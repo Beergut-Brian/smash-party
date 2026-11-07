@@ -2,20 +2,77 @@
   "notes": "Sound effects made with ElevenLabs sound generation. id -> {prompt, dur (seconds, 0.5-30), influence (0-1, how literally to follow the prompt)}. Game plays them with sfxClip(id). Run: node --env-file=.env tools/make-sfx.mjs",
   "style": "cartoon, funny, bright, kids video game, clean, no music",
   "sounds": {
-    "chicken": { "prompt": "Cartoon chicken surprised squawk BAWK, flapping", "dur": 1.0 },
-    "chick":   { "prompt": "Tiny baby chick high squeaky peep peep", "dur": 0.7 },
-    "duck":    { "prompt": "Cartoon duck loud surprised QUACK", "dur": 0.8 },
-    "goose":   { "prompt": "Cartoon goose honk, silly and loud", "dur": 0.9 },
-    "cow":     { "prompt": "Cartoon cow surprised long MOOO", "dur": 1.4 },
-    "pig":     { "prompt": "Cartoon pig squeal and oink oink", "dur": 1.0 },
-    "sheep":   { "prompt": "Cartoon sheep baa, wobbly and silly", "dur": 1.0 },
-    "goat":    { "prompt": "Cartoon goat bleat, funny yell", "dur": 1.0 },
-    "horse":   { "prompt": "Cartoon horse whinny neigh, silly", "dur": 1.3 },
-    "dog":     { "prompt": "Cartoon dog happy yip yip bark", "dur": 0.8 },
-    "cat":     { "prompt": "Cartoon cat surprised meow yowl", "dur": 0.9 },
-    "bunny":   { "prompt": "Cute cartoon squeak and boing, small bunny", "dur": 0.7 },
-    "whee":    { "prompt": "Cartoon slide whistle going up, launch", "dur": 0.9 },
-    "poof":    { "prompt": "Soft cartoon landing poof with a little bounce boing", "dur": 0.7 },
-    "dizzy":   { "prompt": "Cartoon dizzy tweeting birds swirl after a bonk", "dur": 1.2 }
+    "chicken": {
+      "prompt": "Cartoon chicken surprised squawk BAWK, flapping",
+      "dur": 1.0
+    },
+    "chick": {
+      "prompt": "Tiny baby chick high squeaky peep peep",
+      "dur": 0.7
+    },
+    "duck": {
+      "prompt": "Cartoon duck loud surprised QUACK",
+      "dur": 0.8
+    },
+    "goose": {
+      "prompt": "Cartoon goose honk, silly and loud",
+      "dur": 0.9
+    },
+    "cow": {
+      "prompt": "Cartoon cow surprised long MOOO",
+      "dur": 1.4
+    },
+    "pig": {
+      "prompt": "Cartoon pig squeal and oink oink",
+      "dur": 1.0
+    },
+    "sheep": {
+      "prompt": "Cartoon sheep baa, wobbly and silly",
+      "dur": 1.0
+    },
+    "goat": {
+      "prompt": "Cartoon goat bleat, funny yell",
+      "dur": 1.0
+    },
+    "horse": {
+      "prompt": "Cartoon horse whinny neigh, silly",
+      "dur": 1.3
+    },
+    "dog": {
+      "prompt": "Cartoon dog happy yip yip bark",
+      "dur": 0.8
+    },
+    "cat": {
+      "prompt": "Cartoon cat surprised meow yowl",
+      "dur": 0.9
+    },
+    "bunny": {
+      "prompt": "Cute cartoon squeak and boing, small bunny",
+      "dur": 0.7
+    },
+    "whee": {
+      "prompt": "Cartoon slide whistle going up, launch",
+      "dur": 0.9
+    },
+    "poof": {
+      "prompt": "Soft cartoon landing poof with a little bounce boing",
+      "dur": 0.7
+    },
+    "dizzy": {
+      "prompt": "Cartoon dizzy tweeting birds swirl after a bonk",
+      "dur": 1.2
+    },
+    "boss_roar": {
+      "prompt": "Giant goofy cartoon monster roar, silly not scary, wobbly",
+      "dur": 1.8
+    },
+    "stomp": {
+      "prompt": "Huge cartoon giant stomp, deep thud with rumble and rattling",
+      "dur": 1.4
+    },
+    "bonk": {
+      "prompt": "Big cartoon BONK hit with a sparkly ding",
+      "dur": 0.8
+    }
   }
 }

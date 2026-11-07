@@ -73,5 +73,20 @@
   "prompt": "Cartoon dizzy tweeting birds swirl after a bonk",
   "dur": 1.2,
   "hash": "d04a1d71bafb"
+ },
+ "boss_roar": {
+  "prompt": "Giant goofy cartoon monster roar, silly not scary, wobbly",
+  "dur": 1.8,
+  "hash": "6c51f964151b"
+ },
+ "stomp": {
+  "prompt": "Huge cartoon giant stomp, deep thud with rumble and rattling",
+  "dur": 1.4,
+  "hash": "e148adca94ee"
+ },
+ "bonk": {
+  "prompt": "Big cartoon BONK hit with a sparkly ding",
+  "dur": 0.8,
+  "hash": "b751799452d0"
  }
 }

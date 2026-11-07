@@ -86,6 +86,7 @@ function explode(x,z,e=1){ // e = blast size (1 = a normal barrel); shrunken bar
   for(let i=0;i<16;i++){const c=new THREE.Mesh(GEO.box,M(pick(['#ff7b00','#ffd60a','#333333','#e63946'])));c.castShadow=true;const s=rand(.4,1.1)*e;c.scale.set(s,s,s);
     c.position.set(x,1.5*e,z);const a=rand(0,Math.PI*2),f=rand(12,24)*q;addDebris(c,s*.4,Math.sin(a)*f,rand(8,18)*q,Math.cos(a)*f);}
   for(const o of objects){if(!o.alive||o.falling)continue;const dx=o.x-x,dz=o.z-z,d=Math.hypot(dx,dz);
+    if(o.boss)continue;
     if(o.bld){if(d<9*e+o.r)queue.push({t:0.06+d*0.012,fn:()=>damageBuilding(o,x,z,9*e,99,-1,7*e,dx/(d||1),dz/(d||1),24*q)});continue;}
     if(d<8*e+o.r&&o.sz<=tier+1)queue.push({t:0.06+d*0.012,fn:()=>smash(o,dx,dz,26*q)});}
   for(const p of players){const dx=p.x-x,dz=p.z-z,d=Math.hypot(dx,dz)||1;
@@ -121,14 +122,14 @@ function initBld(o){
 function killBld(o){ // the building is done for: score what's left, remember it, regrow later
   o.alive=false;wakeObj(o);
   if(o.rec){o.rec.dead=true;o.rec.gone=[];o.rec.back=T+rand(REGROW[0],REGROW[1]);}
-  const rest=Math.max(0,1-o.paid);smashCount++;addScore(o.points*rest);grow(GROW_VAL[o.sz]*rest);
+  const rest=Math.max(0,1-o.paid);smashCount++;addScore(o.points*rest);grow((GROW_VAL[o.sz]||0)*rest);
 }
 function damageBuilding(o,x,z,rad,max,y0,y1,nx,nz,power){
   if(!o.alive)return 0;wakeObj(o);
   const hit=o.parts.filter(p=>!p.gone&&p.y1>y0&&p.y0<y1).map(p=>[p,Math.hypot(p.wx-x,p.wz-z)]).filter(a=>a[1]<rad).sort((a,b)=>a[1]-b[1]).slice(0,max);
   if(!hit.length)return 0;
   for(const [p] of hit){breakPart(o,p,nx,nz,power);if(o.rec)(o.rec.gone||(o.rec.gone=[])).push(o.parts.indexOf(p));}
-  const fr=hit.length/o.parts.length;o.paid+=fr;addScore(o.points*fr);grow(GROW_VAL[o.sz]*fr);
+  const fr=hit.length/o.parts.length;o.paid+=fr;addScore(o.points*fr);grow((GROW_VAL[o.sz]||0)*fr);
   sfx.crash(hit.length>2);puff(x,1,z,2+hit.length,1.2,'#e8dcc8');shake=Math.min(1.5,shake+0.1*hit.length);
   if(o.parts.every(p=>p.gone)){killBld(o);scene.remove(o.g);return hit.length;}
   // lost too many walls on a floor? everything above it comes down
@@ -156,7 +157,7 @@ function updateCollapses(dt){
   for(let i=collapsing.length-1;i>=0;i--){const o=collapsing[i],c=o.col;
     if(c.upper.length){ // the upper floors fall as one block, tilting, and pancake when they land
       c.vy+=c.g*dt;c.fallen=Math.min(c.need,c.fallen+c.vy*dt);c.tilt=Math.min(0.3,c.tilt+dt*0.3);
-      c.up.position.y=-c.fallen;c.up.rotation.x=c.tilt*c.lz;c.up.rotation.z=-c.tilt*c.lx;
+      c.up.position.y=-c.fallen/(o.s0||1);c.up.rotation.x=c.tilt*c.lz;c.up.rotation.z=-c.tilt*c.lx;
       if(c.fallen>=c.need){sfx.thud();shake=Math.min(2,shake+0.35);dust(o,2);crumbleFloor(o,c.upper.shift());c.vy*=0.2;}
       continue;}
     if(c.lower.length){if((c.t-=dt)<=0){c.t=0.16;crumbleFloor(o,c.lower.shift());dust(o,2);}continue;}
@@ -199,7 +200,7 @@ const GROW_VAL=SIZES.map((_,i)=>2**i);               // growth from smashing one
 const SMASHES_PER_SIZE=40;                           // ~that many same-size smashes to grow one size (tune in L5)
 const GROW_AT=[0];for(let i=0;i<SIZES.length;i++)GROW_AT.push(GROW_AT[i]+SMASHES_PER_SIZE*GROW_VAL[i]);
 const TYPE_SIZE={cone:2,melon:2,fence:2,pin:2,barrel:3,crates:3,snowman:3,tree:4,tower:4,house:5};
-const sizeK=o=>clamp(Math.sqrt(GROW_S[o.sz]/0.9),0.35,1.6); // debris/puff scale for an object's size
+const sizeK=o=>clamp(Math.sqrt(GROW_S[Math.min(o.sz,GROW_S.length-1)]/0.9),0.35,1.6); // debris/puff scale for an object's size
 let growth=0,tier=0,S=GROW_S[0],giant=false,popT=0,worldSeed=0;
 function sizeClass(o){
   if(o.size!=null){const i=typeof o.size==='number'?o.size:SIZES.indexOf(o.size);if(i>=0)return i;}
@@ -227,10 +228,11 @@ function sizeUp(){
   for(const p of players)puff(p.x,1,p.z,10,1+S,'#ffffff');}
 function goGiant(){
   showBig('GIANT!');sfx.fanfare();queue.push({t:1.3,fn:()=>sfx.fanfare()});say("You're GIANT! Smash everything!");shake=2;popT=1;confetti(220);
-  nwBtn.style.display='block';}
+  queue.push({t:4,fn:summonBoss});} // the NEW WORLD button comes after the boss is beaten
 // NEW WORLD: shrink back to tiny and roll a fresh, procedurally zoned world. Only ever by choice.
 function newWorld(){
-  if(!giant)return;
+  if(!giant||nwBtn.style.display!=='block')return;
+  boss=null;updateBossHud();bossArrows.forEach(s=>s.visible=false);
   for(const c of chunks.values())if(c.loaded)unloadChunk(c);
   for(const c of chunks.values())for(const r of c.rampList)r.mesh.geometry.dispose();
   chunks.clear();for(const o of objects)scene.remove(o.g);objects=[];queue.length=0;
@@ -586,7 +588,7 @@ function collisions(){
       const n=performance.now();if(n-lastBoing>300){lastBoing=n;sfx.boing();puff((a.x+b.x)/2,1,(a.z+b.z)/2,3,1,'#ffffff');}}
     if(d>95){const nx=dx/d,nz=dz/d;a.kx+=nx*30*0.016;a.kz+=nz*30*0.016;b.kx-=nx*30*0.016;b.kz-=nz*30*0.016;}}
   for(const p of players){const vx=Math.sin(p.heading)*p.speed+p.kx,vz=Math.cos(p.heading)*p.speed+p.kz,spd=Math.hypot(vx,vz);
-    for(const o of objects){if(!o.alive||(o.falling&&o.fy>p.y+3*S))continue;const dx=o.x-p.x,dz=o.z-p.z,rr=p.r+o.r;
+    for(const o of objects){if(!o.alive||o.boss||(o.falling&&o.fy>p.y+3*S))continue;const dx=o.x-p.x,dz=o.z-p.z,rr=p.r+o.r;
       if(dx*dx+dz*dz<rr*rr&&p.y<o.h+o.fy){
         if(o.sz<=tier-3){squish(o);continue;}
         if(o.bld){hitBuilding(p,o,dx,dz,rr,spd,vx,vz);continue;}
@@ -761,6 +763,139 @@ function updateAnimals(dt){
     if(a.state!=='dizzy')g.rotation.set(0,a.heading,moving?Math.sin(T*14+a.ph)*0.12:0);}
 }
 
+
+/* ---------- boss (L6): shows up when you're GIANT ---------- */
+/* A random boss drops in each world once you reach max size. It strolls around, stomps (harmless: cars bounce,
+   stuff around it smashes) and has glowing weak spots in phases. Drive into the glowing spots together; when a
+   phase's spots are gone the boss gets mad and the next ones light up. Beat the last phase and it collapses floor
+   by floor, then the celebration and the NEW WORLD button. No timer, no damage, no losing.
+   Design: `const BOSSES=[{id,name,emoji,sway,build(P,g){…}},…]` in objects.js replaces the placeholders below.
+   build() works like makeObj's: register parts with P(BP(mesh,floor,kind),chunks,whole,half) at "1x" scale
+   (about 11 tall, radius ~3.6; logic scales it up ×BOSS_SCALE). Weak spots: P(bossWeak(mesh,floor,phase),3) with
+   phase 1, 2, 3…, placed low (under ~3.5 tall at 1x) and on the outside so a giant car can reach them. */
+const BOSS_SCALE=7;
+function bossWeak(mesh,floor,phase){mesh.userData.floor=floor;mesh.userData.kind='weak';mesh.userData.phase=phase;return mesh;}
+const BOSS_DEFAULT=[
+  {id:'clankzilla',name:'Clankzilla',emoji:'🤖',sway:0.05,build(P){
+    for(const sx of [-1.4,1.4]){P(BP(mk('box',1.4,3,1.6,'#6c757d',sx,1.5,0),0,'wall'),6);P(BP(mk('box',1.9,0.8,2.6,'#495057',sx,0.4,0.3),0,'wall'),4);}
+    for(const sx of [-1.4,1.4]){P(bossWeak(mk('sph',1,1,1,'#ffd60a',sx,1.8,0.95),0,1),3);P(bossWeak(mk('sph',1,1,1,'#ffd60a',sx,1.8,-0.95),0,2),3);}
+    P(BP(mk('box',5,2.6,3.2,'#8d99ae',0,4.3,0),1,'wall'),10);P(BP(mk('box',4.6,2.2,2.8,'#b5651d',0,6.6,0),1,'wall'),10);
+    P(bossWeak(mk('sph',1.4,1.4,1.4,'#ffd60a',0,3.3,1.7),1,3),4);
+    for(const sx of [-1,1]){const t=mk('cyl',1.4,0.6,1.4,'#222222',sx*1.6,5.6,1.5);t.rotation.x=Math.PI/2;P(BP(t,1,'extra'),2,true,0.7);
+      P(BP(mk('box',0.9,3.2,0.9,'#6c757d',sx*3,5,0),1,'extra'),3,true,1.6);P(BP(mk('box',1.3,0.9,1.3,'#e76f51',sx*3,3.2,0.3),1,'extra'),2,true,0.6);}
+    P(BP(mk('box',2.8,2,2.3,'#adb5bd',0,8.7,0),2,'wall'),6);
+    for(const sx of [-0.6,0.6]){P(BP(mk('sph',0.8,0.8,0.4,'#ffffff',sx,9,1.15),2,'extra'),1,true,0.4);P(BP(mk('sph',0.35,0.35,0.3,'#111111',sx,9,1.35),2,'extra'),1,true,0.2);}
+    P(BP(mk('box',1.6,0.35,0.2,'#333333',0,8.1,1.2),2,'extra'),1,true,0.3);
+    P(BP(mk('cyl',0.15,1.5,0.15,'#333333',0,10.4,0),3,'roof'),1,true,0.7);P(BP(mk('sph',0.6,0.6,0.6,'#ff006e',0,11.2,0),3,'roof'),1,true,0.3);}},
+  {id:'shelldozer',name:'Shelldozer',emoji:'🦀',sway:0.03,build(P){
+    for(let i=0;i<6;i++){const a=i/6*Math.PI*2;const b=mk('box',2.7,2,1.2,'#e85d04',Math.sin(a)*2.5,1.4,Math.cos(a)*2.5);b.rotation.y=a;P(BP(b,0,'wall'),5);}
+    P(BP(mk('cyl',5.4,0.6,5.4,'#dc2f02',0,2.6,0),0,'slab'),8);
+    for(const sx of [-1,1]){for(let k=0;k<3;k++){const l=mk('box',2.2,0.35,0.35,'#9d0208',sx*3.6,0.6,(k-1)*1.3);l.rotation.z=sx*0.5;P(BP(l,0,'extra'),2,true,0.3);}
+      P(BP(mk('box',1.3,1.1,2.2,'#e85d04',sx*2.6,1.4,3),0,'extra'),3,true,0.6);P(bossWeak(mk('sph',1.3,1.1,1.3,'#ffd60a',sx*2.8,1.4,4.2),0,1),3);
+      P(bossWeak(mk('sph',1,1,1,'#ffd60a',sx*3.6,1.0,-0.4),0,2),3);
+      P(BP(mk('cyl',0.2,1.6,0.2,'#9d0208',sx*0.8,2.8,2.2),0,'extra'),1,true,0.8);P(bossWeak(mk('sph',0.9,0.9,0.9,'#ffd60a',sx*0.8,3.6,2.3),0,3),3);}
+    for(let i=0;i<4;i++){const a=i/4*Math.PI*2+Math.PI/4;const w=mk('box',2.6,1.6,0.6,'#f4d58d',Math.sin(a)*1.4,3.7,Math.cos(a)*1.4);w.rotation.y=a;P(BP(w,1,'wall'),5);}
+    for(const [x,z] of [[-1.5,-1.5],[1.5,-1.5],[-1.5,1.5],[1.5,1.5]]){P(BP(mk('cyl',1,2.4,1,'#e9c46a',x,5.4,z),2,'wall'),4);P(BP(mk('cone',1.3,1.2,1.3,'#e63946',x,7.2,z),3,'roof'),2,true,0.6);}
+    P(BP(mk('box',0.1,1.4,0.1,'#333333',0,8,0),3,'roof'),1,true,0.7);P(BP(mk('box',0.9,0.5,0.06,'#06d6a0',0.45,8.5,0),3,'roof'),1,true,0.3);}},
+  {id:'kingwobbles',name:'King Wobbles',emoji:'👑',sway:0.12,build(P){
+    for(const sx of [-1,1]){P(BP(mk('box',1.5,2,1.5,'#3a86ff',sx,1,0),0,'wall'),4);P(bossWeak(mk('box',1.6,0.9,1.4,'#ffd60a',sx,0.45,1.3),0,1),3);}
+    P(BP(mk('box',3.8,1.6,2.8,'#8338ec',0,2.8,0),1,'wall'),8);P(BP(mk('box',3.6,1.6,2.6,'#ff006e',0,4.4,0),1,'wall'),8);
+    for(const sx of [-1,1]){P(BP(mk('box',0.9,2.6,0.9,'#ffbe0b',sx*2.5,3.4,0),1,'extra'),3,true,1.3);P(bossWeak(mk('box',1.3,1.3,1.3,'#ffd60a',sx*2.6,2.2,0.6),1,2),3);}
+    P(bossWeak(mk('sph',1.4,1.4,1.4,'#ffd60a',0,3.3,1.5),1,3),4);
+    P(BP(mk('box',2.8,2.4,2.4,'#06d6a0',0,6.4,0),2,'wall'),8);
+    for(const sx of [-0.6,0.6]){P(BP(mk('sph',0.9,0.9,0.4,'#ffffff',sx,6.8,1.2),2,'extra'),1,true,0.4);P(BP(mk('sph',0.4,0.4,0.3,'#111111',sx,6.8,1.42),2,'extra'),1,true,0.2);}
+    P(BP(mk('box',1.2,0.3,0.2,'#e63946',0,5.8,1.22),2,'extra'),1,true,0.2);
+    P(BP(mk('cyl',2.6,0.6,2.6,'#ffd60a',0,7.9,0),3,'roof'),4);
+    for(let i=0;i<5;i++){const a=i/5*Math.PI*2;P(BP(mk('cone',0.5,1,0.5,'#ffd60a',Math.sin(a)*1.1,8.7,Math.cos(a)*1.1),3,'roof'),1,true,0.5);}}}
+];
+let boss=null,lastBossSay=0;
+const _c1=new THREE.Color(),_c2=new THREE.Color('#ffd60a'),_c3=new THREE.Color('#ff006e'),_wpB=new THREE.Vector3();
+const bossArrowTex=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');
+  x.fillStyle='#ffd60a';x.strokeStyle='#ffffff';x.lineWidth=8;x.beginPath();x.moveTo(64,118);x.lineTo(112,58);x.lineTo(82,58);x.lineTo(82,10);x.lineTo(46,10);x.lineTo(46,58);x.lineTo(16,58);x.closePath();x.fill();x.stroke();
+  return new THREE.CanvasTexture(c);})();
+const bossArrows=[0,1,2,3].map(()=>{const s=new THREE.Sprite(new THREE.SpriteMaterial({map:bossArrowTex,depthTest:false,transparent:true}));s.renderOrder=3;s.visible=false;scene.add(s);return s;});
+const bossHud=document.createElement('div');bossHud.id='bossHud';$('hud').appendChild(bossHud);
+{const st=document.createElement('style');st.textContent=`
+:where(#bossHud){display:none;position:absolute;left:50%;bottom:22px;transform:translateX(-50%);text-align:center;font:26px 'Lilita One',sans-serif;color:#fff;
+  background:rgba(0,0,0,.35);border-radius:20px;padding:6px 18px;white-space:nowrap;text-shadow:0 3px 0 rgba(0,0,0,.35)}
+:where(#bossHud i){font-style:normal;display:inline-block;margin:0 3px;font-size:30px;opacity:.35;transition:opacity .2s,transform .2s}
+:where(#bossHud i.on){opacity:1;animation:bossStar .6s ease-in-out infinite alternate}
+:where(#bossHud i.gone){opacity:.9}
+@keyframes bossStar{to{transform:scale(1.25)}}`;document.head.appendChild(st);}
+function bossList(){return typeof BOSSES!=='undefined'&&BOSSES.length?BOSSES:BOSS_DEFAULT;}
+function summonBoss(id){
+  if(boss||!players.length)return;const def=bossList().find(d=>d.id===id)||pick(bossList());
+  let cx=0,cz=0;players.forEach(p=>{cx+=p.x;cz+=p.z;});cx/=players.length;cz/=players.length;
+  const x=clamp(cx,-ARENA+90,ARENA-90),z=clamp(cz-100,-ARENA+90,ARENA-90);
+  const o=makeObj(x,z,3.6,11,200,(P,g,ob)=>def.build(P,g,ob),{building:true,big:true});
+  o.type='boss';o.boss=true;o.sz=99;o.s0=BOSS_SCALE;o.g.scale.setScalar(BOSS_SCALE);o.r*=BOSS_SCALE;o.h*=BOSS_SCALE;for(const p of o.parts)p.half*=BOSS_SCALE;
+  initBld(o);
+  for(const p of o.parts)if(p.kind==='weak'){p.phase=p.mesh.userData.phase||1;p.s0=p.mesh.scale.clone();p.mesh.material=new THREE.MeshBasicMaterial({color:'#777777'});}
+  boss={o,def,state:'drop',y:260,vy:0,phase:1,t:0,heading:0,stompT:7,hitT:0,speed:10,smashT:0,
+    phases:Math.max(...o.parts.filter(p=>p.kind==='weak').map(p=>p.phase))};
+  o.g.position.y=boss.y;say(`Here comes ${def.name}!`);sfxClip('boss_roar',0.9)||sfx.boom();updateBossHud();
+}
+function bossLand(big){const o=boss.o;shake=2;sfxClip('stomp',1)||(sfx.thud(),sfx.boom());
+  for(let i=0;i<14;i++){const a=i/14*Math.PI*2;puff(o.x+Math.sin(a)*o.r,1,o.z+Math.cos(a)*o.r,2,5,'#d9c9a8');}
+  const R=o.r+(big?30:22);
+  for(const p of players){const dx=p.x-o.x,dz=p.z-o.z,d=Math.hypot(dx,dz)||1;if(d<R){p.air=true;p.vy=Math.max(p.vy,15);p.kx+=dx/d*25;p.kz+=dz/d*25;}}
+  for(const q of objects){if(q===o||!q.alive||q.boss)continue;const dx=q.x-o.x,dz=q.z-o.z,d=Math.hypot(dx,dz);if(d<R-6)queue.push({t:d*0.004,fn:()=>q.bld?collapse(q,0,dx,dz,40,true):smash(q,dx,dz,30)});}
+  for(const a of animals){const dx=a.x-o.x,dz=a.z-o.z;if(Math.hypot(dx,dz)<R)launchAnimal(a,dx||1,dz,20);}
+}
+function updateBossHud(){
+  if(!boss||boss.state==='dead'){bossHud.style.display='none';return;}
+  const w=boss.o.parts.filter(p=>p.kind==='weak');bossHud.style.display='block';
+  bossHud.innerHTML=`${boss.def.emoji||'👾'} ${boss.def.name}<br>`+w.sort((a,b)=>a.phase-b.phase).map(p=>p.gone?'<i class="gone">💥</i>':`<i class="${p.phase===boss.phase?'on':''}">⭐</i>`).join('');
+}
+function bossSay(lines,gap=2500){const n=performance.now();if(n-lastBossSay<gap)return;lastBossSay=n;say(pick(lines));}
+function hitWeak(part,p,nx,nz){const b=boss,o=b.o;b.hitT=T+0.3;
+  part.mesh.getWorldPosition(_wpB);breakPart(o,part,nx,nz,45,1.3);
+  flash(_wpB.x,_wpB.y,_wpB.z,'#ffd60a',8,0.5);puff(_wpB.x,_wpB.y,_wpB.z,8,4,'#ffffff');
+  sfxClip('bonk',1)||sfx.crash(true);sfx.boom();shake=Math.min(2,shake+1.3);o.wob=1;addScore(10);p.kx-=nx*20;p.kz-=nz*20;
+  const left=o.parts.filter(q=>q.kind==='weak'&&!q.gone&&q.phase===b.phase).length;
+  if(left){bossSay(['Ouch!','Bonk!','Again! Again!']);updateBossHud();return;}
+  if(b.phase<b.phases){b.phase++;b.speed*=1.3;b.stompT=1.2;lastBossSay=0;bossSay([b.phase===b.phases?'One more time!':"He's getting mad!"]);
+    sfxClip('boss_roar',0.9)||sfx.boom();updateBossHud();return;}
+  // beaten!
+  b.state='dead';updateBossHud();bossArrows.forEach(s=>s.visible=false);lastBossSay=0;say('You beat the boss!');
+  collapse(o,0,nx,nz,60,true);
+  queue.push({t:2.6,fn:()=>{showBig('BOSS BEATEN!');sfx.fanfare();confetti(260);nwBtn.style.display='block';}});
+  queue.push({t:4.0,fn:()=>{sfx.fanfare();say('Hooray! You did it together!');}});
+}
+function updateBoss(dt){
+  if(!boss||boss.state==='dead')return;const b=boss,o=b.o;
+  if(b.state==='drop'){b.vy-=70*dt;b.y+=b.vy*dt;if(b.y<=0){b.y=0;bossLand(true);b.state='intro';b.t=2.2;}o.g.position.y=b.y;return;}
+  // weak spots pulse; active ones get a bouncing arrow
+  const pulse=0.5+0.5*Math.sin(T*8);let na=0;
+  for(const p of o.parts){if(p.kind!=='weak'||p.gone)continue;const on=p.phase===b.phase;
+    p.mesh.material.color.copy(on?_c1.copy(_c2).lerp(_c3,pulse):_c1.set('#777777'));p.mesh.scale.copy(p.s0).multiplyScalar(on?1+0.18*pulse:1);
+    if(on&&na<bossArrows.length){p.mesh.getWorldPosition(_wpB);const s=bossArrows[na++],k=16;s.visible=true;s.scale.set(k,k,1);s.position.set(_wpB.x,_wpB.y+14+Math.abs(Math.sin(T*5))*5,_wpB.z);}}
+  for(let i=na;i<bossArrows.length;i++)bossArrows[i].visible=false;
+  if(b.state==='intro'){if((b.t-=dt)<=0){b.state='walk';bossSay(['Hit the glowing spots!'],0);}}
+  else if(b.state==='walk'){
+    let cx=0,cz=0;players.forEach(p=>{cx+=p.x;cz+=p.z;});cx/=players.length;cz/=players.length;
+    const tx=cx+Math.sin(T*0.25)*40,tz=cz+Math.cos(T*0.25)*40,want=Math.atan2(tx-o.x,tz-o.z);
+    b.heading+=clamp(angDiff(want,b.heading),-1.2*dt,1.2*dt);
+    if(Math.hypot(tx-o.x,tz-o.z)>12){o.x+=Math.sin(b.heading)*b.speed*dt;o.z+=Math.cos(b.heading)*b.speed*dt;}
+    o.x=clamp(o.x,-ARENA+o.r,ARENA-o.r);o.z=clamp(o.z,-ARENA+o.r,ARENA-o.r);
+    b.y=Math.abs(Math.sin(T*3.5))*1.5;
+    if((b.stompT-=dt)<=0){b.state='stomp';b.vy=20;}
+  }else if(b.state==='stomp'){b.vy-=55*dt;b.y+=b.vy*dt;if(b.y<=0){b.y=0;bossLand(false);b.state='walk';b.stompT=rand(6,10)/(1+0.3*(b.phase-1));}}
+  o.g.position.set(o.x,b.y,o.z);o.g.rotation.y=b.heading;
+  if(!o.wob){o.g.rotation.x=0;o.g.rotation.z=Math.sin(T*3.5)*(b.def.sway||0.05);}
+  // feet flatten whatever they walk over
+  if((b.smashT-=dt)<=0){b.smashT=0.25;for(const q of objects){if(q===o||!q.alive||q.boss)continue;const dx=q.x-o.x,dz=q.z-o.z;if(Math.hypot(dx,dz)<o.r*0.85)q.bld?collapse(q,0,dx,dz,30,true):smash(q,dx,dz,25);}}
+  // cars vs boss: glowing spots break, the rest of the boss boings you away
+  for(const p of players){const vx=Math.sin(p.heading)*p.speed+p.kx,vz=Math.cos(p.heading)*p.speed+p.kz,spd=Math.hypot(vx,vz);
+    // weak spots are placed low by design, so reach is only checked across the ground
+    if((spd>3*p.sm||p.air)&&T>b.hitT)for(const q of o.parts){if(q.kind!=='weak'||q.gone||q.phase!==b.phase)continue;q.mesh.getWorldPosition(_wpB);
+      const reach=p.r+q.s0.x*BOSS_SCALE*0.5+o.r*0.35;if(Math.hypot(p.x-_wpB.x,p.z-_wpB.z)<reach){const d=Math.hypot(_wpB.x-p.x,_wpB.z-p.z)||1;hitWeak(q,p,(_wpB.x-p.x)/d,(_wpB.z-p.z)/d);break;}}
+    if(!boss||b.state==='dead')return;
+    const dx=p.x-o.x,dz=p.z-o.z,d=Math.hypot(dx,dz)||1,rr=o.r*0.6+p.r;
+    if(d<rr&&p.y<o.h){p.x=o.x+dx/d*rr;p.z=o.z+dz/d*rr;p.kx+=dx/d*14;p.kz+=dz/d*14;p.speed*=0.4;o.wob=Math.max(o.wob||0,0.4);
+      const n=performance.now();if(n-lastBoing>400){lastBoing=n;sfx.boing();}bossSay(['Hit the glowing spots!'],6000);}}
+}
+
 /* ---------- "can I smash it?" signals ---------- */
 // Pulsing red ring = too big for you, grow first. Green flash = you just got big enough for these.
 // Close to a too-big thing you also get a floating "grow first" badge; bumping one pops "GROW BIGGER!".
@@ -780,7 +915,7 @@ function updateSignals(dt){
   greenT=Math.max(0,greenT-dt);
   if(state!=='play'||!players.length){redRings.count=greenRings.count=0;badges.forEach(b=>b.visible=false);return;}
   const R=camDist*1.1+8,close=camDist*0.3+2,near=[];
-  for(const list of [objects,animals])for(const o of list){if(!o.alive||o.falling)continue;
+  for(const list of [objects,animals])for(const o of list){if(!o.alive||o.falling||o.boss)continue;
     const red=o.sz>tier;if(!red&&!(greenT>0&&o.sz===tier))continue;
     let d=1e9;for(const p of players)d=Math.min(d,Math.hypot(o.x-p.x,o.z-p.z)-o.r-p.r);
     if(d<R)near.push([o,d,red]);}
@@ -811,8 +946,9 @@ function growHint(o){
 function updateCamera(dt,t){
   if(state!=='play'||!players.length){const a=t*0.08;camera.position.set(Math.sin(a)*95,62,Math.cos(a)*95);camera.lookAt(0,0,0);
     sun.position.set(30,80,30);sun.target.position.set(0,0,0);setShadow(80);return;}
-  let cx=0,cz=0;players.forEach(p=>{cx+=p.x;cz+=p.z;});cx/=players.length;cz/=players.length;
-  let spread=0;if(players.length===2){const a=players[0],b=players[1];spread=Math.max(Math.abs(a.x-b.x)/Math.max(1,camera.aspect)*1.25,Math.abs(a.z-b.z)*1.35);}
+  const pts=players.map(p=>[p.x,p.z]);if(boss&&boss.state!=='drop'&&boss.state!=='dead')pts.push([boss.o.x,boss.o.z],[boss.o.x,boss.o.z+boss.o.r*0.5]); // keep the boss in view, weighted so it isn't under the HUD
+  let cx=0,cz=0;pts.forEach(q=>{cx+=q[0];cz+=q[1];});cx/=pts.length;cz/=pts.length;
+  let spread=0;for(const a of pts)for(const b of pts)spread=Math.max(spread,Math.abs(a[0]-b[0])/Math.max(1,camera.aspect)*1.25,Math.abs(a[1]-b[1])*1.35);
   const base=Math.max(7,38*Math.pow(S,0.75)),want=clamp(base+spread*0.9,base,125*Math.max(1,S*0.6));camDist+=(want-camDist)*Math.min(1,dt*2);
   camT.x+=(cx-camT.x)*Math.min(1,dt*4);camT.z+=(cz-camT.z)*Math.min(1,dt*4);
   const el=0.95;shake*=Math.pow(0.02,dt);const sx=rand(-1,1)*shake,sy=rand(-1,1)*shake;
@@ -847,7 +983,7 @@ function loop(now){
     for(const p of players){const s=src[p.src]||{x:0,z:0};if(s.swapP)p.setCar((p.carIdx+1)%CARS.length,true);if(s.newP&&giant){newWorld();break;}p.update(dt,s);}
   }
   updateGrowth(dt);updateStreaming(dt);
-  if(state==='play')collisions();
+  if(state==='play'){collisions();updateBoss(dt);}
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
   updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateScatter(dt);updateAnimals(dt);updateDebris(dt);updateParts(dt);
   updateCamera(dt,T);updateSignals(dt);cullChunks();updateHUD();
@@ -856,5 +992,6 @@ function loop(now){
 }
 requestAnimationFrame(loop);
 window.__sp={mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,
+  boss(id){if(!giant)grow(1e6);if(!boss)summonBoss(id);return boss&&boss.def.name;}, // __sp.boss('shelldozer')
   tp(x,z,i=0){const p=players[i];if(p){p.x=x;p.z=z;p.y=groundH(x,z);camT.set(x,0,z);}},
   stats(){let l=0;chunks.forEach(c=>l+=c.loaded);const i=renderer.info.render;return {chunks:l,objects:objects.length,awake:objects.filter(o=>!o.sleep).length,debris:debris.length,calls:i.calls,tris:i.triangles};}};

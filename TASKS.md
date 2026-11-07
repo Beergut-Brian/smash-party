@@ -50,7 +50,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - **The world fills with stuff your size:** each loaded chunk gets a "scatter" layer of props picked from design's `ZONE_PROPS` (per zone, per size), re-rolled when you size up. Mix: your size ~50%, one smaller ~15%, one bigger ~20%, two bigger ~10% (goals to aim for), and nothing 3+ below. Landmarks (houses, barns, towers) stay put; regrowth also uses the current mix.
   - Needs: D0 v2 (mini props + `ZONE_PROPS`). Until then, scale today's props to fill the gaps.
 
-- [ ] **L6: Boss at max size** (co-op, no losing, no timer)
+- [x] **L6: Boss at max size** (co-op, no losing, no timer)
   - Reaching max size triggers a BOSS: a huge original character/structure that strolls in with music and a voice intro.
   - Built on the L3 building contract plus glowing **weak spots**. Both players smash weak spots, each hit knocks big parts off, and the boss wobbles, stomps (harmless boings) and changes phase. Beating it gives a giant celebration, then the NEW WORLD button.
   - Bosses can rotate per world/zone later.
@@ -96,7 +96,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 
 - [ ] **D5: Boss model(s)**
   - One original boss for max size, built from L3-contract parts plus `BP(mesh, floor, 'weak')` glowing weak spots. Chunky, funny, not scary. Kaden and son to pick the concept (and maybe name it).
-  - Needs: L6 spec.
+  - Needs: L6 spec. ✅ L6 is done. The format is in `CLAUDE.md` under "Boss". Logic has three blocky placeholders to replace or polish (Kaden picked all three ideas, one random per world): **Clankzilla** (junk robot), **Shelldozer** (crab carrying a sandcastle), **King Wobbles** (wobbly block king). New bosses welcome; Kaden and son will invent more.
 
 - [ ] **D1: Zone layouts**
   - **Town:** streets with houses of different sizes, shops, a school, a fire station, a water tower, mailboxes, street lights, hydrants, parked cars (original designs), and a tall "boss" building to topple when giant.

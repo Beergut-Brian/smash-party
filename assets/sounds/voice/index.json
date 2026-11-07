@@ -128,5 +128,60 @@
   "text": "Up, up and away!",
   "speak": "Up, up and away!",
   "hash": "419ae57c6930"
+ },
+ "here_comes_clankzilla": {
+  "text": "Here comes Clankzilla!",
+  "speak": "Here comes Clankzilla!",
+  "hash": "6b975fd9c691"
+ },
+ "here_comes_shelldozer": {
+  "text": "Here comes Shelldozer!",
+  "speak": "Here comes Shelldozer!",
+  "hash": "214e2b0dbe48"
+ },
+ "here_comes_king_wobbles": {
+  "text": "Here comes King Wobbles!",
+  "speak": "Here comes King Wobbles!",
+  "hash": "0b782204f5ee"
+ },
+ "hit_the_glowing_spots": {
+  "text": "Hit the glowing spots!",
+  "speak": "Hit the glowing spots!",
+  "hash": "5a21416f341c"
+ },
+ "ouch": {
+  "text": "Ouch!",
+  "speak": "Ouch!",
+  "hash": "1419f0cbd67b"
+ },
+ "bonk": {
+  "text": "Bonk!",
+  "speak": "Bonk!",
+  "hash": "41655e73356f"
+ },
+ "again_again": {
+  "text": "Again! Again!",
+  "speak": "Again! Again!",
+  "hash": "22bffc2d11e0"
+ },
+ "he_s_getting_mad": {
+  "text": "He's getting mad!",
+  "speak": "He's getting mad!",
+  "hash": "b7947dacd6ce"
+ },
+ "one_more_time": {
+  "text": "One more time!",
+  "speak": "One more time!",
+  "hash": "c27eec3d7529"
+ },
+ "you_beat_the_boss": {
+  "text": "You beat the boss!",
+  "speak": "You beat the boss!",
+  "hash": "ed0fb8849934"
+ },
+ "hooray_you_did_it_together": {
+  "text": "Hooray! You did it together!",
+  "speak": "Hooray! You did it together!",
+  "hash": "4b901a0e0e7d"
  }
 }

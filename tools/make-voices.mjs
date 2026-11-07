@@ -32,7 +32,7 @@ if (!dry && !key) { console.error('Missing ELEVENLABS_API_KEY (put it in .env an
 let chars = 0, made = 0;
 for (const l of lines) {
   const id = slug(l.text), speak = l.speak || speakable(l.text);
-  const hash = crypto.createHash('sha1').update([cfg.voice, cfg.model, JSON.stringify(cfg.settings), cfg.prefix || '', speak].join('|')).digest('hex').slice(0, 12);
+  const hash = crypto.createHash('sha1').update([cfg.voice, cfg.model, JSON.stringify(cfg.settings), l.prefix ?? cfg.prefix ?? '', speak].join('|')).digest('hex').slice(0, 12);
   const file = path.join(outDir, id + '.mp3');
   if (!force && index[id]?.hash === hash && fs.existsSync(file)) continue;
   chars += speak.length;

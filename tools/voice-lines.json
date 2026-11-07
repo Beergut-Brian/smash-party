@@ -24,6 +24,29 @@
     "Fly, chicken, fly!",
     "Moo-ve over!",
     "Bye bye, birdie!",
-    "Up, up and away!"
+    "Up, up and away!",
+    {
+      "text": "Here comes Clankzilla!",
+      "prefix": "[shouting] "
+    },
+    {
+      "text": "Here comes Shelldozer!",
+      "prefix": "[shouting] "
+    },
+    {
+      "text": "Here comes King Wobbles!",
+      "prefix": "[shouting] "
+    },
+    "Hit the glowing spots!",
+    "Ouch!",
+    "Bonk!",
+    "Again! Again!",
+    "He's getting mad!",
+    "One more time!",
+    {
+      "text": "You beat the boss!",
+      "prefix": "[shouting] "
+    },
+    "Hooray! You did it together!"
   ]
 }
