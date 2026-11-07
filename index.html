@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Smash Party</title>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="hud">
+  <div id="meterWrap"><div id="levelTxt">SMASH LEVEL 1</div><div id="meter"><div id="meterFill"></div></div><div id="count">0 smashes</div></div>
+  <div class="pPanel empty" id="p0"></div>
+  <div class="pPanel empty" id="p1"></div>
+  <div id="tags"></div>
+  <div id="big">MEGA SMASH!</div>
+</div>
+<div id="corner"><button id="muteBtn" title="Sound (M)">🔊</button><button id="fsBtn" title="Fullscreen (F)">⛶</button></div>
+<div id="start"><div id="startInner">
+  <div id="title">SMASH<br>PARTY!</div>
+  <div id="sub">Drive wacky cars. Smash everything. Together!</div>
+  <button id="play">▶ PLAY</button>
+  <div id="controls">
+    <div class="ctl"><b>🎮 Controller</b>Stick: point where you want to go<br>A or RT: TURBO<br>B: JUMP<br>X or Y: new car</div>
+    <div class="ctl"><b>⌨️ Player 1 keys</b>W A S D: drive<br>Space: TURBO<br>E: JUMP<br>Q: new car</div>
+    <div class="ctl"><b>⌨️ Player 2 keys</b>Arrow keys: drive<br>Enter: TURBO<br>Right Shift: JUMP<br>/ : new car</div>
+  </div>
+  <div id="note">Each player presses <b>A</b> (or their TURBO key) to jump in. Fill the smash meter together for a MEGA SMASH! &nbsp;F = fullscreen · M = sound</div>
+</div></div>
+<div id="touch"><div id="stickBase"><div id="stickKnob"></div></div><div class="tbtn" id="bGo">GO!</div><div class="tbtn" id="bJump">JUMP</div><div class="tbtn" id="bSwap">🔄</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="src/game.js"></script>
+</body>
+</html>
