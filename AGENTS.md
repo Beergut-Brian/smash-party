@@ -26,6 +26,9 @@ Scripts are plain (no modules) and load in order: `core.js` → `cars.js` → `o
 
 If a design change needs new logic (or the other way around), make the part in your own file and leave a `// TODO(logic):` or `// TODO(design):` note for the other tool instead of editing their file.
 
+## Tasks
+Check `TASKS.md` before starting. Take the top unchecked task in your section, check it off in the same commit as the work, and add follow-up tasks for the other tool when needed.
+
 ## Git workflow
 - **Pull before you start. Commit small. Push when done.** Never force-push `main`.
 - `main` is live on the TV (GitHub Pages: https://beergut-brian.github.io/smash-party/), so only push working code. Use a branch for big experiments.
