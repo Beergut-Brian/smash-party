@@ -4,7 +4,7 @@ A co-op driving-and-smashing game for a dad and his 5-year-old, played on a TV w
 
 ## Design rules (do not break these)
 - **Co-op only.** No losing, no timers that end the game, no player-vs-player scoring. Everything feeds one shared smash meter.
-- **Kid-simple controls.** Stick = point where you want to go. A/RT = turbo, B = jump, X/Y = next car. Never require reading.
+- **Kid-simple controls.** Stick = point where you want to go. A/RT = turbo, B = jump (becomes 💥 BOOM when stuck), X = shoot (big cars), Y = switch car / LEVEL UP when ready. Never require reading.
 - **Big, loud, funny feedback.** Every action should have a sound, a puff, or a wobble.
 - **Original designs only.** No real car brands, toy lines, logos, or licensed characters.
 - Must run smoothly at 1080p on a GTX 1060 and stay playable on a phone (touch controls).
@@ -42,12 +42,12 @@ Check `TASKS.md` before starting. Take the top unchecked task in your section, c
 - Only chunks near the players are built. Far objects sleep as instanced meshes and wake into real meshes near a car. Smashed things are remembered per chunk and regrow after a couple of minutes.
 
 ## Adding things
-- **Block-built car:** write `buildX()` returning `{g, wheels, ex, h}` (see `buildMonster`) and add it to `CARS` with `name, emoji, speed (20–32), r (collision radius ~2–2.8)`.
+- **Block-built car:** write `buildX()` returning `{g, wheels, ex, h}` (see `buildMonster`) and add it to `CARS` with `name, emoji, speed (20–32), r (collision radius ~2–2.8)`, plus `tier` (0 = starter cars at the tiniest sizes … 3 = the coolest cars at the biggest sizes; a new tier unlocks every 2 sizes) and optionally `weapon: 'cannon' | 'rocket' | null` (default: tier 2 cannon, tier 3 rocket). Until `tier` is set, `CAR_TIER` in game.js decides.
 - **Model car (for graphics models/tools):** drop `name.glb` in `assets/cars/` and add to `cars.json`:
   `{"name":"Comet Crusher","emoji":"☄️","file":"comet.glb","speed":27,"r":2.3,"scale":1,"y":0,"rotateY":0,"height":3,"exhaust":[0,1,-2.5]}`
   Model faces +Z, about 4–5 units long, under ~20k triangles. Meshes named `*wheel*` spin.
 - **Zone layout:** define `const ZONE_LAYOUT={town(ctx){…},farm(ctx){…},park(ctx){…},home(ctx){…}}` in `objects.js`. Each function fills one 80×80 chunk. `ctx` has `zone, ci, cj, x0, z0, x1, z1, cx, cz, size` plus `place(type,x,z,arg,r)`, `ramp(x,z,th,L,W,H)` and `free(x,z,r)`. `place` and `ramp` return false (and do nothing) if the spot is off the chunk, on a road, on a ramp or overlapping. `Math.random`/`rand`/`pick` are seeded while a layout runs, so the same chunk always comes out the same. Which zone each chunk is in lives in `ZONE_MAP` (`core.js`).
-- **Smashable object:** add to `OBJ` using `makeObj(x,z,radius,height,points,build)`. In `build`, register parts with `P(mesh, chunks, whole, half)` — `whole:true` flies off intact, otherwise it shatters into `chunks` boxes. Add it to `SPAWN_W` to respawn. Give it a size class with opts `{size:'mini'|'tiny'|'small'|'medium'|'large'|'huge'|'mega'}` (each size is ~1.65× the last; a `small` thing is about cone-sized, `huge` is house-sized). Players can only smash things at or below their size; bigger things get a red ring and boing them back; things 3+ sizes below get squished without counting. Any `OBJ` type can also be built shrunk or grown: `OBJ.cone(x,z,arg,scale)`.
+- **Smashable object:** add to `OBJ` using `makeObj(x,z,radius,height,points,build)`. In `build`, register parts with `P(mesh, chunks, whole, half)` — `whole:true` flies off intact, otherwise it shatters into `chunks` boxes. Add it to `SPAWN_W` to respawn. Give it a size class with opts `{size:'micro'|'mini'|'tiny'|'small'|'medium'|'large'|'huge'|'mega'}` (each size is ~1.65× the last; a `small` thing is about the size of a car at scale 0.2, a cone is `small`… see `TYPE_SIZE` in game.js: cone = small, house = huge). Players can only smash things at or below their size; bigger things get a red ring and boing them back; things 3+ sizes below get squished without counting. Any `OBJ` type can also be built shrunk or grown: `OBJ.cone(x,z,arg,scale)`.
 - **Size-matched props:** define `const ZONE_PROPS={town:{mini:['flower',…],tiny:[…],small:[…],…},farm:{…},park:{…},home:{…}}` in `objects.js` (OBJ type names per zone per size). Logic keeps the area around the cars stocked from it: mostly the players' size, some a size or two bigger, a few smaller. Missing entries fall back to today's props shrunk or grown.
 - **Building (staged destruction):** make it with `makeObj(x,z,r,h,points,build,{building:true,size:'huge'})` and tag every part with `BP(mesh, floor, kind)` (from `core.js`): `P(BP(mk(...), 0, 'wall'), 3)`.
   - `floor`: 0 = ground floor, counting up. Put the roof on the floor above the top storey (or tag it `'roof'` on the top floor).
@@ -64,4 +64,4 @@ Check `TASKS.md` before starting. Take the top unchecked task in your section, c
 ## Testing
 - Serve locally (`python3 -m http.server`) — model cars only load over http, not `file://`.
 - `window.__sp.mega()`, `__sp.explode(x,z)`, `__sp.addScore(n)`, `__sp.grow(n)` (1800 = GIANT), `__sp.newWorld()`, `__sp.tp(x,z)` and `__sp.stats()` in the console help with testing. Press N (or START) when giant for a new world.
-- Keyboard: P1 WASD/Space/E/Q, P2 Arrows/Enter/RShift//. Check both players, a ramp jump, a barrel chain, and a MEGA SMASH before pushing.
+- Keyboard: P1 WASD/Space/E/Q/F, P2 Arrows/Enter/RShift///. (drive/turbo/jump/switch car or LEVEL UP/shoot). `__sp.level(n)` jumps ahead n sizes. Check both players, a ramp jump, a barrel chain, and a MEGA SMASH before pushing.

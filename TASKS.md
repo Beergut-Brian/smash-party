@@ -74,6 +74,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Replace the synth sfx (crash, boom, boing, jump, thud, turbo, pop, fanfare) with generated ones in the same toy/8-bit style, keeping the synth versions as fallback. Keep total audio download small for phones (lazy-load music).
 
 - [ ] **L5: Tune and test pass**
+  - Round 1 (Kaden's first play-test) ✅: slower when small; car tiers (cooler cars unlock every 2 sizes, Y switches within the tier); big cars shoot (X: cannon / rocket, also hits boss weak spots); LEVEL UP button instead of auto-growing; new `micro` bottom size, scatter mostly at your size with bigger things rarer; stuck detection → jump becomes 💥 BOOM.
   - Play-test the whole v2 loop: small, then medium, then giant. Make sure growth pacing feels good in a ~20 minute session with a 5-year-old.
   - Check touch controls and phone performance still work (lower view radius on phones).
 
@@ -97,6 +98,11 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 - [ ] **D5: Boss model(s)**
   - One original boss for max size, built from L3-contract parts plus `BP(mesh, floor, 'weak')` glowing weak spots. Chunky, funny, not scary. Kaden and son to pick the concept (and maybe name it).
   - Needs: L6 spec. ✅ L6 is done. The format is in `CLAUDE.md` under "Boss". Logic has three blocky placeholders to replace or polish (Kaden picked all three ideas, one random per world): **Clankzilla** (junk robot), **Shelldozer** (crab carrying a sandcastle), **King Wobbles** (wobbly block king). New bosses welcome; Kaden and son will invent more.
+
+- [ ] **D6: Car upgrade path** (from play-test round 1)
+  - Set `tier` on every car: 0 = humble starter cars for the tiniest sizes (toy-ish: pedal car, scooter, shopping cart…), up to 3 = the super cool ones (rocket racer, monster machines). About 2–3 cars per tier so Y has something to switch to. Logic's guess today: `CAR_TIER` in game.js.
+  - Tier 2–3 cars can shoot: set `weapon:'cannon'` or `'rocket'` (logic handles the shots). Make the weapon visible on the model (a cannon barrel, rocket pods).
+  - New car names get a recorded voice once someone runs `tools/make-voices.mjs`.
 
 - [ ] **D1: Zone layouts**
   - **Town:** streets with houses of different sizes, shops, a school, a fire station, a water tower, mailboxes, street lights, hydrants, parked cars (original designs), and a tall "boss" building to topple when giant.

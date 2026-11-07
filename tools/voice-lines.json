@@ -47,6 +47,17 @@
       "text": "You beat the boss!",
       "prefix": "[shouting] "
     },
-    "Hooray! You did it together!"
+    "Hooray! You did it together!",
+    {
+      "text": "LEVEL UP!",
+      "prefix": "[shouting] "
+    },
+    "Level up ready! Press Y!",
+    "New car!",
+    "Stuck? Press jump to go BOOM!",
+    {
+      "text": "BOOM!",
+      "prefix": "[shouting] "
+    }
   ]
 }

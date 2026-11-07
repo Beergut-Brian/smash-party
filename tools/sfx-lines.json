@@ -138,6 +138,26 @@
       "prompt": "Building collapsing, deep rumble and crumbling blocks",
       "dur": 1.8,
       "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
+    },
+    "levelup": {
+      "prompt": "Epic power-up level up sound, big rising sweep into a triumphant sparkly chord",
+      "dur": 2.0,
+      "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
+    },
+    "levelup_ready": {
+      "prompt": "Bright twinkly chime, something is ready, magical sparkle",
+      "dur": 1.0,
+      "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
+    },
+    "cannon": {
+      "prompt": "Toy cannon shot, punchy pop boom",
+      "dur": 0.6,
+      "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
+    },
+    "rocket": {
+      "prompt": "Rocket launch whoosh with fizz",
+      "dur": 0.8,
+      "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
     }
   }
 }

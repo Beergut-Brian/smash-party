@@ -183,5 +183,30 @@
   "text": "Hooray! You did it together!",
   "speak": "Hooray! You did it together!",
   "hash": "4b901a0e0e7d"
+ },
+ "level_up": {
+  "text": "LEVEL UP!",
+  "speak": "Level up!",
+  "hash": "2444f5498028"
+ },
+ "level_up_ready_press_y": {
+  "text": "Level up ready! Press Y!",
+  "speak": "Level up ready! Press Y!",
+  "hash": "aac3bc71cc20"
+ },
+ "new_car": {
+  "text": "New car!",
+  "speak": "New car!",
+  "hash": "5c5141fe64b6"
+ },
+ "stuck_press_jump_to_go_boom": {
+  "text": "Stuck? Press jump to go BOOM!",
+  "speak": "Stuck? Press jump to go BOOM!",
+  "hash": "92c7e9b08909"
+ },
+ "boom": {
+  "text": "BOOM!",
+  "speak": "Boom!",
+  "hash": "1ad68b4c4193"
  }
 }

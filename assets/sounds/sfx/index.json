@@ -153,5 +153,25 @@
   "prompt": "Building collapsing, deep rumble and crumbling blocks",
   "dur": 1.8,
   "hash": "ed00c8f04cda"
+ },
+ "levelup": {
+  "prompt": "Epic power-up level up sound, big rising sweep into a triumphant sparkly chord",
+  "dur": 2,
+  "hash": "d2c5fc899fa8"
+ },
+ "levelup_ready": {
+  "prompt": "Bright twinkly chime, something is ready, magical sparkle",
+  "dur": 1,
+  "hash": "e015098a18d7"
+ },
+ "cannon": {
+  "prompt": "Toy cannon shot, punchy pop boom",
+  "dur": 0.6,
+  "hash": "5e3d88124716"
+ },
+ "rocket": {
+  "prompt": "Rocket launch whoosh with fizz",
+  "dur": 0.8,
+  "hash": "7c6fc32a378d"
  }
 }

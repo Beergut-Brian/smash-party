@@ -189,23 +189,71 @@ function demoBuilding(x,z,floors=3){
   o.type='demo';o.chunk=chunkOf(x,z).k;o.sz=sizeClass(o);initBld(o);o.fr=footprint(o);return o;
 }
 
+/* ---------- car tiers ---------- */
+// Cooler cars unlock as you grow: a new car tier every 2 sizes. Y / Q / / switches between cars in your tier.
+// Design can set `tier` (0–3) and `weapon` ('cannon' | 'rocket' | null) on CARS entries; until then these decide.
+const CAR_TIER={'Bubble Buggy':0,'Ice Cream Smasher':0,'Hot Dog Hot Rod':1,'Big Bouncer':1,'Fire Truck':2,'Dino Dozer':2,'Shark Attack':3,'Rocket Racer':3};
+const WEAPON_BY_TIER=[null,null,'cannon','rocket'];
+const carTierOf=c=>c.tier??CAR_TIER[c.name]??1;
+const carTierNow=()=>Math.min(3,Math.floor((giant?SIZES.length:tier)/2));
+const carWeapon=c=>c.weapon!==undefined?c.weapon:WEAPON_BY_TIER[carTierOf(c)];
+function carsInTier(t){for(let d=0;d<4;d++){const l=CARS.map((c,i)=>i).filter(i=>carTierOf(CARS[i])===t-d);if(l.length)return l;}return [0];}
+function newCars(quiet){const l=carsInTier(carTierNow());
+  for(const p of players)p.setCar(l[p.idx%l.length],false);
+  if(quiet)return;showBig('NEW CAR!');sfxClip('levelup',0.7,1.2)||sfx.fanfare();say('New car!');
+  for(const p of players){puff(p.x,S,p.z,10,1.5*Math.max(S,.3),'#ffffff');p.nameT=3;}
+  if(players[0])queue.push({t:1.2,fn:()=>say(players[0].stats.name+'!')});}
+
+/* ---------- shooting (cars from tier 3 up: X / F / .) ---------- */
+// cannonballs bounce and plow through small stuff; rockets fly straight and explode. Both can hit boss weak spots.
+const shots=[];
+function shoot(p){const w=carWeapon(p.stats);if(!w||T<(p.shotT||0))return;
+  const rk=w==='rocket';p.shotT=T+(rk?0.55:0.28);const fx=Math.sin(p.heading),fz=Math.cos(p.heading),sp=(rk?75:60)*p.sm+Math.max(0,p.speed),r=(rk?0.5:0.6)*S;
+  const m=rk?mk('cone',r*1.2,r*3,r*1.2,'#e63946'):mk('sph',r*2,r*2,r*2,'#333333');if(rk){m.rotation.order='YXZ';m.rotation.set(Math.PI/2,p.heading,0);}
+  const x=p.x+fx*(p.r+r*2),z=p.z+fz*(p.r+r*2),y=p.y+1.1*S;m.position.set(x,y,z);scene.add(m);
+  shots.push({m,rk,x,y,z,vx:fx*sp,vz:fz*sp,vy:rk?0:5*Math.sqrt(S),life:rk?2.2:1.8,r,p,bounced:false,hits:0});
+  sfxClip(rk?'rocket':'cannon',0.7,rand(0.95,1.05))||sfx.pop();p.kx-=fx*3*p.sm;p.kz-=fz*3*p.sm;}
+function shotEnd(s,i){if(s.rk)explode(s.x,s.z,clamp(S*0.55,0.6,2.4));else puff(s.x,s.y,s.z,3,s.r*2,'#dddddd');scene.remove(s.m);shots.splice(i,1);}
+function updateShots(dt){
+  for(let i=shots.length-1;i>=0;i--){const s=shots[i];s.life-=dt;
+    if(!s.rk)s.vy-=20*dt;s.x+=s.vx*dt;s.y+=s.vy*dt;s.z+=s.vz*dt;
+    const gh=groundH(s.x,s.z)+s.r;if(s.y<gh){if(s.rk||s.bounced){shotEnd(s,i);continue;}s.y=gh;s.vy=Math.abs(s.vy)*0.5+3*Math.sqrt(S);s.bounced=true;sfx.thud();}
+    if(s.rk&&Math.random()<0.6)addPart(mk('box',s.r,s.r,s.r,null,s.x,s.y,s.z,E(pick(['#ff7b00','#ffd60a']))),0.3);
+    s.m.position.set(s.x,s.y,s.z);if(!s.rk)s.m.rotation.x+=dt*10;
+    if(s.life<=0||Math.abs(s.x)>ARENA||Math.abs(s.z)>ARENA){shotEnd(s,i);continue;}
+    let done=false;
+    if(boss&&boss.state!=='dead'&&boss.state!=='drop'){const o=boss.o;
+      for(const q of o.parts){if(q.kind!=='weak'||q.gone||q.phase!==boss.phase)continue;q.mesh.getWorldPosition(_wpB);
+        if(Math.hypot(s.x-_wpB.x,s.z-_wpB.z)<s.r+q.s0.x*BOSS_SCALE*0.5+2){const d=Math.hypot(s.vx,s.vz)||1;hitWeak(q,s.p,s.vx/d,s.vz/d);done=true;break;}}
+      if(!done&&Math.hypot(s.x-o.x,s.z-o.z)<o.r*0.6&&s.y<o.h){o.wob=Math.max(o.wob||0,0.5);done=true;}}
+    if(!done)for(const o of objects){if(!o.alive||o.boss)continue;const dx=o.x-s.x,dz=o.z-s.z,rr=o.r+s.r;
+      if(dx*dx+dz*dz>rr*rr||s.y>o.h+o.fy+s.r)continue;
+      if(s.rk){done=true;break;}
+      if(o.bld)damageBuilding(o,s.x,s.z,s.r*4+2*S,3,s.y-2*S,s.y+2*S,s.vx,s.vz,30);
+      else if(o.sz<=tier+1)smash(o,s.vx,s.vz,30*Math.sqrt(S));else{o.wob=1;wakeObj(o);}
+      if(o.bld||o.sz>=tier||++s.hits>4){done=true;break;}}
+    if(!done)for(const a of animals){if(a.state==='fly')continue;if(Math.hypot(a.x-s.x,a.z-s.z)<a.r+s.r*1.5)launchAnimal(a,s.vx,s.vz,20);}
+    if(done)shotEnd(s,i);}
+}
+
 /* ---------- growth (shared by both players) ---------- */
 // Smashing grows both cars together. Your size tier decides what you can smash (object size class <= tier);
 // bigger things wobble and boing you back; things 3+ sizes below get squished flat and don't count.
-// Objects set `size` in makeObj opts ('mini'…'mega' or 0–6), else TYPE_SIZE / a guess from their size.
-const SIZES=['mini','tiny','small','medium','large','huge','mega'];
+// Objects set `size` in makeObj opts ('micro'…'mega' or 0–7), else TYPE_SIZE / a guess from their size.
+// Growing fills the bar; when it's full a LEVEL UP button appears (Y / Q / / / tap) and pressing it grows you.
+const SIZES=['micro','mini','tiny','small','medium','large','huge','mega'];
 const SIZE_STEP=1.65;                                // each size is ~1.65× the one before
-const GROW_S=[0.12,0.2,0.33,0.55,0.9,1.5,2.5,4.0];  // car scale at the start of each size; last = max (GIANT). 1 = the original car
+const GROW_S=[0.07,0.12,0.2,0.33,0.55,0.9,1.5,2.5,4.0]; // car scale at each size; last = GIANT. 1 = the original car
 const GROW_VAL=SIZES.map((_,i)=>2**i);               // growth from smashing one thing of each size
-const SMASHES_PER_SIZE=40;                           // ~that many same-size smashes to grow one size (tune in L5)
+const SMASHES_PER_SIZE=35;                           // ~that many same-size smashes to grow one size (tune in L5)
 const GROW_AT=[0];for(let i=0;i<SIZES.length;i++)GROW_AT.push(GROW_AT[i]+SMASHES_PER_SIZE*GROW_VAL[i]);
-const TYPE_SIZE={cone:2,melon:2,fence:2,pin:2,barrel:3,crates:3,snowman:3,tree:4,tower:4,house:5};
-const sizeK=o=>clamp(Math.sqrt(GROW_S[Math.min(o.sz,GROW_S.length-1)]/0.9),0.35,1.6); // debris/puff scale for an object's size
-let growth=0,tier=0,S=GROW_S[0],giant=false,popT=0,worldSeed=0;
+const TYPE_SIZE={cone:3,melon:3,fence:3,pin:3,barrel:4,crates:4,snowman:4,tree:5,tower:5,house:6};
+const sizeK=o=>clamp(Math.sqrt(GROW_S[Math.min(o.sz,GROW_S.length-1)]/0.9),0.2,1.6); // debris/puff scale for an object's size
+let growth=0,tier=0,S=GROW_S[0],giant=false,popT=0,worldSeed=0,levelReady=false,lastReadySay=0;
 function sizeClass(o){
   if(o.size!=null){const i=typeof o.size==='number'?o.size:SIZES.indexOf(o.size);if(i>=0)return i;}
   if(o.type in TYPE_SIZE)return TYPE_SIZE[o.type];
-  return clamp(Math.round(3+Math.log(Math.max(o.r,o.h/3)/1.1)/Math.log(SIZE_STEP)),0,SIZES.length-1);}
+  return clamp(Math.round(4+Math.log(Math.max(o.r,o.h/3)/1.1)/Math.log(SIZE_STEP)),0,SIZES.length-1);}
 // shrink/grow any object to another size (placeholder minis until design's D0 v2 props land)
 // how far the object really reaches on the ground (roofs overhang their collision radius)
 const _bx=new THREE.Box3();
@@ -213,19 +261,26 @@ function footprint(o){_bx.setFromObject(o.g);return Math.max(o.r,Math.max(o.x-_b
 function scaleObj(o,f){
   if(!f||f===1)return o;o.g.scale.multiplyScalar(f);o.s0=f;o.r*=f;o.h*=f;for(const p of o.parts)p.half*=f;
   o.sz=clamp(Math.round(o.sz+Math.log(f)/Math.log(SIZE_STEP)),0,SIZES.length-1);if(o.bld)initBld(o);return o;}
-function growScale(g){for(let i=1;i<GROW_AT.length;i++)if(g<GROW_AT[i])return GROW_S[i-1]+(GROW_S[i]-GROW_S[i-1])*(g-GROW_AT[i-1])/(GROW_AT[i]-GROW_AT[i-1]);return GROW_S[GROW_S.length-1];}
-function tierOf(g){let t=0;for(let i=1;i<SIZES.length;i++)if(g>=GROW_AT[i])t=i;return t;}
 const MAX_GROW=GROW_AT[GROW_AT.length-1];
 function grow(n){
-  if(giant)return;growth=Math.min(MAX_GROW,growth+n);
-  const t=tierOf(growth);if(t>tier){tier=t;if(growth<MAX_GROW)sizeUp();}
-  if(growth>=MAX_GROW){giant=true;goGiant();}}
-function updateGrowth(dt){S+=(growScale(growth)-S)*Math.min(1,dt*2.5);popT=Math.max(0,popT-dt);}
+  if(giant)return;const next=GROW_AT[tier+1];growth=Math.min(next,growth+n);
+  if(growth>=next&&!levelReady){levelReady=true;lastReadySay=0;sfxClip('levelup_ready',0.8)||sfx.pop();}}
+function levelUp(){
+  if(!levelReady||giant)return;levelReady=false;
+  if(tier>=SIZES.length-1){giant=true;goGiant();return;}
+  const ct=carTierNow();tier++;sizeUp();
+  if(carTierNow()!==ct)queue.push({t:1.6,fn:newCars});}
+function updateGrowth(dt){S+=((giant?GROW_S[GROW_S.length-1]:GROW_S[tier])-S)*Math.min(1,dt*3);popT=Math.max(0,popT-dt);
+  lvBtn.style.display=levelReady&&state==='play'?'block':'none';
+  const n=performance.now();if(levelReady&&n-lastReadySay>14000){lastReadySay=n;say('Level up ready! Press Y!');}}
 const dispScale=()=>S*(1+0.3*popT*Math.sin(popT*22));
 function showBig(txt){const el=$('big');el.textContent=txt;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}
 function sizeUp(){
-  const txt=pick(['BIGGER!','GROWING!','SO BIG!']);showBig(txt);greenT=4;scatterRain(Math.round(SCAT_N*0.4));sfx.fanfare();say(txt);shake=Math.min(2,shake+1.2);popT=1;
-  for(const p of players)puff(p.x,1,p.z,10,1+S,'#ffffff');}
+  showBig('LEVEL UP!');greenT=4;scatterRain(Math.round(SCAT_N*0.4));sfxClip('levelup',1)||sfx.fanfare();say('LEVEL UP!');shake=Math.min(2,shake+1.2);popT=1.2;
+  for(const p of players){puff(p.x,S,p.z,12,1.2*Math.max(S,.3),'#ffd60a');flash(p.x,S,p.z,'#ffd60a',3*Math.max(S,.3),0.5);}}
+// the big glowing LEVEL UP button (also Y on a controller, Q or / on the keyboard)
+const lvBtn=document.createElement('button');lvBtn.id='levelUp';lvBtn.innerHTML='⬆️ LEVEL UP!<small>press Y</small>';
+lvBtn.onclick=e=>{e.stopPropagation();levelUp();};lvBtn.addEventListener('touchstart',e=>{e.stopPropagation();},{passive:true});document.body.appendChild(lvBtn);
 function goGiant(){
   showBig('GIANT!');sfx.fanfare();queue.push({t:1.3,fn:()=>sfx.fanfare()});say("You're GIANT! Smash everything!");shake=2;popT=1;confetti(220);
   queue.push({t:4,fn:summonBoss});} // the NEW WORLD button comes after the boss is beaten
@@ -241,9 +296,9 @@ function newWorld(){
   for(const d of debris)if(!d.confetti){scene.remove(d.m);d.life=0;}
   worldSeed=(Math.random()*1e9)|0;setZoneMap(randomZoneMap(mulberry(worldSeed)));
   buildWorld();captureHome();
-  growth=0;tier=0;giant=false;popT=1;nwBtn.style.display='none';
+  growth=0;tier=0;giant=false;levelReady=false;popT=1;nwBtn.style.display='none';
   players.forEach(p=>{const st=START_SPOTS[p.idx];p.x=st[0];p.z=st[1];p.y=0;p.vy=0;p.speed=0;p.kx=p.kz=0;p.air=false;p.heading=Math.PI;});
-  camT.set(0,0,30);updateStreaming(0,true);
+  camT.set(0,0,30);updateStreaming(0,true);newCars(true);
   music('drive');showBig('NEW WORLD!');sfx.fanfare();say('New world! Smash it!');confetti(150);
 }
 const nwBtn=document.createElement('button');nwBtn.id='newWorld';nwBtn.innerHTML='🌍 NEW WORLD!<small>START / N / tap</small>';
@@ -251,7 +306,7 @@ nwBtn.onclick=e=>{e.stopPropagation();newWorld();};nwBtn.addEventListener('touch
 document.body.appendChild(nwBtn);
 // size HUD: a row of cars getting bigger, lit up as you grow (a picture, not a number)
 const sizeHud=document.createElement('div');sizeHud.id='sizeHud';
-sizeHud.innerHTML=SIZES.map((_,i)=>`<span style="font-size:${12+i*7}px">🚙</span>`).join('')+'<span class="crown">👑</span><div id="sizeBar"><div id="sizeFill"></div></div>';
+sizeHud.innerHTML=SIZES.map((_,i)=>`<span style="font-size:${11+i*6}px">🚙</span>`).join('')+'<span class="crown">👑</span><div id="sizeBar"><div id="sizeFill"></div></div>';
 $('hud').appendChild(sizeHud);
 /* Default look for the new HUD bits. :where() has zero specificity, so anything in style.css wins.
    TODO(design): style #sizeHud, #sizeBar/#sizeFill and #newWorld (.lit / .now / .crown) in style.css. */
@@ -264,15 +319,20 @@ $('hud').appendChild(sizeHud);
 :where(#sizeHud.giant .crown){display:inline}
 :where(#sizeBar){position:absolute;left:12px;right:12px;bottom:5px;height:6px;border-radius:3px;background:rgba(255,255,255,.3)}
 :where(#sizeFill){height:100%;width:0;border-radius:3px;background:#ffd60a;transition:width .2s}
+:where(#sizeHud.ready){box-shadow:0 0 18px #ffd60a;animation:nwPulse .7s ease-in-out infinite alternate}
 :where(#newWorld){display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:20;font:32px 'Lilita One',sans-serif;color:#fff;
   background:#06d6a0;border:6px solid #fff;border-radius:28px;padding:14px 34px;box-shadow:0 8px 0 rgba(0,0,0,.25);cursor:pointer;animation:nwPulse 1s ease-in-out infinite}
 :where(#newWorld small){display:block;font:14px Nunito,sans-serif;font-weight:900;opacity:.9}
+:where(#levelUp){display:none;position:fixed;left:50%;top:22%;transform:translateX(-50%);z-index:20;font:40px 'Lilita One',sans-serif;color:#fff;
+  background:linear-gradient(#ffd60a,#ff9f1c);border:6px solid #fff;border-radius:30px;padding:14px 40px;box-shadow:0 0 30px #ffd60a,0 8px 0 rgba(0,0,0,.25);cursor:pointer;
+  text-shadow:0 3px 0 rgba(0,0,0,.25);animation:nwPulse .7s ease-in-out infinite}
+:where(#levelUp small){display:block;font:16px Nunito,sans-serif;font-weight:900}
 @keyframes nwPulse{50%{transform:translateX(-50%) scale(1.08)}}`;document.head.appendChild(st);}
 let hudTier=-1;
 function updateSizeHUD(){
   const t=giant?SIZES.length:tier;
   if(t!==hudTier){hudTier=t;const sp=sizeHud.querySelectorAll('span:not(.crown)');sp.forEach((e,i)=>{e.className=(i<=t?'lit':'')+(i===t?' now':'');});sizeHud.classList.toggle('giant',giant);}
-  const a=GROW_AT[tier],b=giant?MAX_GROW:(GROW_AT[tier+1]||MAX_GROW);$('sizeFill').style.width=(giant?100:Math.min(100,(growth-a)/(b-a)*100))+'%';
+  sizeHud.classList.toggle('ready',levelReady);const a=GROW_AT[tier],b=giant?MAX_GROW:(GROW_AT[tier+1]||MAX_GROW);$('sizeFill').style.width=(giant?100:Math.min(100,(growth-a)/(b-a)*100))+'%';
 }
 
 /* ---------- respawn ---------- */
@@ -463,10 +523,10 @@ class Player{
     const s=START_SPOTS[idx];this.x=s[0];this.z=s[1];this.y=0;this.vy=0;this.heading=Math.PI;this.speed=0;this.kx=0;this.kz=0;
     this.air=false;this.pitch=0;this.wasBoost=false;this.flameT=0;this.nameT=0;this.wallT=0;
     this.tag=document.createElement('div');this.tag.className='tag';this.tag.style.background=this.color;$('tags').appendChild(this.tag);
-    this.setCar(idx===0?0:2,true);
+    const l=carsInTier(carTierNow());this.setCar(l[idx%l.length],true);this.trail=[];this.trailT=0;this.lastBump=-9;this.stuck=false;
   }
   get r(){return this.stats.r*S;}
-  get sm(){return clamp(Math.pow(S,0.6),0.25,2.3);} // speed scale for car size
+  get sm(){return clamp(S<1?Math.pow(S,0.95):Math.pow(S,0.6),0.07,2.3);} // speed scale: slow when small, same as before from size 1 up
   setCar(i,announce){
     if(this.model)this.root.remove(this.model.g);
     this.carIdx=i;this.stats=CARS[i];this.model=this.stats.build();this.root.add(this.model.g);
@@ -501,7 +561,8 @@ class Player{
     if(!this.air){
       if(gh<this.y-0.4){this.air=true;this.vy=Math.max(5,this.speed*0.5+3);}
       else this.y=gh;
-      if(inp.jumpP&&!this.air){this.air=true;this.vy=13*clamp(Math.pow(S,0.4),0.4,1.8);sfx.jump();}
+      if(inp.jumpP&&!this.air&&this.stuck){boomOut(this);}
+      else if(inp.jumpP&&!this.air){this.air=true;this.vy=13*clamp(Math.pow(S,0.4),0.33,1.8);sfx.jump();}
     }else{
       this.vy-=32*dt;this.y+=this.vy*dt;
       if(this.y<=gh){const imp=-this.vy;this.y=gh;this.air=false;this.vy=0;
@@ -521,17 +582,32 @@ class Player{
       const fs=.7*S,m=mk('box',fs,fs,fs,null,p.x+rand(-.3,.3),p.y+rand(-.2,.2),p.z+rand(-.3,.3),E(pick(['#ff7b00','#ffd60a','#ff006e'])));m.castShadow=false;
       addPart(m,rand(.2,.4),-fx*6+rand(-1,1),rand(0,2),-fz*6+rand(-1,1));}}
     this.nameT-=dt;
+    // stuck? trying to drive, bumping into things, but not getting anywhere for ~1.5s → jump becomes BOOM
+    if((this.trailT-=dt)<=0){this.trailT=0.25;this.trail.push([this.x,this.z]);if(this.trail.length>6)this.trail.shift();}
+    const trying=mag>0.3||inp.boost,t0=this.trail[0],moved=t0?Math.hypot(this.x-t0[0],this.z-t0[1]):99;
+    if(!this.stuck){if(trying&&this.trail.length>=6&&moved<this.r*1.5+0.2&&T-this.lastBump<1){this.stuck=[this.x,this.z]; // sticky until BOOM or driven clear
+        const n=performance.now();if(n-lastStuckSay>10000){lastStuckSay=n;say('Stuck? Press jump to go BOOM!');}}}
+    else if(Math.hypot(this.x-this.stuck[0],this.z-this.stuck[1])>this.r*4+0.5||T-this.lastBump>2.5)this.stuck=false;
     this.ensureEngine();
     if(this.eng){const t=AC.currentTime;this.eng.o.frequency.setTargetAtTime((42+Math.abs(this.speed)/sm*3.2+(boosting?25:0))/Math.sqrt(Math.max(S,0.3)),t,0.06);this.eng.g.gain.setTargetAtTime(0.025+Math.min(1,Math.abs(this.speed)/30)*0.03,t,0.1);}
   }
 }
+let lastStuckSay=0;
+// BOOM out of a tight spot: blast away whatever is hemming the car in (no points), and pop the car up
+function boomOut(p){const R=p.r*3+2*S;
+  p.stuck=false;p.trail.length=0;p.air=true;p.vy=14*Math.sqrt(Math.max(S,0.3));sfx.boom();say('BOOM!');shake=Math.min(2,shake+1);
+  flash(p.x,S,p.z,'#ffd166',R,0.4);flash(p.x,S,p.z,'#ff5400',R*0.7,0.5);puff(p.x,S,p.z,10,R*0.5,'#888888');
+  for(const o of objects){if(!o.alive||o.boss)continue;const dx=o.x-p.x,dz=o.z-p.z;if(Math.hypot(dx,dz)>R+o.r)continue;
+    o.alive=false;wakeObj(o);if(o.rec){o.rec.dead=true;o.rec.gone=[];o.rec.back=T+rand(REGROW[0],REGROW[1]);}
+    for(const part of o.parts)breakPart(o,part,dx,dz,20);scene.remove(o.g);}
+  for(const a of animals){const dx=a.x-p.x,dz=a.z-p.z;if(Math.hypot(dx,dz)<R+a.r)launchAnimal(a,dx||1,dz,15);}}
 function addPlayer(src){
   const idx=players.length===0?0:(players[0].idx===0?1:0);
   const p=new Player(idx,src);players.push(p);sfx.join();updatePanels();
 }
 function updatePanels(){
   for(let i=0;i<2;i++){const el=$('p'+i);const p=players.find(q=>q.idx===i);
-    if(p){el.className='pPanel';el.innerHTML=`P${i+1} ${p.stats.emoji} ${p.stats.name}<small>${p.src==='touch'?'🔄 = new car':(p.src.startsWith('gp')?'Y = new car':(i==0?'Q = new car':'/ = new car'))}</small>`;}
+    if(p){el.className='pPanel';el.innerHTML=`P${i+1} ${p.stats.emoji} ${p.stats.name}<small>${(p.src==='touch'?'🔄 = switch car':(p.src.startsWith('gp')?'Y = switch car':(i==0?'Q = switch car':'/ = switch car')))+(carWeapon(p.stats)?(p.src==='touch'?' · 🎯 = shoot':p.src.startsWith('gp')?' · X = shoot':i==0?' · F = shoot':' · . = shoot'):'')}</small>`;}
     else{el.className='pPanel empty';el.innerHTML=`Player ${i+1}: press A<small>or ${i==0?'Space':'Enter'} to join!</small>`;}}
 }
 
@@ -547,8 +623,8 @@ addEventListener('keydown',e=>{
 });
 addEventListener('keyup',e=>keys.delete(e.code));
 addEventListener('blur',()=>keys.clear());
-const KB={kb1:{u:'KeyW',d:'KeyS',l:'KeyA',r:'KeyD',b:'Space',j:'KeyE',s:'KeyQ'},kb2:{u:'ArrowUp',d:'ArrowDown',l:'ArrowLeft',r:'ArrowRight',b:'Enter',j:'ShiftRight',s:'Slash'}};
-function readKB(m){return {x:(keys.has(m.r)?1:0)-(keys.has(m.l)?1:0),z:(keys.has(m.d)?1:0)-(keys.has(m.u)?1:0),boost:keys.has(m.b),jumpP:pressed.has(m.j),swapP:pressed.has(m.s),joinP:pressed.has(m.b)||pressed.has(m.j)};}
+const KB={kb1:{u:'KeyW',d:'KeyS',l:'KeyA',r:'KeyD',b:'Space',j:'KeyE',s:'KeyQ',f:'KeyF'},kb2:{u:'ArrowUp',d:'ArrowDown',l:'ArrowLeft',r:'ArrowRight',b:'Enter',j:'ShiftRight',s:'Slash',f:'Period'}};
+function readKB(m){return {x:(keys.has(m.r)?1:0)-(keys.has(m.l)?1:0),z:(keys.has(m.d)?1:0)-(keys.has(m.u)?1:0),boost:keys.has(m.b),jumpP:pressed.has(m.j),swapP:pressed.has(m.s),fire:keys.has(m.f),joinP:pressed.has(m.b)||pressed.has(m.j)};}
 const gpPrev={};
 function readGP(){
   const res={};let gps=[];try{gps=navigator.getGamepads?navigator.getGamepads():[];}catch(e){}
@@ -556,7 +632,7 @@ function readGP(){
     const b=gp.buttons.map(x=>x&&(x.pressed||x.value>0.5));const P=i=>b[i]&&!prev[i];
     let x=gp.axes[0]||0,z=gp.axes[1]||0;if(Math.hypot(x,z)<0.22){x=0;z=0;}
     if(b[14])x=-1;if(b[15])x=1;if(b[12])z=-1;if(b[13])z=1;
-    res['gp'+gp.index]={x,z,boost:!!(b[0]||b[7]||b[5]),jumpP:P(1),swapP:P(2)||P(3),joinP:P(0)||P(1)||P(9),newP:P(9)};gpPrev[gp.index]=b;}
+    res['gp'+gp.index]={x,z,boost:!!(b[0]||b[7]||b[5]),jumpP:P(1),swapP:P(3),fire:!!b[2],joinP:P(0)||P(1)||P(9),newP:P(9)};gpPrev[gp.index]=b;}
   return res;
 }
 // touch
@@ -570,6 +646,8 @@ addEventListener('touchmove',e=>{for(const t of e.changedTouches)if(t.identifier
 const endT=e=>{for(const t of e.changedTouches)if(t.identifier===touch.id){touch.id=null;touch.x=0;touch.z=0;$('stickKnob').style.transform='';}};
 addEventListener('touchend',endT);addEventListener('touchcancel',endT);
 const btn=(id,down,up)=>{const el=$(id);el.addEventListener('touchstart',e=>{e.preventDefault();initAudio();down();},{passive:false});el.addEventListener('touchend',e=>{e.preventDefault();up&&up();},{passive:false});};
+const bFire=document.createElement('div');bFire.className='tbtn';bFire.id='bFire';bFire.textContent='🎯';bFire.style.display='none';$('touch').appendChild(bFire);
+btn('bFire',()=>touch.fire=true,()=>touch.fire=false);
 btn('bGo',()=>touch.boost=true,()=>touch.boost=false);btn('bJump',()=>touch.jumpP=true);btn('bSwap',()=>touch.swapP=true);
 
 function startGame(){
@@ -594,15 +672,15 @@ function collisions(){
         if(o.bld){hitBuilding(p,o,dx,dz,rr,spd,vx,vz);continue;}
         if(o.sz>tier){bump(p,o,dx,dz,rr,spd);continue;}
         if(spd>4*p.sm||p.air){smash(o,vx||dx,vz||dz,Math.max(spd,10)*Math.sqrt(Math.max(1,S)));p.speed*=o.big&&o.sz>=tier?0.8:0.96;}
-        else{const d=Math.hypot(dx,dz)||1;p.x-=dx/d*(rr-d);p.z-=dz/d*(rr-d);}}}
+        else{const d=Math.hypot(dx,dz)||1;p.x-=dx/d*(rr-d);p.z-=dz/d*(rr-d);p.lastBump=T;}}}
     animalHits(p,vx,vz,spd);}
 }
 
 // too big to smash (yet): wobble it and boing the car back. Never a fail, just "grow more!"
 function bump(p,o,dx,dz,rr,spd){
-  const d=Math.hypot(dx,dz)||1,nx=dx/d,nz=dz/d;p.x-=nx*(rr-d);p.z-=nz*(rr-d);
+  const d=Math.hypot(dx,dz)||1,nx=dx/d,nz=dz/d;p.x-=nx*(rr-d);p.z-=nz*(rr-d);p.lastBump=T;
   if(spd<3*p.sm&&!p.air)return;
-  p.kx-=nx*(8*p.sm+spd*0.6);p.kz-=nz*(8*p.sm+spd*0.6);p.speed*=0.2;wakeObj(o);o.wob=1;
+  p.lastBump=T;p.kx-=nx*(8*p.sm+spd*0.6);p.kz-=nz*(8*p.sm+spd*0.6);p.speed*=0.2;wakeObj(o);o.wob=1;
   growHint(o);const n=performance.now();if(n-(o.lastBoing||0)>350){o.lastBoing=n;sfx.boing();puff(o.x-nx*o.r,S,o.z-nz*o.r,3,Math.max(S,.3),'#ffffff');shake=Math.min(1,shake+.15);}
 }
 
@@ -620,17 +698,17 @@ function updateSquish(dt){for(let i=squished.length-1;i>=0;i--){const q=squished
    rains in after a size-up, and quietly drops props left far behind. Landmarks from zone layouts stay put.
    Design fills `const ZONE_PROPS={town:{mini:['flower',…],tiny:[…],…},farm:{…},park:{…}}` in objects.js;
    until then today's props are shrunk or grown to the size needed. */
-const SCAT_N=IS_PHONE?45:80,SCAT_MIX=[[0,.5],[1,.2],[-1,.15],[2,.1],[-2,.05]];
+const SCAT_N=IS_PHONE?50:90,SCAT_MIX=[[0,.6],[-1,.2],[1,.12],[-2,.05],[2,.03]]; // mostly your size; bigger things are rarer
 const DEFAULT_PROPS={town:['crates','cone','barrel','house','tower','pin'],farm:['melon','fence','crates','tree','barrel','snowman'],
   park:['tree','snowman','pin','cone','tower','melon'],home:['crates','cone','barrel','tower','pin','melon','snowman','tree']};
-const scatR=()=>Math.max(7,38*Math.pow(S,0.75))*1.25; // about the visible radius at this size (not the zooming camera)
+const scatR=()=>Math.max(4.5,38*Math.pow(S,0.75))*1.25; // about the visible radius at this size (not the zooming camera)
 function scatterSize(){
   for(let t=0;t<10;t++){let r=Math.random();for(const [d,w] of SCAT_MIX){if((r-=w)<0){const k=tier+d;if(k>=0&&k<SIZES.length&&k>tier-3)return k;break;}}}
   return tier;}
 function scatterProp(zone,k){ // → [type, scale]
   const zp=typeof ZONE_PROPS!=='undefined'&&ZONE_PROPS[zone]&&ZONE_PROPS[zone][SIZES[k]];
   if(zp&&zp.length)return [pick(zp),1];
-  const t=pick(DEFAULT_PROPS[zone]||DEFAULT_PROPS.home);return [t,Math.pow(SIZE_STEP,k-(TYPE_SIZE[t]??3))];}
+  const t=pick(DEFAULT_PROPS[zone]||DEFAULT_PROPS.home);return [t,Math.pow(SIZE_STEP,k-(TYPE_SIZE[t]??4))];}
 function spawnScatter(p,fill){
   const Rs=scatR(),moving=Math.abs(p.speed)>2*p.sm;
   for(let tries=0;tries<6;tries++){
@@ -704,7 +782,7 @@ function spawnAnimal(h,x,z){
   const r=Math.max(_bx.max.z-_bx.min.z,_bx.max.x-_bx.min.x)/2*0.85,hgt=_bx.max.y;
   const a={kind:h.kind,def,g,herd:h,x,z,y:0,vx:0,vz:0,vy:0,heading:rand(0,Math.PI*2),state:'idle',t:rand(0,2),r,h:hgt,fr:r*1.2,
     alive:true,falling:false,ph:rand(0,9),spin:[0,0,0]};
-  a.sz=clamp(Math.round(3+Math.log(Math.max(r,hgt/3)/1.1)/Math.log(SIZE_STEP)),0,SIZES.length-1);
+  a.sz=clamp(Math.round(4+Math.log(Math.max(r,hgt/3)/1.1)/Math.log(SIZE_STEP)),0,SIZES.length-1);
   a.speed=clamp(1.2+r*1.6,1,5);g.position.set(x,groundH(x,z),z);g.rotation.y=a.heading;scene.add(g);animals.push(a);h.list.push(a);return a;}
 function herdOn(h){h.on=true;for(let i=0;i<h.n;i++)spawnAnimal(h,h.x+rand(-3,3),h.z+rand(-3,3));}
 function herdOff(h){h.on=false;for(const a of h.list){scene.remove(a.g);const i=animals.indexOf(a);if(i>=0)animals.splice(i,1);}h.list.length=0;}
@@ -892,7 +970,7 @@ function updateBoss(dt){
       const reach=p.r+q.s0.x*BOSS_SCALE*0.5+o.r*0.35;if(Math.hypot(p.x-_wpB.x,p.z-_wpB.z)<reach){const d=Math.hypot(_wpB.x-p.x,_wpB.z-p.z)||1;hitWeak(q,p,(_wpB.x-p.x)/d,(_wpB.z-p.z)/d);break;}}
     if(!boss||b.state==='dead')return;
     const dx=p.x-o.x,dz=p.z-o.z,d=Math.hypot(dx,dz)||1,rr=o.r*0.6+p.r;
-    if(d<rr&&p.y<o.h){p.x=o.x+dx/d*rr;p.z=o.z+dz/d*rr;p.kx+=dx/d*14;p.kz+=dz/d*14;p.speed*=0.4;o.wob=Math.max(o.wob||0,0.4);
+    if(d<rr&&p.y<o.h){p.x=o.x+dx/d*rr;p.z=o.z+dz/d*rr;p.lastBump=T;p.kx+=dx/d*14;p.kz+=dz/d*14;p.speed*=0.4;o.wob=Math.max(o.wob||0,0.4);
       const n=performance.now();if(n-lastBoing>400){lastBoing=n;sfx.boing();}bossSay(['Hit the glowing spots!'],6000);}}
 }
 
@@ -949,7 +1027,7 @@ function updateCamera(dt,t){
   const pts=players.map(p=>[p.x,p.z]);if(boss&&boss.state!=='drop'&&boss.state!=='dead')pts.push([boss.o.x,boss.o.z],[boss.o.x,boss.o.z+boss.o.r*0.5]); // keep the boss in view, weighted so it isn't under the HUD
   let cx=0,cz=0;pts.forEach(q=>{cx+=q[0];cz+=q[1];});cx/=pts.length;cz/=pts.length;
   let spread=0;for(const a of pts)for(const b of pts)spread=Math.max(spread,Math.abs(a[0]-b[0])/Math.max(1,camera.aspect)*1.25,Math.abs(a[1]-b[1])*1.35);
-  const base=Math.max(7,38*Math.pow(S,0.75)),want=clamp(base+spread*0.9,base,125*Math.max(1,S*0.6));camDist+=(want-camDist)*Math.min(1,dt*2);
+  const base=Math.max(4.5,38*Math.pow(S,0.75)),want=clamp(base+spread*0.9,base,125*Math.max(1,S*0.6));camDist+=(want-camDist)*Math.min(1,dt*2);
   camT.x+=(cx-camT.x)*Math.min(1,dt*4);camT.z+=(cz-camT.z)*Math.min(1,dt*4);
   const el=0.95;shake*=Math.pow(0.02,dt);const sx=rand(-1,1)*shake,sy=rand(-1,1)*shake;
   camera.position.set(camT.x+sx,camDist*Math.sin(el)+sy,camT.z+camDist*Math.cos(el));camera.lookAt(camT.x+sx*0.5,0,camT.z-2);
@@ -965,7 +1043,8 @@ function updateHUD(){
   updateSizeHUD();
   for(const p of players){v3.set(p.x,p.y+p.model.h*dispScale()+1.2*Math.max(S,.3),p.z).project(camera);
     p.tag.style.left=((v3.x+1)/2*innerWidth)+'px';p.tag.style.top=((1-v3.y)/2*innerHeight)+'px';
-    p.tag.textContent=p.nameT>0?`${p.stats.emoji} ${p.stats.name}`:`P${p.idx+1}`;}
+    p.tag.textContent=p.stuck?'💥 JUMP = BOOM!':p.nameT>0?`${p.stats.emoji} ${p.stats.name}`:`P${p.idx+1}`;p.tag.style.background=p.stuck?SIGNAL_COL.no:p.color;}
+  const tp=players.find(q=>q.src==='touch');if(tp){$('bJump').textContent=tp.stuck?'💥':'JUMP';$('bSwap').textContent=levelReady?'⬆️':'🔄';bFire.style.display=carWeapon(tp.stats)?'flex':'none';}
 }
 
 /* ---------- loop ---------- */
@@ -977,22 +1056,23 @@ function loop(now){
   const dt=Math.min(0.05,(now-last)/1000);last=now;T+=dt;
   const gpIn=readGP();
   const src=Object.assign({kb1:readKB(KB.kb1),kb2:readKB(KB.kb2)},gpIn);
-  if(touchUsed)src.touch={x:touch.x,z:touch.z,boost:touch.boost,jumpP:touch.jumpP,swapP:touch.swapP,joinP:touch.boost||touch.jumpP};
+  if(touchUsed)src.touch={x:touch.x,z:touch.z,boost:touch.boost,jumpP:touch.jumpP,swapP:touch.swapP,fire:touch.fire,joinP:touch.boost||touch.jumpP};
   if(state==='start'){for(const k in gpIn)if(gpIn[k].joinP){startGame();break;}}
   if(state==='play'){
     for(const k in src){const s=src[k];if(s.joinP&&players.length<2&&!players.some(p=>p.src===k)){addPlayer(k);s.jumpP=false;}}
-    for(const p of players){const s=src[p.src]||{x:0,z:0};if(s.swapP)p.setCar((p.carIdx+1)%CARS.length,true);if(s.newP&&giant){newWorld();break;}p.update(dt,s);}
+    for(const p of players){const s=src[p.src]||{x:0,z:0};if(s.swapP){if(levelReady)levelUp();else{const l=carsInTier(carTierNow());p.setCar(l[(l.indexOf(p.carIdx)+1)%l.length],true);}}if(s.fire)shoot(p);if(s.newP&&giant){newWorld();break;}p.update(dt,s);}
   }
   updateGrowth(dt);updateStreaming(dt);
   if(state==='play'){collisions();updateBoss(dt);}
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
-  updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateScatter(dt);updateAnimals(dt);updateDebris(dt);updateParts(dt);
+  updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateScatter(dt);updateAnimals(dt);updateShots(dt);updateDebris(dt);updateParts(dt);
   updateMusic();updateCamera(dt,T);updateSignals(dt);cullChunks();updateHUD();
   renderer.render(scene,camera);
   pressed.clear();touch.jumpP=false;touch.swapP=false;
 }
 requestAnimationFrame(loop);
 window.__sp={mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,
-  boss(id){if(!giant)grow(1e6);if(!boss)summonBoss(id);return boss&&boss.def.name;}, // __sp.boss('shelldozer')
+  boss(id){if(!giant){tier=SIZES.length-1;growth=MAX_GROW;levelReady=true;levelUp();newCars(true);}if(!boss)summonBoss(id);return boss&&boss.def.name;}, // __sp.boss('shelldozer')
+  level(n=1){for(let i=0;i<n&&!giant;i++){growth=GROW_AT[tier+1];levelReady=true;levelUp();}return giant?'GIANT':SIZES[tier];}, // jump ahead n sizes
   tp(x,z,i=0){const p=players[i];if(p){p.x=x;p.z=z;p.y=groundH(x,z);camT.set(x,0,z);}},
   stats(){let l=0;chunks.forEach(c=>l+=c.loaded);const i=renderer.info.render;return {chunks:l,objects:objects.length,awake:objects.filter(o=>!o.sleep).length,debris:debris.length,calls:i.calls,tris:i.triangles};}};
