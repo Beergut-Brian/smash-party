@@ -434,7 +434,7 @@ function cullChunks(){
 let camT=new THREE.Vector3(0,0,30),camDist=40;
 function mega(){
   const txt=pick(['MEGA SMASH!','SUPER SMASH!','KABOOM!','AWESOME!','SMASHTASTIC!']);
-  showBig(txt);sfx.fanfare();say(txt.replace('!','')+'!');confetti(170);
+  showBig(txt);sfx.fanfare();say(txt);confetti(170);
   scatterRain(22);
 }
 function confetti(n){

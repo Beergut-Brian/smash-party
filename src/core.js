@@ -132,7 +132,7 @@ let AC=null,master=null,noiseBuf=null,muted=false;
 function initAudio(){
   if(AC){if(AC.state==='suspended')AC.resume();return;}
   try{AC=new (window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=muted?0:0.6;master.connect(AC.destination);
-    const len=AC.sampleRate;noiseBuf=AC.createBuffer(1,len,AC.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;}catch(e){AC=null;}
+    const len=AC.sampleRate;noiseBuf=AC.createBuffer(1,len,AC.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;loadVoices();}catch(e){AC=null;}
 }
 function noise(dur,freq,q,vol,type='lowpass',fEnd){if(!AC)return;const t=AC.currentTime;const s=AC.createBufferSource();s.buffer=noiseBuf;s.loop=true;
   const f=AC.createBiquadFilter();f.type=type;f.frequency.setValueAtTime(freq,t);if(fEnd)f.frequency.exponentialRampToValueAtTime(fEnd,t+dur);f.Q.value=q;
@@ -152,8 +152,21 @@ const sfx={
   join(){[392,523,659,784].forEach((f,i)=>tone('triangle',f,f,0.16,0.2,i*0.08));},
   fanfare(){[523,659,784,1047,0,784,1047,1319].forEach((f,i)=>{if(f)tone('triangle',f,f*1.005,0.28,0.25,i*0.11);});noise(1.5,3000,0.5,0.08,'highpass');}
 };
-function say(text){if(muted)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=1.05;u.pitch=1.45;speechSynthesis.speak(u);}catch(e){}}
-function toggleMute(){muted=!muted;if(master)master.gain.value=muted?0:0.6;if(muted)try{speechSynthesis.cancel();}catch(e){}$('muteBtn').textContent=muted?'🔇':'🔊';}
+/* Recorded voice lines (tools/make-voices.mjs → assets/sounds/voice/). say(text) plays the clip whose name is the
+   text's slug ("MEGA SMASH!" → mega_smash.mp3) and falls back to the browser's robot voice when there isn't one. */
+const voiceSlug=t=>t.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,''); // must match make-voices.mjs
+let voiceIndex={},voiceGain=null,voiceSrc=null;const voiceBufs={};
+fetch('assets/sounds/voice/index.json').then(r=>r.ok?r.json():{}).then(j=>{voiceIndex=j||{};loadVoices();}).catch(()=>{});
+function loadVoices(){if(!AC)return;
+  for(const id in voiceIndex)if(!voiceBufs[id]){voiceBufs[id]='loading';
+    fetch('assets/sounds/voice/'+id+'.mp3').then(r=>r.arrayBuffer()).then(b=>AC.decodeAudioData(b)).then(buf=>{voiceBufs[id]=buf;}).catch(()=>{delete voiceBufs[id];});}}
+function stopVoice(){try{speechSynthesis.cancel();}catch(e){}if(voiceSrc){try{voiceSrc.stop();}catch(e){}voiceSrc=null;}}
+function say(text){if(muted)return;const buf=voiceBufs[voiceSlug(text)];
+  if(buf&&buf!=='loading'&&AC){stopVoice();
+    if(!voiceGain){voiceGain=AC.createGain();voiceGain.gain.value=1.5;voiceGain.connect(master);}
+    const s=AC.createBufferSource();s.buffer=buf;s.connect(voiceGain);s.start();voiceSrc=s;return;}
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=1.05;u.pitch=1.45;speechSynthesis.speak(u);}catch(e){}}
+function toggleMute(){muted=!muted;if(master)master.gain.value=muted?0:0.6;if(muted)stopVoice();$('muteBtn').textContent=muted?'🔇':'🔊';}
 function toggleFS(){try{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen().catch(()=>{});}catch(e){}}
 $('muteBtn').onclick=e=>{e.stopPropagation();initAudio();toggleMute();};
 $('fsBtn').onclick=e=>{e.stopPropagation();initAudio();toggleFS();};

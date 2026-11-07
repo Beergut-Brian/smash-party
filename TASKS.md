@@ -56,7 +56,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Bosses can rotate per world/zone later.
   - Needs: D5 (boss model), L2c.
 
-- [ ] **L7: Recorded voices (ElevenLabs, generated once)**
+- [x] **L7: Recorded voices (ElevenLabs, generated once)**
   - `say(id)` plays `assets/sounds/voice/<id>.mp3` and falls back to today's robot voice if a file is missing.
   - `tools/voice-lines.json` (id → text) + `tools/make-voices.mjs`: calls the ElevenLabs API with `ELEVENLABS_API_KEY` (env var only, never committed) and skips files that already exist, so new lines only cost new characters.
   - Lines: size-ups, GIANT, NEW WORLD, MEGA SMASH variants, boss intro and defeat, every car name, animal launches.
@@ -75,6 +75,8 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 ---
 
 ## Design (Cursor)
+
+> **New car or spoken line?** Car names get a recorded voice automatically, but someone with the ElevenLabs key has to run `node --env-file=.env tools/make-voices.mjs` (see CLAUDE.md). Until then the robot voice reads it.
 
 - [ ] **D0: Size classes + growth HUD styling** (from L2)
   - Give every smashable a size class: pass `{size:'mini'…'mega'}` in `makeObj`'s opts (see CLAUDE.md). Until then, logic guesses via `TYPE_SIZE` in `game.js`.
