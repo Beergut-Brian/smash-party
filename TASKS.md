@@ -24,7 +24,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Performance: share geometries and materials, use instanced meshes for repeated props (fences, crops, trees), cap debris. Must hold 60fps at 1080p on a GTX 1060.
   - Leave `// TODO(design):` hooks where each zone's layout function plugs in.
 
-- [ ] **L2: Grow-by-smashing**
+- [x] **L2: Grow-by-smashing**
   - Players start **small** (about 1/3 the current size). Each smash adds "growth" by the object's mass/points. Car model, hit box (`r`), speed, jump height, camera zoom and engine pitch all scale with size.
   - Objects get a **size class** (tiny / small / medium / large / huge). You can only smash things at or below your size. Bigger things **wobble and bump you back** with a funny boing. Never a fail state.
   - Growth is **shared** between both players (co-op), so the 5-year-old never falls behind.
@@ -51,6 +51,11 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 ---
 
 ## Design (Cursor)
+
+- [ ] **D0: Size classes + growth HUD styling** (from L2)
+  - Give every smashable a size class: pass `{size:'tiny'|'small'|'medium'|'large'|'huge'}` in `makeObj`'s opts. Until then, logic guesses via `TYPE_SIZE` in `game.js` (cone/melon/fence/pin = tiny, barrel/crates/snowman = small, tree/tower = medium, house = large). Nothing is `huge` yet, so add something huge for giants to wreck (the "boss" building in D1).
+  - Players start tiny, so the home arena (`buildWorld`) and every zone need lots of tiny and small stuff.
+  - Style `#sizeHud` (spans get `.lit` / `.now`, plus `.crown`), `#sizeBar`/`#sizeFill` and `#newWorld` in `style.css`. Logic injects plain defaults with zero specificity (`:where()`), so anything in `style.css` wins.
 
 - [ ] **D1: Zone layouts**
   - **Town:** streets with houses of different sizes, shops, a school, a fire station, a water tower, mailboxes, street lights, hydrants, parked cars (original designs), and a tall "boss" building to topple when giant.

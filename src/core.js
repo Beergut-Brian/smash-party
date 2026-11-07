@@ -64,15 +64,27 @@ const ZONE_MAP=[
 ];
 const ZONE_GROUND={H:'#86d863',T:'#86b878',F:'#a8c94f',P:'#6fcf55'}; // TODO(design): tune zone ground colors
 const chunkIdx=v=>clamp(Math.round(v/CHUNK),-CHUNKS_HALF,CHUNKS_HALF);
-function zoneAt(ci,cj){const row=ZONE_MAP[cj+CHUNKS_HALF];return ZONE_NAMES[(row&&row[ci+CHUNKS_HALF])||'P']||'park';}
+let zoneRows=ZONE_MAP; // the live map; setZoneMap swaps it for a new world
+function zoneAt(ci,cj){const row=zoneRows[cj+CHUNKS_HALF];return ZONE_NAMES[(row&&row[ci+CHUNKS_HALF])||'P']||'park';}
 function onRoad(x,z,pad=0){const lim=ROAD_W/2+pad;return Math.abs(x-Math.round(x/ROAD_EVERY)*ROAD_EVERY)<lim||Math.abs(z-Math.round(z/ROAD_EVERY)*ROAD_EVERY)<lim;}
 
 // endless outer grass + zone-tinted world ground (one tiny canvas texture = one draw call)
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(ARENA*2+700,ARENA*2+700),M('#7ccf5a'));
 ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
-{const n=CHUNKS_HALF*2+1,cv=document.createElement('canvas');cv.width=cv.height=n;const cx=cv.getContext('2d');
-  for(let j=0;j<n;j++)for(let i=0;i<n;i++){cx.fillStyle=ZONE_GROUND[ZONE_MAP[j][i]]||'#86d863';cx.fillRect(i,j,1,1);}
-  const tex=new THREE.CanvasTexture(cv);tex.magFilter=THREE.NearestFilter;tex.minFilter=THREE.NearestFilter;
+const zoneCanvas=document.createElement('canvas');zoneCanvas.width=zoneCanvas.height=CHUNKS_HALF*2+1;
+const zoneTex=new THREE.CanvasTexture(zoneCanvas);
+function setZoneMap(rows){zoneRows=rows;const n=zoneCanvas.width,cx=zoneCanvas.getContext('2d');
+  for(let j=0;j<n;j++)for(let i=0;i<n;i++){cx.fillStyle=ZONE_GROUND[rows[j][i]]||'#86d863';cx.fillRect(i,j,1,1);}
+  zoneTex.needsUpdate=true;}
+/* Procedural zone map: a few random zone "seeds" grow into blobs (Voronoi), home stays in the middle.
+   rnd is a 0..1 random function. Add new zone letters to `letters` as design builds them. */
+function randomZoneMap(rnd,letters='TFP'){
+  const n=CHUNKS_HALF*2+1,sites=[];for(let k=0;k<7+rnd()*4;k++)sites.push([rnd()*n,rnd()*n,letters[(k+(rnd()*letters.length|0))%letters.length]]);
+  const rows=[];for(let j=0;j<n;j++){let r='';for(let i=0;i<n;i++){
+    if(Math.abs(i-CHUNKS_HALF)<=1&&Math.abs(j-CHUNKS_HALF)<=1){r+='H';continue;}
+    let best=1e9,z='P';for(const [x,y,l] of sites){const d=(x-i)**2+(y-j)**2;if(d<best){best=d;z=l;}}r+=z;}rows.push(r);}
+  return rows;}
+{setZoneMap(ZONE_MAP);const tex=zoneTex;tex.magFilter=THREE.NearestFilter;tex.minFilter=THREE.NearestFilter;
   const inner=new THREE.Mesh(new THREE.PlaneGeometry(ARENA*2,ARENA*2),new THREE.MeshLambertMaterial({map:tex}));
   inner.rotation.x=-Math.PI/2;inner.position.y=0.01;inner.receiveShadow=true;scene.add(inner);}
 // instanced helper for static repeated scenery (frustum culling off: r128 can't bound instances)

@@ -12,8 +12,8 @@ function updateDebris(dt){
     if(d.life<0.8){const k=Math.max(0.01,d.life/0.8);d.m.scale.set(d.s0.x*k,d.s0.y*k,d.s0.z*k);}
     const p=d.m.position;
     if(d.settled){
-      for(const pl of players){const dx=p.x-pl.x,dz=p.z-pl.z,r=pl.stats.r+d.half;
-        if(dx*dx+dz*dz<r*r&&Math.abs(pl.speed)>4&&pl.y<2){const f=Math.abs(pl.speed);d.settled=false;
+      for(const pl of players){const dx=p.x-pl.x,dz=p.z-pl.z,r=pl.r+d.half;
+        if(dx*dx+dz*dz<r*r&&Math.abs(pl.speed)>4&&pl.y<2*S){const f=Math.abs(pl.speed);d.settled=false;
           d.vx=Math.sin(pl.heading)*f*0.7+dx*2;d.vz=Math.cos(pl.heading)*f*0.7+dz*2;d.vy=rand(4,9);d.ax=rand(-10,10);d.ay=rand(-10,10);d.az=rand(-10,10);d.life=Math.max(d.life,3);}}
       continue;}
     if(d.confetti){d.vy=Math.max(d.vy-d.g*dt,-5);d.vx*=0.985;d.vz*=0.985;}else d.vy-=d.g*dt;
@@ -71,7 +71,7 @@ function smash(o,vx,vz,power){
   scene.remove(o.g);
   puff(o.x,0.5,o.z,o.big?7:3,o.big?2.2:1.2);
   sfx.crash(o.big);shake=Math.min(1.5,shake+(o.big?0.6:0.2));
-  smashCount++;addScore(o.points);
+  smashCount++;addScore(o.points);grow(o.points);
   if(o.explosive)queue.push({t:0.07,fn:()=>explode(o.x,o.z)});
 }
 function explode(x,z){
@@ -80,18 +80,89 @@ function explode(x,z){
   for(let i=0;i<16;i++){const c=new THREE.Mesh(GEO.box,M(pick(['#ff7b00','#ffd60a','#333333','#e63946'])));c.castShadow=true;const s=rand(.4,1.1);c.scale.set(s,s,s);
     c.position.set(x,1.5,z);const a=rand(0,Math.PI*2),f=rand(12,24);addDebris(c,s*.4,Math.sin(a)*f,rand(8,18),Math.cos(a)*f);}
   for(const o of objects){if(!o.alive||o.falling)continue;const dx=o.x-x,dz=o.z-z,d=Math.hypot(dx,dz);
-    if(d<8+o.r)queue.push({t:0.06+d*0.012,fn:()=>smash(o,dx,dz,26)});}
+    if(d<8*Math.max(1,S*0.6)+o.r&&o.sz<=tier+1)queue.push({t:0.06+d*0.012,fn:()=>smash(o,dx,dz,26)});}
   for(const p of players){const dx=p.x-x,dz=p.z-z,d=Math.hypot(dx,dz)||1;
     if(d<10){p.air=true;p.vy=Math.max(p.vy,12);p.kx+=dx/d*14;p.kz+=dz/d*14;}}
 }
 function slam(p){
   shake=Math.min(1.5,shake+0.7);sfx.thud();puff(p.x,0.3,p.z,8,1.8);
   for(const o of objects){if(!o.alive||o.falling)continue;const dx=o.x-p.x,dz=o.z-p.z;
-    if(Math.hypot(dx,dz)<p.stats.r+o.r+3)smash(o,dx,dz,18);}
+    if(o.sz<=tier&&Math.hypot(dx,dz)<p.r+o.r+3)smash(o,dx,dz,18);}
 }
 function addScore(n){
   score+=n;levelScore+=n;
   if(levelScore>=goal){levelScore-=goal;level++;goal=100+level*40;mega();}
+}
+
+/* ---------- growth (shared by both players) ---------- */
+// Smashing grows both cars together. Your size tier decides what you can smash (object size class <= tier);
+// bigger things wobble and boing you back. Objects set `size` in makeObj opts ('tiny'…'huge' or 0–4), else TYPE_SIZE / a guess.
+const SIZES=['tiny','small','medium','large','huge'];
+const GROW_AT=[0,40,140,380,900,1800];   // growth where each tier starts; the last one is max size (GIANT)
+const GROW_S=[0.4,0.65,1.0,1.6,2.6,3.4]; // car scale at each of those points (1 = the original car size)
+const TYPE_SIZE={cone:0,melon:0,fence:0,pin:0,barrel:1,crates:1,snowman:1,tree:2,tower:2,house:3};
+let growth=0,tier=0,S=GROW_S[0],giant=false,popT=0,worldSeed=0;
+function sizeClass(o){
+  if(o.size!=null){const i=typeof o.size==='number'?o.size:SIZES.indexOf(o.size);if(i>=0)return i;}
+  if(o.type in TYPE_SIZE)return TYPE_SIZE[o.type];
+  const m=Math.max(o.r,o.h/3);return m<0.9?0:m<1.5?1:m<2.6?2:m<5?3:4;}
+function growScale(g){for(let i=1;i<GROW_AT.length;i++)if(g<GROW_AT[i])return GROW_S[i-1]+(GROW_S[i]-GROW_S[i-1])*(g-GROW_AT[i-1])/(GROW_AT[i]-GROW_AT[i-1]);return GROW_S[GROW_S.length-1];}
+function tierOf(g){let t=0;for(let i=1;i<SIZES.length;i++)if(g>=GROW_AT[i])t=i;return t;}
+const MAX_GROW=GROW_AT[GROW_AT.length-1];
+function grow(n){
+  if(giant)return;growth=Math.min(MAX_GROW,growth+n);
+  const t=tierOf(growth);if(t>tier){tier=t;if(growth<MAX_GROW)sizeUp();}
+  if(growth>=MAX_GROW){giant=true;goGiant();}}
+function updateGrowth(dt){S+=(growScale(growth)-S)*Math.min(1,dt*2.5);popT=Math.max(0,popT-dt);}
+const dispScale=()=>S*(1+0.3*popT*Math.sin(popT*22));
+function showBig(txt){const el=$('big');el.textContent=txt;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}
+function sizeUp(){
+  const txt=pick(['BIGGER!','GROWING!','SO BIG!']);showBig(txt);sfx.fanfare();say(txt);shake=Math.min(2,shake+1.2);popT=1;
+  for(const p of players)puff(p.x,1,p.z,10,1+S,'#ffffff');}
+function goGiant(){
+  showBig('GIANT!');sfx.fanfare();queue.push({t:1.3,fn:()=>sfx.fanfare()});say("You're GIANT! Smash everything!");shake=2;popT=1;confetti(220);
+  nwBtn.style.display='block';}
+// NEW WORLD: shrink back to tiny and roll a fresh, procedurally zoned world. Only ever by choice.
+function newWorld(){
+  if(!giant)return;
+  for(const c of chunks.values())if(c.loaded)unloadChunk(c);
+  for(const c of chunks.values())for(const r of c.rampList)r.mesh.geometry.dispose();
+  chunks.clear();for(const o of objects)scene.remove(o.g);objects=[];queue.length=0;
+  for(const d of debris)if(!d.confetti){scene.remove(d.m);d.life=0;}
+  worldSeed=(Math.random()*1e9)|0;setZoneMap(randomZoneMap(mulberry(worldSeed)));
+  buildWorld();captureHome();
+  growth=0;tier=0;giant=false;popT=1;nwBtn.style.display='none';
+  players.forEach(p=>{const st=START_SPOTS[p.idx];p.x=st[0];p.z=st[1];p.y=0;p.vy=0;p.speed=0;p.kx=p.kz=0;p.air=false;p.heading=Math.PI;});
+  camT.set(0,0,30);updateStreaming(0,true);
+  showBig('NEW WORLD!');sfx.fanfare();say('New world! Smash it!');confetti(150);
+}
+const nwBtn=document.createElement('button');nwBtn.id='newWorld';nwBtn.innerHTML='🌍 NEW WORLD!<small>START / N / tap</small>';
+nwBtn.onclick=e=>{e.stopPropagation();newWorld();};nwBtn.addEventListener('touchstart',e=>{e.stopPropagation();},{passive:true});
+document.body.appendChild(nwBtn);
+// size HUD: a row of cars getting bigger, lit up as you grow (a picture, not a number)
+const sizeHud=document.createElement('div');sizeHud.id='sizeHud';
+sizeHud.innerHTML=SIZES.map((_,i)=>`<span style="font-size:${16+i*9}px">🚙</span>`).join('')+'<span class="crown">👑</span><div id="sizeBar"><div id="sizeFill"></div></div>';
+$('hud').appendChild(sizeHud);
+/* Default look for the new HUD bits. :where() has zero specificity, so anything in style.css wins.
+   TODO(design): style #sizeHud, #sizeBar/#sizeFill and #newWorld (.lit / .now / .crown) in style.css. */
+{const st=document.createElement('style');st.textContent=`
+:where(#sizeHud){position:absolute;left:18px;top:14px;display:flex;align-items:flex-end;gap:4px;padding:6px 12px 14px;border-radius:18px;background:rgba(0,0,0,.25)}
+:where(#sizeHud span){opacity:.25;transition:opacity .3s,transform .3s;line-height:1}
+:where(#sizeHud span.lit){opacity:1}
+:where(#sizeHud span.now){transform:translateY(-4px) scale(1.15)}
+:where(#sizeHud .crown){display:none;font-size:34px;opacity:1}
+:where(#sizeHud.giant .crown){display:inline}
+:where(#sizeBar){position:absolute;left:12px;right:12px;bottom:5px;height:6px;border-radius:3px;background:rgba(255,255,255,.3)}
+:where(#sizeFill){height:100%;width:0;border-radius:3px;background:#ffd60a;transition:width .2s}
+:where(#newWorld){display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:20;font:32px 'Lilita One',sans-serif;color:#fff;
+  background:#06d6a0;border:6px solid #fff;border-radius:28px;padding:14px 34px;box-shadow:0 8px 0 rgba(0,0,0,.25);cursor:pointer;animation:nwPulse 1s ease-in-out infinite}
+:where(#newWorld small){display:block;font:14px Nunito,sans-serif;font-weight:900;opacity:.9}
+@keyframes nwPulse{50%{transform:translateX(-50%) scale(1.08)}}`;document.head.appendChild(st);}
+let hudTier=-1;
+function updateSizeHUD(){
+  const t=giant?SIZES.length:tier;
+  if(t!==hudTier){hudTier=t;const sp=sizeHud.querySelectorAll('span:not(.crown)');sp.forEach((e,i)=>{e.className=(i<=t?'lit':'')+(i===t?' now':'');});sizeHud.classList.toggle('giant',giant);}
+  const a=GROW_AT[tier],b=giant?MAX_GROW:(GROW_AT[tier+1]||MAX_GROW);$('sizeFill').style.width=(giant?100:Math.min(100,(growth-a)/(b-a)*100))+'%';
 }
 
 /* ---------- respawn ---------- */
@@ -107,10 +178,12 @@ function spawnFalling(cx,cz,spread,type){
   return null;
 }
 function updateObjects(dt){
+  for(const o of objects){if(!o.wob)continue;o.wob=Math.max(0,o.wob-dt*1.6);const w=o.wob;
+    o.g.rotation.x=Math.sin(T*23)*0.07*w;o.g.rotation.z=Math.cos(T*19)*0.09*w;o.g.scale.set(1+0.05*w*Math.sin(T*31),1-0.08*w*Math.sin(T*31),1+0.05*w*Math.sin(T*31));}
   for(const o of objects){if(!o.alive||!o.falling)continue;
     o.vy-=40*dt;o.fy+=o.vy*dt;
     if(o.fy<=0){o.fy=0;o.falling=false;sfx.thud();puff(o.x,0.4,o.z,4,1.4);
-      for(const p of players)if(Math.hypot(p.x-o.x,p.z-o.z)<p.stats.r+o.r){p.air=true;p.vy=10;}}
+      for(const p of players)if(Math.hypot(p.x-o.x,p.z-o.z)<p.r+o.r){p.air=true;p.vy=10;}}
     o.g.position.y=o.fy;}
   if(Math.random()<0.02)objects=objects.filter(o=>o.alive);
 }
@@ -128,7 +201,7 @@ function getChunk(ci,cj){const k=chunkKey(ci,cj);let c=chunks.get(k);
   return c;}
 const chunkOf=(x,z)=>getChunk(chunkIdx(x),chunkIdx(z));
 // tag every object with its type/arg/chunk so it can be rebuilt and streamed
-for(const t in OBJ){const f=OBJ[t];OBJ[t]=(x,z,arg)=>{const o=f(x,z,arg);o.type=t;o.arg=arg;o.chunk=chunkOf(x,z).k;return o;};}
+for(const t in OBJ){const f=OBJ[t];OBJ[t]=(x,z,arg)=>{const o=f(x,z,arg);o.type=t;o.arg=arg;o.chunk=chunkOf(x,z).k;o.sz=sizeClass(o);return o;};}
 // deterministic randomness, so a chunk (and each house in it) looks the same every time it's rebuilt
 function mulberry(a){return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 function withSeed(seed,fn){const r=Math.random;Math.random=mulberry(seed);try{return fn();}finally{Math.random=r;}}
@@ -162,7 +235,7 @@ function chunkRamp(c,x,z,th,L=11,W=7,H=3.6){
   c.rampList.push(r);return true;}
 function genChunk(c){
   c.gen=true;
-  withSeed((c.ci+50)*7919+(c.cj+50)*104729,()=>{
+  withSeed((c.ci+50)*7919+(c.cj+50)*104729+worldSeed,()=>{
     const ctx={zone:c.zone,ci:c.ci,cj:c.cj,x0:c.x0,z0:c.z0,x1:c.x0+CHUNK,z1:c.z0+CHUNK,cx:c.ci*CHUNK,cz:c.cj*CHUNK,size:CHUNK,
       place:(type,x,z,arg,r)=>chunkPlace(c,type,x,z,arg,r),ramp:(x,z,th,L,W,H)=>chunkRamp(c,x,z,th,L,W,H),free:(x,z,r)=>spotFree(c,x,z,r)};
     // TODO(design): ZONE_LAYOUT.town/farm/park/home in objects.js replaces these placeholder fillers (D1)
@@ -219,11 +292,11 @@ function unloadChunk(c){
 }
 function wakeObj(o){if(!o.sleep)return;o.sleep=false;for(const [im,i] of o.inst){im.setMatrixAt(i,HIDE);im.instanceMatrix.needsUpdate=true;}scene.add(o.g);}
 function sleepObj(o){o.sleep=true;for(const [im,i,m] of o.inst){im.setMatrixAt(i,m);im.instanceMatrix.needsUpdate=true;}scene.remove(o.g);}
-function streamR(){return (IS_PHONE?0.7:1)*(110+camDist*1.1);} // TODO(L2): grow with player size
+function streamR(){return (IS_PHONE?0.7:1)*(110+camDist*1.1);} // camDist already grows with car size
 function rectDist(c,x,z){return Math.hypot(Math.max(c.x0-x,0,x-c.x0-CHUNK),Math.max(c.z0-z,0,z-c.z0-CHUNK));}
 let regrowT=0;
 function updateStreaming(dt,all){
-  const R=streamR(),pts=players.length?players.map(p=>[p.x,p.z]):[[camT.x,camT.z]];
+  const R=streamR(),wr=WAKE_R*Math.max(1,S),pts=players.length?players.map(p=>[p.x,p.z]):[[camT.x,camT.z]];
   let best;
   do{best=null;let bd=1e9; // load the nearest missing chunk (one per frame, no hitches); drop far ones
     for(let cj=-CHUNKS_HALF;cj<=CHUNKS_HALF;cj++)for(let ci=-CHUNKS_HALF;ci<=CHUNKS_HALF;ci++){const c=getChunk(ci,cj);
@@ -234,7 +307,7 @@ function updateStreaming(dt,all){
   // wake objects near a car, put far ones back to sleep
   for(const o of objects){if(!o.inst||!o.alive)continue;let d=1e9;
     for(const p of players)d=Math.min(d,Math.hypot(o.x-p.x,o.z-p.z)-o.r);
-    if(o.sleep){if(d<WAKE_R)wakeObj(o);}else if(d>WAKE_R+12&&!o.falling)sleepObj(o);}
+    if(o.sleep){if(d<wr)wakeObj(o);}else if(d>wr+12&&!o.falling&&!o.wob)sleepObj(o);}
   // regrow smashed things in loaded chunks: they drop back in from the sky
   if((regrowT-=dt)>0)return;regrowT=1;let n=0;
   for(const c of chunks.values()){if(!c.loaded)continue;
@@ -254,12 +327,13 @@ function cullChunks(){
 let camT=new THREE.Vector3(0,0,30),camDist=40;
 function mega(){
   const txt=pick(['MEGA SMASH!','SUPER SMASH!','KABOOM!','AWESOME!','SMASHTASTIC!']);
-  const el=$('big');el.textContent=txt;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');
-  sfx.fanfare();say(txt.replace('!','')+'!');
-  const cols=['#ff006e','#ffbe0b','#3a86ff','#06d6a0','#8338ec','#fb5607','#ffffff'];
-  for(let i=0;i<170;i++){const c=new THREE.Mesh(GEO.box,M(pick(cols)));c.scale.set(.6,.06,.4);
-    c.position.set(camT.x+rand(-35,35),rand(18,40),camT.z+rand(-30,20));addDebris(c,.05,rand(-3,3),rand(-2,2),rand(-3,3),{confetti:true,g:6,life:rand(5,8)});}
-  for(let i=0;i<22;i++)queue.push({t:0.5+i*0.12,fn:()=>spawnFalling(camT.x,camT.z,28)});
+  showBig(txt);sfx.fanfare();say(txt.replace('!','')+'!');confetti(170);
+  for(let i=0;i<22;i++)queue.push({t:0.5+i*0.12,fn:()=>spawnFalling(camT.x,camT.z,28*Math.max(1,S*0.7))});
+}
+function confetti(n){
+  const cols=['#ff006e','#ffbe0b','#3a86ff','#06d6a0','#8338ec','#fb5607','#ffffff'],w=Math.max(1,camDist/40);
+  for(let i=0;i<n;i++){const c=new THREE.Mesh(GEO.box,M(pick(cols)));c.scale.set(.6,.06,.4);
+    c.scale.multiplyScalar(w);c.position.set(camT.x+rand(-35,35)*w,rand(18,40)*w,camT.z+rand(-30,20)*w);addDebris(c,.05,rand(-3,3),rand(-2,2),rand(-3,3),{confetti:true,g:6,life:rand(5,8)});}
 }
 
 /* ---------- players ---------- */
@@ -276,10 +350,11 @@ class Player{
     this.tag=document.createElement('div');this.tag.className='tag';this.tag.style.background=this.color;$('tags').appendChild(this.tag);
     this.setCar(idx===0?0:2,true);
   }
+  get r(){return this.stats.r*S;}
   setCar(i,announce){
     if(this.model)this.root.remove(this.model.g);
     this.carIdx=i;this.stats=CARS[i];this.model=this.stats.build();this.root.add(this.model.g);
-    this.ring.scale.setScalar(this.stats.r/2.6);this.nameT=2.5;
+    this.nameT=2.5;
     if(announce){sfx.pop();say(this.stats.name+'!');puff(this.x,1,this.z,6,1.6,'#ffffff');}
     updatePanels();
   }
@@ -289,19 +364,19 @@ class Player{
       o.connect(f);f.connect(g);g.connect(master);o.start();this.eng={o,g};}catch(e){}
   }
   update(dt,inp){
-    const st=this.stats;let ix=inp.x||0,iz=inp.z||0;const mag=Math.min(1,Math.hypot(ix,iz));
+    const st=this.stats,sm=clamp(0.6+0.4*S,0.75,1.9),ds=dispScale();let ix=inp.x||0,iz=inp.z||0;const mag=Math.min(1,Math.hypot(ix,iz));
     let target=0;
     if(mag>0.2){const want=Math.atan2(ix,iz);const d=angDiff(want,this.heading);const tr=(this.air?1.6:4.3)*dt;
-      this.heading+=clamp(d,-tr,tr);target=st.speed*mag*Math.max(0.25,(1+Math.cos(d))/2);
-      if(inp.boost)target=st.speed*1.65*Math.max(0.3,(1+Math.cos(d))/2);}
-    else if(inp.boost)target=st.speed*1.65;
+      this.heading+=clamp(d,-tr,tr);target=st.speed*sm*mag*Math.max(0.25,(1+Math.cos(d))/2);
+      if(inp.boost)target=st.speed*sm*1.65*Math.max(0.3,(1+Math.cos(d))/2);}
+    else if(inp.boost)target=st.speed*sm*1.65;
     const boosting=inp.boost&&this.speed>5;
     if(inp.boost&&!this.wasBoost)sfx.turbo();this.wasBoost=inp.boost;
-    if(!this.air){const a=target>this.speed?30:18;this.speed+=clamp(target-this.speed,-a*dt,a*dt);}
+    if(!this.air){const a=(target>this.speed?30:18)*sm;this.speed+=clamp(target-this.speed,-a*dt,a*dt);}
     const fx=Math.sin(this.heading),fz=Math.cos(this.heading);
     this.x+=(fx*this.speed+this.kx)*dt;this.z+=(fz*this.speed+this.kz)*dt;
     const kd=Math.pow(0.05,dt);this.kx*=kd;this.kz*=kd;
-    const lim=ARENA-2.5;this.wallT-=dt;
+    const lim=ARENA-2.5*S;this.wallT-=dt;
     if(Math.abs(this.x)>lim||Math.abs(this.z)>lim){
       if(Math.abs(this.x)>lim){this.x=Math.sign(this.x)*lim;this.kx=-Math.sign(this.x)*6;}
       if(Math.abs(this.z)>lim){this.z=Math.sign(this.z)*lim;this.kz=-Math.sign(this.z)*6;}
@@ -310,7 +385,7 @@ class Player{
     if(!this.air){
       if(gh<this.y-0.4){this.air=true;this.vy=Math.max(5,this.speed*0.5+3);}
       else this.y=gh;
-      if(inp.jumpP&&!this.air){this.air=true;this.vy=13;sfx.jump();}
+      if(inp.jumpP&&!this.air){this.air=true;this.vy=13*clamp(Math.sqrt(S),0.75,1.8);sfx.jump();}
     }else{
       this.vy-=32*dt;this.y+=this.vy*dt;
       if(this.y<=gh){const imp=-this.vy;this.y=gh;this.air=false;this.vy=0;
@@ -320,18 +395,18 @@ class Player{
     if(!this.air){pitch=Math.atan2(groundH(this.x+fx*1.6,this.z+fz*1.6)-groundH(this.x-fx*1.6,this.z-fz*1.6),3.2);}
     else pitch=clamp(this.vy*0.03,-0.45,0.45);
     this.pitch+=(pitch-this.pitch)*Math.min(1,dt*10);
-    this.root.position.set(this.x,this.y,this.z);this.root.rotation.set(-this.pitch,this.heading,0);
+    this.root.position.set(this.x,this.y,this.z);this.root.rotation.set(-this.pitch,this.heading,0);this.root.scale.setScalar(ds);
     this.model.g.position.y=Math.abs(Math.sin(performance.now()*0.02))*0.05*Math.min(1,Math.abs(this.speed)/20);
     for(const w of this.model.wheels)w.rotation.x+=this.speed*dt/w.userData.r;
-    this.ring.position.set(this.x,groundH(this.x,this.z)+0.08,this.z);
+    this.ring.position.set(this.x,groundH(this.x,this.z)+0.08,this.z);this.ring.scale.setScalar(st.r/2.6*ds);
     this.ring.material.opacity=this.air?0.4:0.9;
     if(boosting){this.flameT-=dt;if(this.flameT<=0){this.flameT=0.025;
       const p=this.model.g.localToWorld(this.model.ex.clone());
-      const m=mk('box',.7,.7,.7,null,p.x+rand(-.3,.3),p.y+rand(-.2,.2),p.z+rand(-.3,.3),E(pick(['#ff7b00','#ffd60a','#ff006e'])));m.castShadow=false;
+      const fs=.7*S,m=mk('box',fs,fs,fs,null,p.x+rand(-.3,.3),p.y+rand(-.2,.2),p.z+rand(-.3,.3),E(pick(['#ff7b00','#ffd60a','#ff006e'])));m.castShadow=false;
       addPart(m,rand(.2,.4),-fx*6+rand(-1,1),rand(0,2),-fz*6+rand(-1,1));}}
     this.nameT-=dt;
     this.ensureEngine();
-    if(this.eng){const t=AC.currentTime;this.eng.o.frequency.setTargetAtTime(42+Math.abs(this.speed)*3.2+(boosting?25:0),t,0.06);this.eng.g.gain.setTargetAtTime(0.025+Math.min(1,Math.abs(this.speed)/30)*0.03,t,0.1);}
+    if(this.eng){const t=AC.currentTime;this.eng.o.frequency.setTargetAtTime((42+Math.abs(this.speed)/sm*3.2+(boosting?25:0))/Math.sqrt(S),t,0.06);this.eng.g.gain.setTargetAtTime(0.025+Math.min(1,Math.abs(this.speed)/30)*0.03,t,0.1);}
   }
 }
 function addPlayer(src){
@@ -352,7 +427,7 @@ addEventListener('keydown',e=>{
   if(!keys.has(e.code))pressed.add(e.code);keys.add(e.code);
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Slash','Enter'].includes(e.code))e.preventDefault();
   if(state==='start'&&(e.code==='Space'||e.code==='Enter'))startGame();
-  if(e.code==='KeyM')toggleMute();if(e.code==='KeyF')toggleFS();
+  if(e.code==='KeyN'&&state==='play')newWorld();if(e.code==='KeyM')toggleMute();if(e.code==='KeyF')toggleFS();
 });
 addEventListener('keyup',e=>keys.delete(e.code));
 addEventListener('blur',()=>keys.clear());
@@ -365,7 +440,7 @@ function readGP(){
     const b=gp.buttons.map(x=>x&&(x.pressed||x.value>0.5));const P=i=>b[i]&&!prev[i];
     let x=gp.axes[0]||0,z=gp.axes[1]||0;if(Math.hypot(x,z)<0.22){x=0;z=0;}
     if(b[14])x=-1;if(b[15])x=1;if(b[12])z=-1;if(b[13])z=1;
-    res['gp'+gp.index]={x,z,boost:!!(b[0]||b[7]||b[5]),jumpP:P(1),swapP:P(2)||P(3),joinP:P(0)||P(1)||P(9)};gpPrev[gp.index]=b;}
+    res['gp'+gp.index]={x,z,boost:!!(b[0]||b[7]||b[5]),jumpP:P(1),swapP:P(2)||P(3),joinP:P(0)||P(1)||P(9),newP:P(9)};gpPrev[gp.index]=b;}
   return res;
 }
 // touch
@@ -391,16 +466,25 @@ $('play').onclick=e=>{e.stopPropagation();startGame();};
 /* ---------- collisions ---------- */
 let lastBoing=0;
 function collisions(){
-  if(players.length===2){const a=players[0],b=players[1];const dx=b.x-a.x,dz=b.z-a.z,d=Math.hypot(dx,dz)||0.01,rr=a.stats.r+b.stats.r;
-    if(d<rr&&Math.abs(a.y-b.y)<3){const nx=dx/d,nz=dz/d,ov=(rr-d)/2;a.x-=nx*ov;a.z-=nz*ov;b.x+=nx*ov;b.z+=nz*ov;
+  if(players.length===2){const a=players[0],b=players[1];const dx=b.x-a.x,dz=b.z-a.z,d=Math.hypot(dx,dz)||0.01,rr=a.r+b.r;
+    if(d<rr&&Math.abs(a.y-b.y)<3*S){const nx=dx/d,nz=dz/d,ov=(rr-d)/2;a.x-=nx*ov;a.z-=nz*ov;b.x+=nx*ov;b.z+=nz*ov;
       a.kx-=nx*9;a.kz-=nz*9;b.kx+=nx*9;b.kz+=nz*9;a.speed*=0.7;b.speed*=0.7;
       const n=performance.now();if(n-lastBoing>300){lastBoing=n;sfx.boing();puff((a.x+b.x)/2,1,(a.z+b.z)/2,3,1,'#ffffff');}}
     if(d>95){const nx=dx/d,nz=dz/d;a.kx+=nx*30*0.016;a.kz+=nz*30*0.016;b.kx-=nx*30*0.016;b.kz-=nz*30*0.016;}}
   for(const p of players){const vx=Math.sin(p.heading)*p.speed+p.kx,vz=Math.cos(p.heading)*p.speed+p.kz,spd=Math.hypot(vx,vz);
-    for(const o of objects){if(!o.alive||(o.falling&&o.fy>p.y+3))continue;const dx=o.x-p.x,dz=o.z-p.z,rr=p.stats.r+o.r;
+    for(const o of objects){if(!o.alive||(o.falling&&o.fy>p.y+3*S))continue;const dx=o.x-p.x,dz=o.z-p.z,rr=p.r+o.r;
       if(dx*dx+dz*dz<rr*rr&&p.y<o.h+o.fy){
-        if(spd>4||p.air){smash(o,vx||dx,vz||dz,Math.max(spd,10));p.speed*=o.big?0.8:0.96;}
+        if(o.sz>tier){bump(p,o,dx,dz,rr,spd);continue;}
+        if(spd>4||p.air){smash(o,vx||dx,vz||dz,Math.max(spd,10)*Math.sqrt(Math.max(1,S)));p.speed*=o.big&&o.sz>=tier?0.8:0.96;}
         else{const d=Math.hypot(dx,dz)||1;p.x-=dx/d*(rr-d);p.z-=dz/d*(rr-d);}}}}
+}
+
+// too big to smash (yet): wobble it and boing the car back. Never a fail, just "grow more!"
+function bump(p,o,dx,dz,rr,spd){
+  const d=Math.hypot(dx,dz)||1,nx=dx/d,nz=dz/d;p.x-=nx*(rr-d);p.z-=nz*(rr-d);
+  if(spd<3&&!p.air)return;
+  p.kx-=nx*(8+spd*0.6);p.kz-=nz*(8+spd*0.6);p.speed*=0.2;wakeObj(o);o.wob=1;
+  const n=performance.now();if(n-(o.lastBoing||0)>350){o.lastBoing=n;sfx.boing();puff(o.x-nx*o.r,1,o.z-nz*o.r,3,1,'#ffffff');shake=Math.min(1,shake+.15);}
 }
 
 /* ---------- camera & HUD ---------- */
@@ -409,11 +493,12 @@ function updateCamera(dt,t){
     sun.position.set(30,80,30);sun.target.position.set(0,0,0);setShadow(80);return;}
   let cx=0,cz=0;players.forEach(p=>{cx+=p.x;cz+=p.z;});cx/=players.length;cz/=players.length;
   let spread=0;if(players.length===2){const a=players[0],b=players[1];spread=Math.max(Math.abs(a.x-b.x)/Math.max(1,camera.aspect)*1.25,Math.abs(a.z-b.z)*1.35);}
-  const want=clamp(36+spread*0.9,36,125);camDist+=(want-camDist)*Math.min(1,dt*2);
+  const ck=0.55+0.45*S,want=clamp(36*ck+spread*0.9,36*ck,125*Math.max(1,ck*0.8));camDist+=(want-camDist)*Math.min(1,dt*2);
   camT.x+=(cx-camT.x)*Math.min(1,dt*4);camT.z+=(cz-camT.z)*Math.min(1,dt*4);
   const el=0.95;shake*=Math.pow(0.02,dt);const sx=rand(-1,1)*shake,sy=rand(-1,1)*shake;
   camera.position.set(camT.x+sx,camDist*Math.sin(el)+sy,camT.z+camDist*Math.cos(el));camera.lookAt(camT.x+sx*0.5,0,camT.z-2);
-  sun.position.set(camT.x+30,80,camT.z+30);sun.target.position.set(camT.x,0,camT.z);setShadow(camDist*0.95+10);
+  sun.position.set(camT.x+30,80+camDist,camT.z+30);sun.target.position.set(camT.x,0,camT.z);sc.far=260+camDist*2;setShadow(camDist*0.95+10);
+  scene.fog.near=camDist*1.8+100;scene.fog.far=scene.fog.near+160;
 }
 let lastSh=0;function setShadow(s){if(Math.abs(s-lastSh)<2)return;lastSh=s;sc.left=-s;sc.right=s;sc.top=s;sc.bottom=-s;sc.updateProjectionMatrix();}
 const v3=new THREE.Vector3();
@@ -421,7 +506,8 @@ function updateHUD(){
   if(state!=='play')return;
   $('meterFill').style.width=Math.min(100,levelScore/goal*100)+'%';
   $('levelTxt').textContent='SMASH LEVEL '+level;$('count').textContent=smashCount+(smashCount===1?' smash!':' smashes!');
-  for(const p of players){v3.set(p.x,p.y+p.model.h+1.2,p.z).project(camera);
+  updateSizeHUD();
+  for(const p of players){v3.set(p.x,p.y+p.model.h*dispScale()+1.2,p.z).project(camera);
     p.tag.style.left=((v3.x+1)/2*innerWidth)+'px';p.tag.style.top=((1-v3.y)/2*innerHeight)+'px';
     p.tag.textContent=p.nameT>0?`${p.stats.emoji} ${p.stats.name}`:`P${p.idx+1}`;}
 }
@@ -438,9 +524,9 @@ function loop(now){
   if(state==='start'){for(const k in gpIn)if(gpIn[k].joinP){startGame();break;}}
   if(state==='play'){
     for(const k in src){const s=src[k];if(s.joinP&&players.length<2&&!players.some(p=>p.src===k)){addPlayer(k);s.jumpP=false;}}
-    for(const p of players){const s=src[p.src]||{x:0,z:0};if(s.swapP)p.setCar((p.carIdx+1)%CARS.length,true);p.update(dt,s);}
+    for(const p of players){const s=src[p.src]||{x:0,z:0};if(s.swapP)p.setCar((p.carIdx+1)%CARS.length,true);if(s.newP&&giant){newWorld();break;}p.update(dt,s);}
   }
-  updateStreaming(dt);
+  updateGrowth(dt);updateStreaming(dt);
   if(state==='play')collisions();
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
   updateObjects(dt);updateDebris(dt);updateParts(dt);
@@ -449,6 +535,6 @@ function loop(now){
   pressed.clear();touch.jumpP=false;touch.swapP=false;
 }
 requestAnimationFrame(loop);
-window.__sp={mega,explode,addScore,chunks,
+window.__sp={mega,explode,addScore,chunks,grow,newWorld,
   tp(x,z,i=0){const p=players[i];if(p){p.x=x;p.z=z;p.y=groundH(x,z);camT.set(x,0,z);}},
   stats(){let l=0;chunks.forEach(c=>l+=c.loaded);const i=renderer.info.render;return {chunks:l,objects:objects.length,awake:objects.filter(o=>!o.sleep).length,debris:debris.length,calls:i.calls,tris:i.triangles};}};
