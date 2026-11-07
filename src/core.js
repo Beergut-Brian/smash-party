@@ -132,7 +132,7 @@ let AC=null,master=null,noiseBuf=null,muted=false;
 function initAudio(){
   if(AC){if(AC.state==='suspended')AC.resume();return;}
   try{AC=new (window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=muted?0:0.6;master.connect(AC.destination);
-    const len=AC.sampleRate;noiseBuf=AC.createBuffer(1,len,AC.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;loadVoices();}catch(e){AC=null;}
+    const len=AC.sampleRate;noiseBuf=AC.createBuffer(1,len,AC.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;banks.forEach(loadBank);}catch(e){AC=null;}
 }
 function noise(dur,freq,q,vol,type='lowpass',fEnd){if(!AC)return;const t=AC.currentTime;const s=AC.createBufferSource();s.buffer=noiseBuf;s.loop=true;
   const f=AC.createBiquadFilter();f.type=type;f.frequency.setValueAtTime(freq,t);if(fEnd)f.frequency.exponentialRampToValueAtTime(fEnd,t+dur);f.Q.value=q;
@@ -152,19 +152,26 @@ const sfx={
   join(){[392,523,659,784].forEach((f,i)=>tone('triangle',f,f,0.16,0.2,i*0.08));},
   fanfare(){[523,659,784,1047,0,784,1047,1319].forEach((f,i)=>{if(f)tone('triangle',f,f*1.005,0.28,0.25,i*0.11);});noise(1.5,3000,0.5,0.08,'highpass');}
 };
-/* Recorded voice lines (tools/make-voices.mjs → assets/sounds/voice/). say(text) plays the clip whose name is the
-   text's slug ("MEGA SMASH!" → mega_smash.mp3) and falls back to the browser's robot voice when there isn't one. */
+/* Recorded clips made once with ElevenLabs (tools/). A bank is a folder with <id>.mp3 files + index.json.
+   Clips decode after the first tap/key (AudioContext), and anything missing quietly falls back. */
+const banks=[];
+function clipBank(dir){const b={dir,index:{},bufs:{}};banks.push(b);
+  fetch(dir+'index.json').then(r=>r.ok?r.json():{}).then(j=>{b.index=j||{};loadBank(b);}).catch(()=>{});return b;}
+function loadBank(b){if(!AC)return;
+  for(const id in b.index)if(!b.bufs[id]){b.bufs[id]='loading';
+    fetch(b.dir+id+'.mp3').then(r=>r.arrayBuffer()).then(x=>AC.decodeAudioData(x)).then(buf=>{b.bufs[id]=buf;}).catch(()=>{delete b.bufs[id];});}}
+function playClip(b,id,vol=1,rate=1){const buf=b.bufs[id];if(!AC||!buf||buf==='loading')return null;
+  const s=AC.createBufferSource(),g=AC.createGain();s.buffer=buf;s.playbackRate.value=rate;g.gain.value=vol;s.connect(g);g.connect(master);s.start();return s;}
+const voiceBank=clipBank('assets/sounds/voice/'),sfxBank=clipBank('assets/sounds/sfx/');
+// sound effect clip (tools/sfx-lines.json); returns false if it isn't available so callers can use a synth sound instead
+function sfxClip(id,vol=0.8,rate=1){return !!playClip(sfxBank,id,vol,rate);}
+/* Voice: say(text) plays the clip whose name is the text's slug ("MEGA SMASH!" → mega_smash.mp3),
+   else the browser's robot voice. */
 const voiceSlug=t=>t.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,''); // must match make-voices.mjs
-let voiceIndex={},voiceGain=null,voiceSrc=null;const voiceBufs={};
-fetch('assets/sounds/voice/index.json').then(r=>r.ok?r.json():{}).then(j=>{voiceIndex=j||{};loadVoices();}).catch(()=>{});
-function loadVoices(){if(!AC)return;
-  for(const id in voiceIndex)if(!voiceBufs[id]){voiceBufs[id]='loading';
-    fetch('assets/sounds/voice/'+id+'.mp3').then(r=>r.arrayBuffer()).then(b=>AC.decodeAudioData(b)).then(buf=>{voiceBufs[id]=buf;}).catch(()=>{delete voiceBufs[id];});}}
+let voiceSrc=null;
 function stopVoice(){try{speechSynthesis.cancel();}catch(e){}if(voiceSrc){try{voiceSrc.stop();}catch(e){}voiceSrc=null;}}
-function say(text){if(muted)return;const buf=voiceBufs[voiceSlug(text)];
-  if(buf&&buf!=='loading'&&AC){stopVoice();
-    if(!voiceGain){voiceGain=AC.createGain();voiceGain.gain.value=1.5;voiceGain.connect(master);}
-    const s=AC.createBufferSource();s.buffer=buf;s.connect(voiceGain);s.start();voiceSrc=s;return;}
+function say(text){if(muted)return;const id=voiceSlug(text),buf=voiceBank.bufs[id];
+  if(buf&&buf!=='loading'&&AC){stopVoice();voiceSrc=playClip(voiceBank,id,1.5);return;}
   try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=1.05;u.pitch=1.45;speechSynthesis.speak(u);}catch(e){}}
 function toggleMute(){muted=!muted;if(master)master.gain.value=muted?0:0.6;if(muted)stopVoice();$('muteBtn').textContent=muted?'🔇':'🔊';}
 function toggleFS(){try{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen().catch(()=>{});}catch(e){}}

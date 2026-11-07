@@ -17,8 +17,8 @@ Two tools work on this repo at the same time. Stay in your lane to avoid merge c
 | `src/cars.js` | **Cursor** (design) | Block-built car models + the `CARS` list, model-car loader |
 | `src/objects.js` | **Cursor** (design) | Smashable objects (`OBJ`), arena layout (`buildWorld`), respawn mix (`SPAWN_W`) |
 | `style.css` | **Cursor** (design) | All UI styles |
-| `assets/**` | **Cursor** (design) | `.glb` models, `cars.json`, textures, sounds (except `assets/sounds/voice/`) |
-| `tools/`, `assets/sounds/voice/` | **Claude Code** (logic) | Recorded voice lines: `tools/voice-lines.json`, `tools/make-voices.mjs`, generated mp3s + `index.json` |
+| `assets/**` | **Cursor** (design) | `.glb` models, `cars.json`, textures, sounds (except the generated `assets/sounds/voice/` and `assets/sounds/sfx/`) |
+| `tools/`, `assets/sounds/voice/`, `assets/sounds/sfx/` | **Claude Code** (logic) | ElevenLabs generators (`make-voices.mjs`, `make-sfx.mjs`), their line lists, and the generated mp3s + `index.json` |
 | `src/core.js` | **Claude Code** (logic) | Helpers (`mk`, `M`, `E`, `rand`…), renderer, scene, ground/roads/walls, ramps + `groundH`, audio |
 | `src/game.js` | **Claude Code** (logic) | Debris, smashing, scoring, respawn, celebration, players/driving, input, collisions, camera, HUD, main loop |
 | `index.html`, `CLAUDE.md` | Shared | Change rarely; mention it in the commit message |
@@ -56,6 +56,8 @@ Check `TASKS.md` before starting. Take the top unchecked task in your section, c
   - What happens: when fewer than half (`SUPPORT`) of a storey's walls are left, everything above it drops, tilts and pancakes storey by storey, then the stump crumbles. Way-smaller cars boing off, smaller cars chip 1–2 pieces, same-size cars plow through and bigger cars flatten it. Barrel blasts blow out nearby parts. Knocked-out parts are remembered per chunk.
   - Working example: `demoBuilding()` in `game.js`. Try `__sp.building(x,z,floors)` in the console.
 - **Voice line:** call `say('Exact Text!')` in code and add the same text to `tools/voice-lines.json` (car names are picked up automatically). Then on the machine with the ElevenLabs key in `.env`, run `node --env-file=.env tools/make-voices.mjs` (`--dry` first to see what it will make and the character cost). It only generates new or changed lines. Lines without a clip use the browser's robot voice, so nothing breaks while a line is waiting for a recording.
+- **Sound effect:** add `id: {prompt, dur}` to `tools/sfx-lines.json`, run `node --env-file=.env tools/make-sfx.mjs`, and play it with `sfxClip('id')` (it returns false if the clip isn't there, so keep a synth fallback).
+- **Animal:** define `const ANIMAL={chicken:{build(){…return group},fluff:'#ffffff'},…}` in `objects.js` to replace logic's placeholder looks (`ANIMAL_DEFAULT` in game.js). `build()` returns a `THREE.Group` facing +Z with its feet at y=0, real-ish size (chicken ~0.7 long, cow ~2.6); size class is worked out from its size. `fluff` is the puff color when launched. Kinds today: chick, chicken, duck, goose, bunny, cat, dog, pig, sheep, goat, cow, horse (each has a sound in `sfx-lines.json`; a new kind needs one too). Zone layouts place herds with `ctx.herd(kind,x,z,n)`; chunks without herds get a default mix from `ZONE_HERDS`.
 
 ## Testing
 - Serve locally (`python3 -m http.server`) — model cars only load over http, not `file://`.

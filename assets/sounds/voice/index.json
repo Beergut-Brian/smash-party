@@ -103,5 +103,30 @@
   "text": "Bubble Buggy!",
   "speak": "Bubble Buggy!",
   "hash": "bf7184118a86"
+ },
+ "wheee": {
+  "text": "Wheee!",
+  "speak": "Wheee!",
+  "hash": "73c64680eca9"
+ },
+ "fly_chicken_fly": {
+  "text": "Fly, chicken, fly!",
+  "speak": "Fly, chicken, fly!",
+  "hash": "87bcadc88629"
+ },
+ "moo_ve_over": {
+  "text": "Moo-ve over!",
+  "speak": "Moo-ve over!",
+  "hash": "1b794f978a92"
+ },
+ "bye_bye_birdie": {
+  "text": "Bye bye, birdie!",
+  "speak": "Bye bye, birdie!",
+  "hash": "c9bd0b3e037d"
+ },
+ "up_up_and_away": {
+  "text": "Up, up and away!",
+  "speak": "Up, up and away!",
+  "hash": "419ae57c6930"
  }
 }

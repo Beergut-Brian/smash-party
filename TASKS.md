@@ -62,11 +62,16 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Lines: size-ups, GIANT, NEW WORLD, MEGA SMASH variants, boss intro and defeat, every car name, animal launches.
   - Logic owns `assets/sounds/voice/` and `tools/` (note it in CLAUDE.md). Needs from Kaden: voice choice and API key.
 
-- [ ] **L4: Animal launch ("kick the chicken")**
+- [x] **L4: Animal launch ("kick the chicken")**
   - Animals are **never destroyed**. On hit they get launched in a big silly arc, spinning, with a cartoon sound (bawk, moo, oink) and a little feather/fluff puff. They land, shake it off, and wander again.
   - Simple wander AI: idle, walk and flee a little when cars are near. Herds and flocks stick together.
   - Launching animals gives a small bonus to the meter but **no growth** (we don't "eat" animals).
   - If launched out of the loaded area, quietly respawn them back near their pen.
+
+- [ ] **L8: 8-bit music + recorded sound effects (ElevenLabs)**
+  - Kaden upgraded ElevenLabs for this. `tools/make-sfx.mjs` + `sfx-lines.json` already make the animal sounds.
+  - Chiptune / 8-bit background music: a calm "driving around" loop, a hype loop for MEGA/size-ups, a boss theme, and a giant/victory fanfare. Loop seamlessly and duck under voice lines.
+  - Replace the synth sfx (crash, boom, boing, jump, thud, turbo, pop, fanfare) with generated ones in the same toy/8-bit style, keeping the synth versions as fallback. Keep total audio download small for phones (lazy-load music).
 
 - [ ] **L5: Tune and test pass**
   - Play-test the whole v2 loop: small, then medium, then giant. Make sure growth pacing feels good in a ~20 minute session with a 5-year-old.
@@ -110,7 +115,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 - [ ] **D3: Farm and park animals**
   - Cute, chunky, low-poly: chicken, rooster, duck, cow, pig, sheep, goat, horse, dog, cat, bunny, goose.
   - Built as single whole pieces (they get launched intact, never broken). Big googly eyes encouraged.
-  - Needs: L4 (animal format and how they're registered).
+  - Needs: L4 (animal format and how they're registered). ✅ L4 is done. The format is in `CLAUDE.md` under "Animal"; logic has blocky placeholders in `ANIMAL_DEFAULT` (game.js) to replace. Animal sounds are already recorded.
 
 - [ ] **D4: Vehicle wish list (inspiration only)**
   Design **original** takes on these, with no real brands, logos or copied designs. Every one should look like a toy: big wheels, bright colors, a silly face or feature.

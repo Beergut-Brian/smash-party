@@ -90,11 +90,13 @@ function explode(x,z,e=1){ // e = blast size (1 = a normal barrel); shrunken bar
     if(d<8*e+o.r&&o.sz<=tier+1)queue.push({t:0.06+d*0.012,fn:()=>smash(o,dx,dz,26*q)});}
   for(const p of players){const dx=p.x-x,dz=p.z-z,d=Math.hypot(dx,dz)||1;
     if(d<10*e){p.air=true;p.vy=Math.max(p.vy,12*q);p.kx+=dx/d*14*q;p.kz+=dz/d*14*q;}}
+  for(const a of animals){const dx=a.x-x,dz=a.z-z,d=Math.hypot(dx,dz);if(d<10*e)launchAnimal(a,dx||1,dz,18*q);}
 }
 function slam(p){
   shake=Math.min(1.5,shake+0.7);sfx.thud();puff(p.x,0.3,p.z,8,1.8*Math.max(S,.3));
   for(const o of objects){if(!o.alive||o.falling)continue;const dx=o.x-p.x,dz=o.z-p.z;
     if(o.sz<=tier&&Math.hypot(dx,dz)<p.r+o.r+3)smash(o,dx,dz,18);}
+  for(const a of animals){const dx=a.x-p.x,dz=a.z-p.z;if(a.sz<=tier&&Math.hypot(dx,dz)<p.r+a.r+3)launchAnimal(a,dx||1,dz,14*p.sm);}
 }
 function addScore(n){
   score+=n;levelScore+=n;
@@ -233,6 +235,7 @@ function newWorld(){
   for(const c of chunks.values())for(const r of c.rampList)r.mesh.geometry.dispose();
   chunks.clear();for(const o of objects)scene.remove(o.g);objects=[];queue.length=0;
   for(const o of collapsing)scene.remove(o.g);collapsing.length=0;
+  for(const a of animals)scene.remove(a.g);animals.length=0;
   for(const d of debris)if(!d.confetti){scene.remove(d.m);d.life=0;}
   worldSeed=(Math.random()*1e9)|0;setZoneMap(randomZoneMap(mulberry(worldSeed)));
   buildWorld();captureHome();
@@ -302,7 +305,7 @@ const REGROW=[90,160],WAKE_R=22;
 const chunks=new Map();
 const chunkKey=(ci,cj)=>ci+','+cj;
 function getChunk(ci,cj){const k=chunkKey(ci,cj);let c=chunks.get(k);
-  if(!c){c={k,ci,cj,zone:zoneAt(ci,cj),x0:ci*CHUNK-CHUNK/2,z0:cj*CHUNK-CHUNK/2,recs:[],rampList:[],gen:false,loaded:false,group:null,box:null};chunks.set(k,c);}
+  if(!c){c={k,ci,cj,zone:zoneAt(ci,cj),x0:ci*CHUNK-CHUNK/2,z0:cj*CHUNK-CHUNK/2,recs:[],rampList:[],herds:[],gen:false,loaded:false,group:null,box:null};chunks.set(k,c);}
   return c;}
 const chunkOf=(x,z)=>getChunk(chunkIdx(x),chunkIdx(z));
 // tag every object with its type/arg/chunk so it can be rebuilt and streamed
@@ -342,10 +345,13 @@ function genChunk(c){
   c.gen=true;
   withSeed((c.ci+50)*7919+(c.cj+50)*104729+worldSeed,()=>{
     const ctx={zone:c.zone,ci:c.ci,cj:c.cj,x0:c.x0,z0:c.z0,x1:c.x0+CHUNK,z1:c.z0+CHUNK,cx:c.ci*CHUNK,cz:c.cj*CHUNK,size:CHUNK,
-      place:(type,x,z,arg,r)=>chunkPlace(c,type,x,z,arg,r),ramp:(x,z,th,L,W,H)=>chunkRamp(c,x,z,th,L,W,H),free:(x,z,r)=>spotFree(c,x,z,r)};
+      place:(type,x,z,arg,r)=>chunkPlace(c,type,x,z,arg,r),ramp:(x,z,th,L,W,H)=>chunkRamp(c,x,z,th,L,W,H),free:(x,z,r)=>spotFree(c,x,z,r),herd:(kind,x,z,n)=>chunkHerd(c,kind,x,z,n)};
     // TODO(design): ZONE_LAYOUT.town/farm/park/home in objects.js replaces these placeholder fillers (D1)
     const lay=(typeof ZONE_LAYOUT!=='undefined'&&ZONE_LAYOUT[c.zone])||DEFAULT_LAYOUT[c.zone]||DEFAULT_LAYOUT.park;
-    lay(ctx);});
+    lay(ctx);
+    if(!c.herds.length)defaultHerds(c);
+    if(c.ci===0&&c.cj===0){chunkHerd(c,'chicken',16,36,5);chunkHerd(c,'duck',-16,34,4);} // say hi at the start line
+  });
 }
 // placeholder zone fillers using today's OBJ types, so the big world isn't empty before D1
 function scatter(ctx,n,types,pad=4){for(let i=0;i<n;i++)ctx.place(pick(types),rand(ctx.x0+pad,ctx.x1-pad),rand(ctx.z0+pad,ctx.z1-pad));}
@@ -392,7 +398,7 @@ function loadChunk(c){
   for(const o of sleepers)o.inst=o.inst.map(([b,i,mesh])=>[b.im,i,b.list[i],mesh]);
 }
 function unloadChunk(c){
-  c.loaded=false;
+  c.loaded=false;for(const h of c.herds)if(h.on)herdOff(h);
   for(const r of c.rampList)removeRamp(r);
   objects=objects.filter(o=>{if(o.chunk!==c.k)return true;scene.remove(o.g);return false;}); // alive records stay alive
   c.group.traverse(m=>{if(m.isInstancedMesh)m.dispose();});scene.remove(c.group);c.group=null;
@@ -586,7 +592,8 @@ function collisions(){
         if(o.bld){hitBuilding(p,o,dx,dz,rr,spd,vx,vz);continue;}
         if(o.sz>tier){bump(p,o,dx,dz,rr,spd);continue;}
         if(spd>4*p.sm||p.air){smash(o,vx||dx,vz||dz,Math.max(spd,10)*Math.sqrt(Math.max(1,S)));p.speed*=o.big&&o.sz>=tier?0.8:0.96;}
-        else{const d=Math.hypot(dx,dz)||1;p.x-=dx/d*(rr-d);p.z-=dz/d*(rr-d);}}}}
+        else{const d=Math.hypot(dx,dz)||1;p.x-=dx/d*(rr-d);p.z-=dz/d*(rr-d);}}}
+    animalHits(p,vx,vz,spd);}
 }
 
 // too big to smash (yet): wobble it and boing the car back. Never a fail, just "grow more!"
@@ -646,6 +653,114 @@ function updateScatter(dt){
 }
 function scatterRain(n){for(let i=0;i<n;i++)queue.push({t:0.3+i*0.05,fn:()=>{if(players.length)spawnScatter(pick(players),true);}});}
 
+
+/* ---------- animals: never hurt, just launched ---------- */
+/* Animals wander in herds and scoot away from cars. A hit launches them in a big spinning arc with their sound
+   and a puff of feathers/fluff; they land, get dizzy, shake it off and wander again. Too-big animals boing you
+   back (red ring like any too-big thing), way-smaller ones hop out of the way. A launch gives a small meter bonus,
+   never growth. If one lands far from home it sneaks back while nobody's looking.
+   Design: `const ANIMAL={chicken:{build(){…return group},fluff:'#fff'},…}` in objects.js replaces these placeholders.
+   build() returns a THREE.Group facing +Z, feet at y=0, real-ish size (a chicken ~0.7 long, a cow ~2.6).
+   Herds: zone layouts call ctx.herd(kind,x,z,n); chunks without any get a default mix from ZONE_HERDS.
+   Sound: sfxClip(kind) from tools/sfx-lines.json. */
+function animalEyes(g,x,y,z,s){g.add(mk('sph',s,s,s,'#ffffff',x,y,z),mk('sph',s,s,s,'#ffffff',-x,y,z),mk('sph',s*.5,s*.5,s*.5,'#111111',x,y,z+s*.35),mk('sph',s*.5,s*.5,s*.5,'#111111',-x,y,z+s*.35));}
+function quadAnimal(L,col,headCol,legCol,extra){const g=new THREE.Group(),W=L*.5,H=L*.42,leg=L*.32;
+  g.add(mk('box',W,H,L*.72,col,0,leg+H/2,0),mk('box',W*.72,H*.8,L*.34,headCol||col,0,leg+H*.95,L*.44));
+  for(const [x,z] of [[1,1],[-1,1],[1,-1],[-1,-1]])g.add(mk('box',W*.22,leg,W*.22,legCol||col,x*W*.3,leg/2,z*L*.25));
+  animalEyes(g,W*.2,leg+H*1.12,L*.6,L*.12);if(extra)extra(g,L,W,H,leg);return g;}
+function birdAnimal(L,col,beak,extra){const g=new THREE.Group();
+  g.add(mk('sph',L*.8,L*.7,L,col,0,L*.55,0),mk('sph',L*.55,L*.55,L*.55,col,0,L*.95,L*.35));
+  const b=mk('cone',L*.16,L*.28,L*.16,beak,0,L*.92,L*.7);b.rotation.x=Math.PI/2;g.add(b);
+  g.add(mk('box',L*.08,L*.25,L*.08,beak,L*.15,L*.12,0),mk('box',L*.08,L*.25,L*.08,beak,-L*.15,L*.12,0));
+  animalEyes(g,L*.14,L*1.05,L*.55,L*.15);if(extra)extra(g,L);return g;}
+const ANIMAL_DEFAULT={
+  chick:{fluff:'#ffe14d',build:()=>birdAnimal(.35,'#ffe14d','#ff9f1c')},
+  chicken:{fluff:'#ffffff',build:()=>birdAnimal(.7,'#ffffff','#ff9f1c',(g,L)=>g.add(mk('box',L*.08,L*.2,L*.3,'#e63946',0,L*1.28,L*.35)))},
+  duck:{fluff:'#fff3b0',build:()=>birdAnimal(.8,'#fff3b0','#ff9f1c')},
+  goose:{fluff:'#ffffff',build:()=>birdAnimal(1.1,'#f2f2f2','#ff7b00')},
+  bunny:{fluff:'#ffffff',build:()=>quadAnimal(.7,'#f1f1f1',0,0,(g,L,W,H,leg)=>g.add(mk('box',L*.1,L*.45,L*.06,'#ffc6ff',W*.15,leg+H*1.6,L*.42),mk('box',L*.1,L*.45,L*.06,'#ffc6ff',-W*.15,leg+H*1.6,L*.42)))},
+  cat:{fluff:'#f4a259',build:()=>quadAnimal(1.0,'#f4a259',0,0,(g,L,W,H,leg)=>{const t=mk('box',L*.08,L*.45,L*.08,'#f4a259',0,leg+H*1.2,-L*.4);t.rotation.x=-0.4;g.add(t,mk('cone',L*.12,L*.16,L*.08,'#f4a259',W*.22,leg+H*1.5,L*.44),mk('cone',L*.12,L*.16,L*.08,'#f4a259',-W*.22,leg+H*1.5,L*.44));})},
+  dog:{fluff:'#b5835a',build:()=>quadAnimal(1.4,'#b5835a',0,0,(g,L,W,H,leg)=>g.add(mk('box',L*.08,L*.22,L*.12,'#7f4f24',W*.4,leg+H*1.1,L*.44),mk('box',L*.08,L*.22,L*.12,'#7f4f24',-W*.4,leg+H*1.1,L*.44),mk('sph',L*.1,L*.1,L*.1,'#111111',0,leg+H*.9,L*.62)))},
+  pig:{fluff:'#ffc6d9',build:()=>quadAnimal(1.6,'#ffadc6',0,0,(g,L,W,H,leg)=>g.add(mk('cyl',L*.16,L*.06,L*.16,'#ff8fab',0,leg+H*.9,L*.62).rotateX(Math.PI/2)))},
+  sheep:{fluff:'#ffffff',build:()=>quadAnimal(1.6,'#ffffff','#333333','#333333',(g,L,W,H,leg)=>{for(let i=0;i<5;i++)g.add(mk('sph',W*.7,H*.8,W*.7,'#ffffff',rand(-.15,.15)*L,leg+H*rand(.7,1.1),(i-2)*L*.13));})},
+  goat:{fluff:'#d8cfc0',build:()=>quadAnimal(1.6,'#d8cfc0',0,0,(g,L,W,H,leg)=>g.add(mk('cone',L*.06,L*.22,L*.06,'#6d6875',W*.2,leg+H*1.5,L*.38),mk('cone',L*.06,L*.22,L*.06,'#6d6875',-W*.2,leg+H*1.5,L*.38)))},
+  cow:{fluff:'#ffffff',build:()=>quadAnimal(2.6,'#ffffff',0,0,(g,L,W,H,leg)=>{g.add(mk('box',W*1.02,H*.5,L*.2,'#222222',0,leg+H*.7,L*.1),mk('box',W*1.02,H*.4,L*.15,'#222222',0,leg+H*.55,-L*.2),
+    mk('box',W*.5,H*.3,L*.1,'#ffadc6',0,leg+H*.75,L*.62),mk('cone',L*.05,L*.12,L*.05,'#fff3b0',W*.3,leg+H*1.4,L*.42),mk('cone',L*.05,L*.12,L*.05,'#fff3b0',-W*.3,leg+H*1.4,L*.42));})},
+  horse:{fluff:'#8d5524',build:()=>quadAnimal(2.8,'#8d5524',0,'#5c3a1a',(g,L,W,H,leg)=>g.add(mk('box',W*.15,H*.8,L*.3,'#3b2412',0,leg+H*1.3,L*.3)))}
+};
+const ZONE_HERDS={farm:[['chicken',6],['chick',5],['cow',3],['pig',4],['sheep',5],['goat',3],['horse',2]],
+  park:[['duck',5],['goose',3],['bunny',4],['dog',2],['chick',4]],town:[['dog',2],['cat',3],['chicken',3]],home:[['chicken',5],['duck',4],['bunny',3],['chick',5]]};
+const animalDef=k=>(typeof ANIMAL!=='undefined'&&ANIMAL[k])||ANIMAL_DEFAULT[k];
+const animals=[];
+function chunkHerd(c,kind,x,z,n=4){
+  if(!animalDef(kind)||x<c.x0+4||x>c.x0+CHUNK-4||z<c.z0+4||z>c.z0+CHUNK-4||onRoad(x,z,3))return false;
+  c.herds.push({kind,x,z,n,list:[],on:false});return true;}
+function defaultHerds(c){const opts=ZONE_HERDS[c.zone]||ZONE_HERDS.park,n=c.zone==='farm'?3:c.zone==='town'?1:2;
+  for(let i=0,t=0;i<n&&t<20;t++){const [k,m]=pick(opts);if(chunkHerd(c,k,rand(c.x0+8,c.x0+CHUNK-8),rand(c.z0+8,c.z0+CHUNK-8),m))i++;}}
+function spawnAnimal(h,x,z){
+  const def=animalDef(h.kind),g=def.build();_bx.setFromObject(g);
+  const r=Math.max(_bx.max.z-_bx.min.z,_bx.max.x-_bx.min.x)/2*0.85,hgt=_bx.max.y;
+  const a={kind:h.kind,def,g,herd:h,x,z,y:0,vx:0,vz:0,vy:0,heading:rand(0,Math.PI*2),state:'idle',t:rand(0,2),r,h:hgt,fr:r*1.2,
+    alive:true,falling:false,ph:rand(0,9),spin:[0,0,0]};
+  a.sz=clamp(Math.round(3+Math.log(Math.max(r,hgt/3)/1.1)/Math.log(SIZE_STEP)),0,SIZES.length-1);
+  a.speed=clamp(1.2+r*1.6,1,5);g.position.set(x,groundH(x,z),z);g.rotation.y=a.heading;scene.add(g);animals.push(a);h.list.push(a);return a;}
+function herdOn(h){h.on=true;for(let i=0;i<h.n;i++)spawnAnimal(h,h.x+rand(-3,3),h.z+rand(-3,3));}
+function herdOff(h){h.on=false;for(const a of h.list){scene.remove(a.g);const i=animals.indexOf(a);if(i>=0)animals.splice(i,1);}h.list.length=0;}
+function launchAnimal(a,vx,vz,power){
+  if(a.state==='fly')return;const d=Math.hypot(vx,vz)||1,H=rand(3,6)*Math.max(S,0.25)+a.r*2;
+  a.state='fly';a.bounced=false;a.vy=Math.sqrt(64*H);a.vx=vx/d*power*0.5+rand(-2,2)*S;a.vz=vz/d*power*0.5+rand(-2,2)*S;
+  a.spin=[rand(-12,12),rand(-12,12),rand(-12,12)];a.falling=true;
+  if(!sfxClip(a.kind,0.9,rand(0.92,1.12)))tone('square',rand(500,900),rand(1200,1800),0.25,0.12);sfxClip('whee',0.35,rand(.9,1.2));
+  puff(a.x,a.y+a.h*.5,a.z,6,Math.max(0.3,a.r*0.9),a.def.fluff||'#ffffff');addScore(2);
+  const n=performance.now();if(n-lastAnimalSay>9000&&Math.random()<0.35){lastAnimalSay=n;
+    say(a.kind==='chicken'||a.kind==='chick'?pick(['Fly, chicken, fly!','Wheee!']):a.kind==='cow'?'Moo-ve over!':a.kind==='duck'||a.kind==='goose'?'Bye bye, birdie!':pick(['Wheee!','Up, up and away!']));}
+}
+let lastAnimalSay=0;
+function hopAside(a,dx,dz){if(a.state==='fly')return;const d=Math.hypot(dx,dz)||1;a.state='fly';a.hop=true;a.bounced=true;a.vy=6;a.vx=dx/d*3;a.vz=dz/d*3;a.spin=[0,0,0];a.falling=true;}
+// cars meet animals (called from collisions)
+function animalHits(p,vx,vz,spd){
+  for(const a of animals){if(a.state==='fly')continue;const dx=a.x-p.x,dz=a.z-p.z,rr=p.r+a.r;
+    if(dx*dx+dz*dz>=rr*rr||p.y>a.y+a.h)continue;
+    if(a.sz<=tier-3){hopAside(a,dx,dz);continue;}
+    if(a.sz>tier){bump(p,a,dx,dz,rr,spd);if(a.state!=='dizzy'){sfxClip(a.kind,0.6,0.8);hopAside(a,dx,dz);}continue;}
+    if(spd>2*p.sm||p.air)launchAnimal(a,vx||dx,vz||dz,Math.max(spd,8*p.sm));
+    else{const d=Math.hypot(dx,dz)||1;a.x=p.x+dx/d*rr;a.z=p.z+dz/d*rr;}}
+}
+const _pv=new THREE.Vector3();let herdT=0;
+function updateAnimals(dt){
+  if((herdT-=dt)<=0){herdT=0.5;const R=Math.max(55,scatR()*3);
+    for(const c of chunks.values()){if(!c.loaded)continue;for(const h of c.herds){let d=1e9;
+      for(const p of players.length?players:[{x:camT.x,z:camT.z}])d=Math.min(d,Math.hypot(h.x-p.x,h.z-p.z));
+      if(!h.on&&d<R)herdOn(h);else if(h.on&&d>R+30)herdOff(h);}}}
+  for(const a of animals){const g=a.g;
+    if(a.state==='fly'){a.vy-=32*dt;a.x+=a.vx*dt;a.z+=a.vz*dt;a.y+=a.vy*dt;
+      g.rotation.x+=a.spin[0]*dt;g.rotation.y+=a.spin[1]*dt;g.rotation.z+=a.spin[2]*dt;
+      if(Math.abs(a.x)>ARENA-1){a.x=Math.sign(a.x)*(ARENA-1);a.vx*=-0.5;}if(Math.abs(a.z)>ARENA-1){a.z=Math.sign(a.z)*(ARENA-1);a.vz*=-0.5;}
+      const gh=groundH(a.x,a.z);
+      if(a.y<=gh&&a.vy<0){a.y=gh;
+        if(!a.bounced){a.bounced=true;a.vy*=-0.35;a.vx*=0.5;a.vz*=0.5;sfxClip('poof',0.45,rand(.9,1.1));puff(a.x,gh+0.2,a.z,4,Math.max(0.3,a.r),'#f4ecdf');}
+        else{a.falling=false;g.rotation.set(0,a.heading,0);
+          if(a.hop){a.hop=false;a.state='idle';a.t=rand(0.5,1.5);}
+          else{a.state='dizzy';a.t=1.4;sfxClip('dizzy',0.3,rand(.9,1.2));}}}
+      g.position.set(a.x,a.y,a.z);continue;}
+    a.t-=dt;
+    let near=null,nd=1e9;for(const p of players){const d=Math.hypot(a.x-p.x,a.z-p.z)-p.r;if(d<nd){nd=d;near=p;}}
+    if(a.state!=='dizzy'&&near&&tier>=a.sz-1&&nd<2+a.r*3+near.r){if(a.state!=='flee')a.t=0.9;a.state='flee';a.heading=Math.atan2(a.x-near.x,a.z-near.z)+Math.sin(T*3+a.ph)*0.4;}
+    let moving=false;
+    if(a.state==='dizzy'){g.rotation.set(Math.sin(T*18)*0.15,a.heading+Math.sin(T*9)*0.6,Math.cos(T*14)*0.15);
+      if(a.t<=0){a.state='walk';a.t=rand(1,2.5);a.heading=Math.atan2(a.herd.x-a.x,a.herd.z-a.z);
+        // landed far from home? sneak back while nobody is looking
+        if(Math.hypot(a.x-a.herd.x,a.z-a.herd.z)>45&&!frustum.containsPoint(_pv.set(a.x,a.y+1,a.z))){a.x=a.herd.x+rand(-3,3);a.z=a.herd.z+rand(-3,3);}}}
+    else if(a.state==='idle'){if(a.t<=0){a.state='walk';a.t=rand(1,3);const hr=4+a.r*4;
+      a.heading=Math.atan2(a.herd.x+rand(-hr,hr)-a.x,a.herd.z+rand(-hr,hr)-a.z);}}
+    else{const sp=a.speed*(a.state==='flee'?2.4:1);a.x+=Math.sin(a.heading)*sp*dt;a.z+=Math.cos(a.heading)*sp*dt;moving=true;
+      if(a.t<=0){a.state='idle';a.t=rand(0.8,2.5);}}
+    if(Math.abs(a.x)>ARENA-2)a.x=Math.sign(a.x)*(ARENA-2);if(Math.abs(a.z)>ARENA-2)a.z=Math.sign(a.z)*(ARENA-2);
+    a.y=groundH(a.x,a.z);
+    g.position.set(a.x,a.y+(moving?Math.abs(Math.sin(T*14+a.ph))*0.12*a.r:0),a.z);
+    if(a.state!=='dizzy')g.rotation.set(0,a.heading,moving?Math.sin(T*14+a.ph)*0.12:0);}
+}
+
 /* ---------- "can I smash it?" signals ---------- */
 // Pulsing red ring = too big for you, grow first. Green flash = you just got big enough for these.
 // Close to a too-big thing you also get a floating "grow first" badge; bumping one pops "GROW BIGGER!".
@@ -665,7 +780,7 @@ function updateSignals(dt){
   greenT=Math.max(0,greenT-dt);
   if(state!=='play'||!players.length){redRings.count=greenRings.count=0;badges.forEach(b=>b.visible=false);return;}
   const R=camDist*1.1+8,close=camDist*0.3+2,near=[];
-  for(const o of objects){if(!o.alive||o.falling)continue;
+  for(const list of [objects,animals])for(const o of list){if(!o.alive||o.falling)continue;
     const red=o.sz>tier;if(!red&&!(greenT>0&&o.sz===tier))continue;
     let d=1e9;for(const p of players)d=Math.min(d,Math.hypot(o.x-p.x,o.z-p.z)-o.r-p.r);
     if(d<R)near.push([o,d,red]);}
@@ -734,12 +849,12 @@ function loop(now){
   updateGrowth(dt);updateStreaming(dt);
   if(state==='play')collisions();
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
-  updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateScatter(dt);updateDebris(dt);updateParts(dt);
+  updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateScatter(dt);updateAnimals(dt);updateDebris(dt);updateParts(dt);
   updateCamera(dt,T);updateSignals(dt);cullChunks();updateHUD();
   renderer.render(scene,camera);
   pressed.clear();touch.jumpP=false;touch.swapP=false;
 }
 requestAnimationFrame(loop);
-window.__sp={mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,
+window.__sp={mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,
   tp(x,z,i=0){const p=players[i];if(p){p.x=x;p.z=z;p.y=groundH(x,z);camT.set(x,0,z);}},
   stats(){let l=0;chunks.forEach(c=>l+=c.loaded);const i=renderer.info.render;return {chunks:l,objects:objects.length,awake:objects.filter(o=>!o.sleep).length,debris:debris.length,calls:i.calls,tris:i.triangles};}};
