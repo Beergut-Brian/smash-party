@@ -4,7 +4,11 @@ const rand=(a,b)=>a+Math.random()*(b-a);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const angDiff=(a,b)=>{let d=a-b;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;return d;};
-const ARENA=70;
+// World: chunk centers sit on multiples of CHUNK, so chunk (0,0) is centered on the origin.
+const CHUNK=80,CHUNKS_HALF=5,ARENA=CHUNK*(CHUNKS_HALF+0.5); // 11×11 chunks, world spans ±440
+const HOME=72;  // the original hand-built arena (buildWorld) lives inside ±HOME
+const ROAD_EVERY=160,ROAD_W=10;
+const IS_PHONE=!!(window.matchMedia&&matchMedia('(pointer:coarse)').matches);
 
 /* ---------- renderer / scene ---------- */
 const renderer=new THREE.WebGLRenderer({antialias:true});
@@ -16,7 +20,7 @@ document.body.prepend(renderer.domElement);
 const scene=new THREE.Scene();
 scene.background=new THREE.Color('#8fd3ff');
 scene.fog=new THREE.Fog('#8fd3ff',160,300);
-const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.5,600);
+const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.5,700);
 scene.add(new THREE.HemisphereLight('#ffffff','#5a8f3c',0.8));
 const sun=new THREE.DirectionalLight('#fff4dd',0.85);
 sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-0.0006;
@@ -42,34 +46,72 @@ function mk(shape,sx,sy,sz,color,x=0,y=0,z=0,mat){
 }
 
 /* ---------- world ---------- */
-const ground=new THREE.Mesh(new THREE.PlaneGeometry(700,700),M('#7ccf5a'));
-ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
-const inner=new THREE.Mesh(new THREE.PlaneGeometry(ARENA*2,ARENA*2),M('#86d863'));
-inner.rotation.x=-Math.PI/2;inner.position.y=0.01;inner.receiveShadow=true;scene.add(inner);
-function road(w,d,x,z){const r=mk('box',w,0.04,d,'#5c6670',x,0.03,z);r.castShadow=false;scene.add(r);}
-road(ARENA*2,10,0,0);road(10,ARENA*2,0,0);
-for(let i=-ARENA+4;i<ARENA;i+=8){ if(Math.abs(i)<7)continue;
-  const a=mk('box',4,0.05,0.5,'#ffd60a',i,0.06,0);a.castShadow=false;scene.add(a);
-  const b=mk('box',0.5,0.05,4,'#ffd60a',0,0.06,i);b.castShadow=false;scene.add(b);}
-// arena wall
-for(let s=0;s<4;s++)for(let i=-ARENA;i<ARENA;i+=4){
-  const c=((i/4)|0)%2?'#e63946':'#ffffff';
-  const w=s<2?mk('box',4,1.6,1.6,c,i+2,0.8,(s?1:-1)*(ARENA+0.8)):mk('box',1.6,1.6,4,c,(s==2?1:-1)*(ARENA+0.8),0.8,i+2);
-  scene.add(w);}
-// distant hills
-for(let i=0;i<14;i++){const a=i/14*Math.PI*2,r=rand(150,190);const h=mk('sph',rand(50,90),rand(25,50),rand(50,90),pick(['#6abf4b','#5fae45','#78c95a']),Math.cos(a)*r,0,Math.sin(a)*r);h.castShadow=false;scene.add(h);}
+/* Zone map: one letter per chunk. Rows run from -Z (top of screen) to +Z, columns from -X to +X.
+   H=home arena, T=town, F=farm, P=park. Design fills each zone via ZONE_LAYOUT in objects.js. */
+const ZONE_NAMES={H:'home',T:'town',F:'farm',P:'park'};
+const ZONE_MAP=[
+  'FFFFPPPTTTT',
+  'FFFFPPPTTTT',
+  'FFFFPPTTTTT',
+  'FFFPPPTTTTT',
+  'FFFPHHHTTTT',
+  'PPPPHHHTTTT',
+  'PPPPHHHPPPP',
+  'TTTPPPPPFFF',
+  'TTTTPPPFFFF',
+  'TTTTPPFFFFF',
+  'TTTTPPFFFFF'
+];
+const ZONE_GROUND={H:'#86d863',T:'#86b878',F:'#a8c94f',P:'#6fcf55'}; // TODO(design): tune zone ground colors
+const chunkIdx=v=>clamp(Math.round(v/CHUNK),-CHUNKS_HALF,CHUNKS_HALF);
+function zoneAt(ci,cj){const row=ZONE_MAP[cj+CHUNKS_HALF];return ZONE_NAMES[(row&&row[ci+CHUNKS_HALF])||'P']||'park';}
+function onRoad(x,z,pad=0){const lim=ROAD_W/2+pad;return Math.abs(x-Math.round(x/ROAD_EVERY)*ROAD_EVERY)<lim||Math.abs(z-Math.round(z/ROAD_EVERY)*ROAD_EVERY)<lim;}
 
-/* ramps */
+// endless outer grass + zone-tinted world ground (one tiny canvas texture = one draw call)
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(ARENA*2+700,ARENA*2+700),M('#7ccf5a'));
+ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+{const n=CHUNKS_HALF*2+1,cv=document.createElement('canvas');cv.width=cv.height=n;const cx=cv.getContext('2d');
+  for(let j=0;j<n;j++)for(let i=0;i<n;i++){cx.fillStyle=ZONE_GROUND[ZONE_MAP[j][i]]||'#86d863';cx.fillRect(i,j,1,1);}
+  const tex=new THREE.CanvasTexture(cv);tex.magFilter=THREE.NearestFilter;tex.minFilter=THREE.NearestFilter;
+  const inner=new THREE.Mesh(new THREE.PlaneGeometry(ARENA*2,ARENA*2),new THREE.MeshLambertMaterial({map:tex}));
+  inner.rotation.x=-Math.PI/2;inner.position.y=0.01;inner.receiveShadow=true;scene.add(inner);}
+// instanced helper for static repeated scenery (frustum culling off: r128 can't bound instances)
+function instBoxes(list,color,shadow){
+  const im=new THREE.InstancedMesh(GEO.box,new THREE.MeshLambertMaterial({color:'#ffffff'}),list.length);
+  const m4=new THREE.Matrix4(),q=new THREE.Quaternion(),p=new THREE.Vector3(),s=new THREE.Vector3(),c=new THREE.Color();
+  list.forEach((b,i)=>{p.set(b[0],b[1],b[2]);s.set(b[3],b[4],b[5]);im.setMatrixAt(i,m4.compose(p,q,s));im.setColorAt(i,c.set(b[6]||color));});
+  im.frustumCulled=false;im.castShadow=!!shadow;im.receiveShadow=true;scene.add(im);return im;
+}
+// road grid every ROAD_EVERY units, with yellow dashes
+{const roads=[],dash=[];
+  for(let r=-Math.floor(ARENA/ROAD_EVERY)*ROAD_EVERY;r<=ARENA;r+=ROAD_EVERY){
+    roads.push([r,0.03,0,ROAD_W,0.04,ARENA*2]);roads.push([0,0.03,r,ARENA*2,0.04,ROAD_W]);
+    for(let i=-ARENA+4;i<ARENA;i+=8){if(Math.abs(i-Math.round(i/ROAD_EVERY)*ROAD_EVERY)<7)continue;
+      dash.push([i,0.06,r,4,0.05,0.5]);dash.push([r,0.06,i,0.5,0.05,4]);}}
+  instBoxes(roads,'#5c6670');instBoxes(dash,'#ffd60a');}
+// world-edge wall (soft bounce lives in game.js)
+{const w=[];for(let s=0;s<4;s++)for(let i=-ARENA;i<ARENA;i+=4){
+  const c=((i/4)|0)%2?'#e63946':'#ffffff',o=(s%2?1:-1)*(ARENA+0.8);
+  w.push(s<2?[i+2,0.8,o,4,1.6,1.6,c]:[o,0.8,i+2,1.6,1.6,4,c]);}
+  instBoxes(w,'#ffffff',true);}
+// distant hills in a ring around the square world
+for(let i=0;i<26;i++){const a=i/26*Math.PI*2,r=(ARENA+rand(90,150))/Math.max(Math.abs(Math.cos(a)),Math.abs(Math.sin(a)));const h=mk('sph',rand(70,120),rand(30,60),rand(70,120),pick(['#6abf4b','#5fae45','#78c95a']),Math.cos(a)*r,0,Math.sin(a)*r);h.castShadow=false;scene.add(h);}
+
+/* ramps: `ramps` holds only the ramps in loaded chunks (keeps groundH cheap). makeRamp builds one without
+   adding it; addRamp builds + adds (used by buildWorld). game.js streams them in and out with their chunk. */
 const ramps=[];
-function addRamp(x,z,th,L=11,W=7,H=3.6){
+function makeRamp(x,z,th,L=11,W=7,H=3.6){
   const sh=new THREE.Shape();sh.moveTo(0,0);sh.lineTo(L,0);sh.lineTo(L,H);sh.lineTo(0,0);
   const g=new THREE.ExtrudeGeometry(sh,{depth:W,bevelEnabled:false});g.rotateY(-Math.PI/2);g.translate(W/2,0,0);
   const m=new THREE.Mesh(g,M('#ffbe0b'));m.position.set(x,0,z);m.rotation.y=th;m.castShadow=true;m.receiveShadow=true;
   const sl=Math.atan2(H,L);
   for(let k=1;k<4;k++){const lz=L*k/4;const s=mk('box',W*0.9,0.08,0.9,'#e63946',0,H*lz/L+0.06,lz);s.rotation.x=-sl;s.castShadow=false;m.add(s);}
-  scene.add(m);ramps.push({x,z,L,W,H,s:Math.sin(th),c:Math.cos(th)});
+  return {x,z,L,W,H,s:Math.sin(th),c:Math.cos(th),mesh:m};
 }
-function groundH(x,z){let h=0;for(const r of ramps){const dx=x-r.x,dz=z-r.z;const lz=dx*r.s+dz*r.c,lx=dx*r.c-dz*r.s;if(lz>0&&lz<r.L&&Math.abs(lx)<r.W/2)h=Math.max(h,r.H*lz/r.L);}return h;}
+function addRamp(x,z,th,L,W,H){const r=makeRamp(x,z,th,L,W,H);scene.add(r.mesh);ramps.push(r);return r;}
+function removeRamp(r){const i=ramps.indexOf(r);if(i>=0)ramps.splice(i,1);if(r.mesh.parent)r.mesh.parent.remove(r.mesh);}
+function rampsH(list,x,z){let h=0;for(const r of list){const dx=x-r.x,dz=z-r.z;const lz=dx*r.s+dz*r.c,lx=dx*r.c-dz*r.s;if(lz>0&&lz<r.L&&Math.abs(lx)<r.W/2)h=Math.max(h,r.H*lz/r.L);}return h;}
+function groundH(x,z){return rampsH(ramps,x,z);}
 
 /* ---------- audio ---------- */
 let AC=null,master=null,noiseBuf=null,muted=false;

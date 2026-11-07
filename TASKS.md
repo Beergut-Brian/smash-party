@@ -14,7 +14,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 
 ## Logic (Claude Code)
 
-- [ ] **L1: Bigger world and chunk streaming**
+- [x] **L1: Bigger world and chunk streaming**
   - Grow the world from ±70 to roughly ±400 (tune for fun). Keep a soft wall or edge at the boundary.
   - Split the world into a grid of chunks (~80×80). Only build objects in chunks near the players (radius grows with player size). Unload far chunks.
   - Remember what's destroyed per chunk, so leaving and coming back doesn't magically rebuild everything. Slowly regrow over time so the world never runs out.
@@ -56,7 +56,9 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - **Park:** playground (swings, slide, jungle gym), fountain, benches, picnic tables, trees, a gazebo, a pond with ducks, a giant bounce-house.
   - Ideas for later zones: construction site, beach boardwalk, candy land, dino valley.
   - Every prop gets a **size class** (tiny / small / medium / large / huge) so small players have plenty to smash early.
-  - Needs: L1 (zone map + layout hooks).
+  - Needs: L1 (zone map + layout hooks). ✅ L1 is done. The zone map is `ZONE_MAP` in `core.js`; the layout contract (`ZONE_LAYOUT` + the `ctx` API) is documented in `CLAUDE.md` under "Adding things". Until `ZONE_LAYOUT` exists, `DEFAULT_LAYOUT` in `game.js` fills zones with placeholders.
+  - Also add a `home` layout if you want to dress the ring of chunks around the original arena (the arena itself still comes from `buildWorld`).
+  - New prop types need an entry in `REC_R` (game.js) or pass `r` to `ctx.place`. Ask logic to add it, or just pass `r`.
 
 - [ ] **D2: Destructible buildings**
   - Build every building from separate parts per the L3 part contract (floors, walls, roof, details) so they can crumble in stages. Vary colors and styles. Chunky, toy-like, readable from far away.

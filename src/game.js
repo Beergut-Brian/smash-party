@@ -1,10 +1,10 @@
 /* Smash Party — game logic: debris, smashing, respawn, players, input, collisions, camera, loop. Owner: Claude Code (logic). */
 /* ---------- debris & particles ---------- */
-const debris=[],parts=[];
+const debris=[],parts=[],DEBRIS_MAX=IS_PHONE?220:420;
 function addDebris(m,half,vx,vy,vz,opts={}){
   if(!m.parent)scene.add(m);
   debris.push({m,half,vx,vy,vz,ax:rand(-9,9),ay:rand(-9,9),az:rand(-9,9),life:opts.life||rand(6,9),settled:false,s0:m.scale.clone(),g:opts.g||32,confetti:!!opts.confetti});
-  if(debris.length>480)for(let i=0;i<debris.length-480;i++)debris[i].life=Math.min(debris[i].life,0.6);
+  if(debris.length>DEBRIS_MAX)for(let i=0;i<debris.length-DEBRIS_MAX;i++)debris[i].life=Math.min(debris[i].life,0.6);
 }
 function updateDebris(dt){
   for(let i=debris.length-1;i>=0;i--){const d=debris[i];d.life-=dt;
@@ -46,7 +46,8 @@ function flash(x,y,z,color,size,life){const m=new THREE.Mesh(GEO.sph,new THREE.M
 let score=0,levelScore=0,level=1,goal=100,smashCount=0,shake=0;
 const queue=[];
 function smash(o,vx,vz,power){
-  if(!o.alive)return;o.alive=false;
+  if(!o.alive)return;o.alive=false;wakeObj(o);
+  if(o.rec){o.rec.dead=true;o.rec.back=T+rand(REGROW[0],REGROW[1]);}
   const dl=Math.hypot(vx,vz)||1,nx=vx/dl,nz=vz/dl;
   const wp=new THREE.Vector3(),q=new THREE.Quaternion(),ws=new THREE.Vector3();
   o.g.updateMatrixWorld(true);
@@ -95,7 +96,6 @@ function addScore(n){
 
 /* ---------- respawn ---------- */
 function pickType(){let tot=0;SPAWN_W.forEach(w=>tot+=w[1]);let r=Math.random()*tot;for(const [t,w] of SPAWN_W){if((r-=w)<0)return t;}return 'crates';}
-let TARGET=0,spawnT=0;
 function spawnFalling(cx,cz,spread,type){
   type=type||pickType();
   for(let tries=0;tries<12;tries++){
@@ -112,9 +112,142 @@ function updateObjects(dt){
     if(o.fy<=0){o.fy=0;o.falling=false;sfx.thud();puff(o.x,0.4,o.z,4,1.4);
       for(const p of players)if(Math.hypot(p.x-o.x,p.z-o.z)<p.stats.r+o.r){p.air=true;p.vy=10;}}
     o.g.position.y=o.fy;}
-  spawnT-=dt;
-  if(spawnT<=0){spawnT=0.9;if(objects.filter(o=>o.alive).length<TARGET)spawnFalling();}
-  if(objects.length>300||Math.random()<0.01)objects=objects.filter(o=>o.alive);
+  if(Math.random()<0.02)objects=objects.filter(o=>o.alive);
+}
+
+/* ---------- world streaming (chunks) ---------- */
+/* Each chunk remembers its objects as records {type,x,z,arg,r,seed,dead,back}, so leaving and coming back
+   keeps what you smashed. Only chunks near the players are built. Built objects "sleep" as instanced meshes
+   (a few draw calls per chunk) and wake into real meshes when a car gets close enough to smash them.
+   Smashed records regrow after REGROW seconds (dropping from the sky if the chunk is loaded). */
+const REGROW=[90,160],WAKE_R=22;
+const chunks=new Map();
+const chunkKey=(ci,cj)=>ci+','+cj;
+function getChunk(ci,cj){const k=chunkKey(ci,cj);let c=chunks.get(k);
+  if(!c){c={k,ci,cj,zone:zoneAt(ci,cj),x0:ci*CHUNK-CHUNK/2,z0:cj*CHUNK-CHUNK/2,recs:[],rampList:[],gen:false,loaded:false,group:null,box:null};chunks.set(k,c);}
+  return c;}
+const chunkOf=(x,z)=>getChunk(chunkIdx(x),chunkIdx(z));
+// tag every object with its type/arg/chunk so it can be rebuilt and streamed
+for(const t in OBJ){const f=OBJ[t];OBJ[t]=(x,z,arg)=>{const o=f(x,z,arg);o.type=t;o.arg=arg;o.chunk=chunkOf(x,z).k;return o;};}
+// deterministic randomness, so a chunk (and each house in it) looks the same every time it's rebuilt
+function mulberry(a){return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function withSeed(seed,fn){const r=Math.random;Math.random=mulberry(seed);try{return fn();}finally{Math.random=r;}}
+
+/* Zone layout contract (design fills this in objects.js as `const ZONE_LAYOUT={town(ctx){…},farm(ctx){…},park(ctx){…}}`):
+   ctx = {zone, ci, cj, x0, z0, x1, z1, cx, cz, size,
+          place(type,x,z,arg,r) → true if placed (stays inside the chunk, off roads, off ramps, no overlaps),
+          ramp(x,z,th,L,W,H)    → true if placed,
+          free(x,z,r)           → would a spot of radius r fit?}
+   Math.random (and rand/pick) is seeded while a layout runs, so layouts can use them freely. */
+const REC_R={house:3.6,crates:1.5,tower:1.4,pin:1.1,snowman:1.3,fence:1.8,barrel:1.0,cone:0.7,melon:1.1,tree:1.1};
+function spotFree(c,x,z,r){
+  if(x-r<c.x0||x+r>c.x0+CHUNK||z-r<c.z0||z+r>c.z0+CHUNK)return false;
+  if(Math.abs(x)>ARENA-r-2||Math.abs(z)>ARENA-r-2)return false;
+  if(Math.abs(x)<HOME+r&&Math.abs(z)<HOME+r)return false; // hand-built home arena
+  if(onRoad(x,z,r))return false;
+  for(const [a,b] of [[0,0],[r+1,0],[-r-1,0],[0,r+1],[0,-r-1]])if(rampsH(c.rampList,x+a,z+b)>0)return false;
+  for(const q of c.recs)if(Math.hypot(q.x-x,q.z-z)<q.r+r+0.6)return false;
+  return true;}
+function chunkPlace(c,type,x,z,arg,r){
+  if(!OBJ[type])return false;r=r||REC_R[type]||1.5;
+  if(!spotFree(c,x,z,r))return false;
+  c.recs.push({type,x,z,arg,r,seed:(Math.random()*1e9)|0,dead:false,back:0});return true;}
+function chunkRamp(c,x,z,th,L=11,W=7,H=3.6){
+  const m=W+2,sx=Math.sin(th),sz=Math.cos(th);
+  for(let k=0;k<=2;k++){const px=x+sx*L*k/2,pz=z+sz*L*k/2;
+    if(px<c.x0+m||px>c.x0+CHUNK-m||pz<c.z0+m||pz>c.z0+CHUNK-m||onRoad(px,pz,W/2)||(Math.abs(px)<HOME+m&&Math.abs(pz)<HOME+m))return false;}
+  const r=makeRamp(x,z,th,L,W,H);
+  for(const q of [...c.recs,...c.rampList.map(o=>({x:o.x,z:o.z,r:o.L}))])
+    for(const [a,b] of [[0,0],[q.r+1,0],[-q.r-1,0],[0,q.r+1],[0,-q.r-1]])if(rampsH([r],q.x+a,q.z+b)>0)return false;
+  c.rampList.push(r);return true;}
+function genChunk(c){
+  c.gen=true;
+  withSeed((c.ci+50)*7919+(c.cj+50)*104729,()=>{
+    const ctx={zone:c.zone,ci:c.ci,cj:c.cj,x0:c.x0,z0:c.z0,x1:c.x0+CHUNK,z1:c.z0+CHUNK,cx:c.ci*CHUNK,cz:c.cj*CHUNK,size:CHUNK,
+      place:(type,x,z,arg,r)=>chunkPlace(c,type,x,z,arg,r),ramp:(x,z,th,L,W,H)=>chunkRamp(c,x,z,th,L,W,H),free:(x,z,r)=>spotFree(c,x,z,r)};
+    // TODO(design): ZONE_LAYOUT.town/farm/park/home in objects.js replaces these placeholder fillers (D1)
+    const lay=(typeof ZONE_LAYOUT!=='undefined'&&ZONE_LAYOUT[c.zone])||DEFAULT_LAYOUT[c.zone]||DEFAULT_LAYOUT.park;
+    lay(ctx);});
+}
+// placeholder zone fillers using today's OBJ types, so the big world isn't empty before D1
+function scatter(ctx,n,types,pad=4){for(let i=0;i<n;i++)ctx.place(pick(types),rand(ctx.x0+pad,ctx.x1-pad),rand(ctx.z0+pad,ctx.z1-pad));}
+function maybeRamp(ctx,ch){if(Math.random()<ch)for(let t=0;t<8;t++)if(ctx.ramp(rand(ctx.x0+12,ctx.x1-12),rand(ctx.z0+12,ctx.z1-12),(Math.random()*4|0)*Math.PI/2))break;}
+const DEFAULT_LAYOUT={
+  town(ctx){maybeRamp(ctx,.4);
+    for(let x=ctx.x0+10;x<ctx.x1-6;x+=14)for(let z=ctx.z0+10;z<ctx.z1-6;z+=14){
+      if(Math.random()<.6)ctx.place('house',x+rand(-1,1),z+rand(-1,1));else ctx.place(pick(['crates','tower','barrel','tree']),x+rand(-3,3),z+rand(-3,3));}
+    scatter(ctx,14,['cone','crates','barrel']);},
+  farm(ctx){maybeRamp(ctx,.5);const fx=ctx.x0+rand(8,40),fz=ctx.z0+rand(8,40);
+    for(let i=0;i<6;i++)for(let j=0;j<6;j++)ctx.place('melon',fx+i*3.4,fz+j*3.4);
+    for(let x=ctx.x0+6;x<ctx.x1-6;x+=4.2)ctx.place('fence',x,ctx.z0+rand(6,10));
+    scatter(ctx,14,['crates','tree','barrel','snowman','crates']);},
+  park(ctx){maybeRamp(ctx,.6);const px=ctx.cx+rand(-20,20),pz=ctx.cz+rand(-20,20);
+    for(let row=0;row<4;row++)for(let k=0;k<=row;k++)ctx.place('pin',px+(k-row/2)*3.4,pz-row*3.2);
+    scatter(ctx,22,['tree','tree','snowman','tower','cone','melon','barrel']);}
+};
+DEFAULT_LAYOUT.home=DEFAULT_LAYOUT.park;
+// the hand-built home arena (buildWorld) becomes records in its chunks
+function captureHome(){
+  for(const o of objects){chunkOf(o.x,o.z).recs.push({type:o.type,x:o.x,z:o.z,arg:o.arg,r:o.r,seed:(Math.random()*1e9)|0,dead:false,back:0});scene.remove(o.g);}
+  objects=[];
+  for(const r of ramps.slice()){removeRamp(r);chunkOf(r.x,r.z).rampList.push(r);}
+}
+function buildRec(rec){const o=withSeed(rec.seed,()=>OBJ[rec.type](rec.x,rec.z,rec.arg));o.rec=rec;return o;}
+
+const HIDE=new THREE.Matrix4().makeTranslation(0,-9999,0),instMats={};
+const instMat=m=>instMats[m.id]||(instMats[m.id]=m.clone()); // own material so plain + instanced meshes don't swap shader programs
+function loadChunk(c){
+  if(!c.gen)genChunk(c);
+  c.loaded=true;c.group=new THREE.Group();scene.add(c.group);
+  c.box=new THREE.Box3(new THREE.Vector3(c.x0-12,-1,c.z0-12),new THREE.Vector3(c.x0+CHUNK+12,40,c.z0+CHUNK+12));
+  for(const r of c.rampList){c.group.add(r.mesh);ramps.push(r);}
+  const batches=new Map(),sleepers=[];
+  for(const rec of c.recs){
+    if(rec.dead){if(T<rec.back)continue;rec.dead=false;}
+    const o=buildRec(rec);scene.remove(o.g);o.g.updateMatrixWorld(true);o.inst=[];o.sleep=true;sleepers.push(o);
+    o.g.traverse(m=>{if(!m.isMesh)return;const k=m.geometry.id+'_'+m.material.id;let b=batches.get(k);
+      if(!b)batches.set(k,b={geo:m.geometry,mat:m.material,list:[]});o.inst.push([b,b.list.length]);b.list.push(m.matrixWorld.clone());});}
+  for(const b of batches.values()){const im=new THREE.InstancedMesh(b.geo,instMat(b.mat),b.list.length);
+    b.list.forEach((m,i)=>im.setMatrixAt(i,m));im.castShadow=im.receiveShadow=true;im.frustumCulled=false;c.group.add(im);b.im=im;}
+  for(const o of sleepers)o.inst=o.inst.map(([b,i])=>[b.im,i,b.list[i]]);
+}
+function unloadChunk(c){
+  c.loaded=false;
+  for(const r of c.rampList)removeRamp(r);
+  objects=objects.filter(o=>{if(o.chunk!==c.k)return true;scene.remove(o.g);return false;}); // alive records stay alive
+  c.group.traverse(m=>{if(m.isInstancedMesh)m.dispose();});scene.remove(c.group);c.group=null;
+}
+function wakeObj(o){if(!o.sleep)return;o.sleep=false;for(const [im,i] of o.inst){im.setMatrixAt(i,HIDE);im.instanceMatrix.needsUpdate=true;}scene.add(o.g);}
+function sleepObj(o){o.sleep=true;for(const [im,i,m] of o.inst){im.setMatrixAt(i,m);im.instanceMatrix.needsUpdate=true;}scene.remove(o.g);}
+function streamR(){return (IS_PHONE?0.7:1)*(110+camDist*1.1);} // TODO(L2): grow with player size
+function rectDist(c,x,z){return Math.hypot(Math.max(c.x0-x,0,x-c.x0-CHUNK),Math.max(c.z0-z,0,z-c.z0-CHUNK));}
+let regrowT=0;
+function updateStreaming(dt,all){
+  const R=streamR(),pts=players.length?players.map(p=>[p.x,p.z]):[[camT.x,camT.z]];
+  let best;
+  do{best=null;let bd=1e9; // load the nearest missing chunk (one per frame, no hitches); drop far ones
+    for(let cj=-CHUNKS_HALF;cj<=CHUNKS_HALF;cj++)for(let ci=-CHUNKS_HALF;ci<=CHUNKS_HALF;ci++){const c=getChunk(ci,cj);
+      let d=1e9;for(const [x,z] of pts)d=Math.min(d,rectDist(c,x,z));
+      if(!c.loaded&&d<R&&d<bd){bd=d;best=c;}else if(c.loaded&&d>R+40)unloadChunk(c);}
+    if(best)loadChunk(best);
+  }while(all&&best);
+  // wake objects near a car, put far ones back to sleep
+  for(const o of objects){if(!o.inst||!o.alive)continue;let d=1e9;
+    for(const p of players)d=Math.min(d,Math.hypot(o.x-p.x,o.z-p.z)-o.r);
+    if(o.sleep){if(d<WAKE_R)wakeObj(o);}else if(d>WAKE_R+12&&!o.falling)sleepObj(o);}
+  // regrow smashed things in loaded chunks: they drop back in from the sky
+  if((regrowT-=dt)>0)return;regrowT=1;let n=0;
+  for(const c of chunks.values()){if(!c.loaded)continue;
+    for(const rec of c.recs){if(!rec.dead||T<rec.back)continue;
+      if(players.some(p=>Math.hypot(p.x-rec.x,p.z-rec.z)<14))continue;
+      if(objects.some(o=>o.alive&&Math.hypot(o.x-rec.x,o.z-rec.z)<o.r+rec.r))continue;
+      rec.dead=false;const o=buildRec(rec);o.falling=true;o.fy=rand(28,50);o.vy=0;o.g.position.y=o.fy;
+      if(++n>=3)return;}}
+}
+const frustum=new THREE.Frustum(),projM=new THREE.Matrix4();
+function cullChunks(){
+  camera.updateMatrixWorld();projM.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);frustum.setFromProjectionMatrix(projM);
+  for(const c of chunks.values())if(c.loaded)c.group.visible=frustum.intersectsBox(c.box);
 }
 
 /* ---------- celebration ---------- */
@@ -294,8 +427,8 @@ function updateHUD(){
 }
 
 /* ---------- loop ---------- */
-buildWorld();TARGET=Math.floor(objects.length*0.85);
 let last=performance.now(),T=0;
+buildWorld();captureHome();updateStreaming(0,true);
 function loop(now){
   requestAnimationFrame(loop);
   const dt=Math.min(0.05,(now-last)/1000);last=now;T+=dt;
@@ -306,13 +439,16 @@ function loop(now){
   if(state==='play'){
     for(const k in src){const s=src[k];if(s.joinP&&players.length<2&&!players.some(p=>p.src===k)){addPlayer(k);s.jumpP=false;}}
     for(const p of players){const s=src[p.src]||{x:0,z:0};if(s.swapP)p.setCar((p.carIdx+1)%CARS.length,true);p.update(dt,s);}
-    collisions();
   }
+  updateStreaming(dt);
+  if(state==='play')collisions();
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
   updateObjects(dt);updateDebris(dt);updateParts(dt);
-  updateCamera(dt,T);updateHUD();
+  updateCamera(dt,T);cullChunks();updateHUD();
   renderer.render(scene,camera);
   pressed.clear();touch.jumpP=false;touch.swapP=false;
 }
 requestAnimationFrame(loop);
-window.__sp={mega,explode,addScore};
+window.__sp={mega,explode,addScore,chunks,
+  tp(x,z,i=0){const p=players[i];if(p){p.x=x;p.z=z;p.y=groundH(x,z);camT.set(x,0,z);}},
+  stats(){let l=0;chunks.forEach(c=>l+=c.loaded);const i=renderer.info.render;return {chunks:l,objects:objects.length,awake:objects.filter(o=>!o.sleep).length,debris:debris.length,calls:i.calls,tris:i.triangles};}};

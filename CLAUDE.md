@@ -37,13 +37,15 @@ Check `TASKS.md` before starting. Take the top unchecked task in your section, c
 ## Coordinate conventions
 - Y is up. Forward for any car/object is **+Z** at `rotation.y = 0`; heading θ points along `(sin θ, cos θ)`.
 - The camera looks from +Z toward −Z, so screen-up is world −Z.
-- Arena spans ±70 (`ARENA`). Units ≈ meters; a car is ~4–5 long.
+- The world spans ±440 (`ARENA`) as an 11×11 grid of 80×80 chunks (`CHUNK`); chunk (0,0) is centered on the origin. The original hand-built arena (`buildWorld`) fills the middle, ±72 (`HOME`). Roads run every 160 units. Units ≈ meters; a car is ~4–5 long.
+- Only chunks near the players are built. Far objects sleep as instanced meshes and wake into real meshes near a car. Smashed things are remembered per chunk and regrow after a couple of minutes.
 
 ## Adding things
 - **Block-built car:** write `buildX()` returning `{g, wheels, ex, h}` (see `buildMonster`) and add it to `CARS` with `name, emoji, speed (20–32), r (collision radius ~2–2.8)`.
 - **Model car (for graphics models/tools):** drop `name.glb` in `assets/cars/` and add to `cars.json`:
   `{"name":"Comet Crusher","emoji":"☄️","file":"comet.glb","speed":27,"r":2.3,"scale":1,"y":0,"rotateY":0,"height":3,"exhaust":[0,1,-2.5]}`
   Model faces +Z, about 4–5 units long, under ~20k triangles. Meshes named `*wheel*` spin.
+- **Zone layout:** define `const ZONE_LAYOUT={town(ctx){…},farm(ctx){…},park(ctx){…},home(ctx){…}}` in `objects.js`. Each function fills one 80×80 chunk. `ctx` has `zone, ci, cj, x0, z0, x1, z1, cx, cz, size` plus `place(type,x,z,arg,r)`, `ramp(x,z,th,L,W,H)` and `free(x,z,r)`. `place` and `ramp` return false (and do nothing) if the spot is off the chunk, on a road, on a ramp or overlapping. `Math.random`/`rand`/`pick` are seeded while a layout runs, so the same chunk always comes out the same. Which zone each chunk is in lives in `ZONE_MAP` (`core.js`).
 - **Smashable object:** add to `OBJ` using `makeObj(x,z,radius,height,points,build)`. In `build`, register parts with `P(mesh, chunks, whole, half)` — `whole:true` flies off intact, otherwise it shatters into `chunks` boxes. Add it to `SPAWN_W` to respawn.
 
 ## Testing
