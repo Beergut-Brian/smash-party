@@ -38,6 +38,30 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Define a building "part contract" that design follows (floors, walls, roof, extras), and document it in `CLAUDE.md`.
   - Needs: L2 (size decides how much damage a hit does).
 
+- [ ] **L2b: "Can I smash it?" signals** (play-test feedback: a 5-year-old needs to see it at a glance)
+  - Too big for you: a pulsing **red ring** on the ground around it, plus a little "grow first" badge (🚙⬆️) when you're close. Bumping it pops a "GROW BIGGER!" bubble.
+  - After a size-up, everything you can now smash nearby flashes **green** for a few seconds ("now you can smash these!").
+  - Only show rings near the players (instanced, one draw call). Leave the colors as tokens for design.
+
+- [ ] **L2c: Size ladder v2: start super small, every size-up matters**
+  - 7 sizes: `mini, tiny, small, medium, large, huge, mega`. Start at ~0.12 scale (a toy car among flowers) and grow about 1.65× per size, up to ~4× today's car at max.
+  - Re-tune growth so each size takes about 2–3 minutes and max size lands around minute 15–18.
+  - **Things way below you (3+ sizes) don't count anymore:** you squish them flat as you drive over (tiny pop, no growth, no slowdown), and they stop appearing near you.
+  - **The world fills with stuff your size:** each loaded chunk gets a "scatter" layer of props picked from design's `ZONE_PROPS` (per zone, per size), re-rolled when you size up. Mix: your size ~50%, one smaller ~15%, one bigger ~20%, two bigger ~10% (goals to aim for), and nothing 3+ below. Landmarks (houses, barns, towers) stay put; regrowth also uses the current mix.
+  - Needs: D0 v2 (mini props + `ZONE_PROPS`). Until then, scale today's props to fill the gaps.
+
+- [ ] **L6: Boss at max size** (co-op, no losing, no timer)
+  - Reaching max size triggers a BOSS: a huge original character/structure that strolls in with music and a voice intro.
+  - Built on the L3 building contract plus glowing **weak spots**. Both players smash weak spots, each hit knocks big parts off, and the boss wobbles, stomps (harmless boings) and changes phase. Beating it gives a giant celebration, then the NEW WORLD button.
+  - Bosses can rotate per world/zone later.
+  - Needs: D5 (boss model), L2c.
+
+- [ ] **L7: Recorded voices (ElevenLabs, generated once)**
+  - `say(id)` plays `assets/sounds/voice/<id>.mp3` and falls back to today's robot voice if a file is missing.
+  - `tools/voice-lines.json` (id → text) + `tools/make-voices.mjs`: calls the ElevenLabs API with `ELEVENLABS_API_KEY` (env var only, never committed) and skips files that already exist, so new lines only cost new characters.
+  - Lines: size-ups, GIANT, NEW WORLD, MEGA SMASH variants, boss intro and defeat, every car name, animal launches.
+  - Logic owns `assets/sounds/voice/` and `tools/` (note it in CLAUDE.md). Needs from Kaden: voice choice and API key.
+
 - [ ] **L4: Animal launch ("kick the chicken")**
   - Animals are **never destroyed**. On hit they get launched in a big silly arc, spinning, with a cartoon sound (bawk, moo, oink) and a little feather/fluff puff. They land, shake it off, and wander again.
   - Simple wander AI: idle, walk and flee a little when cars are near. Herds and flocks stick together.
@@ -56,6 +80,15 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Give every smashable a size class: pass `{size:'tiny'|'small'|'medium'|'large'|'huge'}` in `makeObj`'s opts. Until then, logic guesses via `TYPE_SIZE` in `game.js` (cone/melon/fence/pin = tiny, barrel/crates/snowman = small, tree/tower = medium, house = large). Nothing is `huge` yet, so add something huge for giants to wreck (the "boss" building in D1).
   - Players start tiny, so the home arena (`buildWorld`) and every zone need lots of tiny and small stuff.
   - Style `#sizeHud` (spans get `.lit` / `.now`, plus `.crown`), `#sizeBar`/`#sizeFill` and `#newWorld` in `style.css`. Logic injects plain defaults with zero specificity (`:where()`), so anything in `style.css` wins.
+
+- [ ] **D0 v2: Mini props, size lists, giant stuff** (for L2c)
+  - Sizes are now `mini, tiny, small, medium, large, huge, mega`. Lots of **mini** props: flowers, pebbles, mushrooms, acorns, toy blocks, soda cans, rubber ducks, garden gnomes, snails (original designs only).
+  - Fill `const ZONE_PROPS={town:{mini:[...],tiny:[...],...},farm:{...},park:{...}}` with `OBJ` type names per zone per size. Logic scatters from it.
+  - Plan **huge** and **mega** objects using the L3 building contract: apartment tower, water tower, silo, stadium, skyscraper, cargo ship, ferris wheel, mountain-sized "boss" building.
+
+- [ ] **D5: Boss model(s)**
+  - One original boss for max size, built from L3-contract parts plus `BP(mesh, floor, 'weak')` glowing weak spots. Chunky, funny, not scary. Kaden and son to pick the concept (and maybe name it).
+  - Needs: L6 spec.
 
 - [ ] **D1: Zone layouts**
   - **Town:** streets with houses of different sizes, shops, a school, a fire station, a water tower, mailboxes, street lights, hydrants, parked cars (original designs), and a tall "boss" building to topple when giant.
