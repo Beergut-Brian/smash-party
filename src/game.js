@@ -45,29 +45,34 @@ function flash(x,y,z,color,size,life){const m=new THREE.Mesh(GEO.sph,new THREE.M
 /* ---------- smashing ---------- */
 let score=0,levelScore=0,level=1,goal=100,smashCount=0,shake=0;
 const queue=[];
+const _wp=new THREE.Vector3(),_q=new THREE.Quaternion(),_ws=new THREE.Vector3();
+// send one part flying: whole parts fly off intact, others shatter into `n` boxes. vyK scales the upward kick.
+function breakPart(o,part,nx,nz,power,vyK=1){
+  if(part.gone)return;part.gone=true;const m=part.mesh;
+  m.traverse(x=>x.userData.dead=true); // keeps it hidden in the chunk's instanced copy
+  m.getWorldPosition(_wp);const out=Math.atan2(_wp.x-o.x,_wp.z-o.z);
+  if(part.whole){
+    m.getWorldQuaternion(_q);m.getWorldScale(_ws);
+    scene.add(m);m.position.copy(_wp);m.quaternion.copy(_q);m.scale.copy(_ws);
+    const f=power*rand(.4,1.0);
+    addDebris(m,part.half,nx*f+Math.sin(out)*rand(1,5)+rand(-3,3),rand(4,11)*(0.6+power/45)*vyK,nz*f+Math.cos(out)*rand(1,5)+rand(-3,3));
+  }else{
+    m.getWorldScale(_ws);const s=_ws,vol=s.x*s.y*s.z/part.n;const cs0=clamp(Math.cbrt(vol),0.3,2.0);
+    for(let i=0;i<part.n;i++){const cs=cs0*rand(.7,1.15);
+      const c=new THREE.Mesh(GEO.box,m.material);c.castShadow=true;c.scale.set(cs*rand(.8,1.2),cs*rand(.6,1.1),cs*rand(.8,1.2));
+      c.position.set(_wp.x+rand(-s.x/2,s.x/2)*.8,_wp.y+rand(-s.y/2,s.y/2)*.8,_wp.z+rand(-s.z/2,s.z/2)*.8);c.rotation.set(rand(0,3),rand(0,3),rand(0,3));
+      const f=power*rand(.3,.85),oa=Math.atan2(c.position.x-o.x,c.position.z-o.z);
+      addDebris(c,cs*0.4,nx*f+Math.sin(oa)*rand(2,7),rand(5,13)*(0.6+power/45)*vyK,nz*f+Math.cos(oa)*rand(2,7));}
+    if(m.parent)m.parent.remove(m);
+  }
+}
 function smash(o,vx,vz,power){
-  if(!o.alive)return;o.alive=false;wakeObj(o);
+  if(!o.alive)return;
+  if(o.bld){collapse(o,0,vx,vz,power,true);return;}
+  o.alive=false;wakeObj(o);
   if(o.rec){o.rec.dead=true;o.rec.back=T+rand(REGROW[0],REGROW[1]);}
   const dl=Math.hypot(vx,vz)||1,nx=vx/dl,nz=vz/dl;
-  const wp=new THREE.Vector3(),q=new THREE.Quaternion(),ws=new THREE.Vector3();
-  o.g.updateMatrixWorld(true);
-  for(const part of o.parts){
-    const m=part.mesh;m.getWorldPosition(wp);
-    const out=Math.atan2(wp.x-o.x,wp.z-o.z);
-    if(part.whole){
-      m.getWorldQuaternion(q);m.getWorldScale(ws);
-      scene.add(m);m.position.copy(wp);m.quaternion.copy(q);m.scale.copy(ws);
-      const f=power*rand(.4,1.0);
-      addDebris(m,part.half,nx*f+Math.sin(out)*rand(1,5)+rand(-3,3),rand(4,11)*(0.6+power/45),nz*f+Math.cos(out)*rand(1,5)+rand(-3,3));
-    }else{
-      const s=m.scale,vol=s.x*s.y*s.z/part.n;const cs0=clamp(Math.cbrt(vol),0.3,2.0);
-      for(let i=0;i<part.n;i++){const cs=cs0*rand(.7,1.15);
-        const c=new THREE.Mesh(GEO.box,m.material);c.castShadow=true;c.scale.set(cs*rand(.8,1.2),cs*rand(.6,1.1),cs*rand(.8,1.2));
-        c.position.set(wp.x+rand(-s.x/2,s.x/2)*.8,wp.y+rand(-s.y/2,s.y/2)*.8,wp.z+rand(-s.z/2,s.z/2)*.8);c.rotation.set(rand(0,3),rand(0,3),rand(0,3));
-        const f=power*rand(.3,.85),oa=Math.atan2(c.position.x-o.x,c.position.z-o.z);
-        addDebris(c,cs*0.4,nx*f+Math.sin(oa)*rand(2,7),rand(5,13)*(0.6+power/45),nz*f+Math.cos(oa)*rand(2,7));}
-    }
-  }
+  for(const part of o.parts)breakPart(o,part,nx,nz,power);
   scene.remove(o.g);
   puff(o.x,0.5,o.z,o.big?7:3,o.big?2.2:1.2);
   sfx.crash(o.big);shake=Math.min(1.5,shake+(o.big?0.6:0.2));
@@ -80,6 +85,7 @@ function explode(x,z){
   for(let i=0;i<16;i++){const c=new THREE.Mesh(GEO.box,M(pick(['#ff7b00','#ffd60a','#333333','#e63946'])));c.castShadow=true;const s=rand(.4,1.1);c.scale.set(s,s,s);
     c.position.set(x,1.5,z);const a=rand(0,Math.PI*2),f=rand(12,24);addDebris(c,s*.4,Math.sin(a)*f,rand(8,18),Math.cos(a)*f);}
   for(const o of objects){if(!o.alive||o.falling)continue;const dx=o.x-x,dz=o.z-z,d=Math.hypot(dx,dz);
+    if(o.bld){if(d<9+o.r)queue.push({t:0.06+d*0.012,fn:()=>damageBuilding(o,x,z,9,99,-1,7,dx/(d||1),dz/(d||1),24)});continue;}
     if(d<8*Math.max(1,S*0.6)+o.r&&o.sz<=tier+1)queue.push({t:0.06+d*0.012,fn:()=>smash(o,dx,dz,26)});}
   for(const p of players){const dx=p.x-x,dz=p.z-z,d=Math.hypot(dx,dz)||1;
     if(d<10){p.air=true;p.vy=Math.max(p.vy,12);p.kx+=dx/d*14;p.kz+=dz/d*14;}}
@@ -92,6 +98,91 @@ function slam(p){
 function addScore(n){
   score+=n;levelScore+=n;
   if(levelScore>=goal){levelScore-=goal;level++;goal=100+level*40;mega();}
+}
+
+/* ---------- buildings: staged destruction ---------- */
+/* A building is made with makeObj(..., {building:true}) and its parts are tagged with BP(mesh,floor,kind) (core.js).
+   Hits knock parts out. When a floor loses too many walls, everything above it drops, tilts and pancakes floor by
+   floor, then the stump crumbles. Size decides the hit: way smaller = boing, smaller = chip 1–2 pieces,
+   same size = plow straight through, bigger = flatten in one hit. */
+const SUPPORT=0.5; // a floor holds up the rest while at least this share of its walls stand
+const collapsing=[];
+function initBld(o){
+  if(!o.building&&!o.parts.some(p=>p.mesh.userData.kind))return;
+  o.g.updateMatrixWorld(true);const bx=new THREE.Box3(),c=new THREE.Vector3(),fl={};
+  for(const p of o.parts){p.floor=p.mesh.userData.floor|0;p.kind=p.mesh.userData.kind||'extra';
+    bx.setFromObject(p.mesh);bx.getCenter(c);p.wx=c.x;p.wz=c.z;p.y0=bx.min.y;p.y1=bx.max.y;
+    const F=fl[p.floor]||(fl[p.floor]={walls:0,y0:1e9,y1:-1e9});F.walls+=p.kind==='wall';F.y0=Math.min(F.y0,p.y0);F.y1=Math.max(F.y1,p.y1);}
+  o.bld={fl};o.paid=0;
+}
+function killBld(o){ // the building is done for: score what's left, remember it, regrow later
+  o.alive=false;wakeObj(o);
+  if(o.rec){o.rec.dead=true;o.rec.gone=[];o.rec.back=T+rand(REGROW[0],REGROW[1]);}
+  const rest=Math.max(0,o.points-o.paid);smashCount++;addScore(rest);grow(rest);
+}
+function damageBuilding(o,x,z,rad,max,y0,y1,nx,nz,power){
+  if(!o.alive)return 0;wakeObj(o);
+  const hit=o.parts.filter(p=>!p.gone&&p.y1>y0&&p.y0<y1).map(p=>[p,Math.hypot(p.wx-x,p.wz-z)]).filter(a=>a[1]<rad).sort((a,b)=>a[1]-b[1]).slice(0,max);
+  if(!hit.length)return 0;
+  for(const [p] of hit){breakPart(o,p,nx,nz,power);if(o.rec)(o.rec.gone||(o.rec.gone=[])).push(o.parts.indexOf(p));}
+  const pts=o.points*hit.length/o.parts.length;o.paid+=pts;addScore(pts);grow(pts);
+  sfx.crash(hit.length>2);puff(x,1,z,2+hit.length,1.2,'#e8dcc8');shake=Math.min(1.5,shake+0.1*hit.length);
+  if(o.parts.every(p=>p.gone)){killBld(o);scene.remove(o.g);return hit.length;}
+  // lost too many walls on a floor? everything above it comes down
+  for(const f of Object.keys(o.bld.fl).map(Number).sort((a,b)=>a-b)){const F=o.bld.fl[f];
+    if(F.walls&&o.parts.filter(p=>!p.gone&&p.floor===f&&p.kind==='wall').length/F.walls<SUPPORT&&
+       o.parts.some(p=>!p.gone&&(p.floor>f||(p.floor===f&&p.kind==='roof')))){collapse(o,f,nx,nz,power*0.5);break;}}
+  return hit.length;
+}
+function dust(o,n){for(let i=0;i<n;i++)puff(o.x+rand(-o.r,o.r),rand(0.5,2.5),o.z+rand(-o.r,o.r),3,1.4+o.r*0.35,'#d9c9a8');}
+function collapse(o,k,vx,vz,power,fast){
+  if(!o.alive)return;killBld(o);
+  const dl=Math.hypot(vx,vz)||1,nx=vx/dl,nz=vz/dl,ry=o.g.rotation.y;
+  const fs=[...new Set(o.parts.filter(p=>!p.gone).map(p=>p.floor))].sort((a,b)=>a-b);
+  const up=new THREE.Group();o.g.add(up);
+  for(const p of o.parts)if(!p.gone&&p.floor>=k)up.add(p.mesh);
+  o.col={up,upper:fs.filter(f=>f>=k),lower:fs.filter(f=>f<k).reverse(),need:0,fallen:0,vy:0,tilt:0,t:0,
+    lx:nx*Math.cos(ry)-nz*Math.sin(ry),lz:nx*Math.sin(ry)+nz*Math.cos(ry),g:fast?70:34,nx,nz,power:Math.max(8,power)};
+  crumbleFloor(o,o.col.upper.shift()); // the floor that gave way goes first
+  collapsing.push(o);sfx.rumble();sfx.crash(true);shake=Math.min(2,shake+(fast?1.3:0.8));dust(o,fast?6:3);
+}
+function crumbleFloor(o,f){const c=o.col;
+  for(const p of o.parts)if(!p.gone&&p.floor===f)breakPart(o,p,c.nx,c.nz,c.power*0.5,0.4);
+  const F=o.bld.fl[f];c.need+=F?Math.max(0.6,F.y1-F.y0):1;}
+function updateCollapses(dt){
+  for(let i=collapsing.length-1;i>=0;i--){const o=collapsing[i],c=o.col;
+    if(c.upper.length){ // the upper floors fall as one block, tilting, and pancake when they land
+      c.vy+=c.g*dt;c.fallen=Math.min(c.need,c.fallen+c.vy*dt);c.tilt=Math.min(0.3,c.tilt+dt*0.3);
+      c.up.position.y=-c.fallen;c.up.rotation.x=c.tilt*c.lz;c.up.rotation.z=-c.tilt*c.lx;
+      if(c.fallen>=c.need){sfx.thud();shake=Math.min(2,shake+0.35);dust(o,2);crumbleFloor(o,c.upper.shift());c.vy*=0.2;}
+      continue;}
+    if(c.lower.length){if((c.t-=dt)<=0){c.t=0.16;crumbleFloor(o,c.lower.shift());dust(o,2);}continue;}
+    dust(o,4);scene.remove(o.g);collapsing.splice(i,1);
+  }
+}
+function hitBuilding(p,o,dx,dz,rr,spd,vx,vz){
+  const diff=o.sz-tier;
+  if(diff>=3||(spd<4&&!p.air)){bump(p,o,dx,dz,rr,spd);return;}
+  const pw=Math.max(spd,10)*Math.sqrt(Math.max(1,S)),nx=vx/(spd||1),nz=vz/(spd||1);
+  if(diff<0){collapse(o,0,vx||dx,vz||dz,pw,true);p.speed*=0.95;return;}               // bigger: flatten it
+  const d=Math.hypot(dx,dz)||1,y0=p.y-0.3,y1=p.y+(p.model.h+1)*S;                       // what the car can reach
+  if(diff===0){if(o.hitT>T)return;o.hitT=T+0.1;                                       // same size: plow through
+    damageBuilding(o,p.x+dx/d*p.r,p.z+dz/d*p.r,p.r+2.5,99,y0,y1,nx,nz,pw);p.speed*=0.85;return;}
+  if(!(o.hitT>T)){o.hitT=T+0.3;damageBuilding(o,p.x,p.z,99,diff===1?2:1,y0,y1,nx,nz,pw*0.6);} // smaller: chip
+  bump(p,o,dx,dz,rr,spd);
+}
+// Reference building for D2 and testing (__sp.building). Design's real buildings live in objects.js.
+function demoBuilding(x,z,floors=3){
+  const fh=3,w=6.4;
+  const o=makeObj(x,z,w*0.62,floors*fh+2.5,10+floors*8,(P,g)=>{
+    for(let f=0;f<floors;f++){const y=f*fh,col=pick(PASTEL);
+      for(let s=0;s<4;s++)for(let k=0;k<3;k++){const a=-w/2+w/6+k*w/3,e=w/2-0.25;
+        P(BP(s<2?mk('box',w/3,fh,0.5,col,a,y+fh/2,s?e:-e):mk('box',0.5,fh,w/3,col,s==2?e:-e,y+fh/2,a),f,'wall'),3);}
+      P(BP(mk('box',1,1.1,0.2,'#a0e7ff',-1.6,y+fh*0.55,w/2),f,'extra'),1,true,0.5);P(BP(mk('box',1,1.1,0.2,'#a0e7ff',1.6,y+fh*0.55,w/2),f,'extra'),1,true,0.5);
+      P(BP(mk('box',w,0.3,w,'#dddddd',0,y+fh,0),f,'slab'),4);}
+    P(BP(mk('pyr',w*1.4,2.4,w*1.4,pick(ROOF),0,floors*fh+1.35,0),floors,'roof'),8);
+  },{building:true,size:'large',big:true});
+  o.type='demo';o.chunk=chunkOf(x,z).k;o.sz=sizeClass(o);initBld(o);return o;
 }
 
 /* ---------- growth (shared by both players) ---------- */
@@ -128,6 +219,7 @@ function newWorld(){
   for(const c of chunks.values())if(c.loaded)unloadChunk(c);
   for(const c of chunks.values())for(const r of c.rampList)r.mesh.geometry.dispose();
   chunks.clear();for(const o of objects)scene.remove(o.g);objects=[];queue.length=0;
+  for(const o of collapsing)scene.remove(o.g);collapsing.length=0;
   for(const d of debris)if(!d.confetti){scene.remove(d.m);d.life=0;}
   worldSeed=(Math.random()*1e9)|0;setZoneMap(randomZoneMap(mulberry(worldSeed)));
   buildWorld();captureHome();
@@ -201,7 +293,7 @@ function getChunk(ci,cj){const k=chunkKey(ci,cj);let c=chunks.get(k);
   return c;}
 const chunkOf=(x,z)=>getChunk(chunkIdx(x),chunkIdx(z));
 // tag every object with its type/arg/chunk so it can be rebuilt and streamed
-for(const t in OBJ){const f=OBJ[t];OBJ[t]=(x,z,arg)=>{const o=f(x,z,arg);o.type=t;o.arg=arg;o.chunk=chunkOf(x,z).k;o.sz=sizeClass(o);return o;};}
+for(const t in OBJ){const f=OBJ[t];OBJ[t]=(x,z,arg)=>{const o=f(x,z,arg);o.type=t;o.arg=arg;o.chunk=chunkOf(x,z).k;o.sz=sizeClass(o);initBld(o);return o;};}
 // deterministic randomness, so a chunk (and each house in it) looks the same every time it's rebuilt
 function mulberry(a){return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 function withSeed(seed,fn){const r=Math.random;Math.random=mulberry(seed);try{return fn();}finally{Math.random=r;}}
@@ -265,7 +357,9 @@ function captureHome(){
   objects=[];
   for(const r of ramps.slice()){removeRamp(r);chunkOf(r.x,r.z).rampList.push(r);}
 }
-function buildRec(rec){const o=withSeed(rec.seed,()=>OBJ[rec.type](rec.x,rec.z,rec.arg));o.rec=rec;return o;}
+function buildRec(rec){const o=withSeed(rec.seed,()=>OBJ[rec.type](rec.x,rec.z,rec.arg));o.rec=rec;
+  if(o.bld&&rec.gone)for(const i of rec.gone){const p=o.parts[i];if(p&&!p.gone){p.gone=true;p.mesh.parent.remove(p.mesh);o.paid+=o.points/o.parts.length;}}
+  return o;}
 
 const HIDE=new THREE.Matrix4().makeTranslation(0,-9999,0),instMats={};
 const instMat=m=>instMats[m.id]||(instMats[m.id]=m.clone()); // own material so plain + instanced meshes don't swap shader programs
@@ -279,10 +373,10 @@ function loadChunk(c){
     if(rec.dead){if(T<rec.back)continue;rec.dead=false;}
     const o=buildRec(rec);scene.remove(o.g);o.g.updateMatrixWorld(true);o.inst=[];o.sleep=true;sleepers.push(o);
     o.g.traverse(m=>{if(!m.isMesh)return;const k=m.geometry.id+'_'+m.material.id;let b=batches.get(k);
-      if(!b)batches.set(k,b={geo:m.geometry,mat:m.material,list:[]});o.inst.push([b,b.list.length]);b.list.push(m.matrixWorld.clone());});}
+      if(!b)batches.set(k,b={geo:m.geometry,mat:m.material,list:[]});o.inst.push([b,b.list.length,m]);b.list.push(m.matrixWorld.clone());});}
   for(const b of batches.values()){const im=new THREE.InstancedMesh(b.geo,instMat(b.mat),b.list.length);
     b.list.forEach((m,i)=>im.setMatrixAt(i,m));im.castShadow=im.receiveShadow=true;im.frustumCulled=false;c.group.add(im);b.im=im;}
-  for(const o of sleepers)o.inst=o.inst.map(([b,i])=>[b.im,i,b.list[i]]);
+  for(const o of sleepers)o.inst=o.inst.map(([b,i,mesh])=>[b.im,i,b.list[i],mesh]);
 }
 function unloadChunk(c){
   c.loaded=false;
@@ -291,7 +385,7 @@ function unloadChunk(c){
   c.group.traverse(m=>{if(m.isInstancedMesh)m.dispose();});scene.remove(c.group);c.group=null;
 }
 function wakeObj(o){if(!o.sleep)return;o.sleep=false;for(const [im,i] of o.inst){im.setMatrixAt(i,HIDE);im.instanceMatrix.needsUpdate=true;}scene.add(o.g);}
-function sleepObj(o){o.sleep=true;for(const [im,i,m] of o.inst){im.setMatrixAt(i,m);im.instanceMatrix.needsUpdate=true;}scene.remove(o.g);}
+function sleepObj(o){o.sleep=true;for(const [im,i,m,mesh] of o.inst){im.setMatrixAt(i,mesh.userData.dead?HIDE:m);im.instanceMatrix.needsUpdate=true;}scene.remove(o.g);}
 function streamR(){return (IS_PHONE?0.7:1)*(110+camDist*1.1);} // camDist already grows with car size
 function rectDist(c,x,z){return Math.hypot(Math.max(c.x0-x,0,x-c.x0-CHUNK),Math.max(c.z0-z,0,z-c.z0-CHUNK));}
 let regrowT=0;
@@ -474,6 +568,7 @@ function collisions(){
   for(const p of players){const vx=Math.sin(p.heading)*p.speed+p.kx,vz=Math.cos(p.heading)*p.speed+p.kz,spd=Math.hypot(vx,vz);
     for(const o of objects){if(!o.alive||(o.falling&&o.fy>p.y+3*S))continue;const dx=o.x-p.x,dz=o.z-p.z,rr=p.r+o.r;
       if(dx*dx+dz*dz<rr*rr&&p.y<o.h+o.fy){
+        if(o.bld){hitBuilding(p,o,dx,dz,rr,spd,vx,vz);continue;}
         if(o.sz>tier){bump(p,o,dx,dz,rr,spd);continue;}
         if(spd>4||p.air){smash(o,vx||dx,vz||dz,Math.max(spd,10)*Math.sqrt(Math.max(1,S)));p.speed*=o.big&&o.sz>=tier?0.8:0.96;}
         else{const d=Math.hypot(dx,dz)||1;p.x-=dx/d*(rr-d);p.z-=dz/d*(rr-d);}}}}
@@ -529,12 +624,12 @@ function loop(now){
   updateGrowth(dt);updateStreaming(dt);
   if(state==='play')collisions();
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
-  updateObjects(dt);updateDebris(dt);updateParts(dt);
+  updateObjects(dt);updateCollapses(dt);updateDebris(dt);updateParts(dt);
   updateCamera(dt,T);cullChunks();updateHUD();
   renderer.render(scene,camera);
   pressed.clear();touch.jumpP=false;touch.swapP=false;
 }
 requestAnimationFrame(loop);
-window.__sp={mega,explode,addScore,chunks,grow,newWorld,
+window.__sp={mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,
   tp(x,z,i=0){const p=players[i];if(p){p.x=x;p.z=z;p.y=groundH(x,z);camT.set(x,0,z);}},
   stats(){let l=0;chunks.forEach(c=>l+=c.loaded);const i=renderer.info.render;return {chunks:l,objects:objects.length,awake:objects.filter(o=>!o.sleep).length,debris:debris.length,calls:i.calls,tris:i.triangles};}};

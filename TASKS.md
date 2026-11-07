@@ -32,7 +32,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - **Max size (decided):** stay giant. Show a big on-screen celebration with a clear "NEW WORLD!" button (controller button + tap) that starts a fresh world when the players choose. Never forced.
   - Needs: L1 (camera and streaming radius must scale with size).
 
-- [ ] **L3: Collapsing buildings**
+- [x] **L3: Collapsing buildings**
   - Replace instant shatter with **staged destruction**: hits knock out wall chunks, and when enough support is gone the building collapses floor by floor (upper parts drop, tilt and crumble), with a dust cloud and rumble.
   - Small players chip pieces off. Big players smash straight through. Giant players flatten in one hit.
   - Define a building "part contract" that design follows (floors, walls, roof, extras), and document it in `CLAUDE.md`.
@@ -69,7 +69,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 
 - [ ] **D2: Destructible buildings**
   - Build every building from separate parts per the L3 part contract (floors, walls, roof, details) so they can crumble in stages. Vary colors and styles. Chunky, toy-like, readable from far away.
-  - Needs: L3 (part contract).
+  - Needs: L3 (part contract). ✅ L3 is done. The contract is in `CLAUDE.md` under "Building (staged destruction)", with a working example in `demoBuilding()` (game.js). Convert today's `house` to the contract too, so the home arena's houses crumble.
 
 - [ ] **D3: Farm and park animals**
   - Cute, chunky, low-poly: chicken, rooster, duck, cow, pig, sheep, goat, horse, dog, cat, bunny, goose.

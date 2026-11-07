@@ -47,6 +47,12 @@ Check `TASKS.md` before starting. Take the top unchecked task in your section, c
   Model faces +Z, about 4–5 units long, under ~20k triangles. Meshes named `*wheel*` spin.
 - **Zone layout:** define `const ZONE_LAYOUT={town(ctx){…},farm(ctx){…},park(ctx){…},home(ctx){…}}` in `objects.js`. Each function fills one 80×80 chunk. `ctx` has `zone, ci, cj, x0, z0, x1, z1, cx, cz, size` plus `place(type,x,z,arg,r)`, `ramp(x,z,th,L,W,H)` and `free(x,z,r)`. `place` and `ramp` return false (and do nothing) if the spot is off the chunk, on a road, on a ramp or overlapping. `Math.random`/`rand`/`pick` are seeded while a layout runs, so the same chunk always comes out the same. Which zone each chunk is in lives in `ZONE_MAP` (`core.js`).
 - **Smashable object:** add to `OBJ` using `makeObj(x,z,radius,height,points,build)`. In `build`, register parts with `P(mesh, chunks, whole, half)` — `whole:true` flies off intact, otherwise it shatters into `chunks` boxes. Add it to `SPAWN_W` to respawn. Give it a size class with opts `{size:'tiny'|'small'|'medium'|'large'|'huge'}`. Players can only smash things at or below their current size; bigger things wobble and boing them back.
+- **Building (staged destruction):** make it with `makeObj(x,z,r,h,points,build,{building:true,size:'large'})` and tag every part with `BP(mesh, floor, kind)` (from `core.js`): `P(BP(mk(...), 0, 'wall'), 3)`.
+  - `floor`: 0 = ground floor, counting up. Put the roof on the floor above the top storey (or tag it `'roof'` on the top floor).
+  - `kind`: `'wall'` holds up everything above it. Build each storey from **several** wall pieces (about 8–12, e.g. 3 per side) so they can be knocked out one at a time. `'slab'` is a floor or ceiling plate, `'roof'` is the roof, and `'extra'` covers windows, doors, signs and chimneys (usually `whole:true` so they pop off intact).
+  - Storey heights come from the parts themselves, so no numbers are needed. Keep it under ~60 parts.
+  - What happens: when fewer than half (`SUPPORT`) of a storey's walls are left, everything above it drops, tilts and pancakes storey by storey, then the stump crumbles. Way-smaller cars boing off, smaller cars chip 1–2 pieces, same-size cars plow through and bigger cars flatten it. Barrel blasts blow out nearby parts. Knocked-out parts are remembered per chunk.
+  - Working example: `demoBuilding()` in `game.js`. Try `__sp.building(x,z,floors)` in the console.
 
 ## Testing
 - Serve locally (`python3 -m http.server`) — model cars only load over http, not `file://`.

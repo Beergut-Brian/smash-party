@@ -44,6 +44,8 @@ function mk(shape,sx,sy,sz,color,x=0,y=0,z=0,mat){
   const m=new THREE.Mesh(GEO[shape],mat||M(color));
   m.scale.set(sx,sy,sz);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;return m;
 }
+// building part tag (see "Buildings" in CLAUDE.md): floor 0 = ground floor; kind = 'wall' | 'slab' | 'roof' | 'extra'
+function BP(mesh,floor,kind='wall'){mesh.userData.floor=floor;mesh.userData.kind=kind;return mesh;}
 
 /* ---------- world ---------- */
 /* Zone map: one letter per chunk. Rows run from -Z (top of screen) to +Z, columns from -X to +X.
@@ -140,6 +142,7 @@ function tone(type,f0,f1,dur,vol,delay=0){if(!AC)return;const t=AC.currentTime+d
 let lastCrash=0,lastThud=0;
 const sfx={
   crash(big){const n=performance.now();if(n-lastCrash<45)return;lastCrash=n;noise(big?0.6:0.3,rand(700,1500),0.8,big?0.7:0.45);noise(0.15,3500,1,0.18,'highpass');tone('square',rand(180,420),50,0.14,0.07);},
+  rumble(){noise(1.6,160,0.7,0.9,'lowpass',35);tone('sine',70,28,1.4,0.6);},
   boom(){noise(1.3,700,0.7,1,'lowpass',70);tone('sine',150,32,0.9,0.7);},
   boing(){tone('sine',200,520,0.28,0.35);tone('triangle',260,640,0.2,0.12);},
   jump(){tone('triangle',300,900,0.22,0.22);},
