@@ -88,5 +88,70 @@
   "prompt": "Big cartoon BONK hit with a sparkly ding",
   "dur": 0.8,
   "hash": "b751799452d0"
+ },
+ "crash_1": {
+  "prompt": "Toy wooden blocks smashing apart, crunchy crash",
+  "dur": 0.6,
+  "hash": "6962cb3da294"
+ },
+ "crash_2": {
+  "prompt": "Plastic toys breaking with a bouncy crunch",
+  "dur": 0.6,
+  "hash": "1bc0b531d9b7"
+ },
+ "crash_3": {
+  "prompt": "Quick crunchy smash with sparkly bits",
+  "dur": 0.6,
+  "hash": "3dbed05273ed"
+ },
+ "crash_big": {
+  "prompt": "Big house smash, crumbling crash with tumbling blocks",
+  "dur": 1.2,
+  "hash": "2732911109c4"
+ },
+ "boom": {
+  "prompt": "Big chunky explosion boom with crackle",
+  "dur": 1.5,
+  "hash": "fc0b3a4dbd79"
+ },
+ "boing": {
+  "prompt": "Springy bounce boing, rising pitch",
+  "dur": 0.5,
+  "hash": "e05ac8806e33"
+ },
+ "jump": {
+  "prompt": "Jump sound, quick rising bleep",
+  "dur": 0.5,
+  "hash": "8537149be6de"
+ },
+ "thud": {
+  "prompt": "Heavy landing thud with a little bounce",
+  "dur": 0.5,
+  "hash": "b3bc1064612d"
+ },
+ "turbo": {
+  "prompt": "Turbo boost whoosh with rising engine rev",
+  "dur": 0.8,
+  "hash": "3b9583ac2faa"
+ },
+ "pop": {
+  "prompt": "Bright happy pop and sparkle, new item",
+  "dur": 0.5,
+  "hash": "fb398fa88ba2"
+ },
+ "join": {
+  "prompt": "Player joins jingle, four quick rising happy notes",
+  "dur": 0.8,
+  "hash": "57ebff8296dd"
+ },
+ "fanfare": {
+  "prompt": "Short level-up fanfare, triumphant rising arpeggio",
+  "dur": 1.6,
+  "hash": "14d148b6c350"
+ },
+ "rumble": {
+  "prompt": "Building collapsing, deep rumble and crumbling blocks",
+  "dur": 1.8,
+  "hash": "ed00c8f04cda"
  }
 }

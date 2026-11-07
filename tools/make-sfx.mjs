@@ -23,7 +23,7 @@ if (!dry && !key) { console.error('Missing ELEVENLABS_API_KEY (put it in .env an
 let made = 0;
 for (const [id, s] of Object.entries(cfg.sounds)) {
   if (only && !only.has(id)) continue;
-  const text = s.prompt + (cfg.style ? ', ' + cfg.style : '');
+  const style = s.style ?? cfg.style, text = s.prompt + (style ? ', ' + style : '');
   const body = { text, duration_seconds: s.dur, prompt_influence: s.influence ?? 0.6 };
   const hash = crypto.createHash('sha1').update(JSON.stringify(body)).digest('hex').slice(0, 12);
   const file = path.join(outDir, id + '.mp3');

@@ -68,7 +68,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Launching animals gives a small bonus to the meter but **no growth** (we don't "eat" animals).
   - If launched out of the loaded area, quietly respawn them back near their pen.
 
-- [ ] **L8: 8-bit music + recorded sound effects (ElevenLabs)**
+- [x] **L8: 8-bit music + recorded sound effects (ElevenLabs)**
   - Kaden upgraded ElevenLabs for this. `tools/make-sfx.mjs` + `sfx-lines.json` already make the animal sounds.
   - Chiptune / 8-bit background music: a calm "driving around" loop, a hype loop for MEGA/size-ups, a boss theme, and a giant/victory fanfare. Loop seamlessly and duck under voice lines.
   - Replace the synth sfx (crash, boom, boing, jump, thud, turbo, pop, fanfare) with generated ones in the same toy/8-bit style, keeping the synth versions as fallback. Keep total audio download small for phones (lazy-load music).

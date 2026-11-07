@@ -1,0 +1,22 @@
+{
+ "title": {
+  "prompt": "Cheerful catchy title-screen theme, bouncy melody, medium tempo, invites you to press start, seamless loop, no ending",
+  "seconds": 45,
+  "hash": "8d09bf175892"
+ },
+ "drive": {
+  "prompt": "Upbeat bouncy driving music for a co-op smash-everything game, playful bassline, steady snappy drums, happy and energetic but not frantic, seamless loop, no intro and no ending",
+  "seconds": 90,
+  "hash": "2f03c771e2e5"
+ },
+ "boss": {
+  "prompt": "Goofy epic boss battle music, fast and dramatic but silly and fun, never scary, driving arpeggios and big drums, seamless loop, no ending",
+  "seconds": 75,
+  "hash": "032237c9cd7e"
+ },
+ "victory": {
+  "prompt": "Triumphant victory fanfare, bright and happy, ends on a big final chord",
+  "seconds": 12,
+  "hash": "da3a37ddceb7"
+ }
+}

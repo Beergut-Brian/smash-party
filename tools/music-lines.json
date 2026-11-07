@@ -1,0 +1,22 @@
+{
+  "notes": "Background music made with the ElevenLabs Music API. id -> {prompt, seconds}. Played by music(id) in core.js; tracks loop with a crossfade, so avoid big endings on looping tracks. Run: node --env-file=.env tools/make-music.mjs",
+  "style": "8-bit chiptune, NES / Game Boy style square and triangle waves, kids video game, instrumental, no vocals",
+  "tracks": {
+    "title": {
+      "prompt": "Cheerful catchy title-screen theme, bouncy melody, medium tempo, invites you to press start, seamless loop, no ending",
+      "seconds": 45
+    },
+    "drive": {
+      "prompt": "Upbeat bouncy driving music for a co-op smash-everything game, playful bassline, steady snappy drums, happy and energetic but not frantic, seamless loop, no intro and no ending",
+      "seconds": 90
+    },
+    "boss": {
+      "prompt": "Goofy epic boss battle music, fast and dramatic but silly and fun, never scary, driving arpeggios and big drums, seamless loop, no ending",
+      "seconds": 75
+    },
+    "victory": {
+      "prompt": "Triumphant victory fanfare, bright and happy, ends on a big final chord",
+      "seconds": 12
+    }
+  }
+}

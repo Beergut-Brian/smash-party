@@ -139,14 +139,14 @@ function noise(dur,freq,q,vol,type='lowpass',fEnd){if(!AC)return;const t=AC.curr
   const g=AC.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+dur);s.connect(f);f.connect(g);g.connect(master);s.start(t,Math.random()*0.5);s.stop(t+dur+0.05);}
 function tone(type,f0,f1,dur,vol,delay=0){if(!AC)return;const t=AC.currentTime+delay;const o=AC.createOscillator();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+dur);
   const g=AC.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.001,t+dur);o.connect(g);g.connect(master);o.start(t);o.stop(t+dur+0.05);}
-let lastCrash=0,lastThud=0;
-const sfx={
-  crash(big){const n=performance.now();if(n-lastCrash<45)return;lastCrash=n;noise(big?0.6:0.3,rand(700,1500),0.8,big?0.7:0.45);noise(0.15,3500,1,0.18,'highpass');tone('square',rand(180,420),50,0.14,0.07);},
+// synth versions: used when a recorded clip (tools/sfx-lines.json) isn't available
+const synth={
+  crash(big){noise(big?0.6:0.3,rand(700,1500),0.8,big?0.7:0.45);noise(0.15,3500,1,0.18,'highpass');tone('square',rand(180,420),50,0.14,0.07);},
   rumble(){noise(1.6,160,0.7,0.9,'lowpass',35);tone('sine',70,28,1.4,0.6);},
   boom(){noise(1.3,700,0.7,1,'lowpass',70);tone('sine',150,32,0.9,0.7);},
   boing(){tone('sine',200,520,0.28,0.35);tone('triangle',260,640,0.2,0.12);},
   jump(){tone('triangle',300,900,0.22,0.22);},
-  thud(){const n=performance.now();if(n-lastThud<80)return;lastThud=n;noise(0.25,260,1,0.45);tone('sine',95,40,0.25,0.35);},
+  thud(){noise(0.25,260,1,0.45);tone('sine',95,40,0.25,0.35);},
   turbo(){noise(0.6,350,2,0.3,'bandpass',2600);},
   pop(){tone('sine',500,1300,0.12,0.25);tone('sine',800,1800,0.12,0.15,0.08);},
   join(){[392,523,659,784].forEach((f,i)=>tone('triangle',f,f,0.16,0.2,i*0.08));},
@@ -155,23 +155,54 @@ const sfx={
 /* Recorded clips made once with ElevenLabs (tools/). A bank is a folder with <id>.mp3 files + index.json.
    Clips decode after the first tap/key (AudioContext), and anything missing quietly falls back. */
 const banks=[];
-function clipBank(dir){const b={dir,index:{},bufs:{}};banks.push(b);
+function clipBank(dir,lazy){const b={dir,index:{},bufs:{},lazy};banks.push(b);
   fetch(dir+'index.json').then(r=>r.ok?r.json():{}).then(j=>{b.index=j||{};loadBank(b);}).catch(()=>{});return b;}
-function loadBank(b){if(!AC)return;
+function loadBank(b){if(!AC||b.lazy)return;
   for(const id in b.index)if(!b.bufs[id]){b.bufs[id]='loading';
     fetch(b.dir+id+'.mp3').then(r=>r.arrayBuffer()).then(x=>AC.decodeAudioData(x)).then(buf=>{b.bufs[id]=buf;}).catch(()=>{delete b.bufs[id];});}}
+function loadClip(b,id){const have=b.bufs[id];if(have&&have!=='loading')return Promise.resolve(have);if(!AC||!b.index[id])return Promise.reject();
+  b.wait=b.wait||{};return b.wait[id]||(b.wait[id]=fetch(b.dir+id+'.mp3').then(r=>r.arrayBuffer()).then(x=>AC.decodeAudioData(x)).then(buf=>b.bufs[id]=buf));}
 function playClip(b,id,vol=1,rate=1){const buf=b.bufs[id];if(!AC||!buf||buf==='loading')return null;
   const s=AC.createBufferSource(),g=AC.createGain();s.buffer=buf;s.playbackRate.value=rate;g.gain.value=vol;s.connect(g);g.connect(master);s.start();return s;}
 const voiceBank=clipBank('assets/sounds/voice/'),sfxBank=clipBank('assets/sounds/sfx/');
-// sound effect clip (tools/sfx-lines.json); returns false if it isn't available so callers can use a synth sound instead
-function sfxClip(id,vol=0.8,rate=1){return !!playClip(sfxBank,id,vol,rate);}
+// sound effect clip (tools/sfx-lines.json); returns false if it isn't available so callers can use a synth sound instead.
+// Ids with variants (crash_1, crash_2…) are played as sfxClip('crash') and pick one at random.
+const sfxVariants={};
+function sfxClip(id,vol=0.8,rate=1){
+  if(!sfxBank.bufs[id]){const v=sfxVariants[id]||(sfxVariants[id]=Object.keys(sfxBank.index).filter(k=>k.startsWith(id+'_')&&/^\d+$/.test(k.slice(id.length+1))));
+    const ready=v.filter(k=>sfxBank.bufs[k]&&sfxBank.bufs[k]!=='loading');if(ready.length)id=pick(ready);}
+  return !!playClip(sfxBank,id,vol,rate);}
+const SFX_VOL={crash:0.5,crash_big:0.75,rumble:0.8,boom:0.85,boing:0.55,jump:0.45,thud:0.55,turbo:0.5,pop:0.55,join:0.6,fanfare:0.65};
+const SFX_GAP={crash:45,thud:80,boom:60};const sfxLast={};
+const sfx={};
+for(const k in synth)sfx[k]=(...a)=>{const n=performance.now();if(n-(sfxLast[k]||0)<(SFX_GAP[k]||30))return;sfxLast[k]=n;
+  const id=k==='crash'&&a[0]?'crash_big':k;if(!sfxClip(id,SFX_VOL[id]||0.6,rand(0.93,1.07)))synth[k](...a);};
+
+/* Background music (tools/make-music.mjs → assets/sounds/music/). music(id) crossfades to that track; looping
+   tracks restart with a crossfade before they end; music(id,{loop:false,then:'drive'}) plays once and moves on.
+   Tracks download only when first wanted (phones). Voice lines duck the music. */
+const musicBank=clipBank('assets/sounds/music/',true),MUSIC_VOL=0.3,MUSIC_XF=1.5;
+let musicGain=null,musicWant=null,mTrack=null;
+function music(id,opts={}){if(musicWant&&musicWant.id===id)return;musicWant={id,loop:opts.loop!==false,then:opts.then};}
+function playTrackNow(id,buf,loop){const t=AC.currentTime;
+  if(!musicGain){musicGain=AC.createGain();musicGain.gain.value=MUSIC_VOL;musicGain.connect(master);}
+  if(mTrack){const g=mTrack.g.gain;g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(0,t+MUSIC_XF);try{mTrack.src.stop(t+MUSIC_XF+0.05);}catch(e){}}
+  const src=AC.createBufferSource(),g=AC.createGain();src.buffer=buf;src.connect(g);g.connect(musicGain);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(1,t+MUSIC_XF);src.start(t);mTrack={id,src,g,start:t,dur:buf.duration,loop};}
+function updateMusic(){const w=musicWant;if(!AC||!w)return;
+  if(!mTrack||mTrack.id!==w.id){if(!w.pending&&musicBank.index[w.id]){w.pending=true;
+      loadClip(musicBank,w.id).then(buf=>{if(musicWant===w)playTrackNow(w.id,buf,w.loop);}).catch(()=>{});}return;}
+  const left=mTrack.start+mTrack.dur-AC.currentTime;
+  if(mTrack.loop&&left<MUSIC_XF+0.1)playTrackNow(mTrack.id,mTrack.src.buffer,true);
+  else if(!mTrack.loop&&left<0.6&&w.then)music(w.then);}
+function duckMusic(sec){if(!musicGain)return;const t=AC.currentTime,g=musicGain.gain;g.cancelScheduledValues(t);g.setTargetAtTime(MUSIC_VOL*0.4,t,0.05);g.setTargetAtTime(MUSIC_VOL,t+sec,0.3);}
 /* Voice: say(text) plays the clip whose name is the text's slug ("MEGA SMASH!" → mega_smash.mp3),
    else the browser's robot voice. */
 const voiceSlug=t=>t.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,''); // must match make-voices.mjs
 let voiceSrc=null;
 function stopVoice(){try{speechSynthesis.cancel();}catch(e){}if(voiceSrc){try{voiceSrc.stop();}catch(e){}voiceSrc=null;}}
 function say(text){if(muted)return;const id=voiceSlug(text),buf=voiceBank.bufs[id];
-  if(buf&&buf!=='loading'&&AC){stopVoice();voiceSrc=playClip(voiceBank,id,1.5);return;}
+  if(buf&&buf!=='loading'&&AC){stopVoice();voiceSrc=playClip(voiceBank,id,1.5);duckMusic(buf.duration);return;}
   try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=1.05;u.pitch=1.45;speechSynthesis.speak(u);}catch(e){}}
 function toggleMute(){muted=!muted;if(master)master.gain.value=muted?0:0.6;if(muted)stopVoice();$('muteBtn').textContent=muted?'🔇':'🔊';}
 function toggleFS(){try{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen().catch(()=>{});}catch(e){}}

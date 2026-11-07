@@ -1,5 +1,5 @@
 {
-  "notes": "Sound effects made with ElevenLabs sound generation. id -> {prompt, dur (seconds, 0.5-30), influence (0-1, how literally to follow the prompt)}. Game plays them with sfxClip(id). Run: node --env-file=.env tools/make-sfx.mjs",
+  "notes": "Sound effects made with ElevenLabs sound generation. id -> {prompt, dur (seconds, 0.5-30), influence (0-1, how literally to follow the prompt)}. Game plays them with sfxClip(id). Run: node --env-file=.env tools/make-sfx.mjs A sound can set its own \"style\" (\"\" for none). Ids ending _1, _2… are variants: sfxClip('crash') picks one at random.",
   "style": "cartoon, funny, bright, kids video game, clean, no music",
   "sounds": {
     "chicken": {
@@ -73,6 +73,71 @@
     "bonk": {
       "prompt": "Big cartoon BONK hit with a sparkly ding",
       "dur": 0.8
+    },
+    "crash_1": {
+      "prompt": "Toy wooden blocks smashing apart, crunchy crash",
+      "dur": 0.6,
+      "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
+    },
+    "crash_2": {
+      "prompt": "Plastic toys breaking with a bouncy crunch",
+      "dur": 0.6,
+      "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
+    },
+    "crash_3": {
+      "prompt": "Quick crunchy smash with sparkly bits",
+      "dur": 0.6,
+      "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
+    },
+    "crash_big": {
+      "prompt": "Big house smash, crumbling crash with tumbling blocks",
+      "dur": 1.2,
+      "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
+    },
+    "boom": {
+      "prompt": "Big chunky explosion boom with crackle",
+      "dur": 1.5,
+      "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
+    },
+    "boing": {
+      "prompt": "Springy bounce boing, rising pitch",
+      "dur": 0.5,
+      "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
+    },
+    "jump": {
+      "prompt": "Jump sound, quick rising bleep",
+      "dur": 0.5,
+      "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
+    },
+    "thud": {
+      "prompt": "Heavy landing thud with a little bounce",
+      "dur": 0.5,
+      "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
+    },
+    "turbo": {
+      "prompt": "Turbo boost whoosh with rising engine rev",
+      "dur": 0.8,
+      "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
+    },
+    "pop": {
+      "prompt": "Bright happy pop and sparkle, new item",
+      "dur": 0.5,
+      "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
+    },
+    "join": {
+      "prompt": "Player joins jingle, four quick rising happy notes",
+      "dur": 0.8,
+      "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
+    },
+    "fanfare": {
+      "prompt": "Short level-up fanfare, triumphant rising arpeggio",
+      "dur": 1.6,
+      "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
+    },
+    "rumble": {
+      "prompt": "Building collapsing, deep rumble and crumbling blocks",
+      "dur": 1.8,
+      "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
     }
   }
 }

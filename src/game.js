@@ -244,7 +244,7 @@ function newWorld(){
   growth=0;tier=0;giant=false;popT=1;nwBtn.style.display='none';
   players.forEach(p=>{const st=START_SPOTS[p.idx];p.x=st[0];p.z=st[1];p.y=0;p.vy=0;p.speed=0;p.kx=p.kz=0;p.air=false;p.heading=Math.PI;});
   camT.set(0,0,30);updateStreaming(0,true);
-  showBig('NEW WORLD!');sfx.fanfare();say('New world! Smash it!');confetti(150);
+  music('drive');showBig('NEW WORLD!');sfx.fanfare();say('New world! Smash it!');confetti(150);
 }
 const nwBtn=document.createElement('button');nwBtn.id='newWorld';nwBtn.innerHTML='🌍 NEW WORLD!<small>START / N / tap</small>';
 nwBtn.onclick=e=>{e.stopPropagation();newWorld();};nwBtn.addEventListener('touchstart',e=>{e.stopPropagation();},{passive:true});
@@ -573,7 +573,7 @@ const btn=(id,down,up)=>{const el=$(id);el.addEventListener('touchstart',e=>{e.p
 btn('bGo',()=>touch.boost=true,()=>touch.boost=false);btn('bJump',()=>touch.jumpP=true);btn('bSwap',()=>touch.swapP=true);
 
 function startGame(){
-  if(state!=='start')return;state='play';initAudio();
+  if(state!=='start')return;state='play';initAudio();music('drive');
   $('start').style.display='none';$('hud').style.display='block';updatePanels();
   if(touchUsed){$('touch').style.display='block';addPlayer('touch');}
 }
@@ -833,7 +833,7 @@ function summonBoss(id){
   for(const p of o.parts)if(p.kind==='weak'){p.phase=p.mesh.userData.phase||1;p.s0=p.mesh.scale.clone();p.mesh.material=new THREE.MeshBasicMaterial({color:'#777777'});}
   boss={o,def,state:'drop',y:260,vy:0,phase:1,t:0,heading:0,stompT:7,hitT:0,speed:10,smashT:0,
     phases:Math.max(...o.parts.filter(p=>p.kind==='weak').map(p=>p.phase))};
-  o.g.position.y=boss.y;say(`Here comes ${def.name}!`);sfxClip('boss_roar',0.9)||sfx.boom();updateBossHud();
+  o.g.position.y=boss.y;music('boss');say(`Here comes ${def.name}!`);sfxClip('boss_roar',0.9)||sfx.boom();updateBossHud();
 }
 function bossLand(big){const o=boss.o;shake=2;sfxClip('stomp',1)||(sfx.thud(),sfx.boom());
   for(let i=0;i<14;i++){const a=i/14*Math.PI*2;puff(o.x+Math.sin(a)*o.r,1,o.z+Math.cos(a)*o.r,2,5,'#d9c9a8');}
@@ -857,7 +857,7 @@ function hitWeak(part,p,nx,nz){const b=boss,o=b.o;b.hitT=T+0.3;
   if(b.phase<b.phases){b.phase++;b.speed*=1.3;b.stompT=1.2;lastBossSay=0;bossSay([b.phase===b.phases?'One more time!':"He's getting mad!"]);
     sfxClip('boss_roar',0.9)||sfx.boom();updateBossHud();return;}
   // beaten!
-  b.state='dead';updateBossHud();bossArrows.forEach(s=>s.visible=false);lastBossSay=0;say('You beat the boss!');
+  b.state='dead';updateBossHud();music('victory',{loop:false,then:'drive'});bossArrows.forEach(s=>s.visible=false);lastBossSay=0;say('You beat the boss!');
   collapse(o,0,nx,nz,60,true);
   queue.push({t:2.6,fn:()=>{showBig('BOSS BEATEN!');sfx.fanfare();confetti(260);nwBtn.style.display='block';}});
   queue.push({t:4.0,fn:()=>{sfx.fanfare();say('Hooray! You did it together!');}});
@@ -970,6 +970,7 @@ function updateHUD(){
 
 /* ---------- loop ---------- */
 let last=performance.now(),T=0;
+music('title'); // starts on the first tap/key (browsers need a gesture before audio)
 buildWorld();captureHome();updateStreaming(0,true);
 function loop(now){
   requestAnimationFrame(loop);
@@ -986,7 +987,7 @@ function loop(now){
   if(state==='play'){collisions();updateBoss(dt);}
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
   updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateScatter(dt);updateAnimals(dt);updateDebris(dt);updateParts(dt);
-  updateCamera(dt,T);updateSignals(dt);cullChunks();updateHUD();
+  updateMusic();updateCamera(dt,T);updateSignals(dt);cullChunks();updateHUD();
   renderer.render(scene,camera);
   pressed.clear();touch.jumpP=false;touch.swapP=false;
 }
