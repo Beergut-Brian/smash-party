@@ -105,7 +105,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 - [x] **D1: Zone layouts**
   - Done in `ZONE_LAYOUT`: town streets (cottage / house / shop / villa rows, mailboxes, lamps, hydrants, parked toy cars) plus one clock-tower, school, fire station, and water tower. Farm has a barn, two silos, a farmhouse, hay, fences, crops, a pond, a windmill, a coop with chickens, scarecrows, and a tractor. Park has a clustered playground, fountain, benches, picnic tables, a gazebo, a duck pond, and a bounce house. Home dresses the ring around the original arena.
   - One of each landmark per map, recomputed when `zoneRows` changes so NEW WORLD moves them.
-  - Layouts pass `r` from `RAD` (no `REC_R` update needed). Duck and chicken set `animal:true`; hay sets `roll:true` for L4. Windmill boards are static until logic spins them.
+  - Layouts pass `r` from `RAD` (no `REC_R` update needed). The coop and the duck pond call `ctx.herd` so those animals launch instead of smashing. Other chunks still get the default `ZONE_HERDS` mix. Hay sets `roll:true` for a later tumble. Windmill boards are static until logic spins them.
   - **Town:** streets with houses of different sizes, shops, a school, a fire station, a water tower, mailboxes, street lights, hydrants, parked cars (original designs), and a tall "boss" building to topple when giant.
   - **Farm:** big red barn, silo, farmhouse, hay bales (roll when hit), fences, crop rows, a pond, windmill, chicken coop, scarecrow, parked tractor.
   - **Park:** playground (swings, slide, jungle gym), fountain, benches, picnic tables, trees, a gazebo, a pond with ducks, a giant bounce-house.

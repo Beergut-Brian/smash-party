@@ -37,23 +37,11 @@ const RAD={
   cottage:2.7,villa:4.6,shop:3.8,school:6.6,firestation:5.6,watertower:3.2,mailbox:.55,lamp:.6,hydrant:.5,
   parked:2.2,boss:6.8,barn:7.2,silo:2.5,farmhouse:4,hay:1.25,crops:2.6,pond:4.8,windmill:3.6,coop:2.4,
   scarecrow:.9,tractor:2.7,swing:1.9,slide:1.9,gym:3.2,fountain:2.9,bench:1.3,picnic:1.7,gazebo:3.8,
-  duck:.75,chicken:.7,bounce:5.8,bush:.9,flowers:.32,pebble:.26,mushroom:.3,acorn:.22,toyblock:.28,can:.2,toyduck:.3,gnome:.26,snail:.28
+  bounce:5.8,bush:.9,flowers:.32,pebble:.26,mushroom:.3,acorn:.22,toyblock:.28,can:.2,toyduck:.3,gnome:.26,snail:.28
 };
-/* TODO(logic): o.animal (duck, chicken) should launch intact in L4 — never smash, never grant growth.
-   TODO(logic): o.roll (hay) should keep tumbling along the ground after the hit.
-   TODO(logic): spin the four windmill boards in front of the hub. */
-function critter(x,z,duck){
-  return prop(x,z,duck?RAD.duck:RAD.chicken,1.35,1,'tiny',P=>{
-    const b=new THREE.Group(),body=duck?'#ffd60a':'#f8f9fa';
-    b.add(mk('sph',duck?1.15:1.0,duck?0.85:0.9,duck?1.35:1.15,body,0,.62,0));
-    b.add(mk('sph',.62,.62,.62,body,0,1.16,.5));
-    const bill=mk('cone',.2,duck?0.5:0.32,.2,duck?'#fb8500':'#e63946',0,1.1,.92);bill.rotation.x=Math.PI/2;b.add(bill);
-    if(!duck)b.add(mk('cone',.16,.3,.16,'#e63946',0,1.5,.42));
-    b.add(mk('sph',.2,.2,.2,'#fff',-.14,1.28,.74),mk('sph',.2,.2,.2,'#fff',.14,1.28,.74));
-    b.add(mk('sph',.09,.09,.09,'#111',-.15,1.28,.84),mk('sph',.09,.09,.09,'#111',.15,1.28,.84));
-    P(b,1,true,.55);
-  },{animal:true});
-}
+/* TODO(logic): o.roll (hay) should keep tumbling along the ground after the hit.
+   TODO(logic): spin the four windmill boards in front of the hub.
+   Chickens and ducks are herds (ctx.herd), not smashables, so L4 launches them. */
 const OBJ={
   crates:(x,z)=>{const k=1+(Math.random()*3|0);return makeObj(x,z,1.5,2.1*k,2*k,P=>{for(let i=0;i<k;i++){const c=mk('box',2.1,2.1,2.1,pick(['#c68b59','#b5835a','#d4a373']),0,1.05+i*2.1,0);c.rotation.y=rand(-.4,.4);P(c,5);}},{size:'medium'});},
   cone:(x,z)=>makeObj(x,z,.7,1.6,1,P=>{P(mk('cone',1.2,1.6,1.2,'#ff7b00',0,.8,0),1,true,.6);},{size:'small'}),
@@ -216,8 +204,6 @@ const OBJ={
   gazebo:(x,z)=>prop(x,z,RAD.gazebo,5.8,14,'huge',P=>{
     P(mk('cyl',6,.28,6,'#f8f9fa',0,.16,0),3);[[-1.9,-1.9],[1.9,-1.9],[-1.9,1.9],[1.9,1.9]].forEach(([x,z])=>P(mk('cyl',.26,3,.26,'#fff',x,1.7,z),2));
     P(mk('pyr',7,2,7,'#e63946',0,4.3,0),4);P(mk('sph',.45,.45,.45,'#ffd60a',0,5.4,0),1,true,.22);}),
-  duck:(x,z)=>critter(x,z,true),
-  chicken:(x,z)=>critter(x,z,false),
   bounce:(x,z,arg)=>prop(x,z,RAD.bounce,6.2,26,'mega',(P,g)=>{
     P(mk('box',9.6,3.8,7,'#ff70a6',0,1.9,0),8);P(mk('box',9.9,1,7.3,'#ffd166',0,4.1,0),3);
     [[-4.1,-2.9],[4.1,-2.9],[-4.1,2.9],[4.1,2.9]].forEach(([x,z],i)=>P(mk('cyl',1.5,6.4,1.5,['#4cc9f0','#06d6a0','#ffbe0b','#8338ec'][i],x,3.2,z),2));
@@ -364,16 +350,16 @@ const ZONE_LAYOUT={
   farm(ctx){
     const LM=landmarks();
     if(at(LM.barn,ctx)){const p=drop(ctx,'barn',0);if(p){ring(ctx,p.x,p.z,RAD.barn+3,6,'hay');put(ctx,'tractor',p.x+RAD.barn+4.2,p.z+4,0);}for(let x=ctx.x0+8;x<ctx.x1-8;x+=8)put(ctx,'fence',x,ctx.z0+8,0);crumbs(ctx,4,['crops','scarecrow']);return;}
-    if(at(LM.mill,ctx)){const p=drop(ctx,'windmill',0);if(p)ring(ctx,p.x,p.z,RAD.windmill+4.2,5,'crops');crumbs(ctx,4,['hay','flowers','chicken']);return;}
+    if(at(LM.mill,ctx)){const p=drop(ctx,'windmill',0);if(p){ring(ctx,p.x,p.z,RAD.windmill+4.2,5,'crops');ctx.herd('chicken',p.x+8,p.z+6,4);}crumbs(ctx,4,['hay','flowers','bush']);return;}
     if(at(LM.silo,ctx)){const a=drop(ctx,'silo',0);if(a){put(ctx,'silo',a.x+7,a.z-6,0);put(ctx,'farmhouse',a.x-12,a.z+8,1);ring(ctx,a.x,a.z,8,4,'hay');}return;}
     if(at(LM.farmpond,ctx)){const p=drop(ctx,'pond',0);if(p){ring(ctx,p.x,p.z,RAD.pond+2.2,5,'flowers');put(ctx,'tractor',p.x+RAD.pond+4.2,p.z,1);put(ctx,'hay',p.x,p.z+RAD.pond+3,0);}crumbs(ctx,3,['tree','bush']);return;}
-    if(at(LM.coop,ctx)){const p=drop(ctx,'coop',0);if(p){ring(ctx,p.x,p.z,RAD.coop+2.2,6,'chicken');put(ctx,'scarecrow',p.x+6,p.z+5,0);}for(let z=ctx.z0+10;z<ctx.z1-10;z+=8)put(ctx,'fence',ctx.x0+8,z,Math.PI/2);crumbs(ctx,3,['hay','crops']);return;}
+    if(at(LM.coop,ctx)){const p=drop(ctx,'coop',0);if(p){ctx.herd('chicken',p.x,p.z+RAD.coop+3.2,6);put(ctx,'scarecrow',p.x+6,p.z+5,0);}for(let z=ctx.z0+10;z<ctx.z1-10;z+=8)put(ctx,'fence',ctx.x0+8,z,Math.PI/2);crumbs(ctx,3,['hay','crops']);return;}
     for(let i=0;i<3;i++)for(let j=0;j<2;j++)put(ctx,'crops',ctx.x0+18+i*18,ctx.z0+16+j*24,(i+j)%2);
     for(let x=ctx.x0+8;x<ctx.x1-8;x+=8)if(Math.random()<.8)put(ctx,'fence',x,ctx.z1-8,0);
     for(let i=0;i<4;i++)put(ctx,'hay',rand(ctx.x0+12,ctx.x1-12),rand(ctx.cz-6,ctx.z1-14),0);
     if(Math.random()<.7)put(ctx,'scarecrow',ctx.cx+rand(-8,8),ctx.cz+rand(-6,6),0);
     if(Math.random()<.45)put(ctx,'tractor',ctx.x0+16,ctx.z1-18,0);
-    if(Math.random()<.55){put(ctx,'chicken',ctx.cx-6,ctx.cz+8,0);put(ctx,'chicken',ctx.cx-3.2,ctx.cz+9,0);put(ctx,'chicken',ctx.cx-4.4,ctx.cz+6,0);}
+    if(Math.random()<.55)ctx.herd('chicken',ctx.cx-4,ctx.cz+8,4);
     put(ctx,'tree',ctx.x1-12,ctx.z0+12,0);put(ctx,'bush',ctx.x0+12,ctx.z0+14,0);
     maybeRamp(ctx);
   },
@@ -383,7 +369,7 @@ const ZONE_LAYOUT={
     if(at(LM.play,ctx)){const p=drop(ctx,'gym',0);if(p){put(ctx,'swing',p.x+7,p.z+1,1);put(ctx,'slide',p.x-7,p.z+1,0);put(ctx,'bench',p.x+6,p.z-5,0);put(ctx,'bench',p.x-5,p.z-5,2);put(ctx,'flowers',p.x,p.z+6,0);ring(ctx,p.x,p.z,14,6,'tree');}return;}
     if(at(LM.gazebo,ctx)){const p=drop(ctx,'gazebo',0);if(p){ring(ctx,p.x,p.z,RAD.gazebo+2.4,4,'picnic');ring(ctx,p.x,p.z,RAD.gazebo+4.2,6,'flowers');}crumbs(ctx,4,['tree','bench']);return;}
     if(at(LM.bounce,ctx)){const p=drop(ctx,'bounce',0);if(p)ring(ctx,p.x,p.z,RAD.bounce+2,8,'cone');ctx.ramp(ctx.cx+18,ctx.cz,Math.PI/2);crumbs(ctx,3,['bench','flowers']);return;}
-    if(at(LM.ducks,ctx)){const p=drop(ctx,'pond',0);if(p){ring(ctx,p.x,p.z,RAD.pond+2.2,6,'duck');put(ctx,'bench',p.x+RAD.pond+2.6,p.z+2,1);put(ctx,'bench',p.x-RAD.pond-2.6,p.z-2,3);}crumbs(ctx,4,['tree','flowers','bush']);return;}
+    if(at(LM.ducks,ctx)){const p=drop(ctx,'pond',0);if(p){ctx.herd('duck',p.x+RAD.pond+3,p.z,6);put(ctx,'bench',p.x+RAD.pond+2.6,p.z+2,1);put(ctx,'bench',p.x-RAD.pond-2.6,p.z-2,3);}crumbs(ctx,4,['tree','flowers','bush']);return;}
     for(let i=0;i<7;i++)put(ctx,'tree',rand(ctx.x0+8,ctx.x1-8),rand(ctx.z0+8,ctx.z1-8),0);
     for(let i=0;i<3;i++)put(ctx,'bench',rand(ctx.x0+10,ctx.x1-10),rand(ctx.z0+10,ctx.z1-10),Math.random()*4|0);
     for(let i=0;i<2;i++)put(ctx,'picnic',rand(ctx.x0+12,ctx.x1-12),rand(ctx.z0+12,ctx.z1-12),Math.random()*4|0);
