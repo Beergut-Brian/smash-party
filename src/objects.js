@@ -208,30 +208,30 @@ const OBJ={
     P(mk('box',9.6,3.8,7,'#ff70a6',0,1.9,0),8);P(mk('box',9.9,1,7.3,'#ffd166',0,4.1,0),3);
     [[-4.1,-2.9],[4.1,-2.9],[-4.1,2.9],[4.1,2.9]].forEach(([x,z],i)=>P(mk('cyl',1.5,6.4,1.5,['#4cc9f0','#06d6a0','#ffbe0b','#8338ec'][i],x,3.2,z),2));
     P(mk('box',2,2,.12,'#1d3557',0,1.2,3.56),1);face(g,arg);}),
-  bush:(x,z)=>prop(x,z,RAD.bush,1.3,1,'tiny',P=>{
+  bush:(x,z)=>prop(x,z,RAD.bush,1.3,1,'mini',P=>{
     const c=pick(['#2d6a4f','#40916c','#52b788']);
     P(mk('sph',1.2,.95,1.2,c,0,.5,0),1,true,.5);P(mk('sph',.7,.6,.7,c,.35,.8,.15),1,true,.3);}),
-  flowers:(x,z)=>prop(x,z,RAD.flowers,.45,1,'mini',P=>{
+  flowers:(x,z)=>prop(x,z,RAD.flowers,.45,1,'micro',P=>{
     P(mk('box',.52,.16,.3,'#bc6c25',0,.08,0),1);
     ['#e63946','#ffbe0b','#8338ec'].forEach((c,i)=>P(mk('sph',.13,.13,.13,c,-.16+i*.16,.24,0),1,true,.06));}),
-  pebble:(x,z)=>prop(x,z,RAD.pebble,.22,1,'mini',P=>{
+  pebble:(x,z)=>prop(x,z,RAD.pebble,.22,1,'micro',P=>{
     const c=pick(['#adb5bd','#ced4da','#d4a373','#6c757d']);
     P(mk('sph',.38,.22,.32,c,0,.1,0),1,true,.12);
     if(Math.random()<.5)P(mk('sph',.2,.14,.18,c,.16,.07,.06),1,true,.08);}),
-  mushroom:(x,z)=>prop(x,z,RAD.mushroom,.42,1,'mini',P=>{
+  mushroom:(x,z)=>prop(x,z,RAD.mushroom,.42,1,'micro',P=>{
     P(mk('cyl',.14,.26,.14,'#f8f9fa',0,.13,0),1);
     P(mk('sph',.42,.24,.42,pick(['#e63946','#ff006e','#ffbe0b']),0,.3,0),1,true,.12);
     P(mk('sph',.07,.07,.07,'#fff',.08,.34,.12),1);}),
-  acorn:(x,z)=>prop(x,z,RAD.acorn,.3,1,'mini',P=>{
+  acorn:(x,z)=>prop(x,z,RAD.acorn,.3,1,'micro',P=>{
     P(mk('sph',.26,.3,.26,'#bc6c25',0,.12,0),1,true,.1);
     P(mk('sph',.24,.14,.24,'#6d4c41',0,.26,0),1,true,.08);
     P(mk('cyl',.04,.14,.04,'#2d6a4f',0,.36,0),1);}),
-  toyblock:(x,z)=>prop(x,z,RAD.toyblock,.4,1,'mini',P=>{
+  toyblock:(x,z)=>prop(x,z,RAD.toyblock,.4,1,'micro',P=>{
     const b=mk('box',.4,.4,.4,pick(BLOCK),0,.2,0);b.rotation.y=rand(0,1.2);P(b,1,true,.18);}),
-  can:(x,z)=>prop(x,z,RAD.can,.42,1,'mini',P=>{
+  can:(x,z)=>prop(x,z,RAD.can,.42,1,'micro',P=>{
     P(mk('cyl',.2,.44,.2,pick(['#e63946','#3a86ff','#06d6a0','#ffbe0b']),0,.22,0),1,true,.14);
     P(mk('cyl',.21,.05,.21,'#f8f9fa',0,.43,0),1);}),
-  toyduck:(x,z)=>prop(x,z,RAD.toyduck,.4,1,'mini',P=>{
+  toyduck:(x,z)=>prop(x,z,RAD.toyduck,.4,1,'micro',P=>{
     P(mk('sph',.38,.28,.44,'#ffd60a',0,.16,0),1,true,.14);
     P(mk('sph',.2,.18,.2,'#ffd60a',0,.32,.14),1,true,.08);
     const bill=mk('cone',.06,.14,.06,'#fb8500',0,.3,.3);bill.rotation.x=Math.PI/2;P(bill,1);
@@ -241,7 +241,7 @@ const OBJ={
     P(mk('sph',.24,.24,.24,'#ffd6a5',0,.44,0),1,true,.1);
     P(mk('cone',.3,.32,.3,'#e63946',0,.66,0),1,true,.12);
     P(mk('sph',.05,.05,.05,'#111',-.05,.46,.1),1);P(mk('sph',.05,.05,.05,'#111',.05,.46,.1),1);face(g,arg);}),
-  snail:(x,z,arg)=>prop(x,z,RAD.snail,.32,1,'mini',(P,g)=>{
+  snail:(x,z,arg)=>prop(x,z,RAD.snail,.32,1,'micro',(P,g)=>{
     P(mk('sph',.34,.28,.34,pick(['#bc6c25','#e9c46a','#f4a261']),0,.16,0),1,true,.12);
     P(mk('sph',.16,.12,.2,'#fff3bf',0,.1,.2),1,true,.08);
     P(mk('sph',.045,.045,.045,'#111',.04,.14,.28),1);face(g,arg);})
@@ -387,10 +387,10 @@ const ZONE_LAYOUT={
   }
 };
 /* Scatter lists for L2c. One entry per size the zone should rain in. Landmarks stay in the layouts. */
-const MINI=['flowers','pebble','mushroom','acorn','toyblock','can','toyduck','gnome','snail'];
+const MICRO=['flowers','pebble','mushroom','acorn','toyblock','can','toyduck','snail'];
 const ZONE_PROPS={
-  town:{mini:MINI,tiny:['hydrant','mailbox','bush','bench'],small:['cone','lamp','pin'],medium:['barrel','crates','parked','snowman'],large:['tree','tower','shop','cottage'],huge:['house','villa'],mega:['bounce']},
-  farm:{mini:['flowers','pebble','mushroom','acorn'],tiny:['bush'],small:['fence','crops','hay','scarecrow','cone'],medium:['melon','crates','barrel','coop'],large:['tree','tractor'],huge:['farmhouse','silo','windmill'],mega:['barn']},
-  park:{mini:['flowers','pebble','mushroom','toyduck','acorn'],tiny:['bush','bench'],small:['cone','pin','swing','slide'],medium:['picnic','snowman'],large:['tree','fountain','gym'],huge:['gazebo'],mega:['bounce']},
-  home:{mini:MINI,tiny:['bush','hydrant','mailbox','bench'],small:['cone','pin','melon','fence'],medium:['barrel','crates','snowman'],large:['tree','tower'],huge:['house'],mega:['bounce']}
+  town:{micro:MICRO,mini:['bush','gnome'],tiny:['hydrant','mailbox','bench'],small:['cone','lamp','pin'],medium:['barrel','crates','parked','snowman'],large:['tree','tower','shop','cottage'],huge:['house','villa'],mega:['bounce']},
+  farm:{micro:['flowers','pebble','mushroom','acorn'],mini:['bush','gnome'],tiny:['mailbox'],small:['fence','crops','hay','scarecrow','cone'],medium:['melon','crates','barrel','coop'],large:['tree','tractor'],huge:['farmhouse','silo','windmill'],mega:['barn']},
+  park:{micro:['flowers','pebble','mushroom','toyduck','acorn'],mini:['bush','gnome'],tiny:['bench'],small:['cone','pin','swing','slide'],medium:['picnic','snowman'],large:['tree','fountain','gym'],huge:['gazebo'],mega:['bounce']},
+  home:{micro:MICRO,mini:['bush','gnome'],tiny:['hydrant','mailbox','bench'],small:['cone','pin','melon','fence'],medium:['barrel','crates','snowman'],large:['tree','tower'],huge:['house'],mega:['bounce']}
 };

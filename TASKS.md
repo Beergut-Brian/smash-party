@@ -85,12 +85,13 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 > **New car or spoken line?** Car names get a recorded voice automatically, but someone with the ElevenLabs key has to run `node --env-file=.env tools/make-voices.mjs` (see CLAUDE.md). Until then the robot voice reads it.
 
 - [x] **D0: Size classes + growth HUD styling** (from L2)
-  - Done: every prop passes `{size:'mini'…'mega'}`. Cone and fence are small, barrel and crates are medium, trees are large, houses are huge, and the clock tower, barn, and bounce house are mega.
-  - The home arena puts a cluster of mini props in front of the start spots (flowers, pebbles, mushrooms, acorns, toy blocks, cans, rubber ducks, gnomes, snails) plus bushes and hydrants.
+  - Done: every prop passes `{size:'micro'…'mega'}`. Flowers and pebbles are micro (the size you start at), bushes are mini, cones are small, houses are huge, and the clock tower, barn, and bounce house are mega.
+  - The home arena puts micro props in front of the start spots (flowers, pebbles, mushrooms, acorns, toy blocks, cans, rubber ducks, snails) plus gnomes, bushes, and hydrants.
+  - `#levelUp` and `#bossHud` use the same chunky style. The size meter glows when a level-up is ready.
   - `#sizeHud` (`.lit` / `.now` / `.crown`), `#sizeBar`/`#sizeFill`, `#newWorld`, and `.growPop` are styled in `style.css`. `SIGNAL_COL` stays in `game.js` (`#ff2d55` / `#3ddc84`), matching this HUD.
 
 - [x] **D0 v2: Mini props, size lists, giant stuff** (for L2c)
-  - Done: mini props are flowers, pebbles, mushrooms, acorns, toy blocks, soda cans, rubber ducks, gnomes, and snails. `ZONE_PROPS` lists real `OBJ` names for town, farm, park, and home at every size, so scatter no longer shrinks dollhouses.
+  - Done: micro props are flowers, pebbles, mushrooms, acorns, toy blocks, soda cans, rubber ducks, and snails. Gnomes and bushes are mini. `ZONE_PROPS` lists real `OBJ` names for town, farm, park, and home from micro through mega, so scatter no longer shrinks dollhouses.
   - Huge and mega already in the world: house, villa, school, fire station, farmhouse, silo, windmill, water tower, gazebo (huge); clock tower, barn, bounce house (mega). All of the box ones use the L3 part contract.
 
 - [ ] **D5: Boss model(s)**
@@ -132,5 +133,5 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - **Son-designed car:** reserved spot. Ask him for a name, color and silly feature.
   - Each car: 4–5 units long, faces +Z, `speed` 20–32, `r` 2–2.8. Scales automatically once L2 lands.
 
-- [ ] **D6: More mega set pieces**
+- [ ] **D7: More mega set pieces**
   - Still just ideas: stadium, skyscraper, cargo ship, ferris wheel. Build them with `BP` when a zone has room. The mountain-sized boss is D5.
