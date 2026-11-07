@@ -2,7 +2,7 @@
 //   node --env-file=.env tools/make-voices.mjs          generate new or changed lines only
 //   node --env-file=.env tools/make-voices.mjs --dry    list lines and character count, no API calls
 //   node --env-file=.env tools/make-voices.mjs --force  regenerate everything
-// Needs ELEVENLABS_API_KEY in .env (gitignored). Writes assets/sounds/voice/<slug>.mp3 + index.json.
+// Needs ELEVENLABS_API_KEY in .env (gitignored). Optional "prefix" (e.g. "[excited] " for eleven_v3) is prepended to every line. Writes assets/sounds/voice/<slug>.mp3 + index.json.
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -32,14 +32,14 @@ if (!dry && !key) { console.error('Missing ELEVENLABS_API_KEY (put it in .env an
 let chars = 0, made = 0;
 for (const l of lines) {
   const id = slug(l.text), speak = l.speak || speakable(l.text);
-  const hash = crypto.createHash('sha1').update([cfg.voice, cfg.model, JSON.stringify(cfg.settings), speak].join('|')).digest('hex').slice(0, 12);
+  const hash = crypto.createHash('sha1').update([cfg.voice, cfg.model, JSON.stringify(cfg.settings), cfg.prefix || '', speak].join('|')).digest('hex').slice(0, 12);
   const file = path.join(outDir, id + '.mp3');
   if (!force && index[id]?.hash === hash && fs.existsSync(file)) continue;
   chars += speak.length;
   if (dry) { console.log(`would make ${id}.mp3  "${speak}"`); continue; }
   const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${cfg.voice}?output_format=mp3_44100_128`, {
     method: 'POST', headers: { 'xi-api-key': key, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
-    body: JSON.stringify({ text: speak, model_id: cfg.model, voice_settings: cfg.settings })
+    body: JSON.stringify({ text: (l.prefix ?? cfg.prefix ?? '') + speak, model_id: cfg.model, voice_settings: cfg.settings })
   });
   if (!res.ok) { console.error(`FAILED ${id}: ${res.status} ${(await res.text()).slice(0, 300)}`); process.exitCode = 1; continue; }
   fs.writeFileSync(file, Buffer.from(await res.arrayBuffer()));

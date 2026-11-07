@@ -2,106 +2,106 @@
  "mega_smash": {
   "text": "MEGA SMASH!",
   "speak": "Mega smash!",
-  "hash": "0d469be1986e"
+  "hash": "9afb8d64e555"
  },
  "super_smash": {
   "text": "SUPER SMASH!",
   "speak": "Super smash!",
-  "hash": "a706d9327d43"
+  "hash": "3286144f59e8"
  },
  "kaboom": {
   "text": "KABOOM!",
   "speak": "Kaboom!",
-  "hash": "23f3b2e2a1d5"
+  "hash": "e9a4920b7c28"
  },
  "awesome": {
   "text": "AWESOME!",
   "speak": "Awesome!",
-  "hash": "4ef07d9a5bbd"
+  "hash": "f5c666cae992"
  },
  "smashtastic": {
   "text": "SMASHTASTIC!",
   "speak": "Smashtastic!",
-  "hash": "2ba16b51a634"
+  "hash": "db4d1cd1f992"
  },
  "bigger": {
   "text": "BIGGER!",
   "speak": "Bigger!",
-  "hash": "d37009c8f1b4"
+  "hash": "ef564f0cc075"
  },
  "growing": {
   "text": "GROWING!",
   "speak": "Growing!",
-  "hash": "5fb5acab55b0"
+  "hash": "90db3f7ae016"
  },
  "so_big": {
   "text": "SO BIG!",
   "speak": "So big!",
-  "hash": "690c2844cebd"
+  "hash": "06096bece9d3"
  },
  "you_re_giant_smash_everything": {
   "text": "You're GIANT! Smash everything!",
   "speak": "You're GIANT! Smash everything!",
-  "hash": "ad84f58e0396"
+  "hash": "c296459b30db"
  },
  "new_world_smash_it": {
   "text": "New world! Smash it!",
   "speak": "New world! Smash it!",
-  "hash": "b6cb290af863"
+  "hash": "f7211947f475"
  },
  "grow_bigger_first": {
   "text": "Grow bigger first!",
   "speak": "Grow bigger first!",
-  "hash": "8624cfab3321"
+  "hash": "66672ea302a6"
  },
  "too_big_smash_smaller_stuff": {
   "text": "Too big! Smash smaller stuff!",
   "speak": "Too big! Smash smaller stuff!",
-  "hash": "c987ccfd6c1a"
+  "hash": "616f503a4e32"
  },
  "get_bigger": {
   "text": "Get bigger!",
   "speak": "Get bigger!",
-  "hash": "1d4816ace9c1"
+  "hash": "4e545b262fa0"
  },
  "big_bouncer": {
   "text": "Big Bouncer!",
   "speak": "Big Bouncer!",
-  "hash": "1d3ea53f1905"
+  "hash": "0b233c200177"
  },
  "rocket_racer": {
   "text": "Rocket Racer!",
   "speak": "Rocket Racer!",
-  "hash": "18579383b833"
+  "hash": "9212e16b3834"
  },
  "shark_attack": {
   "text": "Shark Attack!",
   "speak": "Shark Attack!",
-  "hash": "21ac0c69df6a"
+  "hash": "1c20f990cd1c"
  },
  "dino_dozer": {
   "text": "Dino Dozer!",
   "speak": "Dino Dozer!",
-  "hash": "8767c818fbaa"
+  "hash": "83480c3b0997"
  },
  "ice_cream_smasher": {
   "text": "Ice Cream Smasher!",
   "speak": "Ice Cream Smasher!",
-  "hash": "9c19118f6d6a"
+  "hash": "46ce85f12502"
  },
  "hot_dog_hot_rod": {
   "text": "Hot Dog Hot Rod!",
   "speak": "Hot Dog Hot Rod!",
-  "hash": "3bcb161d2ae1"
+  "hash": "42f22cf1c637"
  },
  "fire_truck": {
   "text": "Fire Truck!",
   "speak": "Fire Truck!",
-  "hash": "dbb738bc0e10"
+  "hash": "d57cf53b4ff8"
  },
  "bubble_buggy": {
   "text": "Bubble Buggy!",
   "speak": "Bubble Buggy!",
-  "hash": "f35bd8697a96"
+  "hash": "bf7184118a86"
  }
 }

@@ -1,13 +1,24 @@
 {
   "voice": "1bCZMUGHZpu5Ma2JfrBc",
-  "model": "eleven_multilingual_v2",
-  "settings": { "stability": 0.35, "similarity_boost": 0.8, "style": 0.55, "use_speaker_boost": true },
-  "notes": "Each line is the exact text the game passes to say(). Car names from src/cars.js and assets/cars/cars.json are added automatically (as 'Name!'). Use {\"text\":…, \"speak\":…} when the spoken wording should differ from the game text.",
+  "model": "eleven_v3",
+  "settings": {
+    "stability": 0.0
+  },
+  "prefix": "[excited] ",
+  "notes": "Each line is the exact text the game passes to say(). Car names from src/cars.js and assets/cars/cars.json are added automatically (as 'Name!'). Use {\"text\":…, \"speak\":…} when the spoken wording should differ from the game text. eleven_v3 takes direction tags like [excited], [shouting], [laughing], [whispers]; \"prefix\" applies one to every line, or give a line its own {\"text\":…, \"prefix\":\"[shouting] \"}. v3 stability must be 0.0 (creative), 0.5 or 1.0.",
   "lines": [
-    "MEGA SMASH!", "SUPER SMASH!", "KABOOM!", "AWESOME!", "SMASHTASTIC!",
-    "BIGGER!", "GROWING!", "SO BIG!",
+    "MEGA SMASH!",
+    "SUPER SMASH!",
+    "KABOOM!",
+    "AWESOME!",
+    "SMASHTASTIC!",
+    "BIGGER!",
+    "GROWING!",
+    "SO BIG!",
     "You're GIANT! Smash everything!",
     "New world! Smash it!",
-    "Grow bigger first!", "Too big! Smash smaller stuff!", "Get bigger!"
+    "Grow bigger first!",
+    "Too big! Smash smaller stuff!",
+    "Get bigger!"
   ]
 }
