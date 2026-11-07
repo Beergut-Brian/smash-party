@@ -1,6 +1,6 @@
 # Smash Party — guide for AI collaborators
 
-A co-op driving-and-smashing game for a dad and his 5-year-old, played on a TV with two controllers. Plain HTML + three.js (r128, global `THREE`), no build step. GitHub Pages serves `main` as-is.
+A co-op driving-and-smashing game for a dad and his 5-year-old, played on a TV with two controllers. Plain HTML + three.js (r128, global `THREE`), no build step, no frameworks. GitHub Pages serves `main` as-is.
 
 ## Design rules (do not break these)
 - **Co-op only.** No losing, no timers that end the game, no player-vs-player scoring. Everything feeds one shared smash meter.
@@ -9,13 +9,27 @@ A co-op driving-and-smashing game for a dad and his 5-year-old, played on a TV w
 - **Original designs only.** No real car brands, toy lines, logos, or licensed characters.
 - Must run smoothly at 1080p on a GTX 1060 and stay playable on a phone (touch controls).
 
-## Layout
-- `index.html` — page shell, HUD, start screen.
-- `style.css` — all UI styles.
-- `src/game.js` — the whole game, in labeled sections (`/* ---------- name ---------- */`):
-  renderer/scene · geometry helpers · world & ramps · audio · cars · model cars · smashable objects · debris & particles · smashing · respawn · celebration · players · input · collisions · camera & HUD · loop.
-- `assets/cars/` — `.glb` car models plus `cars.json` manifest.
-- `assets/textures/`, `assets/sounds/` — for future art and audio.
+## Layout & who owns what
+Two tools work on this repo at the same time. Stay in your lane to avoid merge conflicts.
+
+| File | Owner | What's in it |
+|---|---|---|
+| `src/cars.js` | **Cursor** (design) | Block-built car models + the `CARS` list, model-car loader |
+| `src/objects.js` | **Cursor** (design) | Smashable objects (`OBJ`), arena layout (`buildWorld`), respawn mix (`SPAWN_W`) |
+| `style.css` | **Cursor** (design) | All UI styles |
+| `assets/**` | **Cursor** (design) | `.glb` models, `cars.json`, textures, sounds |
+| `src/core.js` | **Claude Code** (logic) | Helpers (`mk`, `M`, `E`, `rand`…), renderer, scene, ground/roads/walls, ramps + `groundH`, audio |
+| `src/game.js` | **Claude Code** (logic) | Debris, smashing, scoring, respawn, celebration, players/driving, input, collisions, camera, HUD, main loop |
+| `index.html`, `CLAUDE.md` | Shared | Change rarely; mention it in the commit message |
+
+Scripts are plain (no modules) and load in order: `core.js` → `cars.js` → `objects.js` → `game.js`. Top-level `const`/`function` names are shared across files, so never reuse a name.
+
+If a design change needs new logic (or the other way around), make the part in your own file and leave a `// TODO(logic):` or `// TODO(design):` note for the other tool instead of editing their file.
+
+## Git workflow
+- **Pull before you start. Commit small. Push when done.** Never force-push `main`.
+- `main` is live on the TV (GitHub Pages: https://beergut-brian.github.io/smash-party/), so only push working code. Use a branch for big experiments.
+- Commit messages start with the area: `cars: add Comet Crusher`, `logic: bigger barrel explosions`.
 
 ## Coordinate conventions
 - Y is up. Forward for any car/object is **+Z** at `rotation.y = 0`; heading θ points along `(sin θ, cos θ)`.

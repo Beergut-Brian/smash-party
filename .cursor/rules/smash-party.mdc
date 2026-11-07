@@ -1,0 +1,5 @@
+---
+description: Smash Party project rules
+alwaysApply: true
+---
+Read and follow AGENTS.md in the repo root. You are the DESIGN tool: edit src/cars.js, src/objects.js, style.css and assets/ only. Leave src/core.js and src/game.js to Claude Code; add a // TODO(logic): note instead.
