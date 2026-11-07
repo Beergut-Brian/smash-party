@@ -10,6 +10,8 @@ Shared to-do list for both tools. **Pick the top unchecked task in your section*
 ## The big picture (v2)
 A much bigger world with **zones** (town, farm, park, and more) where **everything is destructible**. Buildings collapse, and animals get comically launched but never hurt. You **start tiny and grow** by smashing things: the bigger you get, the bigger your hit box and the bigger the stuff you can wreck, until you're a giant stomping through the town. Still co-op only, with no losing.
 
+**Long-term:** the world will be **procedurally generated** as more zones get built. Keep zones and layouts data-driven (`ZONE_MAP`, `ZONE_LAYOUT`) so the zone map can later be generated instead of hand-written, and a "new world" can roll a fresh one.
+
 ---
 
 ## Logic (Claude Code)
@@ -27,7 +29,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Objects get a **size class** (tiny / small / medium / large / huge). You can only smash things at or below your size. Bigger things **wobble and bump you back** with a funny boing. Never a fail state.
   - Growth is **shared** between both players (co-op), so the 5-year-old never falls behind.
   - Big milestone moments: a size-up fanfare, a screen shake and a voice callout ("BIGGER!"). Show size on the HUD as a picture (a car icon growing), not a number.
-  - Open question for Kaden: at max size, do we "shrink and start a new world" as a celebration, or stay giant forever?
+  - **Max size (decided):** stay giant. Show a big on-screen celebration with a clear "NEW WORLD!" button (controller button + tap) that starts a fresh world when the players choose. Never forced.
   - Needs: L1 (camera and streaming radius must scale with size).
 
 - [ ] **L3: Collapsing buildings**
