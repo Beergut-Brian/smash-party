@@ -52,12 +52,12 @@
       "text": "LEVEL UP!",
       "prefix": "[shouting] "
     },
-    "Level up ready! Press Y!",
     "New car!",
     "Stuck? Press jump to go BOOM!",
     {
       "text": "BOOM!",
       "prefix": "[shouting] "
-    }
+    },
+    "Level up ready! Press X or Y!"
   ]
 }

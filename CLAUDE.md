@@ -4,7 +4,7 @@ A co-op driving-and-smashing game for a dad and his 5-year-old, played on a TV w
 
 ## Design rules (do not break these)
 - **Co-op only.** No losing, no timers that end the game, no player-vs-player scoring. Everything feeds one shared smash meter.
-- **Kid-simple controls.** Stick = point where you want to go. A/RT = turbo, B = jump (becomes 💥 BOOM when stuck), X = shoot (big cars), Y = switch car / LEVEL UP when ready. Never require reading.
+- **Kid-simple controls.** Stick = point where you want to go. A/RT = turbo, B = jump (becomes 💥 BOOM when stuck), X or Y = shoot (and LEVEL UP when the gold button shows; either works because 8BitDo/Nintendo pads swap the X/Y labels), LB/RB = switch car. Never require reading.
 - **Big, loud, funny feedback.** Every action should have a sound, a puff, or a wobble.
 - **Original designs only.** No real car brands, toy lines, logos, or licensed characters.
 - Must run smoothly at 1080p on a GTX 1060 and stay playable on a phone (touch controls).
@@ -42,7 +42,7 @@ Check `TASKS.md` before starting. Take the top unchecked task in your section, c
 - Only chunks near the players are built. Far objects sleep as instanced meshes and wake into real meshes near a car. Smashed things are remembered per chunk and regrow after a couple of minutes.
 
 ## Adding things
-- **Block-built car:** write `buildX()` returning `{g, wheels, ex, h}` (see `buildMonster`) and add it to `CARS` with `name, emoji, speed (20–32), r (collision radius ~2–2.8)`, plus `tier` (0 = starter cars at the tiniest sizes … 3 = the coolest cars at the biggest sizes; a new tier unlocks every 2 sizes) and optionally `weapon: 'cannon' | 'rocket' | null` (default: tier 2 cannon, tier 3 rocket). Until `tier` is set, `CAR_TIER` in game.js decides.
+- **Block-built car:** write `buildX()` returning `{g, wheels, ex, h}` (see `buildMonster`) and add it to `CARS` with `name, emoji, speed (20–32), r (collision radius ~2–2.8)`, plus `tier` (0 = starter cars at the tiniest sizes … 3 = the coolest cars at the biggest sizes; a new tier unlocks every 2 sizes) and optionally `weapon: 'bubble' | 'cannon' | 'rocket'` (default: tiers 0–1 bubble, tier 2 cannon, tier 3 rocket). Until `tier` is set, `CAR_TIER` in game.js decides.
 - **Model car (for graphics models/tools):** drop `name.glb` in `assets/cars/` and add to `cars.json`:
   `{"name":"Comet Crusher","emoji":"☄️","file":"comet.glb","speed":27,"r":2.3,"scale":1,"y":0,"rotateY":0,"height":3,"exhaust":[0,1,-2.5]}`
   Model faces +Z, about 4–5 units long, under ~20k triangles. Meshes named `*wheel*` spin.

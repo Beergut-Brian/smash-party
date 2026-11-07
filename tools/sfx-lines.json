@@ -158,6 +158,11 @@
       "prompt": "Rocket launch whoosh with fizz",
       "dur": 0.8,
       "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
+    },
+    "bubble": {
+      "prompt": "Cute bubble blaster shot, bloop with a soft pop",
+      "dur": 0.5,
+      "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
     }
   }
 }

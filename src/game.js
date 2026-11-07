@@ -190,10 +190,10 @@ function demoBuilding(x,z,floors=3){
 }
 
 /* ---------- car tiers ---------- */
-// Cooler cars unlock as you grow: a new car tier every 2 sizes. Y / Q / / switches between cars in your tier.
-// Design can set `tier` (0–3) and `weapon` ('cannon' | 'rocket' | null) on CARS entries; until then these decide.
+// Cooler cars unlock as you grow: a new car tier every 2 sizes. LB/RB (Q, /) switches between cars in your tier.
+// Design can set `tier` (0–3) and `weapon` ('bubble' | 'cannon' | 'rocket') on CARS entries; until then these decide.
 const CAR_TIER={'Bubble Buggy':0,'Ice Cream Smasher':0,'Hot Dog Hot Rod':1,'Big Bouncer':1,'Fire Truck':2,'Dino Dozer':2,'Shark Attack':3,'Rocket Racer':3};
-const WEAPON_BY_TIER=[null,null,'cannon','rocket'];
+const WEAPON_BY_TIER=['bubble','bubble','cannon','rocket'];
 const carTierOf=c=>c.tier??CAR_TIER[c.name]??1;
 const carTierNow=()=>Math.min(3,Math.floor((giant?SIZES.length:tier)/2));
 const carWeapon=c=>c.weapon!==undefined?c.weapon:WEAPON_BY_TIER[carTierOf(c)];
@@ -204,35 +204,42 @@ function newCars(quiet){const l=carsInTier(carTierNow());
   for(const p of players){puff(p.x,S,p.z,10,1.5*Math.max(S,.3),'#ffffff');p.nameT=3;}
   if(players[0])queue.push({t:1.2,fn:()=>say(players[0].stats.name+'!')});}
 
-/* ---------- shooting (cars from tier 3 up: X / F / .) ---------- */
-// cannonballs bounce and plow through small stuff; rockets fly straight and explode. Both can hit boss weak spots.
+/* ---------- shooting (X or Y / F / . / 🎯) ---------- */
+// bubbles (small cars) float and pop one thing your size; cannonballs bounce and plow through small stuff;
+// rockets fly straight and explode. Cannonballs and rockets can hit boss weak spots.
+const BUBBLE_MAT=new THREE.MeshBasicMaterial({color:'#9bf6ff',transparent:true,opacity:0.6,depthWrite:false});
 const shots=[];
 function shoot(p){const w=carWeapon(p.stats);if(!w||T<(p.shotT||0))return;
-  const rk=w==='rocket';p.shotT=T+(rk?0.55:0.28);const fx=Math.sin(p.heading),fz=Math.cos(p.heading),sp=(rk?75:60)*p.sm+Math.max(0,p.speed),r=(rk?0.5:0.6)*S;
-  const m=rk?mk('cone',r*1.2,r*3,r*1.2,'#e63946'):mk('sph',r*2,r*2,r*2,'#333333');if(rk){m.rotation.order='YXZ';m.rotation.set(Math.PI/2,p.heading,0);}
+  const rk=w==='rocket',bub=w==='bubble';p.shotT=T+(rk?0.55:bub?0.22:0.28);
+  const fx=Math.sin(p.heading),fz=Math.cos(p.heading),sp=(rk?75:bub?22:60)*p.sm+Math.max(0,p.speed),r=(rk?0.5:bub?0.45:0.6)*S;
+  const m=rk?mk('cone',r*1.2,r*3,r*1.2,'#e63946'):bub?mk('sph',r*2,r*2,r*2,null,0,0,0,BUBBLE_MAT):mk('sph',r*2,r*2,r*2,'#333333');
+  if(rk){m.rotation.order='YXZ';m.rotation.set(Math.PI/2,p.heading,0);}if(bub)m.castShadow=false;
   const x=p.x+fx*(p.r+r*2),z=p.z+fz*(p.r+r*2),y=p.y+1.1*S;m.position.set(x,y,z);scene.add(m);
-  shots.push({m,rk,x,y,z,vx:fx*sp,vz:fz*sp,vy:rk?0:5*Math.sqrt(S),life:rk?2.2:1.8,r,p,bounced:false,hits:0});
-  sfxClip(rk?'rocket':'cannon',0.7,rand(0.95,1.05))||sfx.pop();p.kx-=fx*3*p.sm;p.kz-=fz*3*p.sm;}
-function shotEnd(s,i){if(s.rk)explode(s.x,s.z,clamp(S*0.55,0.6,2.4));else puff(s.x,s.y,s.z,3,s.r*2,'#dddddd');scene.remove(s.m);shots.splice(i,1);}
+  shots.push({m,rk,bub,x,y,z,y0:y,vx:fx*sp,vz:fz*sp,vy:rk||bub?0:5*Math.sqrt(S),life:rk?2.2:bub?1.1:1.8,r,p,bounced:false,hits:0,ph:rand(0,6)});
+  if(bub){if(!sfxClip('bubble',0.6,rand(0.9,1.2)))tone('sine',rand(500,700),rand(900,1200),0.12,0.12);}
+  else{sfxClip(rk?'rocket':'cannon',0.7,rand(0.95,1.05))||sfx.pop();p.kx-=fx*3*p.sm;p.kz-=fz*3*p.sm;}}
+function shotEnd(s,i){if(s.rk)explode(s.x,s.z,clamp(S*0.55,0.6,2.4));else puff(s.x,s.y,s.z,3,s.r*2,s.bub?'#cdf7ff':'#dddddd');
+  if(s.bub)tone('sine',900,1600,0.06,0.08);scene.remove(s.m);shots.splice(i,1);}
 function updateShots(dt){
   for(let i=shots.length-1;i>=0;i--){const s=shots[i];s.life-=dt;
-    if(!s.rk)s.vy-=20*dt;s.x+=s.vx*dt;s.y+=s.vy*dt;s.z+=s.vz*dt;
+    if(!s.rk&&!s.bub)s.vy-=20*dt;s.x+=s.vx*dt;s.y+=s.vy*dt;s.z+=s.vz*dt;if(s.bub)s.y=s.y0+Math.sin(T*8+s.ph)*s.r;
     const gh=groundH(s.x,s.z)+s.r;if(s.y<gh){if(s.rk||s.bounced){shotEnd(s,i);continue;}s.y=gh;s.vy=Math.abs(s.vy)*0.5+3*Math.sqrt(S);s.bounced=true;sfx.thud();}
     if(s.rk&&Math.random()<0.6)addPart(mk('box',s.r,s.r,s.r,null,s.x,s.y,s.z,E(pick(['#ff7b00','#ffd60a']))),0.3);
     s.m.position.set(s.x,s.y,s.z);if(!s.rk)s.m.rotation.x+=dt*10;
     if(s.life<=0||Math.abs(s.x)>ARENA||Math.abs(s.z)>ARENA){shotEnd(s,i);continue;}
     let done=false;
-    if(boss&&boss.state!=='dead'&&boss.state!=='drop'){const o=boss.o;
+    if(boss&&!s.bub&&boss.state!=='dead'&&boss.state!=='drop'){const o=boss.o;
       for(const q of o.parts){if(q.kind!=='weak'||q.gone||q.phase!==boss.phase)continue;q.mesh.getWorldPosition(_wpB);
         if(Math.hypot(s.x-_wpB.x,s.z-_wpB.z)<s.r+q.s0.x*BOSS_SCALE*0.5+2){const d=Math.hypot(s.vx,s.vz)||1;hitWeak(q,s.p,s.vx/d,s.vz/d);done=true;break;}}
       if(!done&&Math.hypot(s.x-o.x,s.z-o.z)<o.r*0.6&&s.y<o.h){o.wob=Math.max(o.wob||0,0.5);done=true;}}
     if(!done)for(const o of objects){if(!o.alive||o.boss)continue;const dx=o.x-s.x,dz=o.z-s.z,rr=o.r+s.r;
       if(dx*dx+dz*dz>rr*rr||s.y>o.h+o.fy+s.r)continue;
       if(s.rk){done=true;break;}
+      if(s.bub){if(o.bld)damageBuilding(o,s.x,s.z,s.r*3+S,1,s.y-S,s.y+S,s.vx,s.vz,12);else if(o.sz<=tier)smash(o,s.vx,s.vz,12*Math.sqrt(S));else{o.wob=1;wakeObj(o);}done=true;break;}
       if(o.bld)damageBuilding(o,s.x,s.z,s.r*4+2*S,3,s.y-2*S,s.y+2*S,s.vx,s.vz,30);
       else if(o.sz<=tier+1)smash(o,s.vx,s.vz,30*Math.sqrt(S));else{o.wob=1;wakeObj(o);}
       if(o.bld||o.sz>=tier||++s.hits>4){done=true;break;}}
-    if(!done)for(const a of animals){if(a.state==='fly')continue;if(Math.hypot(a.x-s.x,a.z-s.z)<a.r+s.r*1.5)launchAnimal(a,s.vx,s.vz,20);}
+    if(!done)for(const a of animals){if(a.state==='fly')continue;if(Math.hypot(a.x-s.x,a.z-s.z)<a.r+s.r*1.5){if(a.sz<=tier)launchAnimal(a,s.vx,s.vz,s.bub?8:20);if(s.bub){done=true;break;}}}
     if(done)shotEnd(s,i);}
 }
 
@@ -272,14 +279,14 @@ function levelUp(){
   if(carTierNow()!==ct)queue.push({t:1.6,fn:newCars});}
 function updateGrowth(dt){S+=((giant?GROW_S[GROW_S.length-1]:GROW_S[tier])-S)*Math.min(1,dt*3);popT=Math.max(0,popT-dt);
   lvBtn.style.display=levelReady&&state==='play'?'block':'none';
-  const n=performance.now();if(levelReady&&n-lastReadySay>14000){lastReadySay=n;say('Level up ready! Press Y!');}}
+  const n=performance.now();if(levelReady&&n-lastReadySay>14000){lastReadySay=n;say('Level up ready! Press X or Y!');}}
 const dispScale=()=>S*(1+0.3*popT*Math.sin(popT*22));
 function showBig(txt){const el=$('big');el.textContent=txt;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}
 function sizeUp(){
   showBig('LEVEL UP!');greenT=4;scatterRain(Math.round(SCAT_N*0.4));sfxClip('levelup',1)||sfx.fanfare();say('LEVEL UP!');shake=Math.min(2,shake+1.2);popT=1.2;
   for(const p of players){puff(p.x,S,p.z,12,1.2*Math.max(S,.3),'#ffd60a');flash(p.x,S,p.z,'#ffd60a',3*Math.max(S,.3),0.5);}}
 // the big glowing LEVEL UP button (also Y on a controller, Q or / on the keyboard)
-const lvBtn=document.createElement('button');lvBtn.id='levelUp';lvBtn.innerHTML='⬆️ LEVEL UP!<small>press Y</small>';
+const lvBtn=document.createElement('button');lvBtn.id='levelUp';lvBtn.innerHTML='⬆️ LEVEL UP!<small>press X or Y</small>';
 lvBtn.onclick=e=>{e.stopPropagation();levelUp();};lvBtn.addEventListener('touchstart',e=>{e.stopPropagation();},{passive:true});document.body.appendChild(lvBtn);
 function goGiant(){
   showBig('GIANT!');sfx.fanfare();queue.push({t:1.3,fn:()=>sfx.fanfare()});say("You're GIANT! Smash everything!");shake=2;popT=1;confetti(220);
@@ -593,6 +600,8 @@ class Player{
   }
 }
 let lastStuckSay=0;
+const soundHint=document.createElement('div');soundHint.id='soundHint';soundHint.textContent='🔊 Press a key, click or tap for sound';$('hud').appendChild(soundHint);
+{const st=document.createElement('style');st.textContent=`:where(#soundHint){display:none;position:absolute;right:16px;top:74px;font:18px 'Lilita One',sans-serif;color:#fff;background:rgba(0,0,0,.45);padding:6px 14px;border-radius:14px}`;document.head.appendChild(st);}
 // BOOM out of a tight spot: blast away whatever is hemming the car in (no points), and pop the car up
 function boomOut(p){const R=p.r*3+2*S;
   p.stuck=false;p.trail.length=0;p.air=true;p.vy=14*Math.sqrt(Math.max(S,0.3));sfx.boom();say('BOOM!');shake=Math.min(2,shake+1);
@@ -607,7 +616,7 @@ function addPlayer(src){
 }
 function updatePanels(){
   for(let i=0;i<2;i++){const el=$('p'+i);const p=players.find(q=>q.idx===i);
-    if(p){el.className='pPanel';el.innerHTML=`P${i+1} ${p.stats.emoji} ${p.stats.name}<small>${(p.src==='touch'?'🔄 = switch car':(p.src.startsWith('gp')?'Y = switch car':(i==0?'Q = switch car':'/ = switch car')))+(carWeapon(p.stats)?(p.src==='touch'?' · 🎯 = shoot':p.src.startsWith('gp')?' · X = shoot':i==0?' · F = shoot':' · . = shoot'):'')}</small>`;}
+    if(p){el.className='pPanel';el.innerHTML=`P${i+1} ${p.stats.emoji} ${p.stats.name}<small>${(p.src==='touch'?'🔄 = switch car · 🎯 = shoot':(p.src.startsWith('gp')?'LB/RB = switch car · X/Y = shoot':(i==0?'Q = switch car · F = shoot':'/ = switch car · . = shoot')))}</small>`;}
     else{el.className='pPanel empty';el.innerHTML=`Player ${i+1}: press A<small>or ${i==0?'Space':'Enter'} to join!</small>`;}}
 }
 
@@ -624,7 +633,7 @@ addEventListener('keydown',e=>{
 addEventListener('keyup',e=>keys.delete(e.code));
 addEventListener('blur',()=>keys.clear());
 const KB={kb1:{u:'KeyW',d:'KeyS',l:'KeyA',r:'KeyD',b:'Space',j:'KeyE',s:'KeyQ',f:'KeyF'},kb2:{u:'ArrowUp',d:'ArrowDown',l:'ArrowLeft',r:'ArrowRight',b:'Enter',j:'ShiftRight',s:'Slash',f:'Period'}};
-function readKB(m){return {x:(keys.has(m.r)?1:0)-(keys.has(m.l)?1:0),z:(keys.has(m.d)?1:0)-(keys.has(m.u)?1:0),boost:keys.has(m.b),jumpP:pressed.has(m.j),swapP:pressed.has(m.s),fire:keys.has(m.f),joinP:pressed.has(m.b)||pressed.has(m.j)};}
+function readKB(m){return {x:(keys.has(m.r)?1:0)-(keys.has(m.l)?1:0),z:(keys.has(m.d)?1:0)-(keys.has(m.u)?1:0),boost:keys.has(m.b),jumpP:pressed.has(m.j),swapP:pressed.has(m.s),fire:keys.has(m.f),levelP:pressed.has(m.s)||pressed.has(m.f),joinP:pressed.has(m.b)||pressed.has(m.j)};}
 const gpPrev={};
 function readGP(){
   const res={};let gps=[];try{gps=navigator.getGamepads?navigator.getGamepads():[];}catch(e){}
@@ -632,7 +641,9 @@ function readGP(){
     const b=gp.buttons.map(x=>x&&(x.pressed||x.value>0.5));const P=i=>b[i]&&!prev[i];
     let x=gp.axes[0]||0,z=gp.axes[1]||0;if(Math.hypot(x,z)<0.22){x=0;z=0;}
     if(b[14])x=-1;if(b[15])x=1;if(b[12])z=-1;if(b[13])z=1;
-    res['gp'+gp.index]={x,z,boost:!!(b[0]||b[7]||b[5]),jumpP:P(1),swapP:P(3),fire:!!b[2],joinP:P(0)||P(1)||P(9),newP:P(9)};gpPrev[gp.index]=b;}
+    // X and Y both shoot: 8BitDo / Nintendo-style pads swap the X and Y labels, so either one works.
+    res['gp'+gp.index]={x,z,boost:!!(b[0]||b[7]),jumpP:P(1),swapP:P(4)||P(5),fire:!!(b[2]||b[3]),levelP:P(2)||P(3)||P(4)||P(5),joinP:P(0)||P(1)||P(9),newP:P(9)};gpPrev[gp.index]=b;
+    if(b.some(Boolean)&&AC&&AC.state!=='running')AC.resume().catch(()=>{});}
   return res;
 }
 // touch
@@ -1040,11 +1051,11 @@ function updateHUD(){
   if(state!=='play')return;
   $('meterFill').style.width=Math.min(100,levelScore/goal*100)+'%';
   $('levelTxt').textContent='SMASH LEVEL '+level;$('count').textContent=smashCount+(smashCount===1?' smash!':' smashes!');
-  updateSizeHUD();
+  updateSizeHUD();soundHint.style.display=AC&&AC.state!=='running'&&!muted?'block':'none';
   for(const p of players){v3.set(p.x,p.y+p.model.h*dispScale()+1.2*Math.max(S,.3),p.z).project(camera);
     p.tag.style.left=((v3.x+1)/2*innerWidth)+'px';p.tag.style.top=((1-v3.y)/2*innerHeight)+'px';
     p.tag.textContent=p.stuck?'💥 JUMP = BOOM!':p.nameT>0?`${p.stats.emoji} ${p.stats.name}`:`P${p.idx+1}`;p.tag.style.background=p.stuck?SIGNAL_COL.no:p.color;}
-  const tp=players.find(q=>q.src==='touch');if(tp){$('bJump').textContent=tp.stuck?'💥':'JUMP';$('bSwap').textContent=levelReady?'⬆️':'🔄';bFire.style.display=carWeapon(tp.stats)?'flex':'none';}
+  const tp=players.find(q=>q.src==='touch');if(tp){$('bJump').textContent=tp.stuck?'💥':'JUMP';$('bSwap').textContent=levelReady?'⬆️':'🔄';bFire.style.display='flex';}
 }
 
 /* ---------- loop ---------- */
@@ -1060,7 +1071,7 @@ function loop(now){
   if(state==='start'){for(const k in gpIn)if(gpIn[k].joinP){startGame();break;}}
   if(state==='play'){
     for(const k in src){const s=src[k];if(s.joinP&&players.length<2&&!players.some(p=>p.src===k)){addPlayer(k);s.jumpP=false;}}
-    for(const p of players){const s=src[p.src]||{x:0,z:0};if(s.swapP){if(levelReady)levelUp();else{const l=carsInTier(carTierNow());p.setCar(l[(l.indexOf(p.carIdx)+1)%l.length],true);}}if(s.fire)shoot(p);if(s.newP&&giant){newWorld();break;}p.update(dt,s);}
+    for(const p of players){const s=src[p.src]||{x:0,z:0};if(levelReady&&(s.levelP||s.swapP))levelUp();else{if(s.swapP){const l=carsInTier(carTierNow());p.setCar(l[(l.indexOf(p.carIdx)+1)%l.length],true);}if(s.fire)shoot(p);}if(s.newP&&giant){newWorld();break;}p.update(dt,s);}
   }
   updateGrowth(dt);updateStreaming(dt);
   if(state==='play'){collisions();updateBoss(dt);}

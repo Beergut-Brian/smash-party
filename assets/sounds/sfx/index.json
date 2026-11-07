@@ -173,5 +173,10 @@
   "prompt": "Rocket launch whoosh with fizz",
   "dur": 0.8,
   "hash": "7c6fc32a378d"
+ },
+ "bubble": {
+  "prompt": "Cute bubble blaster shot, bloop with a soft pop",
+  "dur": 0.5,
+  "hash": "c7f7ed8b7fd3"
  }
 }

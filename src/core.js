@@ -157,11 +157,11 @@ const synth={
 const banks=[];
 function clipBank(dir,lazy){const b={dir,index:{},bufs:{},lazy};banks.push(b);
   fetch(dir+'index.json').then(r=>r.ok?r.json():{}).then(j=>{b.index=j||{};loadBank(b);}).catch(()=>{});return b;}
-function loadBank(b){if(!AC||b.lazy)return;
-  for(const id in b.index)if(!b.bufs[id]){b.bufs[id]='loading';
-    fetch(b.dir+id+'.mp3').then(r=>r.arrayBuffer()).then(x=>AC.decodeAudioData(x)).then(buf=>{b.bufs[id]=buf;}).catch(()=>{delete b.bufs[id];});}}
+function loadBank(b){if(!AC||b.lazy)return;for(const id in b.index)loadClip(b,id).catch(()=>{});}
 function loadClip(b,id){const have=b.bufs[id];if(have&&have!=='loading')return Promise.resolve(have);if(!AC||!b.index[id])return Promise.reject();
-  b.wait=b.wait||{};return b.wait[id]||(b.wait[id]=fetch(b.dir+id+'.mp3').then(r=>r.arrayBuffer()).then(x=>AC.decodeAudioData(x)).then(buf=>b.bufs[id]=buf));}
+  b.wait=b.wait||{};if(!b.wait[id]){b.bufs[id]='loading';
+    b.wait[id]=fetch(b.dir+id+'.mp3').then(r=>r.arrayBuffer()).then(x=>AC.decodeAudioData(x)).then(buf=>b.bufs[id]=buf).catch(e=>{delete b.bufs[id];delete b.wait[id];throw e;});}
+  return b.wait[id];}
 function playClip(b,id,vol=1,rate=1){const buf=b.bufs[id];if(!AC||!buf||buf==='loading')return null;
   const s=AC.createBufferSource(),g=AC.createGain();s.buffer=buf;s.playbackRate.value=rate;g.gain.value=vol;s.connect(g);g.connect(master);s.start();return s;}
 const voiceBank=clipBank('assets/sounds/voice/'),sfxBank=clipBank('assets/sounds/sfx/');
@@ -201,9 +201,15 @@ function duckMusic(sec){if(!musicGain)return;const t=AC.currentTime,g=musicGain.
 const voiceSlug=t=>t.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,''); // must match make-voices.mjs
 let voiceSrc=null;
 function stopVoice(){try{speechSynthesis.cancel();}catch(e){}if(voiceSrc){try{voiceSrc.stop();}catch(e){}voiceSrc=null;}}
-function say(text){if(muted)return;const id=voiceSlug(text),buf=voiceBank.bufs[id];
-  if(buf&&buf!=='loading'&&AC){stopVoice();voiceSrc=playClip(voiceBank,id,1.5);duckMusic(buf.duration);return;}
-  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=1.05;u.pitch=1.45;speechSynthesis.speak(u);}catch(e){}}
+let sayWant=null;
+function playVoice(id,buf){stopVoice();voiceSrc=playClip(voiceBank,id,1.5);duckMusic(buf.duration);}
+function robotSay(text){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=1.05;u.pitch=1.45;speechSynthesis.speak(u);}catch(e){}}
+function say(text){if(muted)return;const id=voiceSlug(text),buf=voiceBank.bufs[id];sayWant=id;
+  if(buf&&buf!=='loading'&&AC){playVoice(id,buf);return;}
+  // the recording exists but is still downloading (the first seconds after start): wait for it rather than use the robot voice
+  if(AC&&voiceBank.index[id]){const t0=performance.now();
+    loadClip(voiceBank,id).then(b=>{if(sayWant===id&&performance.now()-t0<3000)playVoice(id,b);}).catch(()=>robotSay(text));return;}
+  robotSay(text);}
 function toggleMute(){muted=!muted;if(master)master.gain.value=muted?0:0.6;if(muted)stopVoice();$('muteBtn').textContent=muted?'🔇':'🔊';}
 function toggleFS(){try{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen().catch(()=>{});}catch(e){}}
 $('muteBtn').onclick=e=>{e.stopPropagation();initAudio();toggleMute();};

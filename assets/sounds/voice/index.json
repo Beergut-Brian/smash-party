@@ -189,11 +189,6 @@
   "speak": "Level up!",
   "hash": "2444f5498028"
  },
- "level_up_ready_press_y": {
-  "text": "Level up ready! Press Y!",
-  "speak": "Level up ready! Press Y!",
-  "hash": "aac3bc71cc20"
- },
  "new_car": {
   "text": "New car!",
   "speak": "New car!",
@@ -208,5 +203,10 @@
   "text": "BOOM!",
   "speak": "Boom!",
   "hash": "1ad68b4c4193"
+ },
+ "level_up_ready_press_x_or_y": {
+  "text": "Level up ready! Press X or Y!",
+  "speak": "Level up ready! Press X or Y!",
+  "hash": "dbad27cc1ade"
  }
 }
