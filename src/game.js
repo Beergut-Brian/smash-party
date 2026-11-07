@@ -208,7 +208,7 @@ function updateGrowth(dt){S+=(growScale(growth)-S)*Math.min(1,dt*2.5);popT=Math.
 const dispScale=()=>S*(1+0.3*popT*Math.sin(popT*22));
 function showBig(txt){const el=$('big');el.textContent=txt;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}
 function sizeUp(){
-  const txt=pick(['BIGGER!','GROWING!','SO BIG!']);showBig(txt);sfx.fanfare();say(txt);shake=Math.min(2,shake+1.2);popT=1;
+  const txt=pick(['BIGGER!','GROWING!','SO BIG!']);showBig(txt);greenT=4;sfx.fanfare();say(txt);shake=Math.min(2,shake+1.2);popT=1;
   for(const p of players)puff(p.x,1,p.z,10,1+S,'#ffffff');}
 function goGiant(){
   showBig('GIANT!');sfx.fanfare();queue.push({t:1.3,fn:()=>sfx.fanfare()});say("You're GIANT! Smash everything!");shake=2;popT=1;confetti(220);
@@ -579,8 +579,54 @@ function bump(p,o,dx,dz,rr,spd){
   const d=Math.hypot(dx,dz)||1,nx=dx/d,nz=dz/d;p.x-=nx*(rr-d);p.z-=nz*(rr-d);
   if(spd<3&&!p.air)return;
   p.kx-=nx*(8+spd*0.6);p.kz-=nz*(8+spd*0.6);p.speed*=0.2;wakeObj(o);o.wob=1;
-  const n=performance.now();if(n-(o.lastBoing||0)>350){o.lastBoing=n;sfx.boing();puff(o.x-nx*o.r,1,o.z-nz*o.r,3,1,'#ffffff');shake=Math.min(1,shake+.15);}
+  growHint(o);const n=performance.now();if(n-(o.lastBoing||0)>350){o.lastBoing=n;sfx.boing();puff(o.x-nx*o.r,1,o.z-nz*o.r,3,1,'#ffffff');shake=Math.min(1,shake+.15);}
 }
+
+/* ---------- "can I smash it?" signals ---------- */
+// Pulsing red ring = too big for you, grow first. Green flash = you just got big enough for these.
+// Close to a too-big thing you also get a floating "grow first" badge; bumping one pops "GROW BIGGER!".
+const SIGNAL_COL={no:'#ff2d55',yes:'#3ddc84'},RING_MAX=80; // TODO(design): tune signal colors
+const ringGeo=(()=>{const g=new THREE.RingGeometry(0.77,1,40);g.rotateX(-Math.PI/2);return g;})();
+function ringLayer(color){const m=new THREE.InstancedMesh(ringGeo,new THREE.MeshBasicMaterial({color,transparent:true,opacity:.8,depthWrite:false}),RING_MAX);
+  m.frustumCulled=false;m.count=0;m.renderOrder=2;scene.add(m);return m;}
+const redRings=ringLayer(SIGNAL_COL.no),greenRings=ringLayer(SIGNAL_COL.yes);
+const badgeTex=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');
+  x.fillStyle=SIGNAL_COL.no;x.beginPath();x.arc(64,64,60,0,Math.PI*2);x.fill();x.lineWidth=8;x.strokeStyle='#fff';x.stroke();
+  x.fillStyle='#fff';x.beginPath();x.moveTo(64,14);x.lineTo(98,52);x.lineTo(76,52);x.lineTo(76,70);x.lineTo(52,70);x.lineTo(52,52);x.lineTo(30,52);x.closePath();x.fill();
+  x.font='44px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('🚙',64,96);return new THREE.CanvasTexture(c);})();
+const badges=[0,1,2,3].map(()=>{const s=new THREE.Sprite(new THREE.SpriteMaterial({map:badgeTex,depthTest:false,transparent:true}));s.renderOrder=3;s.visible=false;scene.add(s);return s;});
+let greenT=0,lastHint=0,lastHintSay=0;
+const _m4=new THREE.Matrix4(),_v=new THREE.Vector3(),_s=new THREE.Vector3(),_qi=new THREE.Quaternion();
+function updateSignals(dt){
+  greenT=Math.max(0,greenT-dt);
+  if(state!=='play'||!players.length){redRings.count=greenRings.count=0;badges.forEach(b=>b.visible=false);return;}
+  const R=camDist*1.1+8,close=camDist*0.3+2,near=[];
+  for(const o of objects){if(!o.alive||o.falling)continue;
+    const red=o.sz>tier;if(!red&&!(greenT>0&&o.sz===tier))continue;
+    let d=1e9;for(const p of players)d=Math.min(d,Math.hypot(o.x-p.x,o.z-p.z)-o.r-p.r);
+    if(d<R)near.push([o,d,red]);}
+  near.sort((a,b)=>a[1]-b[1]);
+  let nr=0,ng=0,nb=0;const pulse=1+0.07*Math.sin(T*7);
+  for(const [o,d,red] of near){
+    if(red?nr>=RING_MAX:ng>=RING_MAX)continue;
+    const s=(o.r+0.3*S)*1.3*pulse; // inner edge sits just outside the object_v.set(o.x,groundH(o.x,o.z)+0.07,o.z);_s.set(s,1,s);
+    (red?redRings:greenRings).setMatrixAt(red?nr++:ng++,_m4.compose(_v,_qi,_s));
+    if(red&&d<close&&nb<badges.length){const b=badges[nb++],k=camDist*0.07;b.visible=true;b.scale.set(k,k,1);
+      b.position.set(o.x,o.h+k*0.7+Math.sin(T*5)*k*0.1,o.z);}}
+  for(let i=nb;i<badges.length;i++)badges[i].visible=false;
+  redRings.count=nr;greenRings.count=ng;redRings.instanceMatrix.needsUpdate=greenRings.instanceMatrix.needsUpdate=true;
+  redRings.material.opacity=0.85+0.15*Math.sin(T*7);greenRings.material.opacity=Math.min(1,greenT);
+}
+function growHint(o){
+  const n=performance.now();if(n-lastHint<1500)return;lastHint=n;
+  v3.set(o.x,o.h+1,o.z).project(camera);const el=document.createElement('div');el.className='growPop';el.innerHTML='🚙⬆️ GROW BIGGER!';
+  el.style.left=((v3.x+1)/2*innerWidth)+'px';el.style.top=((1-v3.y)/2*innerHeight)+'px';$('hud').appendChild(el);setTimeout(()=>el.remove(),1400);
+  if(n-lastHintSay>7000){lastHintSay=n;say(pick(['Grow bigger first!','Too big! Smash smaller stuff!','Get bigger!']));}
+}
+{const st=document.createElement('style');st.textContent=`
+:where(.growPop){position:absolute;transform:translate(-50%,-50%);font:28px 'Lilita One',sans-serif;color:#fff;background:${SIGNAL_COL.no};padding:6px 16px;border-radius:999px;
+  border:4px solid #fff;white-space:nowrap;pointer-events:none;animation:growPop 1.4s ease-out forwards}
+@keyframes growPop{0%{opacity:0;margin-top:10px;scale:.6}15%{opacity:1;scale:1.1}25%{scale:1}100%{opacity:0;margin-top:-50px}}`;document.head.appendChild(st);}
 
 /* ---------- camera & HUD ---------- */
 function updateCamera(dt,t){
@@ -625,7 +671,7 @@ function loop(now){
   if(state==='play')collisions();
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
   updateObjects(dt);updateCollapses(dt);updateDebris(dt);updateParts(dt);
-  updateCamera(dt,T);cullChunks();updateHUD();
+  updateCamera(dt,T);updateSignals(dt);cullChunks();updateHUD();
   renderer.render(scene,camera);
   pressed.clear();touch.jumpP=false;touch.swapP=false;
 }
