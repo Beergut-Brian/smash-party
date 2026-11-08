@@ -316,7 +316,8 @@ Full spec and contracts: **`docs/ADVENTURE.md`** (read it before any task below)
 - [ ] **L37: Save + Continue** `NEEDS LOGIC` (logic-systems; needs L35; spec §6)
   - Adventure auto-saves to localStorage after each quest step and garage visit (quests, abilities, cosmetics, cars, size, unlocked worlds). Start screen: ▶️ Continue and 🆕 New Adventure (2-second hold). Arcade only remembers unlocked worlds.
 
-- [ ] **D19: Garage inside v2 + quest UI** `NEEDS DESIGN` (cars-ui; needs L32, L35, L36)
+- [x] **D19: Garage inside v2 + quest UI** `NEEDS DESIGN` (cars-ui; needs L32, L35, L36)
+  - Done: `buildGarage()` v2 fills the building's square (tiled floor, candy-wedge turntable r≈38, front-to-back drive lane with GO chevrons, checkered finish line, finish posts and a green ⬆ GO sign over the back door, wall lamps, tire stacks); the old D9 floor slab was never added (its `g.add` sat inside a comment), fixed. `buildCarPart(id)` for hammer (swinging toy mallet), shoot (egg blaster), hover (glow ring + thrusters), glide (kite wings), dozer (blade), hat, crown. style.css: giver balloons (blue / gold `.main`, tail, pulsing !), picture bubbles with dots, quest icons, `#questArrow`, `#questHud`, `.abGlyph` pop-in + glow, `#modePick` tiles matching `#worldPick`. Continue / New (L37): styled ahead as `#savePick .mp` (`.new` = pink New tile, `--hold` 0–1 fills it for the 2-second hold, `.sel`, `.focus`); L37 can use those names or rename them in style.css.
   - `buildGarage()` with the roomier floor and a back exit door; the GO arrow over the door.
   - Style the giver "!" balloons (gold / blue), picture bubbles with dots, the ability glyph pop-up, the mode picker and Continue / New tiles. Icons only.
   - Car parts for abilities and cosmetics: roof hammer, egg-blaster nozzle, hover glow ring, glide wings, party hat, crown.
