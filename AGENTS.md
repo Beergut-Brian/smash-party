@@ -10,14 +10,14 @@ A co-op driving-and-smashing game for a dad and his 5-year-old, played on a TV w
 - Must run smoothly at 1080p on a GTX 1060 and stay playable on a phone (touch controls).
 
 ## Layout & who owns what
-Two tools work on this repo at the same time. Stay in your lane to avoid merge conflicts.
+Three lanes work on this repo at the same time: **logic** (Claude Code), **cars & UI** (Cursor) and **world** (a Claude Code *design* session). Stay in your lane to avoid merge conflicts.
 
 | File | Owner | What's in it |
 |---|---|---|
-| `src/cars.js` | **Cursor** (design) | Block-built car models + the `CARS` list, model-car loader |
-| `src/objects.js` | **Cursor** (design) | Smashable objects (`OBJ`), arena layout (`buildWorld`), respawn mix (`SPAWN_W`) |
-| `style.css` | **Cursor** (design) | All UI styles |
-| `assets/**` | **Cursor** (design) | `.glb` models, `cars.json`, textures, sounds |
+| `src/cars.js` | **Cursor** (cars & UI) | Block-built car models + the `CARS` list, model-car loader |
+| `src/objects.js` | **Claude Code design session** (world) | Smashable objects (`OBJ`), arena layout (`buildWorld`), respawn mix (`SPAWN_W`) |
+| `style.css` | **Cursor** (cars & UI) | All UI styles |
+| `assets/**` | **Cursor**: `assets/cars/`, UI art. **World session**: `assets/props/`, `assets/textures/` | `.glb` models, `cars.json`, textures, sounds |
 | `src/core.js` | **Claude Code** (logic) | Helpers (`mk`, `M`, `E`, `rand`…), renderer, scene, ground/roads/walls, ramps + `groundH`, audio |
 | `src/game.js` | **Claude Code** (logic) | Debris, smashing, scoring, respawn, celebration, players/driving, input, collisions, camera, HUD, main loop |
 | `index.html`, `CLAUDE.md` | Shared | Change rarely; mention it in the commit message |

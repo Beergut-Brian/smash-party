@@ -93,6 +93,12 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 
 > **New car or spoken line?** Car names get a recorded voice automatically, but someone with the ElevenLabs key has to run `node --env-file=.env tools/make-voices.mjs` (see CLAUDE.md). Until then the robot voice reads it.
 
+## Design lanes (two design agents)
+Design is split by file so both can run at once without conflicts:
+- **Cursor = Cars & UI:** `src/cars.js`, `assets/cars/`, `style.css`. Tasks: D8a, recipe system, D6, D4.
+- **Claude Code (design session) = World:** `src/objects.js`, `assets/props/`. Tasks: D8b, D3, D5, D7.
+Claude Code's *logic* sessions still own `core.js`, `game.js` and `tools/`. A design session never edits those; it leaves `// TODO(logic):` notes.
+
 - [x] **D0: Size classes + growth HUD styling** (from L2)
   - Done: every prop passes `{size:'micro'…'mega'}`. Flowers and pebbles are micro (the size you start at), bushes are mini, cones are small, houses are huge, and the clock tower, barn, and bounce house are mega.
   - The home arena puts micro props in front of the start spots (flowers, pebbles, mushrooms, acorns, toy blocks, cans, rubber ducks, snails) plus gnomes, bushes, and hydrants.
@@ -103,18 +109,18 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Done: micro props are flowers, pebbles, mushrooms, acorns, toy blocks, soda cans, rubber ducks, and snails. Gnomes and bushes are mini. `ZONE_PROPS` lists real `OBJ` names for town, farm, park, and home from micro through mega, so scatter no longer shrinks dollhouses.
   - Huge and mega already in the world: house, villa, school, fire station, farmhouse, silo, windmill, water tower, gazebo (huge); clock tower, barn, bounce house (mega). All of the box ones use the L3 part contract.
 
-- [ ] **D8: Swap in a free CC0 low-poly art pack** (next up; biggest visual win)
+- [ ] **D8: Swap in a free CC0 low-poly art pack** (biggest visual win). Split: **D8a cars → Cursor** (Kenney car kit, in progress); **D8b world → Claude Code design** (town, farm, park props/buildings via the L9 GLB prop loader, in `objects.js` + `assets/props/`)
   - Use **CC0** packs only (free for any use, no attribution needed): Kenney, Quaternius, or KayKit. Pick **one** main style so everything matches. Note the pack and license in `assets/CREDITS.md`.
   - Start with the **town** (houses, shops, trees, street props) and **cars**, then the farm, park and animals.
   - Put models in `assets/props/` and `assets/cars/`. Keep each prop under ~5k triangles, cars under ~20k.
   - Buildings still need the L3 part contract to collapse. For a pack building, either keep it one piece (it smashes but doesn't pancake) or split walls/roof into separate meshes in Blender, and tag them in a small manifest.
   - Needs: L9 GLB prop loader for the cleanest path. Cars can start now via `assets/cars/cars.json`.
 
-- [ ] **D5: Boss model(s)**
+- [ ] **D5: Boss model(s)** (World: Claude Code design)
   - One original boss for max size, built from L3-contract parts plus `BP(mesh, floor, 'weak')` glowing weak spots. Chunky, funny, not scary. Kaden and son to pick the concept (and maybe name it).
   - Needs: L6 spec. ✅ L6 is done. The format is in `CLAUDE.md` under "Boss". Logic has three blocky placeholders to replace or polish (Kaden picked all three ideas, one random per world): **Clankzilla** (junk robot), **Shelldozer** (crab carrying a sandcastle), **King Wobbles** (wobbly block king). New bosses welcome; Kaden and son will invent more.
 
-- [ ] **D6: Car upgrade path** (from play-test round 1)
+- [ ] **D6: Car upgrade path** (Cars: Cursor) (from play-test round 1)
   - Set `tier` on every car: 0 = humble starter cars for the tiniest sizes (toy-ish: pedal car, scooter, shopping cart…), up to 3 = the super cool ones (rocket racer, monster machines). About 2–3 cars per tier so Y has something to switch to. Logic's guess today: `CAR_TIER` in game.js.
   - Tier 2–3 cars can shoot: set `weapon:'cannon'` or `'rocket'` (logic handles the shots). Make the weapon visible on the model (a cannon barrel, rocket pods).
   - New car names get a recorded voice once someone runs `tools/make-voices.mjs`.
@@ -136,12 +142,12 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Done for the box buildings: house, cottage, villa, shop, school, fire station, clock tower, barn, and farmhouse use `BP` walls (about 8–12 per storey), slabs, a roof, and whole extras (doors, windows). They pass `{building:true}`.
   - Still one-piece (fine to smash, they do not pancake): water tower, silo, gazebo, coop, windmill, and the little smash-tower. A later pass can shell those if they should collapse too.
 
-- [ ] **D3: Farm and park animals**
+- [ ] **D3: Farm and park animals** (World: Claude Code design)
   - Cute, chunky, low-poly: chicken, rooster, duck, cow, pig, sheep, goat, horse, dog, cat, bunny, goose.
   - Built as single whole pieces (they get launched intact, never broken). Big googly eyes encouraged.
   - Needs: L4 (animal format and how they're registered). ✅ L4 is done. The format is in `CLAUDE.md` under "Animal"; logic has blocky placeholders in `ANIMAL_DEFAULT` (game.js) to replace. Animal sounds are already recorded.
 
-- [ ] **D4: Vehicle wish list (inspiration only)**
+- [ ] **D4: Vehicle wish list (inspiration only)** (Cars: Cursor, via the recipe system)
   Design **original** takes on these, with no real brands, logos or copied designs. Every one should look like a toy: big wheels, bright colors, a silly face or feature.
   - **Real-life vehicle types:** dump truck, cement mixer, garbage truck, school bus, fire engine, ambulance, tow truck, street sweeper, snowplow, bulldozer, excavator, steamroller, forklift, farm tractor, combine harvester, ice-rink resurfacer, double-decker bus, limo, RV/camper, food truck, taxi, police cruiser, mail truck, delivery van, race car, dune buggy, monster truck, rally car, go-kart, hovercraft, golf cart, lawn mower, armored truck, ladder truck, crane truck, tank (cartoon, no weapons)
   - **Futuristic:** angular armored "future truck", hover car, robot-leg walker, rocket sled, solar-panel buggy, bubble-dome moon rover
@@ -149,7 +155,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - **Son-designed car:** reserved spot. Ask him for a name, color and silly feature.
   - Each car: 4–5 units long, faces +Z, `speed` 20–32, `r` 2–2.8. Scales automatically once L2 lands.
 
-- [ ] **D7: More mega set pieces**
+- [ ] **D7: More mega set pieces** (World: Claude Code design)
   - Still just ideas: stadium, skyscraper, cargo ship, ferris wheel. Build them with `BP` when a zone has room. The mountain-sized boss is D5.
 
 ---

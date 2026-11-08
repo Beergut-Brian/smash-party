@@ -10,14 +10,14 @@ A co-op driving-and-smashing game for a dad and his 5-year-old, played on a TV w
 - Must run smoothly at 1080p on a GTX 1060. Computer only (TV via PC + controllers); phone/touch support isn't needed, so don't spend time on it.
 
 ## Layout & who owns what
-Two tools work on this repo at the same time. Stay in your lane to avoid merge conflicts.
+Three lanes work on this repo at the same time: **logic** (Claude Code), **cars & UI** (Cursor) and **world** (a Claude Code *design* session). Stay in your lane to avoid merge conflicts.
 
 | File | Owner | What's in it |
 |---|---|---|
-| `src/cars.js` | **Cursor** (design) | Block-built car models + the `CARS` list, model-car loader |
-| `src/objects.js` | **Cursor** (design) | Smashable objects (`OBJ`), arena layout (`buildWorld`), respawn mix (`SPAWN_W`) |
-| `style.css` | **Cursor** (design) | All UI styles |
-| `assets/**` | **Cursor** (design) | `.glb` models, `cars.json`, textures, sounds (except the generated `assets/sounds/voice/`, `sfx/` and `music/`) |
+| `src/cars.js` | **Cursor** (cars & UI) | Block-built car models + the `CARS` list, model-car loader |
+| `src/objects.js` | **Claude Code design session** (world) | Smashable objects (`OBJ`), arena layout (`buildWorld`), respawn mix (`SPAWN_W`) |
+| `style.css` | **Cursor** (cars & UI) | All UI styles |
+| `assets/**` | **Cursor**: `assets/cars/`, UI art. **World session**: `assets/props/`, `assets/textures/` | `.glb` models, `cars.json`, textures, sounds (except the generated `assets/sounds/voice/`, `sfx/` and `music/`) |
 | `tools/`, `assets/sounds/voice/`, `sfx/`, `music/` | **Claude Code** (logic) | ElevenLabs generators (`make-voices.mjs`, `make-sfx.mjs`, `make-music.mjs`), their lists (`*-lines.json`), and the generated mp3s + `index.json` |
 | `src/core.js` | **Claude Code** (logic) | Helpers (`mk`, `M`, `E`, `rand`…), renderer, scene, ground/roads/walls, ramps + `groundH`, audio |
 | `src/game.js` | **Claude Code** (logic) | Debris, smashing, scoring, respawn, celebration, players/driving, input, collisions, camera, HUD, main loop |
