@@ -2168,8 +2168,8 @@ function growHint(o){
    of the players (rumble, dust, beacon, gold arrow), scaled to their size. Drive in the big front door (+Z): the roof and
    front wall get out of the way so the camera sees in, and the first one in waits inside. Once everyone is in, the
    front door rolls down and the camera frames the showroom: up to GARAGE_N parked cars per player on pads in their
-   color. Drive into one to pick it. When everyone has picked, the back door (−Z) rolls up under a GO arrow: drive out
-   (or A / START) into the world set up for the new size (Arcade: a fresh world with the garage right behind you;
+   color, each player on their own side (L49). Drive onto one to swap into it (try as many as you like); once everyone has
+   tried one, the back door (−Z) rolls up under a GO arrow: the car you drive out in is your pick. Drive out (or START) into the world set up for the new size (Arcade: a fresh world with the garage right behind you;
    Adventure (L36): the same world, restocked around the exit), and the garage sinks back into the ground. Fwoomp.
    Design hooks (all optional, placeholders otherwise), at car scale 1 (logic scales the whole thing by the players' size):
    - `function buildGarageBuilding(){…}` in objects.js: the outside shell, a THREE.Group centered on the origin, floor
@@ -2295,34 +2295,41 @@ function garageRemove(){
   for(const r of G.ramps){const c=chunkOf(r.x,r.z);if(c.loaded&&c.group&&c.rampList.includes(r)&&!ramps.includes(r)){c.group.add(r.mesh);ramps.push(r);}}
   scene.remove(G.g);for(const m of G.merged)carUnmerge(m);garage=null;goBtn.style.display='none';garageArrowEl.style.display='none';garageArrow3.visible=false;
   for(const p of players)p.inG=false;}
-// (re)lay the parked cars for every player who hasn't picked yet: one player gets a row of 4, two players a 2×2 block each side
+// (re)lay the parked cars (L49): one player gets a row of 4 across the room, two players a 2×2 block each on their own
+// side (P1 left, P2 right), ~3 car lengths apart, the middle lane from door to door left free. The pad of the car you're
+// driving stands empty.
+const GARAGE_COLS=[10.5,31],GARAGE_ROWZ=[-20,6],GARAGE_ROW1=[-30,-10.5,10.5,30];
 function garageRows(){
   const G=garage,lists=garageLists(G.tier),C=GARAGE_CAR;
-  for(const pd of G.pads.filter(q=>!q.gone&&G.picked[q.owner]==null))garagePadOff(pd,false);
-  G.pads=G.pads.filter(q=>!q.gone);
-  for(const p of players){if(G.picked[p.idx]!=null)continue;const l=lists[p.idx]||lists[0];
+  for(const pd of G.pads)if(!pd.gone)garagePadOff(pd,false);
+  G.pads=[];
+  for(const p of players){const l=lists[p.idx]||lists[0];
     l.forEach((c,k)=>{let x,z;
-      if(players.length>1){const side=p.idx===0?-1:1;x=side*(17+(k%2)*14);z=-24+Math.floor(k/2)*17;}
-      else{x=(k-(l.length-1)/2)*14;z=-12;}
+      if(players.length>1){const side=p.idx===0?-1:1;x=side*GARAGE_COLS[k%2];z=GARAGE_ROWZ[Math.floor(k/2)%2]+Math.floor(k/4)*13;}
+      else{x=GARAGE_ROW1[k%4];z=-8+Math.floor(k/4)*20;}
       const y=GARAGE_FLOOR+0.12,model=carMerge(c.build());model.g.scale.setScalar(C);model.g.position.set(x,y+0.3,z);G.g.add(model.g);
       const pad=mk('cyl',6*C,0.3,6*C,null,x,y+0.15,z,E(p.color));pad.castShadow=false;G.g.add(pad);
       const beam=new THREE.Mesh(MARK_BEAM_GEO,new THREE.MeshBasicMaterial({color:'#fff3b0',transparent:true,opacity:0.18,depthWrite:false,
         blending:THREE.AdditiveBlending,side:THREE.DoubleSide,fog:false}));beam.scale.set(3*C,GARAGE_WALL,3*C);beam.position.set(x,y,z);G.g.add(beam);
-      const card=garageCard(c,p.color),below=players.length>1&&k>1;card.style.display=G.anyIn?'':'none';if(below)card.style.transform='translate(-50%,0)';
-      G.pads.push({car:c,owner:p.idx,lx:x,lz:z,model,pad,beam,card,below,spin:rand(0,6)});});}}
+      const card=garageCard(c,p.color),below=false;card.style.display=G.anyIn?'':'none';
+      const pd={car:c,owner:p.idx,lx:x,lz:z,model,pad,beam,card,below,spin:rand(0,6)};G.pads.push(pd);
+      if(G.picked[p.idx]!=null&&garageCarIdx(c)===G.picked[p.idx]&&!G.pads.some(q=>q!==pd&&q.taken===p.idx))garagePadTake(pd,p.idx);});}}
+// the car on this pad is now being driven (hide it), or it's back on its pad (show it)
+function garagePadTake(pd,who){pd.taken=who;pd.model.g.visible=who==null;pd.card.classList.toggle('taken',who!=null);}
 function garagePadOff(pd,poof){pd.gone=true;garage.g.remove(pd.model.g,pd.pad,pd.beam);carUnmerge(pd.model);pd.beam.material.dispose();pd.card.remove();
   if(poof){const w=garageW(pd);puff(w.x,garage.sG*2,w.z,6,1.6*garage.sG,'#ffffff');}}
 const _gw=new THREE.Vector3();
 function garageW(pd){return _gw.set(garage.x+pd.lx*garage.sG,0,garage.z+pd.lz*garage.sG);}
+// L49: driving onto one of your pads swaps you into that car (the one you were in goes back on its pad). Swap as often as
+// you like; the back door opens once everyone has tried one, and the car you drive out in is your pick.
 function garagePick(p,pd){
-  const G=garage,w=garageW(pd),x=w.x,z=w.z,s=G.sG;
-  G.picked[p.idx]=garageCarIdx(pd.car);garagePadOff(pd,false);
-  flash(x,s*1.5,z,p.color,5*s,0.5);flash(x,s*1.5,z,'#ffffff',3.5*s,0.35);puff(x,s*1.5,z,14,2*s,'#ffd60a');confetti(60);shake=Math.min(1.5,shake+1);
-  sfxClip('levelup',0.8,1.1)||sfx.fanfare();sfx.crash(true);
+  const G=garage,w=garageW(pd),x=w.x,z=w.z,s=G.sG,first=G.picked[p.idx]==null;
+  for(const q of G.pads)if(q.taken===p.idx){garagePadTake(q,null);const qw=garageW(q);puff(qw.x,s*1.5,qw.z,8,1.6*s,'#ffffff');}
+  G.picked[p.idx]=garageCarIdx(pd.car);garagePadTake(pd,p.idx);
+  flash(x,s*1.5,z,p.color,5*s,0.5);puff(x,s*1.5,z,14,2*s,'#ffd60a');confetti(first?60:25);shake=Math.min(1.5,shake+(first?1:0.4));
+  if(first)sfxClip('levelup',0.8,1.1)||sfx.fanfare();else sfx.pop();sfx.crash(true);
   p.setCar(G.picked[p.idx],true);p.markT=3;
-  for(const q of G.pads)if(!q.gone&&q.owner===p.idx)garagePadOff(q,true); // the other cars in your row go poof
-  G.pads=G.pads.filter(q=>!q.gone);
-  if(players.every(q=>G.picked[q.idx]!=null))G.goT=1.6;}
+  if(!G.ready&&!(G.goT>0)&&players.every(q=>G.picked[q.idx]!=null))G.goT=1.6;}
 // the walls, as segments in the garage's own units (scale 1); doors are only solid while shut
 function garageWalls(G){const H=GARAGE_HW+GARAGE_T/2,D=GARAGE_DOOR/2,w=[[-H,-H,-H,H],[H,-H,H,H],[-H,H,-D,H],[D,H,H,H],[-H,-H,-D,-H],[D,-H,H,-H]];
   if(G.frontK<0.6)w.push([-D,H,D,H]);if(G.backK<0.7)w.push([-D,-H,D,-H]);return w;}
@@ -2363,12 +2370,13 @@ function updateGarage(dt,src){
     if(pd.below)v3.set(w.x,GARAGE_FLOOR*s,w.z+4.8*GARAGE_CAR*s).project(camera);else v3.set(w.x,(GARAGE_FLOOR+pd.model.h*GARAGE_CAR+2.6)*s,w.z).project(camera);pd.card.style.left=((v3.x+1)/2*innerWidth)+'px';pd.card.style.top=((1-v3.y)/2*innerHeight)+'px';}
   for(const p of players){if(!p.inG)continue;
     for(const pd of G.pads){const w=garageW(pd),dx=p.x-w.x,dz=p.z-w.z,d=Math.hypot(dx,dz)||0.01,rr=p.r+2.2*GARAGE_CAR*s;if(d>=rr)continue;
-      if(pd.owner===p.idx&&G.picked[p.idx]==null){garagePick(p,pd);break;}
-      p.x=w.x+dx/d*rr;p.z=w.z+dz/d*rr;p.speed*=0.5; // someone else's car (or you already picked): it's solid
+      if(pd.taken===p.idx)continue; // the empty pad of the car you're in
+      if(pd.owner===p.idx){if(pd.taken==null){garagePick(p,pd);break;}continue;}
+      p.x=w.x+dx/d*rr;p.z=w.z+dz/d*rr;p.speed*=0.5; // someone else's car: it's solid
       if(T-p.lastBump>0.4){sfx.boing();p.lastBump=T;}}}
   if(allIn&&players.length===2){const [a,b]=players,dx=b.x-a.x,dz=b.z-a.z,d=Math.hypot(dx,dz)||0.01,rr=a.r+b.r; // collisions() waits while everyone's in
     if(d<rr){const ov=(rr-d)/2;a.x-=dx/d*ov;a.z-=dz/d*ov;b.x+=dx/d*ov;b.z+=dz/d*ov;}}
-  if(G.goT>0&&(G.goT-=dt)<=0){G.ready=true;goBtn.style.display='block';say('Out the back door!');sfx.join();G.sayT=12;}
+  if(G.goT>0&&(G.goT-=dt)<=0){G.ready=true;goBtn.style.display='block';say('Out the back door!');sfx.join();G.sayT=14;}
   if((G.sayT-=dt)<=0){G.sayT=14;if(!anyIn)say('Drive into the garage!');else if(G.ready)say('Out the back door!');}
   // the gold arrow: over the front door until everyone's in, then just inside the back door once it's open ([x, z, height at scale 1])
   const tgt=!allIn?[G.x,G.z+O,GARAGE_WALL*0.7]:G.ready?[G.x,G.z-O+6*s,3]:null;garageArrow3.visible=!!tgt;garageArrowEl.style.display='none';
@@ -2376,7 +2384,7 @@ function updateGarage(dt,src){
     if(!allIn){v3.set(tgt[0],2*s,tgt[1]).project(camera); // off screen: a 🏁 at the edge points the way
       if(v3.z>1||Math.abs(v3.x)>0.92||Math.abs(v3.y)>0.85){let ax=v3.x,ay=v3.y;if(v3.z>1){ax=-ax;ay=-ay;}const m=Math.max(Math.abs(ax)/0.88,Math.abs(ay)/0.8,1e-3);
         garageArrowEl.style.left=((ax/m+1)/2*innerWidth)+'px';garageArrowEl.style.top=((1-ay/m)/2*innerHeight)+'px';garageArrowEl.style.display='block';}}}
-  if(G.ready)for(const k in src)if(src[k].joinP){garageGo();return;}}
+}
 // out the back door (or A / START): into the world for the new size, then the garage sinks away
 function garageGo(){
   const G=garage;if(!G||!G.ready||G.phase!=='wait')return;
@@ -2395,7 +2403,7 @@ function garageGo(){
   camDist*=1.6;camKick=0.5; // the camera pulls back as you roll out
   G.phase='sink';G.t=-0.5;G.dustT=0;
   showBig('GO!');sfx.fanfare();confetti(120);players.forEach(p=>introCar(p,1.6));queue.push({t:0.5,fn:saveGame});} // L37: saved once out the door
-const goBtn=document.createElement('button');goBtn.id='garageGo';goBtn.innerHTML='🏁 GO!<small>A / START</small>';
+const goBtn=document.createElement('button');goBtn.id='garageGo';goBtn.innerHTML='🏁 GO!<small>START</small>';
 goBtn.onclick=e=>{e.stopPropagation();garageGo();};document.body.appendChild(goBtn);
 const garageArrowEl=document.createElement('div');garageArrowEl.id='garageArrow';garageArrowEl.textContent='🏁';$('hud').appendChild(garageArrowEl);
 const garageArrow3=new THREE.Mesh(MARK_ARROW_GEO,new THREE.MeshBasicMaterial({color:'#ffd60a',transparent:true,opacity:0.95,depthTest:false}));
@@ -2406,6 +2414,7 @@ garageArrow3.renderOrder=10;garageArrow3.visible=false;scene.add(garageArrow3);
 :where(.garageCard b){font-size:34px}
 :where(.garageCard span){color:#ffd60a;letter-spacing:1px}
 :where(.garageCard.soon){opacity:.8;border-style:dashed}
+:where(.garageCard.taken){opacity:.45}
 :where(#garageGo){display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:20;font:46px 'Lilita One',sans-serif;color:#fff;
   background:#06d6a0;border:6px solid #fff;border-radius:30px;padding:14px 50px;box-shadow:0 8px 0 rgba(0,0,0,.25);cursor:pointer;animation:nwPulse .8s ease-in-out infinite}
 :where(#garageGo small){display:block;font:16px Nunito,sans-serif;font-weight:900;opacity:.9}
@@ -2518,7 +2527,7 @@ window.__sp={voiceMissing,voiceInfo:()=>({cur:voiceCur&&{id:voiceCur.id,prio:voi
   quest(id,finish){questOn=true;questDefaults();const q=id&&QUESTS[id];if(id&&!q)return 'no quest '+id; // __sp.quest() turns Adventure quests on; ('id') starts one; ('id',true) finishes it
     if(q&&(!questA||questA.q!==q))questStart(q);if(q&&finish){questStepEnd(false);questFinish();}return questA?{id:questA.q.id,step:questA.si,do:questA.st&&questA.st.s.do,got:questA.st&&questA.st.got,n:questA.st&&questA.st.n}:questState();},
   garageIn(){if(!garage)return;garage.t=GARAGE_RISE;players.forEach((p,i)=>{p.x=garage.x+(i-(players.length-1)/2)*8*garage.sG;p.z=garage.z+20*garage.sG;p.heading=Math.PI;p.speed=0;});return garage.phase;}, // skip the drive up
-  garageGo(){if(!garage)return;__sp.garageIn();updateGarage(0,{});for(const p of players)if(garage.picked[p.idx]==null){const pd=garage.pads.find(q=>q.owner===p.idx&&!q.gone);if(pd)garagePick(p,pd);}garage.ready=true;garageGo();return !!garage&&garage.phase;},
+  garageGo(){if(!garage)return;__sp.garageIn();updateGarage(0,{});for(const p of players)if(garage.picked[p.idx]==null){const pd=garage.pads.find(q=>q.owner===p.idx&&!q.gone&&q.taken==null);if(pd)garagePick(p,pd);}garage.ready=true;garageGo();return !!garage&&garage.phase;},
   garageInfo(){const G=garage;return G&&{phase:G.phase,x:+G.x.toFixed(1),z:+G.z.toFixed(1),s:G.sG,in:players.map(p=>!!p.inG),picked:G.picked,ready:G.ready,front:+G.frontK.toFixed(2),back:+G.backK.toFixed(2),pads:G.pads.length,p:players.map(p=>[+p.x.toFixed(1),+p.z.toFixed(1)])};},
   tp(x,z,i=0){const p=players[i];if(p){p.x=x;p.z=z;p.y=groundH(x,z);p.markT=3;camT.set(x,0,z);}},
   carStats,perk(name,i=0){const p=players[i];if(!p)return;p.perk=name||null;p.perkT=0.5;return carStats(p.stats);}, // __sp.perk('magnet')
