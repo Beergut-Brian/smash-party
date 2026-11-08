@@ -18,7 +18,8 @@
    Nothing can fail and nothing has a timer: things that run away stay in the stage, items never drop. */
 const QUESTS={},QUEST_LIST=[];
 const QUEST_CHAPTERS=4;
-const QUEST_ABILITIES=['hammer','shoot','hover','dozer','glide']; // what they do lives in game.js (L36)
+const QUEST_ABILITIES=['hammer','shoot','hover','dozer','glide','stomp','sugarrush']; // what they do lives in game.js (L36, land abilities L42)
+const QUEST_LAND_ABIL=['stomp','sugarrush']; // L42: earned in a land; in Adventure off until a quest hands it out (even before the land's pack exists)
 let questOn=/[?&](adventure|mode=adventure)\b/.test(location.search); // L36 sets this from the start screen
 const questDone=new Set(),questAbil=new Set(),questCos=new Set(),questProg={};
 let questA=null; // the active quest: {q, si (step index), st (step state)}
@@ -26,7 +27,7 @@ function registerQuest(q){
   if(!q||!q.id||!Array.isArray(q.steps)){console.warn('registerQuest: needs id and steps',q);return;}
   q.world=q.world||'home';q.chapter=clamp(q.chapter||1,1,QUEST_CHAPTERS);q.giver=q.giver||{};q.giver.id=q.giver.id||q.id;
   if(QUESTS[q.id])QUEST_LIST.splice(QUEST_LIST.indexOf(QUESTS[q.id]),1);QUESTS[q.id]=q;QUEST_LIST.push(q);return q;}
-const hasAbility=id=>!questOn||questAbil.has(id)||!QUEST_LIST.some(q=>q.reward&&q.reward.ability===id); // Arcade: everything; Adventure: earned, or no quest gives it out yet
+const hasAbility=id=>!questOn||questAbil.has(id)||(!QUEST_LAND_ABIL.includes(id)&&!QUEST_LIST.some(q=>q.reward&&q.reward.ability===id)); // Arcade: everything; Adventure: earned, or no quest gives it out yet
 const questWorld=()=>typeof worldId!=='undefined'?worldId:'home'; // L33 worlds
 const questChapter=()=>carTierNow()+1;
 const questOpen=q=>q.world===questWorld()&&q.chapter<=questChapter()&&!questDone.has(q.id)&&(q.needs||[]).every(n=>questDone.has(n)||questAbil.has(n));
@@ -189,7 +190,7 @@ function questFinish(){
   if(rw.cosmetic){questCos.add(rw.cosmetic);if(typeof grantCosmetic==='function')grantCosmetic(rw.cosmetic);}
   if(rw.stars&&!giant)queue.push({t:1.2,fn:()=>{grow(Math.round((GROW_AT[tier+1]-GROW_AT[tier])*0.25*rw.stars));}}); // ⭐ = a quarter of a size
   questSave();}
-const QUEST_ICON={hammer:'🔨',shoot:'🥚',hover:'🛸',dozer:'🚜',glide:'🪁'};
+const QUEST_ICON={hammer:'🔨',shoot:'🥚',hover:'🛸',dozer:'🚜',glide:'🪁',stomp:'🦖',sugarrush:'🍭'};
 let questSpinT=0;
 function questSave(){if(typeof saveGame==='function')try{saveGame();}catch(e){}} // L37
 // for L37: everything quest-side that a save needs, and putting it back
