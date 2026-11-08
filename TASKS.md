@@ -123,8 +123,10 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 - [ ] **D12: More cars for the garage** `NEEDS DESIGN` (cars-ui; before L17 ships)
   - The level-up garage shows 3–4 cars per player from the new tier. Today's counts are tier 0: 3, tier 1: 8, tier 2: 11, tier 3: 5. Add **3+ tier-0 starters** (pedal car, shopping cart, toy scooter) and **4+ tier-3 showstoppers** from the D4 list (rocket sled, robot-leg walker, stegosaurus spike car, hover car) so both players get real choices.
 
-- [ ] **Z1: Candy Land zone** `NEEDS DESIGN` (zone-candy agent, see `agents/zone.md`; needs L15 ✅)
+- [x] **Z1: Candy Land zone** `NEEDS DESIGN` (zone-candy agent, see `agents/zone.md`; needs L15 ✅)
   - `src/world/zones/candy.js` from the template: pink/pastel ground and sky, lollipop trees, gumdrops, candy canes, cupcake houses (BP contract), a giant cake mega set piece, 15+ props across micro…mega, bunnies. No real candy brands.
+  - Done: zone `candy` (letter C, frosting-pink ground, pink sky). 20 block-built props: micro wrapped candy / jelly beans / peppermints; mini gumdrops / mini lollipops / cookies; tiny candy canes / cupcakes; small lollipops / rolling donuts / marshmallow stacks; medium ice-cream cones / chocolate bars / gingerbread folks; large swirl-lollipop trees / candy-cane arches / **cupcake houses** (BP); huge **gingerbread houses** (BP, 2 storeys) / gumball machines; mega **three-tier birthday cake** (BP) / giant sundae. One cake, gumball machine and sundae per map; other chunks are cupcake-house streets, lollipop groves or gingerbread lanes, with 1–2 ramps and bunny/chick herds. Test: `__sp.zone('candy')`.
+  - Draw calls (`__sp.stats().calls`, same spot, high quality): small 172 / medium 370 (both under the normal world's 227 / 540); mega 1684 vs 1505 for the normal world, which is already over the ~700 goal at mega size.
 
 - [ ] **Z2: Dino Valley zone** `NEEDS DESIGN` (zone-dino agent, see `agents/zone.md`; needs L15 ✅)
   - `src/world/zones/dino.js` from the template: warm jungle ground, ferns, palm trees, boulders, volcano mega set piece, giant eggs and bones, 15+ props across micro…mega. Goofy, never scary. Dino animals → `NEEDS DESIGN` for world-animals (+ `NEEDS LOGIC` for their sounds/herds).
