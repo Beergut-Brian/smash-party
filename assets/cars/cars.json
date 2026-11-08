@@ -51,23 +51,6 @@
     "tier": 1
   },
   {
-    "name": "Yellow Cab",
-    "emoji": "\ud83d\ude95",
-    "file": "taxi.glb",
-    "speed": 25,
-    "r": 2.14,
-    "scale": 1.636,
-    "y": 0,
-    "rotateY": 0,
-    "height": 2.45,
-    "exhaust": [
-      0,
-      0.86,
-      -2.1
-    ],
-    "tier": 1
-  },
-  {
     "name": "Parcel Pal",
     "emoji": "\ud83d\ude90",
     "file": "van.glb",
@@ -136,23 +119,6 @@
     "tier": 2
   },
   {
-    "name": "Hose Hero",
-    "emoji": "\ud83d\ude92",
-    "file": "firetruck.glb",
-    "speed": 24,
-    "r": 2.14,
-    "scale": 1.324,
-    "y": 0,
-    "rotateY": 0,
-    "height": 2.25,
-    "exhaust": [
-      0,
-      0.79,
-      -2.1
-    ],
-    "tier": 2
-  },
-  {
     "name": "Bin Buggy",
     "emoji": "\ud83d\uddd1\ufe0f",
     "file": "garbage-truck.glb",
@@ -182,23 +148,6 @@
     "exhaust": [
       0,
       0.87,
-      -2.1
-    ],
-    "tier": 2
-  },
-  {
-    "name": "Dash Racer",
-    "emoji": "\ud83c\udfce\ufe0f",
-    "file": "race.glb",
-    "speed": 30,
-    "r": 2.14,
-    "scale": 1.758,
-    "y": 0,
-    "rotateY": 0,
-    "height": 1.29,
-    "exhaust": [
-      0,
-      0.45,
       -2.1
     ],
     "tier": 2
