@@ -1,5 +1,8 @@
 /* Smash Party — INSIDE THE HOUSE: a giant kid's bedroom (indoor zone, Z3). Owner: zone-bedroom agent (see agents/zone.md).
-   You start micro among crumbs, cereal and building bricks on a play-mat road rug, grow into toys, then furniture,
+   The room is fully planned (Z4): furniture and 13 scenes at fixed spots, from a cereal spill at the start (micro)
+   to a toy-car race on the play-mat road (tiny), a tea party, a train loop and a pillow fort (large); only a small
+   random top-up and the filler scenes (the same scenes at your size) come on top.
+   You start micro among crumbs, cereal and building bricks in front of a play-mat road rug, grow into toys, then furniture,
    and at HUGE you smash the bedroom door to BREAK OUT (mega is left for outside). The mega set pieces (a bunk bed
    with a slide, a cardboard-box castle) are there for anyone who stays in. Room = ±80, walls 44 tall; at that scale
    1 unit ≈ 6 cm, so a cereal ring is micro, a toy block tiny, a teddy small, a dresser huge.
@@ -31,7 +34,12 @@ function bedroomCone(P,r0,r1,y0,y1,n,floor,cols){const h=y1-y0,lean=Math.atan2(r
     w.rotation.order='YXZ';w.rotation.set(-lean,a,0);P(BP(w,floor,'wall'),2);}}
 const BEDROOM_R={crumb:.2,cereal:.22,gummy:.2,brick:.24,crayon:.45,marble:.3,bricks:.4,dice:.42,block:.6,duck:.55,toycar:.7,sock:.6,
   teddy:1.1,books:1.2,cup:.8,robot:.9,ball:1.1,truck:2,train:2.2,tower:1.6,drum:1.5,bunny:1.4,
-  chest:5.2,dollhouse:4.6,lamp:2.6,chair:3.4,desk:6.5,horse:4,beanbag:3.6,dresser:7.4,shelf:8,bigteddy:6,tent:7,door:7,bunkbed:11,castle:12};
+  chest:5.2,dollhouse:4.6,lamp:2.6,chair:3.4,desk:6.5,horse:4,beanbag:3.6,dresser:7.4,shelf:8,bigteddy:6,tent:7,door:7,bunkbed:11,castle:12,
+  teacup:.35,teapot:.7,flag:.45,bowl:1.4,teatable:1.7,stand:2.8,rail:2.1,crayonbox:1.2,dino:1.3,tunnel:2.4,sockpile:2.3,easel:2.2,pillow:2.2,marblerun:2.8,basket:4,fort:6.5};
+// placement radius per prop for scenes and the filler (game.js recR reads RAD); only our own bedroom_ keys
+if(typeof RAD!=='undefined')for(const k in BEDROOM_R)if(RAD['bedroom_'+k]==null)RAD['bedroom_'+k]=BEDROOM_R[k];
+// fixed pseudo-random 0..1 (scenes are built once per chunk they touch, so their positions must not use rand)
+const bedroomH=(i,k=0)=>{const v=Math.sin(i*12.9898+k*78.233+1.7)*43758.5453;return v-Math.floor(v);};
 
 const BEDROOM_PROPS={
   /* ---- micro: floor crumbs and the tiniest toys ---- */
@@ -64,14 +72,14 @@ const BEDROOM_PROPS={
     P(mk('box',1,1,1,d,0,.5,0),3,true,.45);
     P(mk('box',.62,.62,.06,c,0,.5,.5),1);P(mk('box',.06,.62,.62,pick(BEDROOM_TOY),.5,.5,0),1);P(mk('pyr',.5,.4,.5,pick(BEDROOM_TOY),0,1.02,0),1,true,.2);
     g.rotation.y=rand(0,6.28);}),
-  bedroom_duck:(x,z)=>sized(x,z,BEDROOM_R.duck,1,1,'tiny',(P,g)=>{
+  bedroom_duck:(x,z,arg)=>sized(x,z,BEDROOM_R.duck,1,1,'tiny',(P,g)=>{
     P(mk('sph',.95,.65,1.1,'#ffd60a',0,.33,0),2,true,.35);P(mk('sph',.55,.55,.55,'#ffd60a',0,.82,.3),1,true,.25);
     P(mk('box',.3,.12,.3,'#ff924c',0,.78,.62),1);P(mk('sph',.3,.2,.2,'#ffd60a',0,.55,-.55),1);
-    for(const d of [-1,1])P(mk('sph',.1,.12,.06,BEDROOM_INK,d*.16,.92,.53),1);bedroomSpinY(g);},{roll:true}),
-  bedroom_toycar:(x,z)=>sized(x,z,BEDROOM_R.toycar,.62,2,'tiny',(P,g)=>{const c=pick(['#ff595e','#1982c4','#8ac926','#ffca3a','#6a4c93']);
+    for(const d of [-1,1])P(mk('sph',.1,.12,.06,BEDROOM_INK,d*.16,.92,.53),1);typeof arg==='number'?bedroomFace(g,arg):bedroomSpinY(g);},{roll:true}),
+  bedroom_toycar:(x,z,arg)=>sized(x,z,BEDROOM_R.toycar,.62,2,'tiny',(P,g)=>{const c=pick(['#ff595e','#1982c4','#8ac926','#ffca3a','#6a4c93']);
     P(mk('box',.62,.26,1.3,c,0,.24,0),2);P(mk('box',.5,.22,.6,'#bde0fe',0,.48,-.05),1,true,.18);P(mk('box',.55,.04,.08,BEDROOM_WHITE,0,.38,.5),1);
     for(const [a,b] of [[-1,1],[1,1],[-1,-1],[1,-1]])P(bedroomRot(mk('cyl',.26,.12,.26,BEDROOM_INK,a*.32,.13,b*.42),0,0,Math.PI/2),1,true,.12);
-    bedroomSpinY(g);}),
+    typeof arg==='number'?bedroomFace(g,arg):bedroomSpinY(g);}),
   bedroom_sock:(x,z)=>sized(x,z,BEDROOM_R.sock,.3,1,'tiny',(P,g)=>{const a=pick(BEDROOM_PASTEL),b=pick(BEDROOM_TOY);
     for(let i=0;i<4;i++)P(mk('box',.42,.24,.26,i%2?a:b,0,.12,-.45+i*.26),1,true,.12);
     P(mk('box',.42,.24,.5,b,.3,.12,.42),1,true,.15);P(mk('box',.38,.25,.2,BEDROOM_WHITE,.36,.12,.58),1);bedroomSpinY(g);}),
@@ -251,6 +259,98 @@ const BEDROOM_PROPS={
     P(BP(mk('box',.3,6,.3,BEDROOM_INK,0,21,0),2,'extra'),1,true);P(BP(mk('box',3.6,2.2,.2,'#ff595e',1.8,23,0),2,'extra'),1,true);
     P(BP(mk('cyl',3,3,.3,'#ffca3a',0,14,6.2),1,'extra'),1,true);P(BP(mk('box',4,1.4,.2,'#f15bb5',0,4,-11.3),0,'extra'),1,true);
     bedroomFace(g,arg);},{building:true}),
+
+  /* ---- Z4 scene props: tea party, toy race, train loop, art corner, dinos, laundry, pillow fort, marble run, snack bowl ---- */
+  bedroom_teacup:(x,z)=>sized(x,z,BEDROOM_R.teacup,.42,1,'mini',(P,g)=>{const c=pick(BEDROOM_PASTEL);
+    P(mk('cyl',.66,.05,.66,BEDROOM_WHITE,0,.025,0),1,true,.2);P(mk('cyl',.42,.3,.42,c,0,.2,0),1,true,.16);P(mk('cyl',.36,.03,.36,'#c98b55',0,.355,0),1);
+    P(bedroomRot(bedroomMk('hook',.22,.22,.3,c,.22,.22,0),0,0,-Math.PI/2),1);bedroomSpinY(g);}),
+  bedroom_teapot:(x,z,arg)=>sized(x,z,BEDROOM_R.teapot,1.1,2,'tiny',(P,g)=>{const c=pick(['#ffc6ff','#9bf6ff','#caffbf','#ffd6a5']);
+    P(mk('sph',1,.8,1,c,0,.42,0),2,true,.35);P(mk('cyl',.5,.1,.5,BEDROOM_WHITE,0,.84,0),1,true,.15);P(mk('sph',.18,.18,.18,'#ff8fab',0,.95,0),1);
+    P(bedroomRot(mk('cyl',.14,.6,.14,c,0,.6,.55),.9,0,0),1,true,.12);P(bedroomRot(bedroomMk('hook',.5,.5,.4,c,0,.45,-.45),0,-Math.PI/2,Math.PI/2),1);
+    for(const d of [-1,1])P(mk('sph',.14,.14,.06,'#ff8fab',d*.22,.5,.49),1);bedroomFace(g,arg);}),
+  bedroom_flag:(x,z,arg)=>sized(x,z,BEDROOM_R.flag,2.5,2,'tiny',(P,g)=>{ // a checkered race flag
+    P(mk('cyl',.7,.14,.7,BEDROOM_INK,0,.07,0),1);P(mk('cyl',.09,2.4,.09,BEDROOM_WHITE,0,1.2,0),1,true,.2);
+    for(let i=0;i<4;i++)for(let j=0;j<3;j++)P(mk('box',.26,.26,.04,(i+j)%2?BEDROOM_INK:'#ffffff',.18+i*.26,1.78+j*.26,0),1,true,.08);
+    P(mk('sph',.16,.16,.16,'#ffca3a',0,2.45,0),1);bedroomFace(g,arg);}),
+  bedroom_bowl:(x,z,arg)=>sized(x,z,BEDROOM_R.bowl,2.8,3,'small',(P,g)=>{const c=pick(['#4cc9f0','#ff8fab','#ffca3a','#8ac926']); // a tipped-over cereal bowl, mouth +Z
+    P(bedroomRot(mk('cyl',2.4,1.3,2.4,c,0,1.4,-.2),1.15,0,0),3);P(bedroomRot(mk('cyl',2.1,.06,2.1,'#fff8ec',0,1.68,.41),1.15,0,0),1,true,.4);
+    for(const [a,b,col] of [[-.5,1.3,'#ffca3a'],[.4,1.6,'#ff595e'],[.1,1,'#8ac926']])P(bedroomRot(bedroomMk('ring',.36,.36,.5,col,a,b,.7),.4,0,0),1,true,.16);
+    P(mk('box',.26,.1,1.9,'#adb5bd',1.8,.06,.7),1,true,.3);P(mk('sph',.6,.16,.8,'#adb5bd',1.8,.09,1.85),1,true,.2); // the spoon
+    bedroomFace(g,arg);}),
+  bedroom_teatable:(x,z)=>sized(x,z,BEDROOM_R.teatable,2.1,3,'small',(P,g)=>{const c=pick(['#ffadad','#bdb2ff','#9bf6ff']);
+    P(mk('cyl',1.6,.16,1.6,BEDROOM_WHITE,0,.08,0),1);P(mk('cyl',.4,1.1,.4,BEDROOM_WHITE,0,.65,0),2);
+    P(mk('cyl',3.3,.5,3.3,c,0,1.15,0),3,true,.8); // the tablecloth
+    for(let i=0;i<4;i++){const a=i/4*Math.PI*2+.4,cx=Math.sin(a)*1.05,cz=Math.cos(a)*1.05;
+      P(mk('cyl',.5,.04,.5,BEDROOM_WHITE,cx,1.42,cz),1,true,.12);P(mk('cyl',.32,.26,.32,BEDROOM_PASTEL[(i*2+1)%8],cx,1.57,cz),1,true,.1);}
+    P(mk('cyl',.9,.5,.9,'#ffd6a5',0,1.65,0),1,true,.3);P(mk('cyl',.92,.12,.92,'#ff8fab',0,1.94,0),1,true,.3);P(mk('sph',.22,.22,.22,'#e63946',0,2.1,0),1,true,.1);
+    bedroomSpinY(g);}),
+  bedroom_stand:(x,z,arg)=>sized(x,z,BEDROOM_R.stand,3.4,6,'small',(P,g)=>{ // a toy-block grandstand with plush fans cheering, front +Z
+    for(let f=0;f<3;f++)for(let row=f;row<3;row++)for(let k=-1;k<=1;k++)
+      P(BP(mk('box',1.6,1,1.1,BEDROOM_TOY[(row*3+k+f+8)%8],k*1.65,f+.5,1.2-row*1.15),f,'wall'),2);
+    for(let row=0;row<3;row++)for(const k of row===1?[-1,1]:[0]){const fy=row+1,fz=1.2-row*1.15,fx=k*1.65,fc=pick([BEDROOM_FUR,'#ffc6ff','#caffbf','#ffffff','#e9c46a']);
+      P(BP(mk('sph',.6,.6,.5,fc,fx,fy+.3,fz),row+1,'extra'),1,true);P(BP(mk('sph',.5,.5,.45,fc,fx,fy+.8,fz),row+1,'extra'),1,true);
+      for(const d of [-1,1])P(BP(bedroomRot(mk('sph',.16,.45,.16,fc,fx+d*.33,fy+.95,fz),0,0,-d*.4),row+1,'extra'),1,true);} // arms up: hooray!
+    P(BP(mk('box',.08,1.6,.08,BEDROOM_INK,1.65,3.8,-1.1),3,'roof'),1,true);P(BP(mk('pyr',.8,.5,.06,'#ff595e',1.95,4.3,-1.1),3,'roof'),1,true);
+    bedroomFace(g,arg);},{building:true}),
+  bedroom_rail:(x,z)=>sized(x,z,BEDROOM_R.rail,.45,1,'small',(P,g)=>{ // one piece of wooden train track along +Z (scenes turn it)
+    P(mk('box',1.9,.3,4.1,'#e0b07a',0,.15,0),2,true,.5);for(const d of [-1,1])P(mk('box',.22,.06,4.1,BEDROOM_WOOD2,d*.5,.31,0),1);
+    P(mk('cyl',.5,.3,.5,'#e0b07a',0,.15,2.15),1);}),
+  bedroom_tunnel:(x,z)=>sized(x,z,BEDROOM_R.tunnel,5,5,'medium',(P,g)=>{const gr=pick(['#8ac926','#52b788']); // a toy mountain the track runs through (along Z)
+    for(const d of [-1,1])P(mk('box',1,2.6,3.4,gr,d*1.75,1.3,0),2);
+    P(mk('box',4.6,1,3.4,gr,0,3.05,0),3,true,.9);P(mk('pyr',4.2,1.4,3.2,'#6c757d',0,4.25,0),2,true,.8);P(mk('pyr',1.6,.6,1.3,BEDROOM_WHITE,0,4.75,0),1,true,.3);
+    for(const d of [-1,1])P(bedroomMk('hook',2.6,2.6,.5,'#ffca3a',0,1.4,d*1.72),1);}),
+  bedroom_basket:(x,z,arg)=>sized(x,z,BEDROOM_R.basket,7,10,'large',(P,g)=>{ // the laundry basket, clothes heaped over the rim
+    P(BP(mk('cyl',7,.4,7,BEDROOM_WOOD2,0,.2,0),0,'slab'),2);bedroomCone(P,3.5,3.9,0,5.6,10,0,['#e9c46a','#d4a373']);
+    for(const d of [-1,1])P(BP(mk('box',.6,.9,1.8,BEDROOM_WOOD2,d*3.95,4.8,0),0,'extra'),1,true);
+    P(BP(mk('sph',6.6,2.4,6.6,pick(BEDROOM_PASTEL),0,5.5,0),1,'roof'),4,true,1.6);
+    P(BP(bedroomRot(mk('box',3.2,.5,2.6,pick(BEDROOM_TOY),1.2,6.2,2.6),.5,.3,0),1,'extra'),2,true); // a t-shirt flopped over the front
+    for(const [a,b,y,rz] of [[-2.2,3.6,5,.6],[2.8,-1.2,6.6,-.3],[-1,-1.6,6.9,.2],[3.9,2,3.2,1.3]])
+      P(BP(bedroomRot(mk('box',.7,.4,2.2,pick(BEDROOM_TOY),a,y,b),.3,rz,rz*.5),1,'extra'),1,true);
+    bedroomFace(g,arg);},{building:true}),
+  bedroom_sockpile:(x,z)=>sized(x,z,BEDROOM_R.sockpile,2.6,5,'medium',(P,g)=>{ // a heap of socks
+    P(mk('sph',4.4,2.2,4,pick(BEDROOM_PASTEL),0,.7,0),4);
+    for(let i=0;i<9;i++){const a=i*2.4,d=i<6?1.4:.5,m=mk('box',.7,.45,1.9,BEDROOM_TOY[i%8],Math.sin(a)*d,i<6?1.3:2,Math.cos(a)*d);m.rotation.set(rand(-.3,.3),a+1,rand(-.4,.4));P(m,1,true,.3);}
+    for(const [a,b] of [[1.2,.6],[-1,-.8]])P(mk('box',.74,.5,.5,BEDROOM_WHITE,a,1.9,b),1,true,.2);bedroomSpinY(g);}),
+  bedroom_crayonbox:(x,z,arg)=>sized(x,z,BEDROOM_R.crayonbox,2.4,3,'small',(P,g)=>{
+    P(mk('box',2,1.6,1,'#ffca3a',0,.8,0),3);P(mk('box',2.04,.4,1.04,'#2a9d8f',0,.6,0),1);P(mk('sph',.7,.5,.1,'#ff595e',0,1.15,.52),1);
+    for(let i=0;i<6;i++){const c=BEDROOM_TOY[i],x0=-.8+i*.32,h=.6+((i*37)%5)*.08,z0=(i%2-.5)*.3;
+      P(mk('cyl',.26,h,.26,c,x0,1.5+h/2,z0),1,true,.12);P(mk('cone',.26,.24,.26,c,x0,1.62+h,z0),1,true,.08);}
+    bedroomFace(g,arg);}),
+  bedroom_easel:(x,z,arg)=>sized(x,z,BEDROOM_R.easel,6,5,'medium',(P,g)=>{ // an easel with a crayon drawing: a house, the sun, grass
+    for(const d of [-1,1])P(bedroomRot(mk('box',.3,5.8,.3,BEDROOM_WOOD,d*1.4,2.8,.3),.12,0,-d*.15),2,true,.4);
+    P(bedroomRot(mk('box',.3,5.6,.3,BEDROOM_WOOD,0,2.7,-1),-.3,0,0),1,true,.4);P(mk('box',3.6,.25,.6,BEDROOM_WOOD2,0,1.6,.55),1,true,.4);
+    P(mk('box',3.4,2.8,.12,'#ffffff',0,3.4,.45),2,true,.8);
+    P(mk('box',3.4,.5,.04,'#8ac926',0,2.25,.52),1);P(mk('box',1.1,.9,.04,'#ff595e',-.6,2.95,.53),1);P(mk('pyr',1.4,.7,.04,'#6a4c93',-.6,3.75,.53),1);
+    P(mk('sph',.7,.7,.04,'#ffca3a',1,4.3,.53),1);for(let i=0;i<3;i++)P(mk('box',.3,.18,.18,BEDROOM_TOY[i+2],-1+i*.6,1.82,.55),1,true,.1);
+    bedroomFace(g,arg);}),
+  bedroom_dino:(x,z,arg)=>sized(x,z,BEDROOM_R.dino,2.4,3,'small',(P,g)=>{ // a goofy plastic toy dino, big grin, looking +Z
+    const c=pick(['#8ac926','#4cc9f0','#ff924c','#bdb2ff','#f15bb5']),sp=pick(['#ffca3a','#ff595e','#6a4c93']);
+    P(mk('sph',1.3,1.2,2,c,0,1,0),3);P(mk('sph',1,.9,1.2,c,0,1.9,1.1),2,true,.4);P(mk('sph',.8,.3,.7,'#ffffff',0,1.66,1.42),1);
+    bedroomFace2(P,0,2.02,1.62,.8);P(bedroomRot(mk('cone',.8,1.8,.8,c,0,.85,-1.5),-Math.PI/2+.25,0,0),1,true,.35);
+    for(const [a,b] of [[-1,1],[1,1],[-1,-1],[1,-1]])P(mk('cyl',.36,.6,.36,c,a*.42,.3,b*.5),1,true,.15);
+    for(let i=0;i<4;i++)P(mk('pyr',.36,.42,.36,sp,0,1.68-i*.08,.4-i*.45),1);bedroomFace(g,arg);}),
+  bedroom_pillow:(x,z)=>sized(x,z,BEDROOM_R.pillow,1.8,4,'medium',(P,g)=>{const c=pick(BEDROOM_PASTEL);
+    P(mk('sph',4,1.6,2.8,c,0,.8,0),3,true,.9);P(mk('box',3.4,.06,.5,'#ffffff',0,1.58,0),1);
+    for(const [a,b] of [[-1,-1],[1,-1],[-1,1],[1,1]])P(mk('sph',.5,.4,.5,c,a*1.7,.5,b*1.1),1);bedroomSpinY(g);}),
+  bedroom_fort:(x,z,arg)=>sized(x,z,BEDROOM_R.fort,9,12,'large',(P,g)=>{ // pillow walls, a blanket roof, a flag on a pencil; the way in is +Z
+    let i=0;const pw=(x,y,z,ry)=>P(BP(bedroomRot(mk('sph',4.2,2.4,2,BEDROOM_PASTEL[i++%8],x,y,z),0,ry,0),0,'wall'),2);
+    for(const y of [1.2,3.3]){for(const a of [-3.8,0,3.8])pw(a,y,-4.2,0);for(const d of [-1,1])for(const b of [-1.8,2])pw(d*5.4,y,b,Math.PI/2);}
+    const bc=pick(['#a0c4ff','#ffadad','#caffbf']);
+    P(BP(mk('box',13,.4,10.6,bc,0,4.9,-.6),1,'roof'),5,true,1.6);
+    for(const d of [-1,1])P(BP(bedroomRot(mk('box',4,3,.3,bc,d*4.5,3.6,4.8),-.2,0,0),1,'extra'),2,true); // the blanket hangs down by the door
+    P(BP(mk('cyl',.4,4.4,.4,'#ffca3a',3.6,7.3,-2.5),1,'extra'),1,true);P(BP(mk('cone',.4,.6,.4,'#f2d3ab',3.6,9.8,-2.5),1,'extra'),1,true);
+    P(BP(mk('box',2.2,1.4,.12,'#ff595e',4.7,8.6,-2.5),1,'extra'),1,true);
+    P(BP(mk('cyl',.9,1.6,.9,'#495057',-1.5,.8,1),0,'extra'),1,true);P(BP(mk('cyl',.95,.1,.95,'#fff3b0',-1.5,1.62,1),0,'extra'),1,true); // a flashlight
+    bedroomFace(g,arg);},{building:true}),
+  bedroom_marblerun:(x,z,arg)=>sized(x,z,BEDROOM_R.marblerun,8,8,'medium',(P,g)=>{ // two block towers, zig-zag chutes, marbles on the way down
+    P(BP(mk('box',5.4,.4,2.4,BEDROOM_WHITE,0,.2,0),0,'slab'),2);
+    for(let f=0;f<3;f++)for(const d of [-1,1])P(BP(mk('box',.9,2,.9,BEDROOM_TOY[(f*2+(d>0?1:0))%8],d*2,1.4+f*2,-.5),f,'wall'),2);
+    for(let k=0;k<4;k++){const y=1.3+k*1.45,t=k%2?.22:-.22,f=[0,0,1,2][k];
+      P(BP(bedroomRot(mk('box',3.6,.2,.9,BEDROOM_PASTEL[k*2%8],0,y,.4),0,0,t),f,'extra'),1,true);
+      P(BP(bedroomRot(mk('box',3.6,.35,.1,'#4cc9f0',0,y+.15,.85),0,0,t),f,'extra'),1,true);
+      P(BP(mk('sph',.45,.45,.45,pick(['#f15bb5','#ffca3a','#8ac926','#9bf6ff']),(k%2?1:-1)*.8,y+.38,.4),f,'extra'),1,true);}
+    P(BP(bedroomRot(mk('cone',2,1.4,2,'#ff595e',-2,7.1,-.5),Math.PI,0,0),3,'roof'),2,true);P(BP(mk('box',1.4,.3,1.4,'#ffca3a',2,6.55,-.5),3,'roof'),1,true);
+    bedroomFace(g,arg);},{building:true}),
 };
 // each prop's crash sound (L22): squeaky plush, clattery blocks, crunchy snacks, wooden furniture thuds
 const BEDROOM_SFX={
@@ -260,7 +360,11 @@ const BEDROOM_SFX={
   bedroom_duck:'bedroom_squeak',bedroom_teddy:'bedroom_plush',bedroom_bunny:'bedroom_plush',bedroom_bigteddy:'bedroom_plush',bedroom_sock:'bedroom_plush',bedroom_beanbag:'bedroom_plush',bedroom_tent:'bedroom_plush',
   bedroom_toycar:'bedroom_toy',bedroom_robot:'bedroom_toy',bedroom_truck:'bedroom_toy',bedroom_train:'bedroom_toy',bedroom_cup:'bedroom_toy',bedroom_ball:'bedroom_boing',bedroom_drum:'bedroom_drum',
   bedroom_books:'bedroom_wood',bedroom_chest:'bedroom_wood',bedroom_dollhouse:'bedroom_wood',bedroom_lamp:'bedroom_wood',bedroom_chair:'bedroom_wood',bedroom_desk:'bedroom_wood',
-  bedroom_horse:'bedroom_wood',bedroom_dresser:'bedroom_wood',bedroom_shelf:'bedroom_wood',bedroom_bunkbed:'bedroom_wood',bedroom_door:'bedroom_door'
+  bedroom_horse:'bedroom_wood',bedroom_dresser:'bedroom_wood',bedroom_shelf:'bedroom_wood',bedroom_bunkbed:'bedroom_wood',bedroom_door:'bedroom_door',
+  bedroom_teacup:'bedroom_clink',bedroom_teapot:'bedroom_clink',bedroom_teatable:'bedroom_wood',bedroom_bowl:'bedroom_toy',bedroom_flag:'bedroom_toy',
+  bedroom_stand:'bedroom_clatter',bedroom_marblerun:'bedroom_clatter',bedroom_rail:'bedroom_wood',bedroom_tunnel:'bedroom_wood',bedroom_easel:'bedroom_wood',
+  bedroom_basket:'bedroom_wood',bedroom_crayonbox:'bedroom_cardboard',bedroom_dino:'bedroom_toy',
+  bedroom_sockpile:'bedroom_plush',bedroom_pillow:'bedroom_plush',bedroom_fort:'bedroom_plush'
 };
 for(const k in BEDROOM_SFX){const f=BEDROOM_PROPS[k];BEDROOM_PROPS[k]=(x,z,arg)=>{const o=f(x,z,arg);o.sfx=BEDROOM_SFX[k];return o;};}
 
@@ -334,17 +438,107 @@ function bedroomRoom(h){const H=BEDROOM_WALLH,W=h*2+8,g=new THREE.Group(),Mt=bed
   add(mk('box',1.2,1,20,trim,h-.6,30,40));for(const [z,c] of [[33,BEDROOM_FUR],[40,'#ffc6ff'],[47,'#8ac926']])add(mk('sph',2.6,3.2,2.6,c,h-2,32,z),true);
   return g;}
 
-/* ---------- layout: furniture at fixed room spots (each chunk places the ones inside it) ---------- */
+/* ---------- scenes (Z4, L31 contract): little set-ups that tell a story. Local coords, +Z is the front.
+   Positions never use rand (a scene that crosses a chunk line is built once per chunk and must come out the same). ---------- */
+const BEDROOM_SCENES={
+  // a tipped-over cereal bowl and its spill, right in front of the start (micro: the first things you smash)
+  snack_spill:{size:'micro',r:7,sizes:['micro','mini','tiny'],build(s){
+    s.spot('milk',.5,-1.5,7.5,4.5,.35);s.place('bedroom_bowl',5,-3,3);
+    const T=['bedroom_cereal','bedroom_cereal','bedroom_crumb','bedroom_cereal','bedroom_gummy'];
+    for(let i=0;i<34;i++){const t=bedroomH(i,1),j=.4+t*1.6;s.place(T[i%5],3.2-t*9+(bedroomH(i,2)-.5)*j*2,-2.6+t*5.5+(bedroomH(i,3)-.5)*j*2);}}},
+  // a little building-brick wall around a half-built stack, more bricks trailing off
+  brick_build:{size:'micro',r:6,sizes:['micro','mini','tiny'],build(s){
+    for(let i=0;i<5;i++)for(const [a,b] of [[i,0],[5,i],[5-i,5],[0,5-i]])s.place('bedroom_brick',-1.75+a*.7,-1.75+b*.7);
+    s.place('bedroom_bricks',0,0);s.place('bedroom_dice',.9,-.7);
+    for(const [x,z] of [[-3.6,1.2],[-3.4,2.5],[-4.6,1.8]])s.place('bedroom_bricks',x,z);
+    for(let i=0;i<6;i++)s.place('bedroom_brick',2.7+i*.6,2.4+bedroomH(i,4)*.9);}},
+  // crayon art corner: a big sheet of paper with scribbles, crayons everywhere, the crayon box and an easel
+  crayon_art:{size:'mini',r:8,sizes:['mini','tiny','small'],build(s){
+    s.spot('paper',0,0,12,9,.12);
+    for(const [k,x,z,w,d,t] of [['crayon_g',0,3.2,10,.6,.12],['crayon_y',3.4,-2.4,1.6,1.6,.6],['crayon_r',-2.2,-.8,2.6,.45,.5],
+      ['crayon_b',1.2,1,3.2,.45,-.35],['crayon_p',-3.4,1.6,2,.4,1.2],['crayon_r',-.8,1.6,1.4,1.2,.12]])s.spot(k,x,z,w,d,t);
+    for(let i=0;i<8;i++)s.place('bedroom_crayon',-4.6+bedroomH(i,5)*9.2,-3.4+bedroomH(i,6)*6.8);
+    s.place('bedroom_crayonbox',4.8,-3.3,0,.12);s.place('bedroom_easel',-7.2,-4.6,0,.5);s.place('bedroom_marble',6.4,2.4);}},
+  // toy-car race on the play-mat road: 8 cars on a staggered grid, checkered flags, a starter robot, a block grandstand of plush fans, a jump
+  toy_race:{size:'tiny',r:14,sizes:['tiny','small'],build(s){
+    for(let row=0;row<4;row++)for(const lz of [-2.3,-.1])s.place('bedroom_toycar',6+row*2+(lz>-1?1:0),lz,3);
+    s.place('bedroom_flag',4,-4.4,0);s.place('bedroom_flag',4,2.2,0);
+    s.place('bedroom_stand',9,6.6,2);s.place('bedroom_robot',4,4.6,2);
+    s.place('bedroom_teddy',3,6.8,2,0,.6);s.place('bedroom_teddy',15,6.4,2,0,.6);s.place('bedroom_duck',13,4.4,2);
+    s.place('bedroom_block',16,3,0);s.place('bedroom_block',17.2,3.6,0);s.place('bedroom_toycar',-24,-.8,1);
+    s.ramp(-17,-1.2,-Math.PI/2,5,3.2,1.1);}},
+  // block city: two block skyscrapers, block houses, toy cars on the streets and a rubber-duck mayor in the middle
+  block_city:{size:'tiny',r:9,sizes:['tiny','small'],build(s){
+    s.place('bedroom_tower',-5,-5);s.place('bedroom_tower',5.2,5);
+    for(const [x,z] of [[2.6,-6.4],[4.6,-6.4],[6.6,-6.4],[2.6,-3.6],[6.2,-3.4],[-6.6,2.8],[-4.4,2.8],[-2.4,2.8],[-6.6,5.6],[-4,6.2]])s.place('bedroom_block',x,z);
+    for(const [x,z] of [[-2.2,-2.4],[2.4,2.4],[-7,-1.6],[7.4,1.6]])s.place('bedroom_bricks',x,z);
+    for(const [x,z,a] of [[-.1,-4.4,0],[.1,5.4,2],[-5.6,-.1,1],[4.4,.1,3]])s.place('bedroom_toycar',x,z,a);
+    s.place('bedroom_duck',0,0,0);s.place('bedroom_dice',-1.6,7.4);}},
+  // the dino-toy standoff: a line of toy dinos (and their big boss) vs wind-up robots and their dump truck, a ball as the prize
+  dino_standoff:{size:'small',r:8,sizes:['tiny','small','medium','large'],build(s){
+    for(const z of [-6,-2,2,6])s.place('bedroom_dino',-3,z,1);s.place('bedroom_dino',-6,0,1,0,1.5);
+    for(const z of [-5,-1.7,1.7,5])s.place('bedroom_robot',3,z,3);s.place('bedroom_truck',6.2,0,3);
+    s.place('bedroom_ball',0,0);}},
+  // tea party: a little table with cake and cups, teddies, a bunny and a big duck as guests, the teapot and spilled cups
+  tea_party:{size:'small',r:7,sizes:['mini','tiny','small','medium','large','huge'],build(s){
+    s.place('bedroom_teatable',0,0);
+    s.place('bedroom_teddy',-3.1,0,0,Math.PI/2);s.place('bedroom_teddy',0,-3.1,0,0);s.place('bedroom_bunny',3.2,0,0,-Math.PI/2,.65);s.place('bedroom_duck',2.3,-2.3,0,-Math.PI/4,1.5);
+    s.place('bedroom_teapot',2,2.6,0,Math.PI*.8);s.place('bedroom_teacup',-1.6,3);s.place('bedroom_teacup',-2.6,2.2);s.place('bedroom_teacup',.4,3.6);
+    s.place('bedroom_cup',-3.4,-3.4);}},
+  // pillow fort: the fort, spare pillows, a teddy at the door, a book and a sock
+  pillow_fort:{size:'large',r:8.5,sizes:['medium','large','huge'],build(s){
+    s.place('bedroom_fort',0,0,0);s.place('bedroom_pillow',-7.6,5.4,0,.4);s.place('bedroom_pillow',7.4,4.8,0,-.3);s.place('bedroom_pillow',7.8,-3,0,1.4);
+    s.place('bedroom_teddy',.6,6.8,0);s.place('bedroom_books',-3.4,7.4);s.place('bedroom_sock',3,7.8);}},
+  // sock mountain by the laundry basket: two sock heaps, socks everywhere, a teddy napping
+  sock_mountain:{size:'medium',r:9,sizes:['small','medium','large'],build(s){
+    s.place('bedroom_basket',3.6,-3.6,0);s.place('bedroom_sockpile',-3,1);s.place('bedroom_sockpile',1.4,4.4);
+    for(let i=0;i<9;i++){const a=.6+i*.42,d=4.6+bedroomH(i,7)*3;s.place('bedroom_sock',Math.cos(a)*d-1,Math.sin(a)*d+1.5);}
+    s.place('bedroom_teddy',-6.4,-3,1);}},
+  // train loop: 12 pieces of wooden track in a ring through a toy mountain, the train on it, a little block station inside
+  train_loop:{size:'medium',r:11,sizes:['small','medium','large'],build(s){
+    for(let i=0;i<12;i++){const a=i*Math.PI/6;s.place('bedroom_rail',Math.sin(a)*8,Math.cos(a)*8,null,a+Math.PI/2);}
+    s.place('bedroom_tunnel',-8,0,null,0);s.place('bedroom_train',8,0,0,Math.PI);
+    for(const [x,z] of [[-2,-2.4],[.2,-3.4],[2.4,-2.2]])s.place('bedroom_block',x,z);
+    s.place('bedroom_robot',3,1.6,0,-Math.PI/2);s.place('bedroom_teddy',-2.4,2.6,0,.6);s.place('bedroom_bricks',0,0);}},
+  // marble run with marbles rolled out all over the floor
+  marble_run:{size:'medium',r:8,sizes:['small','medium','large'],build(s){
+    s.place('bedroom_marblerun',0,-1.5,0);
+    for(let i=0;i<10;i++)s.place('bedroom_marble',1.5+bedroomH(i,8)*5.5,1.8+bedroomH(i,9)*4.4);
+    s.place('bedroom_dice',-3.6,2.6);s.place('bedroom_dice',-2.4,3.8);s.place('bedroom_bricks',-4.6,-3.4);s.place('bedroom_robot',-5,1,0,.5);}},
+  // reading nook: book stacks, a teddy and a little bunny reading, a sippy cup, a book ramp
+  reading_nook:{size:'small',r:7,sizes:['small','medium'],build(s){
+    s.place('bedroom_books',-3,-2.4);s.place('bedroom_books',-.6,-3.6);s.place('bedroom_books',3.2,-2.6);
+    s.place('bedroom_teddy',0,0,0);s.place('bedroom_bunny',-2.6,.6,0,.5,.5);s.place('bedroom_cup',3.2,.8);
+    s.ramp(-5.5,4.6,Math.PI/2,5,3,1.2);}},
+  // a pile of plushies around a big bunny
+  plush_pile:{size:'small',r:6,sizes:['small','medium','large','huge'],build(s){
+    s.place('bedroom_bunny',0,-1.2,0);
+    for(let i=0;i<5;i++){const a=-1.1+i*.55;s.place('bedroom_teddy',Math.sin(a)*3.4,Math.cos(a)*3.4-.6,0,a);}
+    s.place('bedroom_duck',-3.6,-2.6,0,.6,1.6);s.place('bedroom_ball',3.8,-2.8);s.place('bedroom_sock',.6,4.4);}},
+};
+// where each scene stands in the room [id, x, z, turn] (furniture is in BEDROOM_FURNITURE)
+const BEDROOM_SCENE_AT=[
+  ['snack_spill',6,47,0],['brick_build',-16,50,0],['crayon_art',-26,66,0],              // by the start (micro, mini)
+  ['toy_race',6,25,0],['block_city',8,8,0],['dino_standoff',-17,8,0],                     // on the play-mat rug (tiny, small)
+  ['tea_party',-54,28,0],['pillow_fort',-54,-8,Math.PI/2],['plush_pile',-54,-28,0],      // the left side
+  ['sock_mountain',54,52,0],['marble_run',50,-2,0],['reading_nook',46,-46,0],            // the right side
+  ['train_loop',18,-28,0]                                                                 // behind the rug, next to the castle
+];
+
+/* ---------- layout: furniture and every scene at fixed room spots (each chunk places the parts inside it) ---------- */
 const bedroomPut=(ctx,type,x,z,arg)=>ctx.place(type,x,z,arg,BEDROOM_R[type.slice(8)]||1.2);
-function bedroomRing(ctx,x,z,rad,n,type,a0=.3){for(let i=0;i<n;i++){const a=a0+i/n*Math.PI*2;bedroomPut(ctx,type,x+Math.cos(a)*rad,z+Math.sin(a)*rad,i%4);}}
 function bedroomSprinkle(ctx,x0,z0,x1,z1,n,types){for(let i=0;i<n;i++)bedroomPut(ctx,pick(types),rand(x0,x1),rand(z0,z1),Math.random()*4|0);}
+function bedroomScene(ctx,id,x,z,th){const r=BEDROOM_SCENES[id].r+3;
+  if(x+r>ctx.x0&&x-r<ctx.x1&&z+r>ctx.z0&&z-r<ctx.z1)ctx.scene(id,x,z,th);}
 const BEDROOM_FURNITURE=[ // [type, x, z, arg (0 +Z, 1 +X, 2 −Z, 3 −X)]
   ['bedroom_door',8,-(BEDROOM_HALF-BEDROOM_R.door-2.05),0],
   ['bedroom_bunkbed',-56,-60,0],['bedroom_chest',-24,-71,0],['bedroom_shelf',58,-70,0],
   ['bedroom_dresser',70,-20,3],['bedroom_desk',68,22,3],['bedroom_chair',56,22,1],['bedroom_lamp',71,-2,0],
-  ['bedroom_dollhouse',-70,-12,1],['bedroom_beanbag',-56,26,0],['bedroom_bigteddy',-70,58,1],['bedroom_tent',62,60,0],
+  ['bedroom_dollhouse',-70,-12,1],['bedroom_beanbag',-68,8,0],['bedroom_bigteddy',-70,58,1],['bedroom_tent',66,66,0],
   ['bedroom_horse',28,-56,0],['bedroom_lamp',-71,-31,0],['bedroom_castle',-18,-28,0]
 ];
+// what the (small) random top-up uses inside the scene spots
+const BEDROOM_PAPER={micro:['bedroom_crumb','bedroom_brick'],mini:['bedroom_crayon','bedroom_crayon','bedroom_marble'],tiny:['bedroom_block','bedroom_toycar'],small:['bedroom_crayonbox','bedroom_books']};
 registerZone({
   id:'bedroom',
   letter:'R',
@@ -354,45 +548,40 @@ registerZone({
   indoor:{half:BEDROOM_HALF,wallH:BEDROOM_WALLH,floor:'#d9a66b',wall:'#cfe6ff',trim:BEDROOM_WHITE},
   room:bedroomRoom,
   breakout:['bedroom_door'],
-  start:[[-2.2,56],[2.2,56]],                 // on the front edge of the play-mat rug, facing the room
+  start:[[-2.2,56],[2.2,56]],                 // on the floor in front of the play-mat rug, facing the room
   // L22 sound + music ids (clips described in TASKS.md AU10; anything missing falls back to the default sounds)
   music:{drive:'bedroom_drive',boss:'bedroom_boss'},
   sfx:{crash:'bedroom_clatter',boom:'bedroom_boom',land:'bedroom_thump',ambient:'bedroom_ambient'},
   props:BEDROOM_PROPS,
+  scenes:BEDROOM_SCENES,                     // also the filler scenes dropped around the cars at their size
+  // the random top-up (scenes do most of the work now); no block towers or castles repeating at the big sizes
   sizes:{
     micro:['bedroom_crumb','bedroom_cereal','bedroom_gummy','bedroom_brick'],
-    mini:['bedroom_crayon','bedroom_marble','bedroom_bricks','bedroom_dice'],
-    tiny:['bedroom_block','bedroom_duck','bedroom_toycar','bedroom_sock'],
-    small:['bedroom_teddy','bedroom_books','bedroom_cup','bedroom_robot','bedroom_ball'],
-    medium:['bedroom_truck','bedroom_train','bedroom_tower','bedroom_drum','bedroom_bunny'],
-    large:['bedroom_chest','bedroom_dollhouse','bedroom_lamp','bedroom_horse','bedroom_beanbag'],
-    huge:['bedroom_bigteddy','bedroom_tent'],
-    mega:['bedroom_castle']                  // the bunk bed and the furniture only stand at their room spots
+    mini:['bedroom_crayon','bedroom_marble','bedroom_bricks','bedroom_dice','bedroom_teacup'],
+    tiny:['bedroom_block','bedroom_duck','bedroom_toycar','bedroom_sock','bedroom_teapot'],
+    small:['bedroom_teddy','bedroom_books','bedroom_cup','bedroom_robot','bedroom_ball','bedroom_dino','bedroom_crayonbox'],
+    medium:['bedroom_truck','bedroom_train','bedroom_drum','bedroom_bunny','bedroom_pillow','bedroom_sockpile'],
+    large:['bedroom_chest','bedroom_dollhouse','bedroom_lamp','bedroom_horse','bedroom_beanbag','bedroom_basket'],
+    huge:['bedroom_bigteddy','bedroom_tent','bedroom_fort'],
+    mega:['bedroom_bigteddy','bedroom_tent','bedroom_castle']   // the bunk bed and the furniture only stand at their room spots
   },
-  // spots: the rug is the toy town (cars, blocks, trains); the snack spill by the start is crumbs and cereal
+  // spots: the snack corner by the start is crumbs and cereal; the milk puddle and the art corner's paper get their own
   spots:{
-    rug:{micro:['bedroom_brick','bedroom_cereal'],mini:['bedroom_bricks','bedroom_marble','bedroom_dice'],tiny:['bedroom_toycar','bedroom_block','bedroom_duck'],
-      small:['bedroom_robot','bedroom_ball','bedroom_teddy'],medium:['bedroom_train','bedroom_truck','bedroom_tower']},
-    snack:{micro:['bedroom_crumb','bedroom_cereal','bedroom_gummy'],mini:['bedroom_crayon','bedroom_marble'],tiny:['bedroom_sock','bedroom_block'],small:['bedroom_cup','bedroom_books']},
-    nook:{micro:['bedroom_gummy','bedroom_brick'],mini:['bedroom_crayon','bedroom_dice'],tiny:['bedroom_sock','bedroom_duck'],small:['bedroom_books','bedroom_teddy'],medium:['bedroom_bunny','bedroom_drum']}
+    snack:{micro:['bedroom_crumb','bedroom_cereal','bedroom_gummy'],mini:['bedroom_crayon','bedroom_marble','bedroom_teacup'],tiny:['bedroom_sock','bedroom_block'],small:['bedroom_cup','bedroom_bowl']},
+    milk:{micro:['bedroom_cereal','bedroom_crumb'],mini:['bedroom_teacup'],tiny:['bedroom_teapot'],small:['bedroom_bowl']},
+    paper:BEDROOM_PAPER,crayon_r:BEDROOM_PAPER,crayon_b:BEDROOM_PAPER,crayon_y:BEDROOM_PAPER,crayon_g:BEDROOM_PAPER,crayon_p:BEDROOM_PAPER
   },
+  // painted floor tiles (L30): the art corner's paper and scribbles, the milk puddle
+  spotLook:{paper:'#fffdf7',milk:'#fff6e6',crayon_r:'#ff595e',crayon_b:'#1982c4',crayon_y:'#ffca3a',crayon_g:'#8ac926',crayon_p:'#f15bb5'},
   herds:[],
   layout(ctx){
+    ctx.planned=true; // the whole room is planned: only a small random top-up on top
     for(const [t,x,z,a] of BEDROOM_FURNITURE)bedroomPut(ctx,t,x,z,a);
-    ctx.spot('rug',-2,8,62,42,0);ctx.spot('snack',22,62,30,22,0);ctx.spot('nook',-50,30,30,26,0);ctx.spot('nook',40,-44,34,16,0);
-    // the toy town on the rug: block towers on the corners, a train and trucks on the road
-    for(const [x,z] of [[-28,-8],[24,-8],[-28,24],[24,24]])bedroomPut(ctx,'bedroom_tower',x,z);
-    bedroomPut(ctx,'bedroom_train',-8,-9,1);bedroomPut(ctx,'bedroom_truck',12,25,3);bedroomPut(ctx,'bedroom_drum',4,10);
-    // a cereal spill by the start: an upturned bowl's worth of rings and crumbs, gummies, a couple of crayons
-    bedroomSprinkle(ctx,6,50,40,72,40,['bedroom_cereal','bedroom_cereal','bedroom_crumb','bedroom_gummy']);
-    bedroomSprinkle(ctx,-24,46,-6,72,22,['bedroom_brick','bedroom_brick','bedroom_crumb']);
-    bedroomSprinkle(ctx,-30,40,30,74,8,['bedroom_crayon','bedroom_marble','bedroom_bricks','bedroom_dice']);
-    bedroomSprinkle(ctx,-30,40,30,74,5,['bedroom_block','bedroom_toycar','bedroom_duck']);
-    bedroomPut(ctx,'bedroom_cup',30,48);bedroomPut(ctx,'bedroom_books',-36,48);bedroomPut(ctx,'bedroom_teddy',-12,74,2);bedroomPut(ctx,'bedroom_ball',44,40);
-    // plush corner + the reading nook under the shelf
-    bedroomRing(ctx,-54,26,10,5,'bedroom_teddy');bedroomPut(ctx,'bedroom_bunny',-40,40,0);bedroomPut(ctx,'bedroom_robot',36,-44,0);bedroomPut(ctx,'bedroom_books',48,-46);
-    // floor clutter everywhere else, plus a couple of book-ramps
-    bedroomSprinkle(ctx,ctx.x0+3,ctx.z0+3,ctx.x1-3,ctx.z1-3,10,['bedroom_brick','bedroom_crumb','bedroom_cereal','bedroom_crayon','bedroom_sock','bedroom_block']);
-    for(const [x,z,th] of [[-30,4,Math.PI/2],[30,4,-Math.PI/2],[0,-60,0]])ctx.ramp(x,z,th);
+    for(const [id,x,z,th] of BEDROOM_SCENE_AT)bedroomScene(ctx,id,x,z,th);
+    ctx.spot('snack',24,62,24,18,0); // the rug and the nooks are scenes now, so no filler spots there (they pulled in most of the top-up)
+    // a few loose things where kids drop them (most of the room is scenes now)
+    bedroomPut(ctx,'bedroom_ball',30,72);bedroomPut(ctx,'bedroom_teddy',-8,74,2);bedroomPut(ctx,'bedroom_sock',-36,44,1);
+    bedroomSprinkle(ctx,ctx.x0+4,ctx.z0+4,ctx.x1-4,ctx.z1-4,4,['bedroom_brick','bedroom_crumb','bedroom_cereal','bedroom_crayon','bedroom_sock','bedroom_block']);
+    for(const [x,z,th] of [[0,-60,0],[50,-26,0]])ctx.ramp(x,z,th);
   }
 });
