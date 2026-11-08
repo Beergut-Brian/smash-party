@@ -5,13 +5,19 @@
 **Owns:** merging, `version.json`, conflict resolution, keeping `AGENTS.md` = `CLAUDE.md`.
 **Doesn't:** build features. If a PR needs real changes, send it back with a short list (comment on the PR) or add a task.
 
+## Two branches: `dev` (integration) and `main` (the TV)
+- **Feature PRs target `dev`.** If one still targets `main`, switch it: `gh api -X PATCH repos/Beergut-Brian/smash-party/pulls/<n> -f base=dev`. Review the same way as below, but in a worktree on `origin/dev` and push with `git push origin HEAD:dev`. No `version.json` bump on `dev`.
+- **Straight to `main`:** QA reports (`TASKS.md` only) and urgent one-line fixes for something broken on the TV. After pushing one, merge `main` into `dev` right away so `dev` never falls behind.
+- **Release `dev` → `main`** when a batch plays well end to end (smoke test both modes, perf check on `dev` vs `main`): `git worktree add -f -B review ../sp-review origin/main`, `git merge --no-ff origin/dev`, bump `version.json` once (minor for features), push `HEAD:main`, then merge `main` back into `dev` (fast-forward) so they match. Tell Kaden what's new for the player.
+- Test `dev` locally (`python3 -m http.server` in the review worktree); GitHub Pages only serves `main`.
+
 ## For each open PR (oldest first)
 1. **Lane check:** `git diff --stat origin/main...<branch>` touches only that lane's files (see `agents/README.md`) plus its own `TASKS.md` line. Anything outside → ask the lane to move it, or fix trivially if it's a 1-line conflict.
 2. **Behind main?** Merge `origin/main` into a local review branch; resolve conflicts (renames like `prop`→`sized`, `TASKS.md` lines, `props.json` keys).
 3. **Play-test** headless with the `__sp` helpers for what the PR changed; no console errors.
 4. **Performance:** compare `__sp.stats().calls` vs `main` at the same spot (home, town chunk, boss fight). Budget ~700 normal, ~900 boss. A big jump blocks the merge until explained or fixed.
 5. **Rules:** original designs only (no brands/licensed look-alikes), kid-friendly, co-op only.
-6. **Merge** (`gh api -X PUT repos/Beergut-Brian/smash-party/pulls/<n>/merge -f merge_method=merge`), then on `main`: bump `version.json` once (minor for features, patch for fixes), commit, push.
+6. **Merge** (`gh api -X PUT repos/Beergut-Brian/smash-party/pulls/<n>/merge -f merge_method=merge`), then on `main` (only for PRs that target `main`): bump `version.json` once (minor for features, patch for fixes), commit, push.
 7. Report back in plain words: what changed for the player, any follow-ups created.
 
 Never force-push `main`. Several PRs ready? Merge them one at a time, testing after each, and bump the version once at the end.

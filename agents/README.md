@@ -22,7 +22,7 @@ The card tells the agent what it owns, what to work on, how to test, and how to 
 | [`art-pipeline`](art-pipeline.md) | Kaden's server agents | `art/*` PRs into `assets/` | `A*` tasks, kid drawings → 3D |
 
 ## Rules every role follows
-1. **Own worktree, own branch.** `git fetch origin && git worktree add ../smash-party-<role> -b <role>/<task> origin/main`, work only there. Never `git checkout` in the shared main folder.
+1. **Own worktree, own branch.** `git fetch origin && git worktree add ../smash-party-<role> -b <role>/<task> origin/dev`, work only there, and open the PR into `dev` (`gh pr create --base dev`). `dev` is where features get tested together; `main` is the TV and only gets `dev` merged in once it plays well (plus urgent fixes). Never `git checkout` in the shared main folder.
 2. **Only your files.** Anything else → a `NEEDS LOGIC` / `NEEDS DESIGN` task in `TASKS.md` for the right lane.
 3. **One task, one PR.** Small PRs merge fast. Don't bump `version.json` (the reviewer does on merge).
 4. **Test before the PR** with the `__sp` helpers; note `__sp.stats().calls` if you touched anything visual.
