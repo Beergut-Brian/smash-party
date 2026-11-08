@@ -203,21 +203,30 @@ const DINO_SFX={
   dino_stump:'dino_wood',dino_log:'dino_wood',dino_hut:'dino_wood',dino_lodge:'dino_wood',
   dino_toadstool:'dino_boing',dino_volcano:'dino_volcano'
 };
-for(const k in DINO_SFX){const f=DINO_PROPS[k];DINO_PROPS[k]=(x,z,arg)=>{const o=f(x,z,arg);o.sfx=DINO_SFX[k];return o;};}
+// wrap each listed prop so it carries its own crash sound (the sub-zone files use this too)
+function dinoWithSfx(props,map){for(const k in map){const f=props[k];if(f)props[k]=(x,z,arg)=>{const o=f(x,z,arg);o.sfx=map[k];return o;};}return props;}
+dinoWithSfx(DINO_PROPS,DINO_SFX);
 
 /* Landmarks: the set pieces go to fixed chunks of the dino blob(s). The volcano takes the chunk with the most dino
    neighbours (the heart of the valley); the rest are spread by a hash, so a world always rebuilds the same. */
-let DINO_LM=null,DINO_LM_ROWS=null;
+/* Landmarks: the set pieces go to fixed chunks of a zone's blob(s). The heart piece takes the chunk with the most
+   neighbours of the same zone; the rest are spread by a hash, so a world always rebuilds the same. Every Dino Land
+   sub-zone uses this with its own list: dinoMarks(id, heart, [kinds…]).get(ci+','+cj). */
+const DINO_LMS={};
 function dinoHash(i,j,s){let h=Math.imul(i+73,0x9e3779b1)^Math.imul(j-41,0x85ebca6b)^Math.imul(s,0xc2b2ae35);h^=h>>>15;h=Math.imul(h,0x2c1b3c6d);h^=h>>>13;return (h>>>0)/4294967296;}
-function dinoLandmarks(){
-  const rows=zoneRows;if(rows===DINO_LM_ROWS)return DINO_LM;DINO_LM_ROWS=rows;DINO_LM=new Map();
-  const L=ZONES.dino&&ZONES.dino.letter,list=[],is=(i,j)=>!!(rows[j]&&rows[j][i]===L);
+function dinoMarks(id,heart,kinds){
+  const rows=zoneRows,c=DINO_LMS[id]||(DINO_LMS[id]={rows:null,map:null});if(c.rows===rows)return c.map;c.rows=rows;const map=c.map=new Map();
+  const L=ZONES[id]&&ZONES[id].letter,list=[],is=(i,j)=>!!(rows[j]&&rows[j][i]===L);
   rows.forEach((r,j)=>{for(let i=0;i<r.length;i++)if(r[i]===L){let n=0;for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++)if(is(i+di,j+dj))n++;list.push({i,j,n,h:dinoHash(i,j,7)});}});
-  if(!list.length)return DINO_LM;
-  list.sort((a,b)=>b.n-a.n||a.h-b.h);const heart=list.shift();DINO_LM.set((heart.i-CHUNKS_HALF)+','+(heart.j-CHUNKS_HALF),'volcano');
-  list.sort((a,b)=>a.h-b.h);
-  ['temple','rex','village','bones','nest','village','dig'].forEach((k,n)=>{const c=list[n];if(c)DINO_LM.set((c.i-CHUNKS_HALF)+','+(c.j-CHUNKS_HALF),k);});
-  return DINO_LM;}
+  if(!list.length)return map;
+  const key=c=>(c.i-CHUNKS_HALF)+','+(c.j-CHUNKS_HALF);
+  if(heart){list.sort((a,b)=>b.n-a.n||a.h-b.h);map.set(key(list.shift()),heart);}
+  list.sort((a,b)=>a.h-b.h);kinds.forEach((k,n)=>{const c=list[n];if(c)map.set(key(c),k);});
+  return map;}
+// is this zone letter anywhere on today's map? (the jungle leaves the volcano to Volcano Peak when it's there)
+const dinoOnMap=id=>{const L=ZONES[id]&&ZONES[id].letter;return !!L&&zoneRows.some(r=>r.includes(L));};
+function dinoLandmarks(){const v=dinoOnMap('dino_volcano');
+  return dinoMarks('dino',v?'temple':'volcano',v?['rex','village','bones','nest','village','dig','eggs']:['temple','rex','village','bones','nest','village','dig']);}
 const dinoPut=(ctx,type,x,z,arg)=>ctx.place(type,x,z,arg,DINO_R[type]||1.2);
 // try a few spots (center first, then the quadrants, which dodge the roads through even chunks)
 function dinoDrop(ctx,type,arg){const r=DINO_R[type]||2,m=r+4;
@@ -234,6 +243,41 @@ function dinoJungle(ctx,dense){ // the wild-jungle filler every dino chunk gets 
   dinoScatter(ctx,dense?5:3,['dino_fern','dino_fern','dino_rock','dino_nest','dino_flower','dino_stump','dino_bone']);
   dinoScatter(ctx,dense?6:4,['dino_eggling','dino_sprout','dino_bonelet','dino_amber','dino_shell']);}
 
+/* Jungle scenes (L31): little stories the layouts place and the filler drops around the cars at their size. */
+const DINO_SCENES={
+  // an egg hunt: a nest in a clearing, eggs hiding under the ferns and flowers all around it
+  dino_egg_hunt:{size:'tiny',r:6,build(s){s.spot('dino_clearing',0,0,10,10);s.place('dino_nest',0,0);
+    for(let i=0;i<6;i++){const a=i/6*Math.PI*2+.4;s.place(i%2?'dino_fern':'dino_flower',Math.sin(a)*3.4,Math.cos(a)*3.4,null,0,i%2?1.65:1);
+      s.place('dino_eggling',Math.sin(a+.25)*3.9,Math.cos(a+.25)*3.9);}
+    s.place('dino_stump',3.8,-3.6);s.place('dino_sprout',-4.2,-3.4);}},
+  // a hatching party: baby dinos peeking out of their eggs around a big egg "cake", with toadstool stools
+  dino_hatch_party:{size:'medium',r:10,build(s){s.spot('dino_clearing',0,0,18,18);s.place('dino_egg',0,0,null,0,1.65);
+    for(let i=0;i<3;i++){const a=-1+i;s.place('dino_hatch',Math.sin(a)*5.4,-Math.cos(a)*5.4,null,a+Math.PI);}
+    for(const [x,z] of [[-6,4],[6,4],[0,6.5]])s.place('dino_toadstool',x,z,null,0,.6);
+    for(let i=0;i<8;i++){const a=i/8*Math.PI*2;s.place('dino_flower',Math.sin(a)*8,Math.cos(a)*8,null,0,2.7);}}},
+  // a jungle gym: logs to hop, bouncy toadstools and a ramp
+  dino_jungle_gym:{size:'medium',r:12,build(s){s.spot('dino_trail',0,0,6,22);s.ramp(0,-6,0,9,5,2.8);
+    for(const z of [2,7])s.place('dino_log',0,z,1);for(const [x,z] of [[-5,-2],[5,0],[-5,6],[5,8]])s.place('dino_toadstool',x,z);
+    s.place('dino_palm',-8,-8);s.place('dino_palm',8,-7);}},
+  // a jungle pond with a log bridge over it (shallow: wade in) and a long-neck family having a drink
+  dino_jungle_pond:{size:'medium',r:12,filler:false,build(s){s.spot('dino_pond',0,0,20,14);s.spot('dino_trail',0,0,4.5,17);
+    for(let i=0;i<6;i++){const a=i/6*Math.PI*2+.5;s.place('dino_lily',Math.sin(a)*6.5,Math.cos(a)*4.4,null,0,4.5);}
+    for(const [x,z] of [[-11,-5],[11,4],[-10,6]])s.place('dino_treefern',x,z,null,0,.6);s.herd('bronto',8,-9,2);}},
+};
+
+/* Shared by the Dino Land sub-zone files (dino_volcano, dino_swamp, dino_dig). */
+// a painted patch (pond, lava, tar, sand pit…) in one quadrant of the chunk, kept 7+ from the middle and the edges, so it
+// never reaches the roads (they run through the middle of even chunks). Returns where it went.
+function dinoPool(ctx,kind,w,d,q){q=q??(Math.random()*4|0);const th=rand(-.5,.5),c=Math.abs(Math.cos(th)),s=Math.abs(Math.sin(th));
+  const k=Math.min(1,13/(c*w/2+s*d/2),13/(s*w/2+c*d/2));w*=k;d*=k;
+  const x=ctx.cx+(q&1?20:-20),z=ctx.cz+(q&2?20:-20);ctx.spot(kind,x,z,w,d,th);return {x,z,w,d,th,q};}
+// sound ids that use a sub-zone's own clip once the audio lane has made it, else the jungle's (read at play time, so
+// nothing needs changing here when the clips land): dinoSounds(musicBank,{drive:'dino_swamp_drive'},{drive:'dino_drive'})
+function dinoSounds(bank,want,fb){const o={};
+  for(const k in want)Object.defineProperty(o,k,{enumerable:true,get(){const id=want[k],ix=(bank&&bank.index)||{};
+    return ix[id]||Object.keys(ix).some(n=>n.startsWith(id+'_')&&/^\d+$/.test(n.slice(id.length+1)))?id:fb[k];}});
+  return o;}
+
 registerZone({
   id:'dino',
   letter:'D',
@@ -244,6 +288,14 @@ registerZone({
   music:{drive:'dino_drive',boss:'dino_boss'},
   sfx:{crash:'dino_crash',boom:'dino_boom',land:'dino_stomp',ambient:'dino_ambient'},
   props:DINO_PROPS,
+  scenes:DINO_SCENES,
+  spots:{
+    dino_clearing:{micro:['dino_eggling','dino_sprout'],mini:['dino_fern','dino_shell'],tiny:['dino_flower','dino_nest'],small:['dino_egg','dino_cycad'],medium:['dino_hatch','dino_toadstool']},
+    dino_trail:{micro:['dino_bonelet','dino_amber'],mini:['dino_rock'],tiny:['dino_stump'],small:['dino_bone']},
+    dino_pond:{micro:['dino_lily'],mini:['dino_lily'],tiny:['dino_lotus'],small:['dino_lotus']}
+  },
+  spotLook:{dino_clearing:'#86bd3b',dino_trail:'#c9a36a',dino_pond:'#56b8c9'},
+  water:{dino_pond:1},
   sizes:{
     micro:['dino_eggling','dino_sprout','dino_bonelet','dino_amber'],
     mini:['dino_fern','dino_rock','dino_shell'],
@@ -276,6 +328,10 @@ registerZone({
       if(p){for(let i=0;i<4;i++){const a=.8+i*Math.PI/2;dinoPut(ctx,'dino_hut',p.x+Math.cos(a)*13,p.z+Math.sin(a)*13,i);}
         dinoRing(ctx,p.x,p.z,DINO_R.dino_lodge+3,5,'dino_stump');dinoRing(ctx,p.x,p.z,19,6,'dino_nest',.1);}
       dinoJungle(ctx,false);return;}
+    if(kind==='eggs'){for(const q of [0,3])ctx.scene('dino_egg_hunt',ctx.cx+(q&1?20:-20),ctx.cz+(q&2?20:-20),rand(0,6.3),'small');
+      ctx.scene('dino_hatch_party',ctx.cx+20,ctx.cz-20,0);dinoJungle(ctx,false);return;}
+    if(Math.random()<.3){const q=Math.random()*4|0;ctx.scene('dino_jungle_pond',ctx.cx+(q&1?20:-20),ctx.cz+(q&2?20:-20),rand(-.5,.5));}
+    else if(Math.random()<.3)ctx.scene(pick(['dino_hatch_party','dino_jungle_gym']),rand(ctx.x0+14,ctx.x1-14),rand(ctx.z0+14,ctx.z1-14),rand(0,6.3));
     // wild jungle: dense palms and eggs, a hut or a hatchling now and then, sometimes a ramp
     if(Math.random()<.35)dinoPut(ctx,'dino_hut',rand(ctx.x0+12,ctx.x1-12),rand(ctx.z0+12,ctx.z1-12),Math.random()*4|0);
     if(Math.random()<.5)dinoPut(ctx,'dino_hatch',rand(ctx.x0+10,ctx.x1-10),rand(ctx.z0+10,ctx.z1-10),Math.random()*4|0);
