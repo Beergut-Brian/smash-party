@@ -1167,7 +1167,7 @@ function updateAnimals(dt){
    stuff around it smashes) and has glowing weak spots in phases. Drive into the glowing spots together; when a
    phase's spots are gone the boss gets mad and the next ones light up. Beat the last phase and it collapses floor
    by floor, then the celebration and the NEW WORLD button. No timer, no damage, no losing.
-   Design: `const BOSSES=[{id,name,emoji,sway,build(P,g){…}},…]` in src/world/bosses.js replaces the placeholders below.
+   Design: `const BOSSES=[{id,name,emoji,sway,zone?,taunts?,defeat?,build(P,g){…}},…]` in src/world/bosses.js replaces the placeholders below.
    build() works like makeObj's: register parts with P(BP(mesh,floor,kind),chunks,whole,half) at "1x" scale
    (about 11 tall, radius ~3.6; logic scales it up ×BOSS_SCALE). Weak spots: P(bossWeak(mesh,floor,phase),3) with
    phase 1, 2, 3…, placed low (under ~3.5 tall at 1x) and on the outside so a giant car can reach them. */
@@ -1221,9 +1221,26 @@ const bossHud=document.createElement('div');bossHud.id='bossHud';$('hud').append
 :where(#bossHud i.gone){opacity:.9}
 @keyframes bossStar{to{transform:scale(1.25)}}`;document.head.appendChild(st);}
 function bossList(){return typeof BOSSES!=='undefined'&&BOSSES.length?BOSSES:BOSS_DEFAULT;}
+/* L23 themed bosses: a boss with zone:'<id>' belongs to that themed zone. At GIANT we pick from the zone the players
+   are in; else from a themed zone somewhere in this world; else a general (zone-less) boss. Never the same boss twice
+   in a row when there's a choice. The zone also sets the boss music (music.boss) and the landing-dust color. */
+let lastBossId=null;
+function worldBossZones(){const seen=new Set(zoneRows.join(''));return Object.values(ZONES).filter(z=>seen.has(z.letter)).map(z=>z.id);}
+function bossPool(zone){const l=bossList();return zone?l.filter(d=>d.zone===zone):l.filter(d=>!d.zone||!ZONES[d.zone]);}
+function pickBoss(id,cx,cz){const l=bossList(),freshPick=a=>{const f=a.filter(d=>d.id!==lastBossId);return pick(f.length?f:a);};
+  if(id&&id.startsWith('zone:')){const a=bossPool(id.slice(5));if(a.length)return freshPick(a);}
+  else if(id){const d=l.find(d=>d.id===id);if(d)return d;}
+  const here=zoneAt(chunkIdx(cx),chunkIdx(cz));let a=bossPool(here);
+  if(!a.length)a=worldBossZones().flatMap(bossPool);
+  if(!a.length)a=bossPool(null);
+  return freshPick(a.length?a:l);}
+function bossZone(def){return def.zone&&ZONES[def.zone]||null;}
+function bossDust(){const z=boss&&bossZone(boss.def);return (z&&(z.bossDust||z.ground))||'#d9c9a8';}
+function bossMusic(def){const z=bossZone(def),id=z&&z.music&&z.music.boss;return id&&musicBank.index[id]?id:'boss';}
 function summonBoss(id){
-  if(boss||!players.length)return;const def=bossList().find(d=>d.id===id)||pick(bossList());
+  if(boss||!players.length)return;
   let cx=0,cz=0;players.forEach(p=>{cx+=p.x;cz+=p.z;});cx/=players.length;cz/=players.length;
+  const def=pickBoss(id,cx,cz);lastBossId=def.id;
   const x=clamp(cx,-ARENA+90,ARENA-90),z=clamp(cz-100,-ARENA+90,ARENA-90);
   const o=makeObj(x,z,3.6,11,200,(P,g,ob)=>def.build(P,g,ob),{building:true,big:true});
   o.type='boss';o.boss=true;o.sz=99;o.s0=BOSS_SCALE;o.g.scale.setScalar(BOSS_SCALE);o.r*=BOSS_SCALE;o.h*=BOSS_SCALE;for(const p of o.parts)p.half*=BOSS_SCALE;
@@ -1231,10 +1248,10 @@ function summonBoss(id){
   for(const p of o.parts)if(p.kind==='weak'){p.phase=p.mesh.userData.phase||1;p.s0=p.mesh.scale.clone();p.mesh.material=new THREE.MeshBasicMaterial({color:'#777777'});}
   boss={o,def,state:'drop',y:260,vy:0,phase:1,t:0,heading:0,stompT:7,hitT:0,speed:10,smashT:0,
     phases:Math.max(...o.parts.filter(p=>p.kind==='weak').map(p=>p.phase))};
-  o.g.position.y=boss.y;music('boss');say(`Here comes ${def.name}!`);sfxClip('boss_roar',0.9)||sfx.boom();updateBossHud();
+  o.g.position.y=boss.y;music(bossMusic(def));say(`Here comes ${def.name}!`);sfxClip('boss_roar',0.9)||sfx.boom();updateBossHud();
 }
-function bossLand(big){const o=boss.o;shake=2;sfxClip('stomp',1)||(sfx.thud(),sfx.boom());
-  for(let i=0;i<14;i++){const a=i/14*Math.PI*2;puff(o.x+Math.sin(a)*o.r,1,o.z+Math.cos(a)*o.r,2,5,'#d9c9a8');}
+function bossLand(big){const o=boss.o,dust=bossDust();shake=2;sfxClip('stomp',1)||(sfx.thud(),sfx.boom());
+  for(let i=0;i<14;i++){const a=i/14*Math.PI*2;puff(o.x+Math.sin(a)*o.r,1,o.z+Math.cos(a)*o.r,2,5,dust);}
   const R=o.r+(big?30:22);
   for(const p of players){const dx=p.x-o.x,dz=p.z-o.z,d=Math.hypot(dx,dz)||1;if(d<R){p.air=true;p.vy=Math.max(p.vy,15);p.kx+=dx/d*25;p.kz+=dz/d*25;}}
   for(const q of objects){if(q===o||!q.alive||q.boss)continue;const dx=q.x-o.x,dz=q.z-o.z,d=Math.hypot(dx,dz);if(d<R-6)queue.push({t:d*0.004,fn:()=>q.bld?collapse(q,0,dx,dz,40,true):smash(q,dx,dz,30)});}
@@ -1251,14 +1268,15 @@ function hitWeak(part,p,nx,nz){const b=boss,o=b.o;b.hitT=T+0.3;
   flash(_wpB.x,_wpB.y,_wpB.z,'#ffd60a',8,0.5);puff(_wpB.x,_wpB.y,_wpB.z,8,4,'#ffffff');
   sfxClip('bonk',1)||sfx.crash(true);sfx.boom();shake=Math.min(2,shake+1.3);o.wob=1;addScore(10);p.kx-=nx*20;p.kz-=nz*20;
   const left=o.parts.filter(q=>q.kind==='weak'&&!q.gone&&q.phase===b.phase).length;
-  if(left){bossSay(['Ouch!','Bonk!','Again! Again!']);updateBossHud();return;}
+  if(left){bossSay(b.def.taunts&&b.def.taunts.length?b.def.taunts:['Ouch!','Bonk!','Again! Again!']);updateBossHud();return;}
   if(b.phase<b.phases){b.phase++;b.speed*=1.3;b.stompT=1.2;lastBossSay=0;bossSay([b.phase===b.phases?'One more time!':"He's getting mad!"]);
     sfxClip('boss_roar',0.9)||sfx.boom();updateBossHud();return;}
   // beaten!
-  b.state='dead';updateBossHud();music('victory',{loop:false,then:'drive'});bossArrows.forEach(s=>s.visible=false);lastBossSay=0;say('You beat the boss!');
+  b.state='dead';updateBossHud();music('victory',{loop:false,then:'drive'});bossArrows.forEach(s=>s.visible=false);lastBossSay=0;
+  const dl=b.def.defeat?3.4:0;if(dl){say(b.def.defeat);queue.push({t:dl,fn:()=>say('You beat the boss!')});}else say('You beat the boss!');
   collapse(o,0,nx,nz,60,true);
   queue.push({t:2.6,fn:()=>{showBig('BOSS BEATEN!');sfx.fanfare();confetti(260);nwBtn.style.display='block';}});
-  queue.push({t:4.0,fn:()=>{sfx.fanfare();say('Hooray! You did it together!');}});
+  queue.push({t:4.0+dl,fn:()=>{sfx.fanfare();say('Hooray! You did it together!');}});
 }
 function updateBoss(dt){
   if(!boss||boss.state==='dead')return;const b=boss,o=b.o;
