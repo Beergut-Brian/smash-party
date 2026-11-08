@@ -166,7 +166,8 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 - [x] **B2: Dino Valley boss** `NEEDS DESIGN` (world-bosses; needs L23 + Z2) — a goofy, clumsy giant dinosaur (big head, tiny arms, never scary).
   - Done (world-bosses/B1-B2): Kaden + son picked **Rexy Rumbleton** 🦖 (`id:'rexy'`, `zone:'dino'`): pastel T-rex, big head with a wide grin and buck teeth, googly eyes looking two ways, polka-dot belly, rounded back plates, teeny arms that windmill, tail dragging on the ground, sway 0.13. 57 parts, weak spots big toenails → knee pads → tail tip + tail bump. Joins the random pick until L23.
 - [ ] **AU7: Gummo + Rexy voice lines** `NEEDS AUDIO` (audio; from B1/B2). Add to `tools/voice-lines.json` and generate: `Here comes Gummo the Gummy Giant!`, `Here comes Rexy Rumbleton!`, plus each boss's `taunts` and `defeat` line (exact text in `BOSSES` in `src/world/bosses.js`). Goofy and friendly: Gummo is a squishy, giggly bear; Rexy is a big clumsy happy dino.
-- [ ] **L27: Per-boss taunts and defeat line** `NEEDS LOGIC` (logic; from B1/B2). Bosses can now carry `taunts:[…]` and `defeat:'…'` (Gummo and Rexy do). In `hitWeak`, use `boss.def.taunts` (when present) instead of the generic `'Ouch!','Bonk!','Again! Again!'`, and say `boss.def.defeat` before `'You beat the boss!'`. Fall back to today's lines when a boss has none.
+- [x] **L27: Per-boss taunts and defeat line** `NEEDS LOGIC` (logic; from B1/B2). Bosses can now carry `taunts:[…]` and `defeat:'…'` (Gummo and Rexy do). In `hitWeak`, use `boss.def.taunts` (when present) instead of the generic `'Ouch!','Bonk!','Again! Again!'`, and say `boss.def.defeat` before `'You beat the boss!'`. Fall back to today's lines when a boss has none.
+  - Done (logic-gameplay/L23): hit lines come from `def.taunts`; on the win the boss says `def.defeat`, then "You beat the boss!" ~3.4 s later and "Hooray!" after that. The `TODO(logic)` note in the bosses.js header can go (world-bosses).
 - [ ] **B3: Bedroom boss** `NEEDS DESIGN` (world-bosses; needs L23 + L20) — a giant toy (wind-up robot, jack-in-the-box, or a living teddy bear) guarding the door out.
 
 - [ ] **AU2: Zone music + sound effects** `NEEDS AUDIO` (audio; needs L22). ElevenLabs credits are plentiful, so go all in:
@@ -261,10 +262,11 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Objects can override: `makeObj(…,{sfx:'gummy_squish'})`.
   - Document the contract in CLAUDE.md, then add `NEEDS AUDIO` tasks (AU2) for each existing zone.
 
-- [ ] **L23: Themed world bosses**
+- [x] **L23: Themed world bosses**
   - Bosses get a `zone` field: `BOSSES=[{id, zone:'candy', …}]`. When the players go GIANT, summon a boss of **the themed zone they're in** (each zone can have **several** bosses: pick one at random, avoiding the one you just fought) (or, in a world with a themed zone, that zone's boss), else a random general boss. Each themed boss gets its own **boss music** (from the zone's `music.boss`), intro line ("Here comes <Name>!"), and arena flavor (debris colors from the zone).
   - Keep it co-op and no-fail as today. Test helper: `__sp.boss('id')` still works, plus `__sp.boss('zone:candy')`.
   - Add `NEEDS DESIGN` tasks B1–B3 for world-bosses (or confirm they exist).
+  - Done (logic-gameplay/L23): `pickBoss` in game.js: the zone under the players' center → a themed zone anywhere on this world's map → general bosses (no `zone`, or an unregistered one); skips the last boss when there's another. Music = the zone's `music.boss` when that clip exists, else `boss`. Landing dust = zone `bossDust` or `ground`. `__sp.boss('zone:candy')` works. B1–B3 exist (plus the B1+B2 order for pairs 2 and 3). Draw calls are unchanged by this (it only picks); the GIANT/boss count is L25.
 
 - [x] **L17: Level-up garage (pick your new car)**
   - Every car-tier unlock (every 2 sizes) opens a **garage** instead of the plain LEVEL UP: the world pauses and both players drop into a small showroom arena with 3–4 parked cars per player from the new tier on glowing pads, each with a **stat card** floating above it.
