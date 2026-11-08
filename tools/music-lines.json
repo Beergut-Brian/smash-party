@@ -45,6 +45,42 @@
     "parade": {
       "prompt": "Proud, silly hometown parade march for a pompous cartoon mayor: big oompah tuba and bouncy snare drum, a strutting brass-band melody, cymbal crashes, kazoo and slide-whistle jokes, crowd-cheer energy, upbeat and grand but goofy, medium-fast march tempo, seamless loop, no ending",
       "seconds": 90
+    },
+    "dino_volcano_drive": {
+      "prompt": "A cartoon dinosaur parade climbing a hot friendly mountain: bubbly tuba bassline, rumbly timpani, warm marimba melody, a fizzy steam-whistle hook, playful and stompy, not dangerous, seamless loop, no intro and no ending",
+      "seconds": 90
+    },
+    "dino_volcano_boss": {
+      "prompt": "Lava Larry's goofy volcano showdown: huge boomy stomps, a burpy low brass riff, bubbling lava synth bass, kazoo stabs, rising excitement, silly never scary, seamless loop, no ending",
+      "seconds": 75
+    },
+    "dino_swamp_drive": {
+      "prompt": "A lazy bouncy bayou stomp in a friendly dinosaur swamp: banjo-like plucks, jug-band tuba, croaky frog-like percussion, a cheeky kazoo lead, laid-back happy groove, seamless loop, no intro and no ending",
+      "seconds": 90
+    },
+    "dino_swamp_boss": {
+      "prompt": "Goofy swamp-monster showdown: squelchy stomping drums, a big jug-band tuba riff, frantic banjo plucks, kazoo fanfares, silly never scary, seamless loop, no ending",
+      "seconds": 75
+    },
+    "dino_dig_drive": {
+      "prompt": "A sunny adventure-explorer march at a fossil dig: woodblock and shaker rhythm, pizzicato strings, a whistled hero tune, xylophone runs like rattling bones, curious and upbeat, seamless loop, no intro and no ending",
+      "seconds": 90
+    },
+    "dino_dig_boss": {
+      "prompt": "Goofy giant fossil skeleton showdown: clattering xylophone bones, big boomy drums, a heroic whistled brass riff, slide whistle stabs, silly never scary, seamless loop, no ending",
+      "seconds": 75
+    },
+    "candy_forest_drive": {
+      "prompt": "A bouncy stroll through a cotton candy forest: playful woodwinds and marimba melody, plucky bassline, twinkly chimes, skippy happy groove, seamless loop, no intro and no ending",
+      "seconds": 90
+    },
+    "candy_river_drive": {
+      "prompt": "A lazy swingy cruise down a chocolate river: oompah tuba bassline, strummy ukulele, gentle swing drums, a sweet whistled melody, seamless loop, no intro and no ending",
+      "seconds": 90
+    },
+    "candy_peaks_drive": {
+      "prompt": "A sparkly ride over ice cream mountains: jingling sleigh bells, glockenspiel melody, bright bouncy bassline, frosty twinkles, cheerful and fast, seamless loop, no intro and no ending",
+      "seconds": 90
     }
   }
 }

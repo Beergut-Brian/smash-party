@@ -664,12 +664,6 @@
   "speak": "Out the back door!",
   "hash": "22ab8aa0c04c"
  },
- "hank__my_lunchbox_by_the_lamp_post": {
-  "text": "My lunchbox! By the lamp post!",
-  "speak": "My lunchbox! By the lamp post!",
-  "voice": "hank",
-  "hash": "3df9558b9581"
- },
  "hank__still_hungry_over_here": {
   "text": "Still hungry over here!",
   "speak": "Still hungry over here!",
@@ -724,29 +718,11 @@
   "voice": "hank",
   "hash": "4edffe53bda8"
  },
- "hank__my_sandwich_is_in_there": {
-  "text": "My SANDWICH is in there!",
-  "speak": "My SANDWICH is in there!",
-  "voice": "hank",
-  "hash": "b0237e05302f"
- },
- "hank__it_is_by_the_big_lamp_post": {
-  "text": "It is by the big lamp post!",
-  "speak": "It is by the big lamp post!",
-  "voice": "hank",
-  "hash": "52a558b6adf2"
- },
  "hank__my_lunchbox_you_found_it": {
   "text": "My lunchbox! You found it!",
   "speak": "My lunchbox! You found it!",
   "voice": "hank",
   "hash": "b4ae1b698482"
- },
- "hank__by_the_lamp_post_go_go_go": {
-  "text": "By the lamp post! Go go go!",
-  "speak": "By the lamp post! Go go go!",
-  "voice": "hank",
-  "hash": "190567e54f7e"
  },
  "hank__bring_it_back_to_old_hank": {
   "text": "Bring it back to old Hank!",
@@ -790,18 +766,6 @@
   "voice": "garry",
   "hash": "e540782428e3"
  },
- "garry__could_you_push_them_home_please": {
-  "text": "Could you push them home, please?",
-  "speak": "Could you push them home, please?",
-  "voice": "garry",
-  "hash": "ad41ac0adaa4"
- },
- "garry__push_them_into_my_garden": {
-  "text": "Push them into my garden!",
-  "speak": "Push them into my garden!",
-  "voice": "garry",
-  "hash": "682b7b46a6bc"
- },
  "garry__oh_thank_you": {
   "text": "Oh, thank you!",
   "speak": "Oh, thank you!",
@@ -825,12 +789,6 @@
   "speak": "Into the green circle, please!",
   "voice": "garry",
   "hash": "4666ac6f5d49"
- },
- "zippy__mail_mail_mail_hurry_hurry": {
-  "text": "Mail mail mail! Hurry hurry!",
-  "speak": "Mail mail mail! Hurry hurry!",
-  "voice": "zippy",
-  "hash": "22a140c3fb12"
  },
  "zippy__gotta_go_fast": {
   "text": "Gotta go fast!",
@@ -868,12 +826,6 @@
   "voice": "zippy",
   "hash": "524c449a6c1a"
  },
- "zippy__drive_through_the_glowing_mailboxes": {
-  "text": "Drive through the glowing mailboxes!",
-  "speak": "Drive through the glowing mailboxes!",
-  "voice": "zippy",
-  "hash": "cbca45f4c612"
- },
  "zippy__zip_delivered": {
   "text": "Zip! Delivered!",
   "speak": "Zip! Delivered!",
@@ -903,18 +855,6 @@
   "speak": "The glowing ones! Go go go!",
   "voice": "zippy",
   "hash": "9c708d3c0e78"
- },
- "fern__catch_my_chickens_ha_ha": {
-  "text": "Catch my chickens! Ha-HA!",
-  "speak": "Catch my chickens! Ha-HA!",
-  "voice": "fern",
-  "hash": "cf352cd4b49f"
- },
- "fern__my_chickens_are_loose_over_there": {
-  "text": "My chickens are loose over there!",
-  "speak": "My chickens are loose over there!",
-  "voice": "fern",
-  "hash": "8f64451513da"
  },
  "fern__best_chicken_catchers_ever_ha": {
   "text": "Best chicken catchers ever! Ha!",
@@ -952,18 +892,6 @@
   "voice": "fern",
   "hash": "21ddd716cf4f"
  },
- "fern__bump_them_back_to_me": {
-  "text": "Bump them back to me!",
-  "speak": "Bump them back to me!",
-  "voice": "fern",
-  "hash": "c1b3ce3d77a1"
- },
- "fern__bump_every_chicken": {
-  "text": "Bump every chicken!",
-  "speak": "Bump every chicken!",
-  "voice": "fern",
-  "hash": "63aa40ab125f"
- },
  "fern__gotcha_ha_ha": {
   "text": "Gotcha! Ha-HA!",
   "speak": "Gotcha! Ha-HA!",
@@ -1000,12 +928,6 @@
   "voice": "fern",
   "hash": "973419814e7c"
  },
- "fern__ooh_they_laid_eggs_grab_them": {
-  "text": "Ooh! They laid eggs! Grab them!",
-  "speak": "Ooh! They laid eggs! Grab them!",
-  "voice": "fern",
-  "hash": "2fb10ffc4030"
- },
  "fern__an_egg_careful_now": {
   "text": "An egg! Careful now!",
   "speak": "An egg! Careful now!",
@@ -1023,12 +945,6 @@
   "speak": "Bring them here, sugar!",
   "voice": "fern",
   "hash": "ce59f5ebf4d7"
- },
- "bubbles__soap_find_the_soap_bottles": {
-  "text": "Soap! Find the soap bottles!",
-  "speak": "Soap! Find the soap bottles!",
-  "voice": "bubbles",
-  "hash": "4ab4f5f2123f"
  },
  "bubbles__pop_pop_pop_hee": {
   "text": "Pop pop pop! Hee!",
@@ -1066,18 +982,6 @@
   "voice": "bubbles",
   "hash": "26509b10f85d"
  },
- "bubbles__i_need_soap_lots_of_soap": {
-  "text": "I need soap! Lots of soap!",
-  "speak": "I need soap! Lots of soap!",
-  "voice": "bubbles",
-  "hash": "6c3298cdf2ac"
- },
- "bubbles__find_three_soap_bottles": {
-  "text": "Find three soap bottles!",
-  "speak": "Find three soap bottles!",
-  "voice": "bubbles",
-  "hash": "6214c6fdab75"
- },
  "bubbles__soap_yes_yes_yes": {
   "text": "Soap! Yes yes yes!",
   "speak": "Soap! Yes yes yes!",
@@ -1102,23 +1006,11 @@
   "voice": "bubbles",
   "hash": "fc8c4702833e"
  },
- "bubbles__bring_it_to_me_hurry": {
-  "text": "Bring it to me! Hurry!",
-  "speak": "Bring it to me! Hurry!",
-  "voice": "bubbles",
-  "hash": "3f29e8020ebc"
- },
  "bubbles__over_here_it_is_me": {
   "text": "Over here! It is me!",
   "speak": "Over here! It is me!",
   "voice": "bubbles",
   "hash": "255ea1d3b7c3"
- },
- "pip__ice_cream_for_the_picnics_la_la": {
-  "text": "Ice cream for the picnics! La la!",
-  "speak": "Ice cream for the picnics! La la!",
-  "voice": "pip",
-  "hash": "d86aaa867aef"
  },
  "pip__ding_ding_ice_cream": {
   "text": "Ding ding! Ice cream!",
@@ -1150,18 +1042,6 @@
   "voice": "pip",
   "hash": "177008e56051"
  },
- "pip__everyone_at_the_picnic_wants_ice_cream": {
-  "text": "Everyone at the picnic wants ice cream!",
-  "speak": "Everyone at the picnic wants ice cream!",
-  "voice": "pip",
-  "hash": "529684248961"
- },
- "pip__drive_to_the_picnic_blankets": {
-  "text": "Drive to the picnic blankets!",
-  "speak": "Drive to the picnic blankets!",
-  "voice": "pip",
-  "hash": "ef57b2ddb82c"
- },
  "pip__yum_yum_la_la": {
   "text": "Yum yum! La la!",
   "speak": "Yum yum! La la!",
@@ -1192,35 +1072,17 @@
   "voice": "pip",
   "hash": "c8e9b35d3014"
  },
- "zorp__beep_the_crystal_pieces_boop": {
-  "text": "Beep! The crystal pieces! Boop!",
-  "speak": "Beep! The crystal pieces! Boop!",
-  "voice": "zorp",
-  "hash": "89710dfcf1b9"
- },
  "zorp__wooo_floaty_beep": {
   "text": "Wooo! Floaty! Beep!",
   "speak": "Wooo! Floaty! Beep!",
   "voice": "zorp",
   "hash": "71bde98272b2"
  },
- "zorp__earth_is_so_smashy_boop": {
-  "text": "Earth is so smashy! Boop!",
-  "speak": "Earth is so smashy! Boop!",
-  "voice": "zorp",
-  "hash": "20462e6e32f0"
- },
  "zorp__the_crystal_works_beep_boop": {
   "text": "The crystal works! Beep boop!",
   "speak": "The crystal works! Beep boop!",
   "voice": "zorp",
   "hash": "48c240eae08c"
- },
- "zorp__hold_jump_in_the_air": {
-  "text": "Hold jump in the air!",
-  "speak": "Hold jump in the air!",
-  "voice": "zorp",
-  "hash": "dc7facaa216b"
  },
  "zorp__now_you_can_float_wooo": {
   "text": "Now you can float! Wooo!",
@@ -1240,29 +1102,11 @@
   "voice": "zorp",
   "hash": "8009ea85673a"
  },
- "zorp__our_wobble_crystal_broke_boop": {
-  "text": "Our Wobble Crystal broke! Boop!",
-  "speak": "Our Wobble Crystal broke! Boop!",
-  "voice": "zorp",
-  "hash": "a3d778192582"
- },
- "zorp__one_piece_is_in_a_haystack": {
-  "text": "One piece is in a haystack!",
-  "speak": "One piece is in a haystack!",
-  "voice": "zorp",
-  "hash": "f7baaceb5acd"
- },
  "zorp__not_this_one_beep": {
   "text": "Not this one! Beep!",
   "speak": "Not this one! Beep!",
   "voice": "zorp",
   "hash": "813576cbadf7"
- },
- "zorp__hay_everywhere_boop": {
-  "text": "Hay everywhere! Boop!",
-  "speak": "Hay everywhere! Boop!",
-  "voice": "zorp",
-  "hash": "9963a46291a2"
  },
  "zorp__a_crystal_piece_beep_beep": {
   "text": "A crystal piece! Beep beep!",
@@ -1276,41 +1120,11 @@
   "voice": "zorp",
   "hash": "7b0d8d8fb040"
  },
- "zorp__one_piece_fell_in_the_duck_pond": {
-  "text": "One piece fell in the duck pond!",
-  "speak": "One piece fell in the duck pond!",
-  "voice": "zorp",
-  "hash": "c8ea7a8acd48"
- },
- "zorp__piece_number_two_boop": {
-  "text": "Piece number two! Boop!",
-  "speak": "Piece number two! Boop!",
-  "voice": "zorp",
-  "hash": "be7c983f5d0f"
- },
  "zorp__the_duck_pond_quack_beep": {
   "text": "The duck pond! Quack! Beep!",
   "speak": "The duck pond! Quack! Beep!",
   "voice": "zorp",
   "hash": "2392f1a6613e"
- },
- "zorp__uh_oh_a_goat_ate_one": {
-  "text": "Uh oh. A goat ate one!",
-  "speak": "Uh oh. A goat ate one!",
-  "voice": "zorp",
-  "hash": "362bf4e685bd"
- },
- "zorp__the_goat_burped_it_out_boop": {
-  "text": "The goat burped it out! Boop!",
-  "speak": "The goat burped it out! Boop!",
-  "voice": "zorp",
-  "hash": "5f368779997f"
- },
- "zorp__bump_the_goat_beep": {
-  "text": "Bump the goat! Beep!",
-  "speak": "Bump the goat! Beep!",
-  "voice": "zorp",
-  "hash": "55712cfda3ba"
  },
  "zorp__bring_the_pieces_to_the_saucer": {
   "text": "Bring the pieces to the saucer!",
@@ -1323,12 +1137,6 @@
   "speak": "Back to the saucer! Beep!",
   "voice": "zorp",
   "hash": "dea5c2a6e251"
- },
- "dot__the_crates_smash_them_all": {
-  "text": "The crates! SMASH THEM ALL!",
-  "speak": "The crates! SMASH THEM ALL!",
-  "voice": "dot",
-  "hash": "156fa5c1499e"
  },
  "dot__smash_ha_ha": {
   "text": "SMASH! Ha ha!",
@@ -1366,18 +1174,6 @@
   "voice": "dot",
   "hash": "588d6e226939"
  },
- "dot__let_s_smash": {
-  "text": "LET'S SMASH!",
-  "speak": "Let's smash!",
-  "voice": "dot",
-  "hash": "a42945640c8f"
- },
- "dot__smash_every_crate_go": {
-  "text": "Smash every crate! GO!",
-  "speak": "Smash every crate! GO!",
-  "voice": "dot",
-  "hash": "58b7306ed168"
- },
  "dot__yeah_smash": {
   "text": "YEAH! SMASH!",
   "speak": "Yeah! smash!",
@@ -1414,12 +1210,6 @@
   "voice": "dot",
   "hash": "37e6a2c654e4"
  },
- "wheelie__through_the_balloon_arches_my_friends": {
-  "text": "Through the balloon arches, my friends!",
-  "speak": "Through the balloon arches, my friends!",
-  "voice": "wheelie",
-  "hash": "f8653ce3960a"
- },
  "wheelie__have_you_seen_my_hat_splendid": {
   "text": "Have you seen my hat? Splendid!",
   "speak": "Have you seen my hat? Splendid!",
@@ -1449,24 +1239,6 @@
   "speak": "I am Mayor Wheelie! Marvelous!",
   "voice": "wheelie",
   "hash": "0d0f83ea6aa4"
- },
- "wheelie__today_is_my_parade": {
-  "text": "Today is my parade!",
-  "speak": "Today is my parade!",
-  "voice": "wheelie",
-  "hash": "52668e92baf2"
- },
- "wheelie__you_shall_lead_it": {
-  "text": "You shall lead it!",
-  "speak": "You shall lead it!",
-  "voice": "wheelie",
-  "hash": "3676607b6df9"
- },
- "wheelie__drive_through_the_balloon_arches": {
-  "text": "Drive through the balloon arches!",
-  "speak": "Drive through the balloon arches!",
-  "voice": "wheelie",
-  "hash": "0388128c5444"
  },
  "wheelie__splendid": {
   "text": "Splendid!",
@@ -1504,12 +1276,6 @@
   "voice": "wheelie",
   "hash": "0a08223d6a33"
  },
- "wheelie__the_robot_stop_the_giant_robot": {
-  "text": "The robot! Stop the giant robot!",
-  "speak": "The robot! Stop the giant robot!",
-  "voice": "wheelie",
-  "hash": "85da0ac7cc53"
- },
  "wheelie__hooray_for_the_heroes": {
   "text": "Hooray for the heroes!",
   "speak": "Hooray for the heroes!",
@@ -1546,18 +1312,6 @@
   "voice": "wheelie",
   "hash": "a22fda494b12"
  },
- "wheelie__save_my_town_my_friends": {
-  "text": "Save my town, my friends!",
-  "speak": "Save my town, my friends!",
-  "voice": "wheelie",
-  "hash": "73a1d6bc8722"
- },
- "wheelie__here_it_comes_smash_it": {
-  "text": "Here it comes! Smash it!",
-  "speak": "Here it comes! Smash it!",
-  "voice": "wheelie",
-  "hash": "a0ad876f6700"
- },
  "wheelie__smash_the_robot_hurry": {
   "text": "Smash the robot! Hurry!",
   "speak": "Smash the robot! Hurry!",
@@ -1581,12 +1335,6 @@
   "speak": "The robot battery fixed their crystal!",
   "voice": "wheelie",
   "hash": "35c68d5dde69"
- },
- "kite__my_kites_dude_all_over_the_park": {
-  "text": "My kites, dude! All over the park!",
-  "speak": "My kites, dude! All over the park!",
-  "voice": "kite",
-  "hash": "69a5528838fc"
  },
  "kite__catch_the_wind_dude": {
   "text": "Catch the wind, dude!",
@@ -1630,18 +1378,6 @@
   "voice": "kite",
   "hash": "7ead8b3db614"
  },
- "kite__bummer_can_you_find_them": {
-  "text": "Bummer. Can you find them?",
-  "speak": "Bummer. Can you find them?",
-  "voice": "kite",
-  "hash": "3c294ed565b0"
- },
- "kite__five_kites_follow_the_arrow_dude": {
-  "text": "Five kites! Follow the arrow, dude!",
-  "speak": "Five kites! Follow the arrow, dude!",
-  "voice": "kite",
-  "hash": "fc967755be81"
- },
  "kite__righteous": {
   "text": "Righteous!",
   "speak": "Righteous!",
@@ -1684,12 +1420,6 @@
   "voice": "kite",
   "hash": "2ae703bfea3e"
  },
- "woolly__the_sheep_push_them_in_the_pen_huff": {
-  "text": "The sheep! Push them in the pen! Huff!",
-  "speak": "The sheep! Push them in the pen! Huff!",
-  "voice": "woolly",
-  "hash": "f9e6b1006765"
- },
  "woolly__phew_all_safe_woof": {
   "text": "Phew. All safe. Woof.",
   "speak": "Phew. All safe. Woof.",
@@ -1725,18 +1455,6 @@
   "speak": "My sheep got out!",
   "voice": "woolly",
   "hash": "60c2a0549f5a"
- },
- "woolly__push_them_into_the_pen_woof": {
-  "text": "Push them into the pen! Woof!",
-  "speak": "Push them into the pen! Woof!",
-  "voice": "woolly",
-  "hash": "21a1a36cb15a"
- },
- "woolly__push_the_sheep_in_the_circle": {
-  "text": "Push the sheep in the circle!",
-  "speak": "Push the sheep in the circle!",
-  "voice": "woolly",
-  "hash": "6282ed5bb937"
  },
  "woolly__phew_one_is_safe": {
   "text": "Phew! One is safe!",
@@ -1774,12 +1492,6 @@
   "voice": "fern",
   "hash": "eed9553708a5"
  },
- "garry__push_my_friends_home_please": {
-  "text": "Push my friends home, please!",
-  "speak": "Push my friends home, please!",
-  "voice": "garry",
-  "hash": "8af0ed731c92"
- },
  "garry__tea_time_with_my_friends": {
   "text": "Tea time with my friends.",
   "speak": "Tea time with my friends.",
@@ -1797,5 +1509,372 @@
   "speak": "Three eggs! Ha!",
   "voice": "fern",
   "hash": "95df00b292d0"
+ },
+ "too_deep_you_need_to_fly": {
+  "text": "Too deep! You need to fly!",
+  "speak": "Too deep! You need to fly!",
+  "hash": "116a3e54e585"
+ },
+ "the_portals_are_open_pick_one": {
+  "text": "The portals are open! Pick one!",
+  "speak": "The portals are open! Pick one!",
+  "hash": "515dbe3c8556"
+ },
+ "welcome_to_dino_land": {
+  "text": "Welcome to Dino Land!",
+  "speak": "Welcome to Dino Land!",
+  "hash": "fa7c8c5082fa"
+ },
+ "welcome_to_candy_land": {
+  "text": "Welcome to Candy Land!",
+  "speak": "Welcome to Candy Land!",
+  "hash": "2b66ee9695af"
+ },
+ "welcome_home": {
+  "text": "Welcome home!",
+  "speak": "Welcome home!",
+  "hash": "873b6ba42428"
+ },
+ "hank__in_the_dirt_go_go_go": {
+  "text": "In the dirt! Go go go!",
+  "speak": "In the dirt! Go go go!",
+  "voice": "hank",
+  "hash": "d1600b442937"
+ },
+ "fern__my_chickens_are_loose_in_the_pasture": {
+  "text": "My chickens are loose in the pasture!",
+  "speak": "My chickens are loose in the pasture!",
+  "voice": "fern",
+  "hash": "374df2726835"
+ },
+ "blip__pieces_please_boop": {
+  "text": "Pieces, please. Boop.",
+  "speak": "Pieces, please. Boop.",
+  "voice": "blip",
+  "hash": "3f319bc575bb"
+ },
+ "blip__earth_is_so_smashy_boop": {
+  "text": "Earth is so smashy. Boop.",
+  "speak": "Earth is so smashy. Boop.",
+  "voice": "blip",
+  "hash": "9fd7446bf41e"
+ },
+ "blip__hold_jump_in_the_air": {
+  "text": "Hold jump in the air.",
+  "speak": "Hold jump in the air.",
+  "voice": "blip",
+  "hash": "ec1806440f16"
+ },
+ "blip__our_crystal_broke_boop": {
+  "text": "Our crystal broke. Boop.",
+  "speak": "Our crystal broke. Boop.",
+  "voice": "blip",
+  "hash": "6bbd2cfbd34d"
+ },
+ "blip__hay_everywhere_boop": {
+  "text": "Hay everywhere. Boop.",
+  "speak": "Hay everywhere. Boop.",
+  "voice": "blip",
+  "hash": "d872c2cd3c37"
+ },
+ "blip__piece_number_two_boop": {
+  "text": "Piece number two. Boop.",
+  "speak": "Piece number two. Boop.",
+  "voice": "blip",
+  "hash": "c4e08cd38e62"
+ },
+ "zorp__the_water_tower_beep": {
+  "text": "The water tower! Beep!",
+  "speak": "The water tower! Beep!",
+  "voice": "zorp",
+  "hash": "7edf23b70042"
+ },
+ "zorp__all_the_pieces_beep_boop": {
+  "text": "All the pieces! Beep boop!",
+  "speak": "All the pieces! Beep boop!",
+  "voice": "zorp",
+  "hash": "667d1440a2f7"
+ },
+ "blip__smash_the_hay_boop": {
+  "text": "Smash the hay. Boop.",
+  "speak": "Smash the hay. Boop.",
+  "voice": "blip",
+  "hash": "9d76eff506f7"
+ },
+ "blip__on_the_treasure_chest_boop": {
+  "text": "On the treasure chest. Boop.",
+  "speak": "On the treasure chest. Boop.",
+  "voice": "blip",
+  "hash": "29a59a679ac5"
+ },
+ "blip__saucer_this_way_boop": {
+  "text": "Saucer. This way. Boop.",
+  "speak": "Saucer. This way. Boop.",
+  "voice": "blip",
+  "hash": "c6310a23d5fa"
+ },
+ "kite__up_on_the_roof_bump_it_dude": {
+  "text": "Up on the roof! Bump it, dude!",
+  "speak": "Up on the roof! Bump it, dude!",
+  "voice": "kite",
+  "hash": "6a7e9e15bd8b"
+ },
+ "hank__find_my_lunchbox_in_my_dirt_pile": {
+  "text": "Find my lunchbox! In my dirt pile!",
+  "speak": "Find my lunchbox! In my dirt pile!",
+  "voice": "hank",
+  "hash": "ac89e553d61f"
+ },
+ "hank__my_sandwich_is_in_my_lunchbox": {
+  "text": "My SANDWICH is in my lunchbox!",
+  "speak": "My SANDWICH is in my lunchbox!",
+  "voice": "hank",
+  "hash": "1f4a367283d0"
+ },
+ "hank__find_my_lunchbox_buddy": {
+  "text": "Find my lunchbox, buddy!",
+  "speak": "Find my lunchbox, buddy!",
+  "voice": "hank",
+  "hash": "101c8d24b962"
+ },
+ "hank__it_is_in_the_dirt_pile_by_my_house": {
+  "text": "It is in the dirt pile by my house!",
+  "speak": "It is in the dirt pile by my house!",
+  "voice": "hank",
+  "hash": "7962e75ee4aa"
+ },
+ "garry__push_my_five_friends_home_please": {
+  "text": "Push my five friends home, please!",
+  "speak": "Push my five friends home, please!",
+  "voice": "garry",
+  "hash": "bb32b9848f79"
+ },
+ "garry__push_my_five_gnomes_home_please": {
+  "text": "Push my five gnomes home, please!",
+  "speak": "Push my five gnomes home, please!",
+  "voice": "garry",
+  "hash": "fec7338ba9cb"
+ },
+ "garry__into_my_round_garden_by_my_house": {
+  "text": "Into my round garden, by my house!",
+  "speak": "Into my round garden, by my house!",
+  "voice": "garry",
+  "hash": "3ad1075ed7af"
+ },
+ "zippy__four_mailboxes_hurry_hurry": {
+  "text": "Four mailboxes! Hurry hurry!",
+  "speak": "Four mailboxes! Hurry hurry!",
+  "voice": "zippy",
+  "hash": "db5582214eca"
+ },
+ "zippy__drive_to_four_glowing_mailboxes": {
+  "text": "Drive to four glowing mailboxes!",
+  "speak": "Drive to four glowing mailboxes!",
+  "voice": "zippy",
+  "hash": "50ce1bf82294"
+ },
+ "zippy__up_and_down_my_street_zoom": {
+  "text": "Up and down my street! Zoom!",
+  "speak": "Up and down my street! Zoom!",
+  "voice": "zippy",
+  "hash": "901ebb036157"
+ },
+ "fern__bump_my_twenty_chickens_ha_ha": {
+  "text": "Bump my twenty chickens! Ha-HA!",
+  "speak": "Bump my twenty chickens! Ha-HA!",
+  "voice": "fern",
+  "hash": "8a0c44b85a5d"
+ },
+ "fern__bump_all_twenty_chickens_ha_ha": {
+  "text": "Bump all twenty chickens! Ha-HA!",
+  "speak": "Bump all twenty chickens! Ha-HA!",
+  "voice": "fern",
+  "hash": "e9422e7c8ae1"
+ },
+ "fern__they_are_in_my_fenced_pasture": {
+  "text": "They are in my fenced pasture!",
+  "speak": "They are in my fenced pasture!",
+  "voice": "fern",
+  "hash": "76991a373d93"
+ },
+ "fern__ooh_three_eggs_in_the_pasture_grab_them": {
+  "text": "Ooh! Three eggs in the pasture! Grab them!",
+  "speak": "Ooh! Three eggs in the pasture! Grab them!",
+  "voice": "fern",
+  "hash": "b2af3f5b52d4"
+ },
+ "bubbles__find_my_three_soap_bottles": {
+  "text": "Find my three soap bottles!",
+  "speak": "Find my three soap bottles!",
+  "voice": "bubbles",
+  "hash": "c0ef61dc82d4"
+ },
+ "bubbles__find_three_soap_bottles_please": {
+  "text": "Find three soap bottles, please!",
+  "speak": "Find three soap bottles, please!",
+  "voice": "bubbles",
+  "hash": "6c837056fdac"
+ },
+ "bubbles__they_are_by_the_bubble_fountain": {
+  "text": "They are by the bubble fountain!",
+  "speak": "They are by the bubble fountain!",
+  "voice": "bubbles",
+  "hash": "efa7d3cfb030"
+ },
+ "bubbles__bring_the_soap_to_me_hurry": {
+  "text": "Bring the soap to me! Hurry!",
+  "speak": "Bring the soap to me! Hurry!",
+  "voice": "bubbles",
+  "hash": "a64c9b45972c"
+ },
+ "pip__ice_cream_to_five_blankets_la_la": {
+  "text": "Ice cream to five blankets! La la!",
+  "speak": "Ice cream to five blankets! La la!",
+  "voice": "pip",
+  "hash": "b6056956b1a5"
+ },
+ "pip__the_picnic_wants_ice_cream": {
+  "text": "The picnic wants ice cream!",
+  "speak": "The picnic wants ice cream!",
+  "voice": "pip",
+  "hash": "5de7629866d9"
+ },
+ "pip__drive_to_five_picnic_blankets": {
+  "text": "Drive to five picnic blankets!",
+  "speak": "Drive to five picnic blankets!",
+  "voice": "pip",
+  "hash": "791efc8d5656"
+ },
+ "pip__the_blankets_are_in_the_meadow_la_la": {
+  "text": "The blankets are in the meadow! La la!",
+  "speak": "The blankets are in the meadow! La la!",
+  "voice": "pip",
+  "hash": "3f4b30297e27"
+ },
+ "zorp__beep_three_crystal_pieces": {
+  "text": "Beep! Three crystal pieces!",
+  "speak": "Beep! Three crystal pieces!",
+  "voice": "zorp",
+  "hash": "ae27825662cc"
+ },
+ "zorp__find_three_crystal_pieces_beep": {
+  "text": "Find three crystal pieces! Beep!",
+  "speak": "Find three crystal pieces! Beep!",
+  "voice": "zorp",
+  "hash": "5e61d8f80d2b"
+ },
+ "zorp__smash_the_hay_bales_by_the_big_haystack": {
+  "text": "Smash the hay bales by the big haystack!",
+  "speak": "Smash the hay bales by the big haystack!",
+  "voice": "zorp",
+  "hash": "a075b70da061"
+ },
+ "blip__bring_it_to_the_saucer_boop": {
+  "text": "Bring it to the saucer. Boop.",
+  "speak": "Bring it to the saucer. Boop.",
+  "voice": "blip",
+  "hash": "66c813013f79"
+ },
+ "zorp__two_more_water_tower_and_duck_pond_beep": {
+  "text": "Two more! Water tower and duck pond! Beep!",
+  "speak": "Two more! Water tower and duck pond! Beep!",
+  "voice": "zorp",
+  "hash": "692189b9932f"
+ },
+ "dot__forty_crates_smash_them_all": {
+  "text": "Forty crates! SMASH THEM ALL!",
+  "speak": "Forty crates! SMASH THEM ALL!",
+  "voice": "dot",
+  "hash": "b52fb773d5e2"
+ },
+ "dot__smash_forty_crates_let_s_smash": {
+  "text": "Smash forty crates! LET'S SMASH!",
+  "speak": "Smash forty crates! LET'S SMASH!",
+  "voice": "dot",
+  "hash": "868493bfc49a"
+ },
+ "dot__they_are_in_my_crate_yard_go": {
+  "text": "They are in my crate yard! GO!",
+  "speak": "They are in my crate yard! GO!",
+  "voice": "dot",
+  "hash": "88edc5fe57ef"
+ },
+ "wheelie__ten_balloon_arches_my_friends": {
+  "text": "Ten balloon arches, my friends!",
+  "speak": "Ten balloon arches, my friends!",
+  "voice": "wheelie",
+  "hash": "d150592baa5e"
+ },
+ "wheelie__today_is_my_parade_you_shall_lead_it": {
+  "text": "Today is my parade! You shall lead it!",
+  "speak": "Today is my parade! You shall lead it!",
+  "voice": "wheelie",
+  "hash": "f073a671dc71"
+ },
+ "wheelie__drive_through_ten_balloon_arches": {
+  "text": "Drive through ten balloon arches!",
+  "speak": "Drive through ten balloon arches!",
+  "voice": "wheelie",
+  "hash": "5ee3a6a53edd"
+ },
+ "wheelie__the_arches_go_round_downtown_onward": {
+  "text": "The arches go round downtown! Onward!",
+  "speak": "The arches go round downtown! Onward!",
+  "voice": "wheelie",
+  "hash": "8070b261d2a8"
+ },
+ "wheelie__smash_the_giant_robot": {
+  "text": "Smash the giant robot!",
+  "speak": "Smash the giant robot!",
+  "voice": "wheelie",
+  "hash": "0d0cddf06e8b"
+ },
+ "wheelie__smash_the_giant_robot_my_friends": {
+  "text": "Smash the giant robot, my friends!",
+  "speak": "Smash the giant robot, my friends!",
+  "voice": "wheelie",
+  "hash": "1fd3076937db"
+ },
+ "wheelie__it_is_stomping_into_the_fair_smash_it": {
+  "text": "It is stomping into the fair! Smash it!",
+  "speak": "It is stomping into the fair! Smash it!",
+  "voice": "wheelie",
+  "hash": "82d0c27b5fa0"
+ },
+ "kite__five_kites_dude_on_the_rooftops": {
+  "text": "Five kites, dude! On the rooftops!",
+  "speak": "Five kites, dude! On the rooftops!",
+  "voice": "kite",
+  "hash": "32c474092a25"
+ },
+ "kite__find_my_five_kites_dude": {
+  "text": "Find my five kites, dude!",
+  "speak": "Find my five kites, dude!",
+  "voice": "kite",
+  "hash": "92a21f5b24c6"
+ },
+ "kite__they_are_on_the_big_rooftops_dude": {
+  "text": "They are on the big rooftops, dude!",
+  "speak": "They are on the big rooftops, dude!",
+  "voice": "kite",
+  "hash": "39c81517cd4a"
+ },
+ "woolly__eight_sheep_push_them_in_the_pen_huff": {
+  "text": "Eight sheep! Push them in the pen! Huff!",
+  "speak": "Eight sheep! Push them in the pen! Huff!",
+  "voice": "woolly",
+  "hash": "7089c5037375"
+ },
+ "woolly__push_my_eight_sheep_into_the_pen": {
+  "text": "Push my eight sheep into the pen!",
+  "speak": "Push my eight sheep into the pen!",
+  "voice": "woolly",
+  "hash": "272c8bd80e4b"
+ },
+ "woolly__my_pen_is_right_here_push_them_in_woof": {
+  "text": "My pen is right here! Push them in! Woof!",
+  "speak": "My pen is right here! Push them in! Woof!",
+  "voice": "woolly",
+  "hash": "827b1b3ff9b3"
  }
 }
