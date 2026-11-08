@@ -134,7 +134,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 
 - [ ] **B1+B2 order (Kaden + son picked, Nov 7): build ALL three bosses for each zone, in this order** (world-bosses; set `zone:'candy'` / `zone:'dino'` on each so L23 can pick them)
   1. **Gummo the Gummy Giant** 🐻 (candy), then **Rexy Rumbleton** 🦖 (dino): first, they're the favorites ✅ (world-bosses/B1-B2)
-  2. **Gumbo-Tron 3000** 🍬 (candy) and **Lava Larry** 🌋 (dino)
+  2. **Gumbo-Tron 3000** 🍬 (candy) and **Lava Larry** 🌋 (dino) ✅ (world-bosses/B-pair2)
   3. **Sir Sprinkles** 🎂 (candy) and **Mama Stegosaurus "Plates"** 🦕 (dino)
   - Concepts and weak-spot ideas are in B1a / B2a below. One PR per pair is fine. Each new boss: add an audio task (AU7) with its intro, 2–3 taunts and defeat line.
 
@@ -167,6 +167,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Done (world-bosses/B1-B2): Kaden + son picked **Rexy Rumbleton** 🦖 (`id:'rexy'`, `zone:'dino'`): pastel T-rex, big head with a wide grin and buck teeth, googly eyes looking two ways, polka-dot belly, rounded back plates, teeny arms that windmill, tail dragging on the ground, sway 0.13. 57 parts, weak spots big toenails → knee pads → tail tip + tail bump. Joins the random pick until L23.
 - [x] **AU7: Gummo + Rexy voice lines** `NEEDS AUDIO` (audio; from B1/B2). Add to `tools/voice-lines.json` and generate: `Here comes Gummo the Gummy Giant!`, `Here comes Rexy Rumbleton!`, plus each boss's `taunts` and `defeat` line (exact text in `BOSSES` in `src/world/bosses.js`). Goofy and friendly: Gummo is a squishy, giggly bear; Rexy is a big clumsy happy dino.
   - Done: all 10 lines recorded (2 intros, 6 taunts, 2 defeat lines), each with its own eleven_v3 direction tag (`[giggles]`, `[playfully]`, `[sighs happily]` for Gummo; `[goofy, friendly]`, `[laughing]`, `[yawns]` for Rexy). They play as soon as L27 says them.
+- [ ] **AU8: Gumbo-Tron + Lava Larry voice lines** `NEEDS AUDIO` (audio; from B pair 2). Add to `tools/voice-lines.json` and generate: `Here comes Gumbo-Tron 3000!`, `Here comes Lava Larry!`, plus each boss's `taunts` and `defeat` line (exact text in `BOSSES` in `src/world/bosses.js`). Gumbo-Tron is a cheerful beepy robot; Lava Larry is a big, warm, rumbly goofball (his defeat line starts with a giant burp).
 - [ ] **L27: Per-boss taunts and defeat line** `NEEDS LOGIC` (logic; from B1/B2). Bosses can now carry `taunts:[…]` and `defeat:'…'` (Gummo and Rexy do). In `hitWeak`, use `boss.def.taunts` (when present) instead of the generic `'Ouch!','Bonk!','Again! Again!'`, and say `boss.def.defeat` before `'You beat the boss!'`. Fall back to today's lines when a boss has none.
 - [ ] **B3: Bedroom boss** `NEEDS DESIGN` (world-bosses; needs L23 + L20) — a giant toy (wind-up robot, jack-in-the-box, or a living teddy bear) guarding the door out.
 
