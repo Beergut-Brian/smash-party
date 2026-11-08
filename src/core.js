@@ -174,7 +174,22 @@ function makeRamp(x,z,th,L=11,W=7,H=3.6){
 function addRamp(x,z,th,L,W,H){const r=makeRamp(x,z,th,L,W,H);scene.add(r.mesh);ramps.push(r);return r;}
 function removeRamp(r){const i=ramps.indexOf(r);if(i>=0)ramps.splice(i,1);if(r.mesh.parent)r.mesh.parent.remove(r.mesh);}
 function rampsH(list,x,z){let h=0;for(const r of list){const dx=x-r.x,dz=z-r.z;const lz=dx*r.s+dz*r.c,lx=dx*r.c-dz*r.s;if(lz>0&&lz<r.L&&Math.abs(lx)<r.W/2)h=Math.max(h,r.H*lz/r.L);}return h;}
-function groundH(x,z){return rampsH(ramps,x,z);}
+/* L52 ground steps: low flat boxes (curbs, sidewalks, porches, slabs) that groundH stands on, so a micro car (~0.15 tall)
+   rides on top of a 0.1 sidewalk instead of inside it. groundStep(x,z,w,d,h,th) adds a w×d box centered at x,z, its top
+   at y=h, turned th radians (like rotation.y; w runs along local x). Options: {when:()=>bool} counts it only while
+   that's true (e.g. ()=>streetDecor.visible). Layouts use ctx.step(…), which streams with the chunk like ramps.
+   Cars climb a step up to STEP_CLIMB × their radius on their own (a little nose-up bump); a taller one is a wall
+   (jump up onto it). groundH = the higher of ramps and steps; rampH = ramps only, for "not on a ramp" placement checks. */
+const steps=[],STEP_CLIMB=1.2;
+function groundStep(x,z,w,d,h,th=0,opt){const c=Math.cos(th),sn=Math.sin(th),hx=w/2,hz=d/2;
+  const st={x,z,hx,hz,h,c,s:sn,ex:Math.abs(c)*hx+Math.abs(sn)*hz,ez:Math.abs(sn)*hx+Math.abs(c)*hz,when:(opt&&opt.when)||null};
+  if(!(opt&&opt.chunk))steps.push(st);return st;}
+function stepsH(list,x,z){let h=0;
+  for(const st of list){if(st.h<=h||Math.abs(x-st.x)>st.ex||Math.abs(z-st.z)>st.ez||(st.when&&!st.when()))continue;
+    const dx=x-st.x,dz=z-st.z;if(Math.abs(dx*st.c-dz*st.s)<=st.hx&&Math.abs(dx*st.s+dz*st.c)<=st.hz)h=st.h;}
+  return h;}
+const stepH=(x,z)=>steps.length?stepsH(steps,x,z):0,rampH=(x,z)=>rampsH(ramps,x,z);
+function groundH(x,z){const r=rampsH(ramps,x,z);return steps.length?Math.max(r,stepsH(steps,x,z)):r;}
 
 /* ---------- audio ---------- */
 let AC=null,master=null,noiseBuf=null,muted=false;
