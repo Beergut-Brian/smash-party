@@ -173,3 +173,9 @@ Scenery the layouts should build (no quest `stage` scenes, like Q1b): Gertie's n
 
 ## Built (Z5b, zone-dino)
 The places are in `src/world/zones/dino_land.js`: `DINO_LAND_PLAN` (the map), `DINO_QUEST_AT` (every quest's giver, stage and point lists, read with `worldQuestAt`), and the scenery each quest needs. Differences from the proposal above: **Nest Hills is part of the jungle** (`dino`, grassy `dino_hill` patches just north of Pebble Village), not a `dino_nest` zone, and Digby's tar pit is a tar seep inside the dig (the swamp is on the other side of the map). `goal` lists are `[x,z,r]`.
+
+## Quest spots (Z5c, zone-dino)
+- The push quests' `quest_<id>` spots are centered on the goals (Gertie's nest, Rolly's hollow, Rosa's corral) because the engine puts the goal circle at the spot's center. Keep them centered when you move anything.
+- Gertie's nest is a `dino_straw` spot with a ring of micro twigs open toward the egg. A real `dino_nest` prop (tiny) would keep the egg out at micro.
+- The `dino_straw`, `dino_hollow` and `dino_corral` spots list only toy-sized props for every size, so filler can't land a blocker in a goal.
+- Rolly's `boulders` list is there for the pack (Q2b); Cinder's optional `rocks` is left out, so her rocks spread over the slope stage.
