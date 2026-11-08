@@ -1406,14 +1406,14 @@ function sceneSpotPoint(px,pz,d0,d1,kind){const l=[];
   for(let t=0;t<6&&l.length;t++){const q=pick(l),x=q.x+rand(-q.ex,q.ex)*0.7,z=q.z+rand(-q.ez,q.ez)*0.7,d=Math.hypot(x-px,z-pz);if(d>=d0&&d<=d1&&inSpot(q,x,z))return [x,z];}
   return null;}
 // can a filler scene prop stand here? (other records, live non-filler objects, roads, ramps, the start lane)
-function scenePropFree(x,z,r,road,skip){ // skip: tags of scenes about to make way
+function scenePropFree(x,z,r,road,skip){ // skip: tags of scenes about to make way (or a test on the record)
   if(Math.abs(x)>WB-r-2||Math.abs(z)>WB-r-2)return false;
   if(!road&&onRoad(x,z,r))return false;if(!roomZ&&typeof startLane==='function'&&startLane(x,z))return false;
   if(groundH(x,z)>0||groundH(x+r,z)>0||groundH(x-r,z)>0||groundH(x,z+r)>0||groundH(x,z-r)>0)return false;
   const c=chunks.get(chunkKey(chunkIdx(x),chunkIdx(z)));if(!c||!c.gen)return false;
   const pad=Math.min(0.6,r*0.6); // tiny props may stand closer
   for(let ci=chunkIdx(x-r-4);ci<=chunkIdx(x+r+4);ci++)for(let cj=chunkIdx(z-r-4);cj<=chunkIdx(z+r+4);cj++){const q=chunks.get(chunkKey(ci,cj));
-    if(q)for(const e of q.recs)if(!e.dead&&!(skip&&skip.has(e.scene))&&Math.abs(e.x-x)<e.r+r+pad&&Math.hypot(e.x-x,e.z-z)<e.r+r+pad)return false;}
+    if(q)for(const e of q.recs)if(!e.dead&&!(skip&&(typeof skip==='function'?skip(e):skip.has(e.scene)))&&Math.abs(e.x-x)<e.r+r+pad&&Math.hypot(e.x-x,e.z-z)<e.r+r+pad)return false;}
   for(const o of objects)if(o.alive&&!o.scat&&!o.rec&&Math.abs(o.x-x)<o.r+r&&Math.hypot(o.x-x,o.z-z)<o.r+r)return false;
   return true;}
 function pickScene(list){let tot=0;for(const [,d] of list)tot+=d.weight??1;let r=Math.random()*tot;for(const e of list)if((r-=e[1].weight??1)<0)return e;return list[list.length-1];}
@@ -1430,9 +1430,7 @@ function spawnScene(p,fill,id){
     if(!list.length)return null;const [sid,def]=pickScene(list),f=sceneF(def,k),R=(def.r||8)*f;
     const d=id?R+p.r+rand(1,6)*Math.max(S,0.3):fill?rand(0.3,0.95)*Rs+R*0.3:rand(1.0,1.3)*Rs+R*0.6;
     x=p.x+Math.sin(a)*d;z=p.z+Math.cos(a)*d;
-    if(def.spot!=='road'&&roadsOn){ // on a road: slide it off to the roadside
-      const rx=Math.round(x/ROAD_EVERY)*ROAD_EVERY,rz=Math.round(z/ROAD_EVERY)*ROAD_EVERY,off=ROAD_W/2+R*0.7;
-      if(Math.abs(x-rx)<off)x=rx+(x>=rx?off:-off);if(Math.abs(z-rz)<off)z=rz+(z>=rz?off:-off);}
+    if(def.spot!=='road')[x,z]=sceneOffRoad(x,z,R);
     if(def.spot){const q=sceneSpotPoint(p.x,p.z,fill?R:Rs,1.5*Rs+R,def.spot);if(!q){miss('spot');continue;}[x,z]=q;}
     if(Math.abs(x)>WB-R*0.5||Math.abs(z)>WB-R*0.5){miss('edge');continue;}
     if(players.some(q=>Math.hypot(q.x-x,q.z-z)<R+q.r+2*S)){miss('car');continue;}
@@ -1443,24 +1441,65 @@ function spawnScene(p,fill,id){
     const th=sceneFace(x,z,R),it=sceneItems(def,x,z,th,f,(Math.random()*1e9)|0,zone,k),road=def.spot==='road',ok=[],skip=new Set(near.map(q=>q.tag));
     for(const q of it.place){const r=recR(q.type)*f*q.sc;if(scenePropFree(q.x,q.z,r,road,skip))ok.push([q,r]);}
     if(!ok.length||ok.length<Math.min(2,it.place.length)||ok.length<it.place.length*0.6){miss('crowded');continue;}
-    const tag='s'+(++sceneSeq),keys=new Set(),home=chunkOf(x,z);lastScene=sid;
-    for(const q of near){const c=chunks.get(q.home);if(c&&c.scenes.includes(q))dropScene(c,q);} // much smaller scenes underneath make way
-    for(const [q,r] of ok){
-      for(const o of objects)if(o.alive&&o.scat&&!o.gold&&Math.hypot(o.x-q.x,o.z-q.z)<o.r+r){o.alive=false;poolRelease(o);scene.remove(o.g);} // filler makes room
-      const c=chunkOf(q.x,q.z),rec={type:q.type,x:q.x,z:q.z,arg:q.arg,r,seed:(Math.random()*1e9)|0,dead:false,back:0,f:f*q.sc,th:q.th,scene:tag};c.recs.push(rec);keys.add(c.k);
-      if(!c.loaded)continue;const o=buildRec(rec);
-      if(fill){o.falling=true;o.fy=rand(6,16)*Math.max(S,0.4)+rand(0,4)*S;o.vy=0;o.g.position.y=o.fy;}
-      else{scene.remove(o.g);if(!o.spin&&!o.gold)poolAdopt(o);if(!o.pooled){o.inst=null;o.sleep=false;scene.add(o.g);}}}
-    for(const h of it.herd)if(chunkHerd(home,...h))home.herds[home.herds.length-1].scene=tag;
-    for(const q of it.spot){const c=chunkOf(q[1],q[2]);if(chunkSpot(c,...q)){c.spots[c.spots.length-1].scene=tag;keys.add(c.k);refreshSpotTiles(c);}}
-    home.scenes.push({id:sid,tag,x,z,r:R,k,home:home.k,keys:[...keys]});
+    lastScene=sid;scenePlant(sid,x,z,R,k,f,it,ok,near,fill);
     return sid;}
   return null;}
+// put a fitted scene into the world: smaller scenes underneath and filler make way, props become chunk records
+// (built now in loaded chunks, falling in when fill), herds and spots tagged so dropScene can clear them
+// on a road: slide it off to the roadside
+function sceneOffRoad(x,z,R){if(!roadsOn||roomZ)return [x,z];
+  const rx=Math.round(x/ROAD_EVERY)*ROAD_EVERY,rz=Math.round(z/ROAD_EVERY)*ROAD_EVERY,off=ROAD_W/2+R*0.7;
+  if(Math.abs(x-rx)<off)x=rx+(x>=rx?off:-off);if(Math.abs(z-rz)<off)z=rz+(z>=rz?off:-off);return [x,z];}
+function scenePlant(sid,x,z,R,k,f,it,ok,near,fill,extra){
+  const tag='s'+(++sceneSeq),keys=new Set(),home=chunkOf(x,z);
+  for(const q of near){const c=chunks.get(q.home);if(c&&c.scenes.includes(q))dropScene(c,q);} // much smaller scenes underneath make way
+  for(const [q,r] of ok){
+    for(const o of objects)if(o.alive&&o.scat&&!o.gold&&Math.hypot(o.x-q.x,o.z-q.z)<o.r+r){o.alive=false;poolRelease(o);scene.remove(o.g);} // filler makes room
+    const c=chunkOf(q.x,q.z),rec={type:q.type,x:q.x,z:q.z,arg:q.arg,r,seed:(Math.random()*1e9)|0,dead:false,back:0,f:f*q.sc,th:q.th,scene:tag};c.recs.push(rec);keys.add(c.k);
+    if(!c.loaded)continue;const o=buildRec(rec);
+    if(fill){o.falling=true;o.fy=rand(6,16)*Math.max(S,0.4)+rand(0,4)*S;o.vy=0;o.g.position.y=o.fy;}
+    else{scene.remove(o.g);if(!o.spin&&!o.gold)poolAdopt(o);if(!o.pooled){o.inst=null;o.sleep=false;scene.add(o.g);}}}
+  for(const h of it.herd)if(chunkHerd(home,...h))home.herds[home.herds.length-1].scene=tag;
+  for(const q of it.spot){const c=chunkOf(q[1],q[2]);if(chunkSpot(c,...q)){c.spots[c.spots.length-1].scene=tag;keys.add(c.k);refreshSpotTiles(c);}}
+  const q={id:sid,tag,x,z,r:R,k,home:home.k,keys:[...keys]};home.scenes.push(extra?Object.assign(q,extra):q);
+  return q;}
+/* L38: a scene at a set point (quest stages, L35): built at the players' size (or `size`), front turned to th, clearing
+   filler and smaller filler scenes off the spot; props that would land on roads, ramps or layout props are skipped.
+   opts.key: one live copy per key (asking again returns the same handle). It stays put like a layout scene until the
+   players are 3+ sizes bigger, then clears away like a filler scene. Returns the handle (null if nothing fit);
+   sceneClear(handle or key) takes it away again. */
+function sceneAt(id,x,z,th=0,size,opts={}){
+  if(opts.key){const h=sceneByKey(opts.key);if(h)return h;}
+  const zone=zoneXZ(x,z),def=sceneDef(id,zone);if(!def){console.warn('unknown scene',id);return null;}
+  const k=size!=null?sizeIdx(size):Math.min(tier,SIZES.length-1),f=sceneF(def,k),R=(def.r||8)*f;
+  if(def.spot!=='road'&&!opts.onRoad)[x,z]=sceneOffRoad(x,z,R);
+  for(let ci=chunkIdx(x-R);ci<=chunkIdx(x+R);ci++)for(let cj=chunkIdx(z-R);cj<=chunkIdx(z+R);cj++){if(Math.abs(ci)<=CHUNKS_HALF&&Math.abs(cj)<=CHUNKS_HALF){const c=getChunk(ci,cj);if(!c.gen)genChunk(c);}}
+  const near=scenesNear(x,z,R*3).filter(q=>!q.fixed&&Math.hypot(q.x-x,q.z-z)<(R+q.r)*(1+SCENE_GAP)),drop=new Set(near.map(q=>q.tag));
+  const keep=new Set(scenesNear(x,z,R*3).filter(q=>q.fixed).map(q=>q.tag));
+  // plain layout clutter up to a size bigger steps aside for the stage (back when it goes); buildings and layout scenes stay
+  const bumpable=e=>drop.has(e.scene)||(!keep.has(e.scene)&&(e.sz==null||e.sz<=k+1)&&!e.gold);
+  const seed=(Math.random()*1e9)|0,road=def.spot==='road';let it=null,ok=[];
+  // the spot asked for, else nudged nearby to where the most of it fits (buildings and big props stay put)
+  for(let t=0;t<9&&(!it||ok.length<it.place.length);t++){
+    const a=t*2.4,d=t?R*(0.5+t*0.25):0;let tx=x+Math.sin(a)*d,tz=z+Math.cos(a)*d;if(t&&!road)[tx,tz]=sceneOffRoad(tx,tz,R);
+    const ti=sceneItems(def,tx,tz,th,f,seed,zone,k),to=[];
+    for(const q of ti.place){const r=recR(q.type)*f*q.sc;if(scenePropFree(q.x,q.z,r,road,bumpable))to.push([q,r]);} // unloaded chunks build theirs on load
+    if(!it||to.length>ok.length){it=ti;ok=to;x=tx;z=tz;}}
+  if(!ok.length&&it.place.length){miss('stage');return null;}
+  const bumped=[];
+  for(const [q,r] of ok)for(let ci=chunkIdx(q.x-r-4);ci<=chunkIdx(q.x+r+4);ci++)for(let cj=chunkIdx(q.z-r-4);cj<=chunkIdx(q.z+r+4);cj++){const c=chunks.get(chunkKey(ci,cj));
+    if(c)for(const e of c.recs)if(!e.dead&&!drop.has(e.scene)&&bumpable(e)&&Math.hypot(e.x-q.x,e.z-q.z)<e.r+r+0.6){e.dead=true;e.back=Infinity;bumped.push(e);
+      for(const o of objects)if(o.alive&&o.rec===e){o.alive=false;poolRelease(o);scene.remove(o.g);}}}
+  return scenePlant(id,x,z,R,k,f,it,ok,near,opts.fill!==false,{fixed:true,stage:true,key:opts.key||null,bumped});}
+function sceneByKey(key){for(const c of chunks.values())for(const q of c.scenes)if(q.key===key)return q;return null;}
+function sceneClear(h){if(typeof h==='string')h=sceneByKey(h);if(!h||!h.tag)return false;
+  const c=chunks.get(h.home);if(!c||!c.scenes.includes(h))return false;dropScene(c,h);return true;}
 function refreshSpotTiles(c){if(!c.loaded)return;
   c.group.children.filter(m=>m.userData.spotTiles).forEach(m=>{c.group.remove(m);m.geometry.dispose();});
   const t=spotTiles(c);if(t)c.group.add(t);}
 // a filler scene left 3+ sizes behind: clear its props (like the scatter does with tiny things)
 function dropScene(home,q){home.scenes.splice(home.scenes.indexOf(q),1);
+  if(q.bumped)for(const e of q.bumped)if(e.back===Infinity)e.back=T+rand(3,12); // L38: what a stage pushed aside grows back
   for(const k of q.keys){const c=chunks.get(k);if(!c)continue;c.recs=c.recs.filter(r=>r.scene!==q.tag);
     const ns=c.spots.filter(s=>s.scene!==q.tag);if(ns.length!==c.spots.length){c.spots=ns;refreshSpotTiles(c);}}
   home.herds=home.herds.filter(h=>{if(h.scene!==q.tag)return true;if(h.on)herdOff(h);return false;});
@@ -1471,7 +1510,7 @@ function updateScenes(dt){
   const Rs=scatR();let n=0;
   for(const c of chunks.values()){if(!c.loaded||!c.scenes.length)continue;
     for(let i=c.scenes.length-1;i>=0;i--){const q=c.scenes[i];
-      if(!q.fixed&&q.k<=tier-3){dropScene(c,q);continue;}
+      if((!q.fixed||q.stage)&&q.k<=tier-3){dropScene(c,q);continue;}
       if(q.k>=tier&&players.some(p=>Math.hypot(q.x-p.x,q.z-p.z)<Rs*1.35+q.r))n++;}}
   if(n<(plannedShare>0.6?1:SCENE_N))spawnScene(pick(players),n===0);}
 function sceneStats(){const Rs=scatR(),p=players[0];let near=0,size=0;
@@ -2285,7 +2324,7 @@ function showSpots(on){if(spotView){scene.remove(spotView);spotView.traverse(m=>
     const col=cols[q.kind]||(cols[q.kind]=new THREE.MeshBasicMaterial({color:new THREE.Color().setHSL(Object.keys(cols).length*0.17%1,0.9,0.55),transparent:true,opacity:0.35,depthWrite:false}));
     const m=new THREE.Mesh(new THREE.PlaneGeometry(q.hx*2,q.hz*2),col);m.rotation.set(-Math.PI/2,0,Math.atan2(q.sn,q.cs));m.position.set(q.x,groundH(q.x,q.z)+0.06,q.z);g.add(m);}
   scene.add(g);spotView=g;return count;}
-window.__sp={scene:(id)=>spawnScene(players[0],true,id),scenes:()=>Object.fromEntries(sceneDefs(zoneXZ(players[0].x,players[0].z)).map(([i,d])=>[i,d.size])),sceneStats,room:(on=true)=>{rollWorld(true,on?"bedroom":"outside");return on?"bedroom":"outside";},spots:(on)=>spotView&&on!==true?showSpots(false):showSpots(on),mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,zone:testZone,zones:ZONES,gold:spawnGold,pad:placePad,pads,
+window.__sp={scene:(id)=>spawnScene(players[0],true,id),sceneAt:(id,dz=-30)=>sceneAt(id,players[0].x,players[0].z+dz*Math.max(S,0.3),0,null,{key:'test'}),sceneClear,scenes:()=>Object.fromEntries(sceneDefs(zoneXZ(players[0].x,players[0].z)).map(([i,d])=>[i,d.size])),sceneStats,room:(on=true)=>{rollWorld(true,on?"bedroom":"outside");return on?"bedroom":"outside";},spots:(on)=>spotView&&on!==true?showSpots(false):showSpots(on),mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,zone:testZone,zones:ZONES,gold:spawnGold,pad:placePad,pads,
   boss(id){if(!giant){tier=SIZES.length-1;growth=MAX_GROW;levelReady=true;levelUp();newCars(true);}if(!boss)summonBoss(id);return boss&&boss.def.name;}, // __sp.boss('shelldozer')
   level(n=1,skipGarage){garageSkip=!!skipGarage;let skipped=false;const unG=()=>{for(let i=queue.length-1;i>=0;i--)if(queue[i].fn===openGarage){queue.splice(i,1);skipped=true;}if(garage){garageRemove();skipped=true;}};
     for(let i=0;i<n&&!giant;i++){unG();growth=GROW_AT[tier+1];levelReady=true;levelUp();}

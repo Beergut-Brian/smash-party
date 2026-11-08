@@ -126,7 +126,7 @@ function questStageCenter(q){
 function questStepStart(){
   const A=questA,q=A.q,s=q.steps[A.si],pr=questProg[q.id],gv=questGv(),voice=q.giver.voice;
   const n=s.n||1,c=questStageCenter(q),st=A.st={s,n,got:pr.n||0,things:[],tier,cx:c[0],cz:c[1],R:c[2],t:0};
-  if(A.si===0&&q.stage&&typeof spawnScene==='function'&&!A.scene){try{A.scene=spawnScene(q.stage,c[0],c[1],0)||true;}catch(e){console.warn('spawnScene',e);}} // L31
+  if(A.si===0&&q.stage&&typeof sceneAt==='function'&&!A.scene){try{A.scene=sceneAt(q.stage,c[0],c[1],0,null,{key:'quest_'+q.id})||true;}catch(e){console.warn('sceneAt',e);}} // L38
   const say0=s.say&&!Array.isArray(s.say)&&s.say.start;
   switch(s.do){
     case 'talk':questSpeak(Array.isArray(s.say)?s.say:[].concat(s.say||[]),voice,gv);st.wait=true;break;
