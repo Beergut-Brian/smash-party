@@ -119,8 +119,9 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Check: `__sp.stats().calls` at huge in town (`__sp.tp(240,-160)`) and at the skyscraper landmark should drop by ~50–100.
   - Done in L25: nothing wakes just for being near a car any more, so an untouched building (proxy or not) stays in its batch until the first hit. Huge town 810 → 295, skyscraper area (-240,240) at huge 1,100 → 470. Follow-up: D15 (skyscraper `grid:3`).
 
-- [ ] **D15: Skyscraper at 3×3 slicing** `NEEDS DESIGN` (world-props; from L24/L25)
+- [x] **D15: Skyscraper at 3×3 slicing** `NEEDS DESIGN` (world-props; from L24/L25)
   - Untouched buildings no longer cost draw calls of their own while a car is near (L24/L25), so the skyscraper's 2×2 cut (kept because a woken 3×3 skyscraper was 55 meshes) can go to `grid:3` like the other pack buildings. Only a building that is being smashed draws as parts now. Check `__sp.stats().calls` at huge by the skyscraper landmark (`__sp.tp(-240,240)`, ~470 today) stays under ~600.
+  - Done (world-props/D15): the skyscraper uses `KIT_GRID` (3×3: 8 walls + a slab per storey), 25 → 55 parts for a 6-storey tower. `__sp.stats().calls` at huge by (-240,240), 1600×900 high: standing 340 → 336, while it collapses after barrel blasts 334–337 → 357–361. Under the ~600 budget.
 
 - [x] **L15: Zone plug-ins** (unblocks the `zone-<name>` agents; see `agents/zone.md`; was numbered L11, which is golden surprises)
   - New zones live in their own files: `src/world/zones/<name>.js`, loaded by `boot.mjs` from a list (e.g. `src/world/zones/index.json`), each registering `{id, letter, ground, sky?, props, layout(ctx), sizes}` via a `registerZone()` helper in core.js.

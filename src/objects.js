@@ -576,8 +576,8 @@ const OBJ={
   OBJ.firestation=kitBld('firestation','huge',20,{noCap:true,eave:.86},()=>'#ff8f8f',(P,H,fl)=>{
     story(P,2.8,2.8,2.6,H,fl,'#d62828',2);slab(P,2.6,2.6,H+2.6,fl,'#fff');
     P(BP(mk('box',.55,.38,.55,null,0,H+2.95,0,glow('#ff1e1e')),fl,'extra'),1);});
-  // grid 2: 4 walls a storey. Six storeys at 3×3 would be ~55 parts, and an awake building draws every part on its own
-  OBJ.skyscraper=kitBld('skyscraper','mega',50,{noCap:true,eave:.93,grid:2},()=>pick(['#ffffff','#cfe8ff','#ffd6e7','#d8f3dc']),null,
+  // KIT_GRID (3×3: 8 walls + a slab a storey) like the other pack buildings; an untouched building draws as its batch (L25)
+  OBJ.skyscraper=kitBld('skyscraper','mega',50,{noCap:true,eave:.93},()=>pick(['#ffffff','#cfe8ff','#ffd6e7','#d8f3dc']),null,
     name=>({'tower-a':4,'tower-c':5,'tower-d':6})[name]||4);
   OBJ.watertower=(x,z,arg)=>{if(!kitHas('watertower'))return B.watertower(x,z,arg);const s=kitFit('watertower',RAD.watertower);
     return sized(x,z,RAD.watertower,kitH('watertower',s),16,'huge',(P,g)=>{kitProp(P,'watertower',s,{cut:{mode:'y',cuts:[.42,.78]},n:5,whole:false});face(g,arg);});};
