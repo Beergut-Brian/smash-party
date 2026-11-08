@@ -210,7 +210,7 @@ function questPlace(s,st,i,ring){ // a spot for thing i: listed points, a spot k
   const a=questAt(s.at,st);if(a)return [a[0]+rand(-2,2)*qS(),a[1]+rand(-2,2)*qS()];
   const R=s.at==='hidden'?st.R*3:st.R;
   for(let t=0;t<12;t++){const ang=rand(0,Math.PI*2),d=(ring?rand(0.45,0.95):Math.sqrt(Math.random()))*R,x=st.cx+Math.sin(ang)*d,z=st.cz+Math.cos(ang)*d;
-    if(Math.abs(x)>WB-4*qS()||Math.abs(z)>WB-4*qS()||groundH(x,z)>0)continue;if(!players.some(p=>Math.hypot(p.x-x,p.z-z)<p.r*3))return [x,z];}
+    if(Math.abs(x)>WB-4*qS()||Math.abs(z)>WB-4*qS()||rampH(x,z)>0)continue;if(!players.some(p=>Math.hypot(p.x-x,p.z-z)<p.r*3))return [x,z];}
   return [st.cx+rand(-1,1)*R*0.5,st.cz+rand(-1,1)*R*0.5];}
 function questRingPos(s,st,i,n){if(Array.isArray(s.at)&&Array.isArray(s.at[0]))return s.at[i%s.at.length];
   const a=i/n*Math.PI*2+0.4;return [st.cx+Math.sin(a)*st.R,st.cz+Math.cos(a)*st.R];}
