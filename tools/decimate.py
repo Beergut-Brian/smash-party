@@ -1,7 +1,8 @@
 """Shrink an AI-generated (or any) model into a game-ready .glb for Smash Party.
 
 Run headless with Blender 3.6+ / 4.x:
-  blender -b -P tools/decimate.py -- IN.glb OUT.glb [--tris 20000] [--length 4.5] [--wheels]
+  blender -b -P tools/decimate.py -- IN.glb OUT.glb [--tris 20000] [--length 4.5] [--min 500] [--wheels]
+  (--min: meshes with fewer triangles than this are never decimated)
 
 What it does
   1. Imports IN (.glb/.gltf/.obj/.fbx).
@@ -37,12 +38,21 @@ def tri_count(o):
 total = sum(tri_count(o) for o in meshes)
 print(f"[decimate] {len(meshes)} meshes, {total} tris -> target {max_tris}")
 
+# Only decimate heavy meshes: simple ones (boxes, wheels, small details) are left
+# untouched, because collapsing a 12-triangle box punches holes in it.
+MIN_TRIS = opt("--min", 500)
 if total > max_tris:
-    ratio = max_tris / total
-    for o in meshes:
-        m = o.modifiers.new("dec", "DECIMATE"); m.ratio = ratio; m.use_collapse_triangulate = True
-        bpy.context.view_layer.objects.active = o
-        bpy.ops.object.modifier_apply(modifier=m.name)
+    heavy = [o for o in meshes if tri_count(o) >= MIN_TRIS]
+    light = total - sum(tri_count(o) for o in heavy)
+    budget = max(max_tris - light, 1)
+    heavy_total = sum(tri_count(o) for o in heavy)
+    if heavy_total > budget:
+        ratio = budget / heavy_total
+        for o in heavy:
+            m = o.modifiers.new("dec", "DECIMATE"); m.ratio = ratio; m.use_collapse_triangulate = True
+            bpy.context.view_layer.objects.active = o
+            bpy.ops.object.modifier_apply(modifier=m.name)
+    print(f"[decimate] decimated {len(heavy)} heavy meshes, left {len(meshes)-len(heavy)} simple ones alone")
 print(f"[decimate] now {sum(tri_count(o) for o in meshes)} tris")
 
 if wheels:
