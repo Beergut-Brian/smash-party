@@ -220,11 +220,11 @@ registerQuest({
   id:'hank_lunchbox',world:'home',chapter:1,main:true,
   giver:{id:'hank',name:'Hammerhead Hank',emoji:'🔨',voice:'hank',at:questHomeAt('hank_lunchbox','giver'),h:3.8,build:questHankBuild},
   stageAt:questHomeAt('hank_lunchbox','stage'),stageR:3,
-  remind:['My lunchbox! In my dirt pile!','Still hungry over here!'],
+  remind:['Find my lunchbox! In my dirt pile!','Still hungry over here!'],
   steps:[
-    {do:'talk',say:['Hey there, little buddy!','I lost my lunchbox!','My SANDWICH is in there!']},
-    {do:'find',item:'lunchbox',icon:'🍱',at:'stage',say:{start:'It is in the dirt by my house!',hint:'In the dirt! Go go go!',got:'My lunchbox! You found it!'}},
-    {do:'bring',icon:'🍱',say:{start:'Bring it back to old Hank!',hint:'Bring it here, buddy!'}}],
+    {do:'talk',icon:'🍱',n:1,say:['Hey there, little buddy!','My SANDWICH is in my lunchbox!','Find my lunchbox, buddy!']},
+    {do:'find',n:1,item:'lunchbox',icon:'🍱',at:'stage',say:{start:'It is in the dirt pile by my house!',hint:'In the dirt! Go go go!',got:'My lunchbox! You found it!'}},
+    {do:'bring',n:1,icon:'🍱',say:{start:'Bring it back to old Hank!',hint:'Bring it here, buddy!'}}],
   reward:{ability:'hammer',stars:2,say:['Mmm! Thank you, buddy!','Here, take my Bonk Hammer!','Now go SMASH stuff!']},
   after:['Smashing is the best, right?','Mmm. Sandwich.','Bonk bonk! Ha!']});
 
@@ -236,11 +236,11 @@ registerQuest({
   id:'garry_gnomes',world:'home',chapter:1,main:false,needs:['hank_lunchbox'],
   giver:{id:'garry',name:'Garry the Gnome',emoji:'🍄',voice:'garry',at:questHomeAt('garry_gnomes','giver'),h:4.4,build:questGarryBuild},
   stageAt:questHomeAt('garry_gnomes','stage'),stageR:4,
-  remind:['Push my friends home, please!'],
+  remind:['Push my five friends home, please!'],
   steps:[
-    {do:'talk',say:['Oh my! Hello there.','My gnome friends rolled away!','Could you push them home, please?']},
+    {do:'talk',icon:'🍄',n:5,say:['Oh my! Hello there.','My gnome friends rolled away!','Push my five gnomes home, please!']},
     {do:'push',n:5,icon:'🍄',r:14,build:questGarryGnome,at:questGarryAt,
-      say:{start:'Push them into my garden!',each:['Oh, thank you!','One more friend home!','Lovely pushing!'],hint:'Into the green circle, please!',got:'Everyone is home! Oh my!'}}],
+      say:{start:'Into my round garden, by my house!',each:['Oh, thank you!','One more friend home!','Lovely pushing!'],hint:'Into the green circle, please!',got:'Everyone is home! Oh my!'}}],
   reward:{cosmetic:'hat',stars:1,say:['You are so kind.','Please, have a party hat!']},
   after:['Tea time with my friends.','Oh my, what a nice hat.']});
 
@@ -248,11 +248,11 @@ registerQuest({
 registerQuest({
   id:'zippy_mail',world:'home',chapter:1,main:false,needs:['hank_lunchbox'],
   giver:{id:'zippy',name:'Zippy the Mail Truck',emoji:'✉️',voice:'zippy',at:questHomeAt('zippy_mail','giver'),h:3.8,build:questZippyBuild},
-  remind:['Mail mail mail! Hurry hurry!'],
+  remind:['Four mailboxes! Hurry hurry!'],
   steps:[
-    {do:'talk',say:['Hi hi hi! No time!','Mail day! Help me, quick quick!']},
+    {do:'talk',icon:'✉️',n:4,say:['Hi hi hi! No time!','Mail day! Help me, quick quick!','Drive to four glowing mailboxes!']},
     {do:'deliver',n:4,icon:'✉️',at:questHomeAt('zippy_mail','drops'),
-      say:{start:'Drive through the glowing mailboxes!',each:['Zip! Delivered!','Zoom zoom, next one!','Woo, so fast!'],hint:'The glowing ones! Go go go!',got:'All the mail is done!'}}],
+      say:{start:'Up and down my street! Zoom!',each:['Zip! Delivered!','Zoom zoom, next one!','Woo, so fast!'],hint:'The glowing ones! Go go go!',got:'All the mail is done!'}}],
   reward:{cosmetic:'kazoo',stars:1,say:['You zip like me!','Here, a kazoo engine! Bzzz!']},
   after:['Gotta go fast!','Bzzzz! Love that kazoo!']});
 
@@ -262,13 +262,13 @@ registerQuest({
   id:'fern_chickens',world:'home',chapter:2,main:true,
   giver:{id:'fern',name:'Farmer Fern',emoji:'🐔',voice:'fern',at:questHomeAt('fern_chickens','giver'),h:4.0,build:questFernBuild},
   stageAt:questHomeAt('fern_chickens','stage'),stageR:20,
-  remind:['Catch my chickens! Ha-HA!','My chickens are loose in the pasture!'],
+  remind:['Bump my twenty chickens! Ha-HA!','My chickens are loose in the pasture!'],
   steps:[
-    {do:'talk',say:['Howdy, little racers! Ha-HA!','My chickens busted out of the coop!','Bump them back to me!']},
+    {do:'talk',icon:'🐔',n:20,say:['Howdy, little racers! Ha-HA!','My chickens busted out of the coop!','Bump all twenty chickens! Ha-HA!']},
     {do:'catch',kind:'chicken',n:20,icon:'🐔',
-      say:{start:'Bump every chicken!',each:['Gotcha! Ha-HA!','Bawk bawk! Nice one!','Feathers everywhere! Ha!','Keep bumping!'],hint:'Chickens! Bump them all!',got:'Every chicken is back! Ha-HA!'}},
-    {do:'find',n:3,item:'egg',icon:'🥚',at:'stage',say:{start:'Ooh! They laid eggs! Grab them!',each:['An egg! Careful now!'],got:'Three eggs! Ha!'}},
-    {do:'bring',icon:'🥚',say:{start:'Bring the eggs to Fern!',hint:'Bring them here, sugar!'}}],
+      say:{start:'They are in my fenced pasture!',each:['Gotcha! Ha-HA!','Bawk bawk! Nice one!','Feathers everywhere! Ha!','Keep bumping!'],hint:'Chickens! Bump them all!',got:'Every chicken is back! Ha-HA!'}},
+    {do:'find',n:3,item:'egg',icon:'🥚',at:'stage',say:{start:'Ooh! Three eggs in the pasture! Grab them!',each:['An egg! Careful now!'],got:'Three eggs! Ha!'}},
+    {do:'bring',n:1,icon:'🥚',say:{start:'Bring the eggs to Fern!',hint:'Bring them here, sugar!'}}],
   reward:{ability:'shoot',stars:3,say:['Ha-HA! You did it!','Take my Egg Blaster!','Push the shoot button! Pow!']},
   after:['Best chicken catchers ever! Ha!','Bawk bawk! Ha-HA!']});
 
@@ -278,11 +278,11 @@ registerQuest({
   id:'bubbles_soap',world:'home',chapter:2,main:false,
   giver:{id:'bubbles',name:'Bubbles the Fire Truck',emoji:'🚒',voice:'bubbles',at:questHomeAt('bubbles_soap','giver'),h:4.4,build:questBubblesBuild},
   stageAt:questHomeAt('bubbles_soap','stage'),stageR:8,
-  remind:['Soap! Find the soap bottles!'],
+  remind:['Find my three soap bottles!'],
   steps:[
-    {do:'talk',say:['Oh! Hi! I am Bubbles!','The bubble fountain is all clogged!','I need soap! Lots of soap!']},
-    {do:'find',n:3,item:'soap',icon:'🧴',at:questBubblesAt,say:{start:'Find three soap bottles!',each:['Soap! Yes yes yes!','One more! You got this!'],hint:'Look by the fountain!',got:'All the soap!'}},
-    {do:'bring',icon:'🧴',say:{start:'Bring it to me! Hurry!',hint:'Over here! It is me!'}}],
+    {do:'talk',icon:'🧴',n:3,say:['Oh! Hi! I am Bubbles!','The bubble fountain is all clogged!','Find three soap bottles, please!']},
+    {do:'find',n:3,item:'soap',icon:'🧴',at:questBubblesAt,say:{start:'They are by the bubble fountain!',each:['Soap! Yes yes yes!','One more! You got this!'],hint:'Look by the fountain!',got:'All the soap!'}},
+    {do:'bring',n:1,icon:'🧴',say:{start:'Bring the soap to me! Hurry!',hint:'Over here! It is me!'}}],
   reward:{cosmetic:'bubbles',stars:1,say:['Bubbles everywhere! Wheee!','Now YOU make bubbles too!']},
   after:['Pop pop pop! Hee!','I love bubbles so much!']});
 
@@ -291,11 +291,11 @@ registerQuest({
   id:'pip_icecream',world:'home',chapter:2,main:false,
   giver:{id:'pip',name:'Pip the Ice-Cream Truck',emoji:'🍦',voice:'pip',at:questHomeAt('pip_icecream','giver'),h:6.2,build:questPipBuild},
   stageAt:questHomeAt('pip_icecream','stage'),stageR:9,
-  remind:['Ice cream for the picnics! La la!'],
+  remind:['Ice cream to five blankets! La la!'],
   steps:[
-    {do:'talk',say:['La la la! Hello, sweeties!','Everyone at the picnic wants ice cream!']},
+    {do:'talk',icon:'🍦',n:5,say:['La la la! Hello, sweeties!','The picnic wants ice cream!','Drive to five picnic blankets!']},
     {do:'deliver',n:5,icon:'🍦',at:questHomeAt('pip_icecream','drops'),
-      say:{start:'Drive to the picnic blankets!',each:['Yum yum! La la!','Sprinkles for you!','Ice cream time!'],hint:'The glowing blankets, sweetie!',got:'Everyone has ice cream!'}}],
+      say:{start:'The blankets are in the meadow! La la!',each:['Yum yum! La la!','Sprinkles for you!','Ice cream time!'],hint:'The glowing blankets, sweetie!',got:'Everyone has ice cream!'}}],
   reward:{cosmetic:'sprinkles',stars:1,say:['You are so sweet!','Have a sprinkle trail! La la!']},
   after:['Ding ding! Ice cream!','Sprinkles make it better!']});
 
@@ -316,15 +316,15 @@ registerQuest({
   id:'zorp_crystal',world:'home',chapter:3,main:true,
   giver:{id:'zorp',name:'Zorp and Blip',emoji:'👽',voice:'zorp',at:questHomeAt('zorp_crystal','giver'),h:4.6,r:2.8,build:questZorpBuild},
   stageAt:questHomeAt('zorp_crystal','stage'),stageR:9,
-  remind:['Beep! The crystal pieces!',questBlip('Pieces, please. Boop.')],
+  remind:['Beep! Three crystal pieces!',questBlip('Pieces, please. Boop.')],
   steps:[
-    {do:'talk',say:['Beep boop! Earth friends!',questBlip('Hellooo. Boop.'),'Our saucer went CRASH!',questBlip('Our crystal broke. Boop.')]},
+    {do:'talk',icon:'💎',n:3,say:['Beep boop! Earth friends!','Our saucer went CRASH!',questBlip('Our crystal broke. Boop.'),'Find three crystal pieces! Beep!']},
     {do:'smash',n:3,type:'hay',icon:'🌾',at:questZorpPieces.hay,reveal:'crystal',revealIcon:'💎',
-      say:{start:'One piece is in a haystack!',each:['Not this one! Beep!',questBlip('Hay everywhere. Boop.')],hint:['Smash the haystacks! Beep!',questBlip('Smash the hay. Boop.')],got:'A crystal piece! Beep beep!'}},
-    {do:'bring',icon:'💎',say:{start:questBlip('To the saucer. Boop.'),hint:'Back to the saucer! Beep!'}},
+      say:{start:'Smash the hay bales by the big haystack!',each:['Not this one! Beep!',questBlip('Hay everywhere. Boop.')],hint:['Smash the haystacks! Beep!',questBlip('Smash the hay. Boop.')],got:'A crystal piece! Beep beep!'}},
+    {do:'bring',n:1,icon:'💎',say:{start:questBlip('Bring it to the saucer. Boop.'),hint:'Back to the saucer! Beep!'}},
     {do:'find',n:2,item:'crystal',icon:'💎',at:questZorpPieces.far,lift:true,
-      say:{start:'Water tower! Duck pond! Two pieces! Beep!',each:[questBlip('Piece number two. Boop.')],hint:['The water tower! Beep!','The duck pond! Quack! Beep!',questBlip('On the treasure chest. Boop.')],got:'All the pieces! Beep boop!'}},
-    {do:'bring',icon:'💎',say:{start:'Bring the pieces to the saucer!',hint:['Back to the saucer! Beep!',questBlip('Saucer. This way. Boop.')]}}],
+      say:{start:'Two more! Water tower and duck pond! Beep!',each:[questBlip('Piece number two. Boop.')],hint:['The water tower! Beep!','The duck pond! Quack! Beep!',questBlip('On the treasure chest. Boop.')],got:'All the pieces! Beep boop!'}},
+    {do:'bring',n:1,icon:'💎',say:{start:'Bring the pieces to the saucer!',hint:['Back to the saucer! Beep!',questBlip('Saucer. This way. Boop.')]}}],
   reward:{ability:'hover',stars:3,say:['The crystal works! Beep boop!',questBlip('Hold jump in the air.'),'Now you can float! Wooo!']},
   after:['Wooo! Floaty! Beep!',questBlip('Earth is so smashy. Boop.')]});
 
@@ -340,11 +340,11 @@ registerQuest({
   id:'dot_demolition',world:'home',chapter:3,main:false,
   giver:{id:'dot',name:'Dozer Dot',emoji:'🚧',voice:'dot',at:questHomeAt('dot_demolition','giver'),h:4.0,build:questDotBuild},
   stageAt:questHomeAt('dot_demolition','stage'),stageR:8,
-  remind:['The crates! SMASH THEM ALL!'],
+  remind:['Forty crates! SMASH THEM ALL!'],
   steps:[
-    {do:'talk',say:['HI! I am Dozer Dot!','It is DEMOLITION DAY!','LET\'S SMASH!']},
+    {do:'talk',icon:'📦',n:40,say:['HI! I am Dozer Dot!','It is DEMOLITION DAY!','Smash forty crates! LET\'S SMASH!']},
     {do:'smash',n:40,type:['crates','crates','barrel'],icon:'📦',at:questDotAt,
-      say:{start:'Smash every crate! GO!',each:['YEAH! SMASH!','KABOOM! More!','So many crates! WOO!','Barrel BOOM!'],hint:'More crates! SMASH!',got:'ALL SMASHED! YEAH!'}}],
+      say:{start:'They are in my crate yard! GO!',each:['YEAH! SMASH!','KABOOM! More!','So many crates! WOO!','Barrel BOOM!'],hint:'More crates! SMASH!',got:'ALL SMASHED! YEAH!'}}],
   reward:{ability:'dozer',stars:3,say:['You are SO strong!','Take my dozer blade! PUSH!']},
   after:['SMASH! Ha ha!','Every day is demolition day!']});
 
@@ -352,11 +352,11 @@ registerQuest({
 registerQuest({
   id:'wheelie_parade',world:'home',chapter:3,main:false,
   giver:QUEST_HOME_WHEELIE,
-  remind:['Through the balloon arches, my friends!'],
+  remind:['Ten balloon arches, my friends!'],
   steps:[
-    {do:'talk',say:['I am Mayor Wheelie! Marvelous!','Today is my parade!','You shall lead it!']},
+    {do:'talk',icon:'🎈',n:10,say:['I am Mayor Wheelie! Marvelous!','Today is my parade! You shall lead it!','Drive through ten balloon arches!']},
     {do:'rings',n:10,icon:'🎈',at:questHomeAt('wheelie_parade','rings'),
-      say:{start:'Drive through the balloon arches!',each:['Splendid!','Wave to the crowd!','Magnificent driving!','Onward!'],hint:'The golden arch! That way!',got:'What a parade! Bravo!'}}],
+      say:{start:'The arches go round downtown! Onward!',each:['Splendid!','Wave to the crowd!','Magnificent driving!','Onward!'],hint:'The golden arch! That way!',got:'What a parade! Bravo!'}}],
   reward:{cosmetic:'confetti',stars:2,say:['A parade fit for a mayor!','Confetti for you! Hooray for me!']},
   after:['Have you seen my hat? Splendid!','I am a marvelous mayor.']});
 
@@ -366,11 +366,11 @@ registerQuest({
   id:'big_stomp',world:'home',chapter:4,main:true,
   giver:Object.assign({},QUEST_HOME_WHEELIE,{at:questHomeAt('big_stomp','giver')}),
   stageAt:questHomeAt('big_stomp','stage'),
-  remind:['The robot! Stop the giant robot!'],
+  remind:['Smash the giant robot!'],
   steps:[
-    {do:'talk',say:['Help! Help! Oh dear!','A GIANT ROBOT is coming!','Save my town, my friends!']},
-    {do:'boss',icon:'🤖',say:{start:'Here it comes! Smash it!',hint:'Smash the robot! Hurry!'}},
-    {do:'talk',say:['You did it! Hooray!','Look! Zorp and Blip!','The robot battery fixed their crystal!']}],
+    {do:'talk',icon:'🤖',n:1,say:['Help! Help! Oh dear!','A GIANT ROBOT is coming!','Smash the giant robot, my friends!']},
+    {do:'boss',boss:'clankzilla',n:1,icon:'🤖',say:{start:'It is stomping into the fair! Smash it!',hint:'Smash the robot! Hurry!'}},
+    {do:'talk',icon:'👽',say:['You did it! Hooray!','Look! Zorp and Blip!','The robot battery fixed their crystal!']}],
   reward:{stars:4,say:['You saved Smashville!','You are the best heroes ever!']},
   after:['Hooray for the heroes!','My town is saved! Marvelous!']});
 
@@ -382,12 +382,12 @@ registerQuest({
   id:'kite_kites',world:'home',chapter:4,main:false,
   giver:{id:'kite',name:'Captain Kite',emoji:'🪁',voice:'kite',at:questHomeAt('kite_kites','giver'),h:5.2,build:questKiteBuild},
   stageAt:questHomeAt('kite_kites','stage'),
-  remind:['My kites, dude! All over town!'],
+  remind:['Five kites, dude! On the rooftops!'],
   steps:[
-    {do:'talk',say:['Duuude. Hey.','A big wind blew my kites away.','Bummer. Can you find them?']},
+    {do:'talk',icon:'🪁',n:5,say:['Duuude. Hey.','A big wind blew my kites away.','Find my five kites, dude!']},
     {do:'find',n:5,item:'kite',icon:'🪁',at:questKiteAt,lift:true,
-      say:{start:'Five kites! Follow the arrow, dude!',each:['Righteous!','Gnarly find, dude!','So rad!'],hint:['Follow the arrow, dude!','Up on the roof! Bump it, dude!'],got:'All my kites! Duuude!'}},
-    {do:'bring',icon:'🪁',say:{start:'Bring them back, dude!',hint:'Over here, little dude!'}}],
+      say:{start:'They are on the big rooftops, dude!',each:['Righteous!','Gnarly find, dude!','So rad!'],hint:['Follow the arrow, dude!','Up on the roof! Bump it, dude!'],got:'All my kites! Duuude!'}},
+    {do:'bring',n:1,icon:'🪁',say:{start:'Bring them back, dude!',hint:'Over here, little dude!'}}],
   reward:{ability:'glide',stars:2,say:['Totally awesome, dude!','Take some wings! Hold jump!','Glide like a kite!']},
   after:['Catch the wind, dude!','So chill. So breezy.']});
 
@@ -399,10 +399,10 @@ registerQuest({
   id:'woolly_sheep',world:'home',chapter:4,main:false,
   giver:{id:'woolly',name:'Woolly the Sheepdog Van',emoji:'🐑',voice:'woolly',at:questHomeAt('woolly_sheep','giver'),h:4.0,build:questWoollyBuild},
   stageAt:questHomeAt('woolly_sheep','stage'),stageR:6,
-  remind:['The sheep! Push them in the pen! Huff!'],
+  remind:['Eight sheep! Push them in the pen! Huff!'],
   steps:[
-    {do:'talk',say:['Huff, huff! Oh no, oh no!','My sheep got out!','Push them into the pen! Woof!']},
+    {do:'talk',icon:'🐑',n:8,say:['Huff, huff! Oh no, oh no!','My sheep got out!','Push my eight sheep into the pen!']},
     {do:'push',n:8,kind:'sheep',icon:'🐑',r:5,at:questWoollyAt,
-      say:{start:'Push the sheep in the circle!',each:['Phew! One is safe!','Good push! Woof!','Baa! In you go!'],hint:'Into the green circle! Huff!',got:'All my sheep! Phew!'}}],
+      say:{start:'My pen is right here! Push them in! Woof!',each:['Phew! One is safe!','Good push! Woof!','Baa! In you go!'],hint:'Into the green circle! Huff!',got:'All my sheep! Phew!'}}],
   reward:{cosmetic:'crown',stars:2,say:['You saved my sheep!','Here, a crown! Woof woof!']},
   after:['Phew. All safe. Woof.','Baa baa! Huff!']});
