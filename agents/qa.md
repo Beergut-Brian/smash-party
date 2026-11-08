@@ -7,7 +7,7 @@
 
 ## Checklist each round
 - Boot: no console errors, version shows on the start screen.
-- Both players join (keyboard P1 + P2), drive, turbo, jump, shoot, switch cars.
+- Both players join (keyboard P1 + P2), drive, turbo, jump, shoot, and pick cars in the level-up garage.
 - Growth: smash up through every size (`__sp.level(n)`), level-up button, size HUD, red-ring "too big" signals.
 - Every zone (`__sp.tp` to each), buildings collapse at the right size, animals launch and come back.
 - Giant → boss for each id (`__sp.boss('id')`), victory, NEW WORLD (`__sp.newWorld()`).

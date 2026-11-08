@@ -128,8 +128,9 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Rex Rammer, Taco Tornado and Stomp King have no voice clips yet (robot voice for now). Run `make-voices.mjs --dry`, then generate.
   - Done: rex_rammer, taco_tornado, stomp_king clips (~35 ElevenLabs characters).
 
-- [ ] **D12: More cars for the garage** `NEEDS DESIGN` (cars-ui; before L17 ships)
-  - The level-up garage shows 3–4 cars per player from the new tier. Today's counts are tier 0: 3, tier 1: 8, tier 2: 11, tier 3: 5. Add **3+ tier-0 starters** (pedal car, shopping cart, toy scooter) and **4+ tier-3 showstoppers** from the D4 list (rocket sled, robot-leg walker, stegosaurus spike car, hover car) so both players get real choices.
+- [ ] **D12: More cars for the garage** `NEEDS DESIGN` (cars-ui; L17 shipped with placeholders)
+  - The garage shows 4 cars per player from the new tier, different for each player once a tier has 6+. Counts now: tier 0: 6 ✅ (starters, not shown in a garage), tier 1: 8 ✅, tier 2: 11 ✅, **tier 3: 5** (Rocket Racer, Shark Attack, Rex Rammer, Stomp King, Comet Cruiser).
+  - **Still needed (tier 3, the coolest cars, shown today as blocky ❓ placeholders):** Rocket Sled 🛷, Robo Walker 🤖 (robot legs), Spike-o-saurus 🦕 (stegosaurus spike car), Hover Zoomer 🛸. Use exactly these names in cars.js / cars.json with `tier:3` and the placeholder disappears by itself (or rename: then update `GARAGE_WANTED` in game.js via a `TODO(logic)`). More tier-3 ideas welcome; 8+ gives both players 4 different real cars.
 
 - [ ] **B1: Candy Land boss** `NEEDS DESIGN` (world-bosses; needs L23 + Z1) — e.g. a wobbly gummy-bear giant or a gumball-machine robot. Built from `BP` parts in candy colors, weak spots on the outside. Kaden + son pick the concept and name.
 - [ ] **B1a: Candy Land boss ideas** `NEEDS DESIGN` (world-bosses; from zone-candy, Z1 ✅; feeds B1, so pick one with Kaden + son and build it as B1)
@@ -179,6 +180,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 - [ ] **D9: Garage look + car stats and perks** `NEEDS DESIGN` (cars-ui; needs L17 + L18)
   - Give every recipe car `speed`, `power`, `handling` and a fitting `perk` (rocket cars get `autoRockets`, dozers get `bulldozer`, and so on). Balance: faster cars are weaker, strong cars are slower.
   - Style the garage: pads, spotlights, the floating stat cards (icons + bars, no text), the picked-car burst, the GO! prompt.
+  - Hooks now live (L17 ✅): `function buildGarage(){…}` in cars.js replaces the placeholder showroom (contract in CLAUDE.md); style `.garageCard` (`.soon` = placeholder car, `--pc` = player color) and `#garageGo` in style.css. The garage look can ship before L18; the stats part needs L18.
 
 - [ ] **D11: Real neighborhoods** `NEEDS DESIGN` (world-props; needs L19)
   - Town: houses lined up along streets with yards, fences, driveways and mailboxes; shops on a main street; a park block. Farm: fenced fields with crops in rows, animals in pens, the barn yard. Park: paths, a playground area, the pond.
@@ -196,6 +198,9 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 - [ ] **D13: Start street set-dressing** `NEEDS DESIGN` (world-props; from L21)
   - The cars now start at micro size in the right lane of the home road (`SPAWN_DEFAULT` in game.js: [2.6,48] and [3.8,48.6], facing −Z). The camera is close, so props around it look giant. Dress the spot: a curb + sidewalk along the road edge (x≈5), sidewalk cracks, a puddle, a mailbox towering over the cars, toy-sized clutter (pebbles, leaves, soda cans, flowers). Move the spot with `const START_STREET=[[x,z],[x,z]]` in objects.js if a better one fits. Keep the first few meters in front of the cars drivable.
 
+- [ ] **AU5: Record the garage lines** `NEEDS AUDIO` (audio agent; from L17)
+  - "Pick your ride!" (garage opens) and "Let's go!" (GO! button shows) are in `tools/voice-lines.json`. Also the 4 placeholder car names when they get real cars (D12).
+
 - [ ] **AU4: Record "Beep beep!"** `NEEDS AUDIO` (audio agent; from L21)
   - New line in `tools/voice-lines.json`, played with a synth horn when the cars appear. Run `make-voices.mjs --dry`, then generate.
 
@@ -212,12 +217,14 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Keep it co-op and no-fail as today. Test helper: `__sp.boss('id')` still works, plus `__sp.boss('zone:candy')`.
   - Add `NEEDS DESIGN` tasks B1–B3 for world-bosses (or confirm they exist).
 
-- [ ] **L17: Level-up garage (pick your new car)**
+- [x] **L17: Level-up garage (pick your new car)**
   - Every car-tier unlock (every 2 sizes) opens a **garage** instead of the plain LEVEL UP: the world pauses and both players drop into a small showroom arena with 3–4 parked cars per player from the new tier on glowing pads, each with a **stat card** floating above it.
   - **Smash a car to pick it** (drive into it, with a big burst, fanfare and the car's name spoken). You then drive the new car around the garage until the other player picks. With one player, only one pick is needed.
   - When everyone has picked, a big **GO!** prompt (A / START) starts a **fresh world** (`newWorld`) and **resets the combo**.
   - **Remove LB/RB car switching** from normal play (keep a debug key). The garage is the only way to change cars.
   - Hand-offs: `NEEDS DESIGN` cars-ui for the garage look + stat cards (D9); voice lines ("Pick your ride!", "Let's go!") for audio.
+  - Done: tier unlocks (tiny, medium, huge) open a round showroom just outside the arena, scaled to the players' size (world streaming, scatter, animals, gold and pads stop meanwhile). One player: a row of 4 cars; two players: a 2×2 block each side on pads in their color, different cars each when the tier has 6+ (real + wanted). Drive into one of yours to pick it (flash, confetti, fanfare, crash, its name spoken); the rest of your row goes poof; other cars are solid. Joining mid-garage gives the new player a row. When everyone has picked: GO! button (A / B / Space / START / click) → `rollWorld(true)` = fresh world at the same size, combo reset, beep-beep intro. LB/RB no longer switch cars (they still LEVEL UP); ` cycles cars for testing. Stat cards: ⚡ speed dots, 💪 power dots (from size + tier until L18), weapon icon. Missing cars are placeholders from `GARAGE_WANTED` (see D12). Test: `__sp.garage()`, `__sp.level(n,true)` skips it.
+  - Draw calls in the garage: 300 (tiny), ~480 (medium), ~500–630 (huge).
 
 - [ ] **L18: Car stats and perks + strength-based smashing**
   - Cars get stats: **speed**, **power** and **handling**, plus an optional **perk**: `autoRockets` (fires at the nearest smashable thing on its own), `magnet` (pulls small stuff in), `bulldozer` (plows through same-size buildings in one hit), `bouncy` (jump x2), and so on. Defaults come from the tier when a car doesn't set them.
