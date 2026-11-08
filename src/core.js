@@ -100,6 +100,7 @@ function zoneAt(ci,cj){const row=zoneRows[cj+CHUNKS_HALF];return ZONE_NAMES[(row
 /* Indoors (L20) there are no roads, zone ground or edge walls: setOutdoor(false) hides them and onRoad says no. */
 const OUTDOOR=[];let roadsOn=true;
 function setOutdoor(on){roadsOn=on;for(const m of OUTDOOR)m.visible=on;}
+const ROAD_MESHES=[];function setRoads(on){roadsOn=on;for(const m of ROAD_MESHES)m.visible=on;} // L33: a land without roads (registerWorld roads:false)
 function onRoad(x,z,pad=0){if(!roadsOn)return false;const lim=ROAD_W/2+pad;return Math.abs(x-Math.round(x/ROAD_EVERY)*ROAD_EVERY)<lim||Math.abs(z-Math.round(z/ROAD_EVERY)*ROAD_EVERY)<lim;}
 
 // endless outer grass + zone-tinted world ground (one tiny canvas texture = one draw call)
@@ -135,7 +136,7 @@ function instBoxes(list,color,shadow){
     roads.push([r,0.03,0,ROAD_W,0.04,ARENA*2]);roads.push([0,0.03,r,ARENA*2,0.04,ROAD_W]);
     for(let i=-ARENA+4;i<ARENA;i+=8){if(Math.abs(i-Math.round(i/ROAD_EVERY)*ROAD_EVERY)<7)continue;
       dash.push([i,0.06,r,4,0.05,0.5]);dash.push([r,0.06,i,0.5,0.05,4]);}}
-  OUTDOOR.push(instBoxes(roads,'#5c6670'),instBoxes(dash,'#ffd60a'));}
+  ROAD_MESHES.push(instBoxes(roads,'#5c6670'),instBoxes(dash,'#ffd60a'));OUTDOOR.push(...ROAD_MESHES);}
 // world-edge wall (soft bounce lives in game.js)
 {const w=[];for(let s=0;s<4;s++)for(let i=-ARENA;i<ARENA;i+=4){
   const c=((i/4)|0)%2?'#e63946':'#ffffff',o=(s%2?1:-1)*(ARENA+0.8);
@@ -248,7 +249,8 @@ let musicGain=null,musicWant=null,mTrack=null;
 let musicZone=null;
 function music(id,opts={}){const zone=opts.zone||(id==='drive'?null:musicZone);
   if(musicWant&&musicWant.id===id&&musicWant.zone===zone)return;musicWant={id,zone,loop:opts.loop!==false,then:opts.then};}
-function musicTrack(w){const z=ZONES[w.zone||(w.id==='drive'?musicZone:null)],t=z&&z.music&&z.music[w.id];
+function musicTrack(w){const z=ZONES[w.zone||(w.id==='drive'?musicZone:null)];let t=z&&z.music&&z.music[w.id];
+  if(!(t&&musicBank.index[t])&&typeof landW!=='undefined'&&landW&&landW.music)t=landW.music[w.id]; // L33: the land's own track
   return t&&musicBank.index[t]?t:w.id;}
 function setMusicZone(id){musicZone=id;}
 function playTrackNow(id,buf,loop){const t=AC.currentTime;

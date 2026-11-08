@@ -1,6 +1,6 @@
 /* Smash Party — boot. Owner: Claude Code (logic).
    three.js ships only as ES modules now, so this module imports it (plus the addons we use), exposes the global
-   THREE the plain game scripts expect, then loads them in order: core → cars → objects → world/animals → world/bosses → world/zones/* → quests → world/quests/* → game. */
+   THREE the plain game scripts expect, then loads them in order: core → cars → objects → world/animals → world/bosses → worlds → world/zones/* → quests → world/quests/* → game. */
 import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
@@ -11,5 +11,5 @@ const v=window.GAME_VERSION||'dev';
 let zones=[];try{zones=await (await fetch(`src/world/zones/index.json?v=${v}`)).json();}catch(e){}
 // quest packs (L35): src/world/quests/index.json lists them, e.g. ["home"]; the engine (quests.js) loads first
 let quests=[];try{quests=await (await fetch(`src/world/quests/index.json?v=${v}`)).json();}catch(e){}
-for(const f of ['core','cars','objects','world/animals','world/bosses',...zones.map(z=>'world/zones/'+z),'quests',...quests.map(q=>'world/quests/'+q),'game'])
+for(const f of ['core','cars','objects','world/animals','world/bosses','worlds',...zones.map(z=>'world/zones/'+z),'quests',...quests.map(q=>'world/quests/'+q),'game'])
   await new Promise((ok,no)=>{const s=document.createElement('script');s.src=`src/${f}.js?v=${v}`;s.onload=ok;s.onerror=no;document.body.appendChild(s);});
