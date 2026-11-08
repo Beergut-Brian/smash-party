@@ -1385,13 +1385,16 @@ Object.assign(SCENES,{
     for(let x=-28;x<=28.1;x+=6.2)for(let z=-28;z<=28.1;z+=6.2){if(Math.hypot(x,z)<17.5||Math.hypot(x+18,z-16)<5)continue;s.place('crops',x,z,0);}
     s.place('saucer',0,0,0);s.place('hay',-18,16);for(let i=0;i<5;i++){const a=i/5*Math.PI*2;s.place('hay',-18+Math.sin(a)*2.6,16+Math.cos(a)*2.6);}
     s.place('scarecrow',-12,-12,0);s.place('pebble',4,6,null,0,4);s.place('pebble',-5,-4,null,0,4);s.place('cone',6,-6);s.place('cone',-6.6,5);}},
-  /* the duck pond (chapter 3): a big pond with an island and a treasure chest on it (needs hover), paddle boats,
-     ducks, reeds and benches round the shore; a crystal piece lies on the bottom at local (10, −6) */
+  /* the duck pond (chapter 3): a big pond with an island and a treasure chest on it, paddle boats, ducks, reeds and
+     benches round the shore. A water_deep moat (four strips, 8 wide, each ≥12 long so cars up to huge can't just wade)
+     rings the island, so reaching the chest (Zorp's crystal piece sits on it) needs 🛸 hover. The strips stay off the
+     island spots (smaller than them, so where they'd overlap the moat would win) */
   duck_pond:{zones:PARKISH,size:'huge',r:30,filler:false,build(s){
     s.spot('lawn',0,0,76,76);s.spot('water',0,0,52,36);s.spot('water',-20,10,18,20);s.spot('water',18,-8,22,26);s.spot('water_deep',10,-6,10,8);
+    s.spot('water_deep',0,9.5,12,8);s.spot('water_deep',0,-9.5,12,8);s.spot('water_deep',-10,0,8,27);s.spot('water_deep',10,0,8,27);
     s.spot('island',0,0,12,9);s.spot('island',1,0,9,11);
     s.place('chest',1.6,.6,0,-.4,4);s.place('tree',-3,-2);s.place('flowers',3.4,-2.4,null,0,2);s.place('pebble',-2.6,2.6,null,0,3);
-    for(const [x,z,t] of [[-14,6,.6],[12,10,-.8],[-6,-12,2.2]])s.place('paperboat',x,z,0,t,9);
+    for(const [x,z,t] of [[-18,6,.6],[17,12,-.8],[-8,-15.5,2.2]])s.place('paperboat',x,z,0,t,9);
     s.herd('duck',-18,-6,5);s.herd('goose',16,12,3);
     for(const [x,z] of [[-27,-8],[-26,4],[-24,16],[27,-14],[28,0],[24,8],[-10,-19],[8,19],[-2,19.5]])s.place('bush',x,z);
     for(const [x,z,t] of [[0,24,Math.PI],[-20,23,Math.PI],[30,14,-Math.PI/2],[-31,-14,Math.PI/2]])s.place('bench',x,z,0,t);
