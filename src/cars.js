@@ -106,6 +106,45 @@ const PARTS={
   fatTire(p){const g=new THREE.Group();
     const tire=mk('cyl',p.r||.95,p.w||.7,p.r||.95,'#222');tire.rotation.z=Math.PI/2;g.add(tire);
     const hub=mk('cyl',(p.r||.95)*.45,(p.w||.7)*1.05,(p.r||.95)*.45,p.hub||'#ffd60a');hub.rotation.z=Math.PI/2;g.add(hub);
+    return g;},
+  /* Humble tier-0 toy bits */
+  pedals(p){const g=new THREE.Group(),c=p.color||'#ffd60a',arm=p.arm||'#495057';
+    g.add(mk('cyl',.08,.55,.08,arm));
+    [-.35,.35].forEach((x,i)=>{
+      const crank=mk('box',.12,.12,.42,arm,x,i?-.12:.12,0);g.add(crank);
+      g.add(mk('box',.55,.1,.28,c,x+(i?-.15:.15),i?-.22:.22,0));
+    });
+    return g;},
+  basket(p){const g=new THREE.Group(),c=p.color||'#ced4da',w=p.w||1.6,h=p.h||1.1,d=p.d||1.8;
+    // Wire-frame shopping basket: rim + grid walls (reads from high camera).
+    g.add(mk('box',w,.08,d,c,0,h,0));
+    g.add(mk('box',w,.08,.08,c,0,0,d/2));g.add(mk('box',w,.08,.08,c,0,0,-d/2));
+    g.add(mk('box',.08,.08,d,c,-w/2,0,0));g.add(mk('box',.08,.08,d,c,w/2,0,0));
+    [-w/2,w/2].forEach(x=>{g.add(mk('box',.08,h,.08,c,x,h/2,d/2));g.add(mk('box',.08,h,.08,c,x,h/2,-d/2));});
+    [-d/2,d/2].forEach(z=>{g.add(mk('box',.08,h,.08,c,-w/2,h/2,z));g.add(mk('box',.08,h,.08,c,w/2,h/2,z));});
+    for(let i=1;i<3;i++){const y=h*(i/3);g.add(mk('box',w,.05,.05,c,0,y,d/2));g.add(mk('box',w,.05,.05,c,0,y,-d/2));
+      g.add(mk('box',.05,.05,d,c,-w/2,y,0));g.add(mk('box',.05,.05,d,c,w/2,y,0));}
+    // Groceries peeking out
+    g.add(mk('sph',.35,.35,.35,p.a||'#e76f51',-.35,h+.15,.2));
+    g.add(mk('sph',.28,.28,.28,p.b||'#ffd60a',.3,h+.1,-.15));
+    g.add(mk('box',.4,.35,.25,p.fill||'#2a9d8f',.05,h+.05,.45));
+    return g;},
+  handlebar(p){const g=new THREE.Group(),c=p.color||'#212529',grip=p.grip||'#e63946';
+    g.add(mk('box',.12,1.1,.12,c,0,.35,0));
+    g.add(mk('box',1.35,.1,.1,c,0,.95,0));
+    g.add(mk('cyl',.09,.28,.09,grip,-.65,.95,0));g.add(mk('cyl',.09,.28,.09,grip,.65,.95,0));
+    if(p.bell!==false)g.add(mk('sph',.16,.16,.16,p.bell||'#ffd60a',.35,.1,.08));
+    return g;},
+  flag(p){const g=new THREE.Group(),pole=p.pole||'#adb5bd',c=p.color||'#3a86ff';
+    g.add(mk('box',.06,1.2,.06,pole,0,.6,0));
+    const cloth=mk('box',.55,.35,.06,c,.28,1.05,0);g.add(cloth);
+    g.add(mk('box',.2,.2,.06,p.tip||'#ffbe0b',.45,1.05,0));
+    return g;},
+  googly(p){const g=new THREE.Group(),s=p.s||.32;
+    [-.45,.45].forEach(x=>{
+      g.add(mk('sph',s,s,s,'#fff',x,0,0));
+      g.add(mk('sph',s*.45,s*.45,s*.45,'#111',x+s*.08,0,s*.35));
+    });
     return g;}
 };
 
@@ -266,7 +305,29 @@ const RECIPES=[
       {id:'rollcage',at:[0,2.25,-.1],color:'#f8f9fa'},
       {id:'stripe',at:[0,1.55,.2],color:'#ffd60a',w:2.2,h:.18,d:3.4},
       {id:'rockets',at:[0,2.05,-.55],scale:1.3,color:'#9b2226',fin:'#ffd60a',glow:'#ff7b00'},
-      {id:'spoiler',at:[0,2.7,-1.55],color:'#111'}]}
+      {id:'spoiler',at:[0,2.7,-1.55],color:'#111'}]},
+  /* D4 tier-0 humble starters — toy-ish, no weapons (bubbles) */
+  {name:'Pedal Putter',emoji:'🚲',base:'kart-oozi.glb',speed:22,r:2.05,tier:0,scale:2.0,height:2.9,
+    paint:'#ff6b6b',exhaust:[0,.95,-1.35],
+    parts:[
+      {id:'pedals',at:[0,.55,.55],color:'#ffd60a',arm:'#495057'},
+      {id:'stripe',at:[0,1.05,.1],color:'#fff',w:.35,h:.1,d:2.0},
+      {id:'googly',at:[0,1.55,1.15],s:.28},
+      {id:'flag',at:[.75,1.55,-.55],color:'#3a86ff',tip:'#ffbe0b'}]},
+  {name:'Cart Crash',emoji:'🛒',base:'van.glb',speed:21,r:2.25,tier:0,scale:1.45,tweak:[.92,.88,.9],height:2.8,
+    paint:'#adb5bd',exhaust:[0,.65,-2.0],
+    parts:[
+      {id:'basket',at:[0,1.35,.15],w:1.7,h:1.15,d:2.0,color:'#dee2e6',a:'#e76f51',b:'#ffd60a',fill:'#2a9d8f'},
+      {id:'handlebar',at:[0,1.55,-1.55],color:'#495057',grip:'#e63946',bell:'#ffd60a'},
+      {id:'googly',at:[0,1.85,1.55],s:.3},
+      {id:'stripe',at:[0,.55,0],color:'#ff006e',w:2.0,h:.12,d:3.4}]},
+  {name:'Scoot Zoom',emoji:'🛴',base:'race.glb',speed:27,r:2.0,tier:0,scale:1.55,tweak:[.72,.55,1.2],height:2.2,
+    paint:'#06d6a0',exhaust:[0,.35,-2.0],
+    parts:[
+      {id:'handlebar',at:[0,.55,1.55],color:'#212529',grip:'#ff006e',bell:'#ffd60a',scale:1.05},
+      {id:'stripe',at:[0,.55,.2],color:'#fff',w:.2,h:.08,d:3.2},
+      {id:'googly',at:[0,.85,1.05],s:.24},
+      {id:'flag',at:[-.55,.9,-1.15],color:'#ffbe0b',tip:'#e63946',scale:.85}]}
 ];
 
 /* ---------- Kenney cars ----------
