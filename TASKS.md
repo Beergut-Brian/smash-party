@@ -365,15 +365,38 @@ Full spec and contracts: **`docs/ADVENTURE.md`** (read it before any task below)
 - [ ] **Q1c: Use the L40 quest options in the Home pack** `NEEDS DESIGN` (quests lane; needs L40 ✅, do with or after Q1b). In `src/world/quests/home.js`: split Zorp & Blip's lines (`{text:'…boop!',voice:'blip'}`; a `blip` entry is in `tools/voices.json`, uncast) and tag the Blip lines `"voice":"blip"` in `tools/voice-lines.json`; give the duck-pond crystal `find` `lift:true` (it sits on the pond, bumping the pond grabs it); make the haystack step `smash` with `reveal:'crystal', revealIcon:'💎'` if you want the piece to pop out; Captain Kite's kites can use `lift:true` on the `HOME_QUEST_AT` roof spots (bump the house) or `y` (jump/hover to it).
 - [ ] **QA round 3** (qa; after Phase B): play the whole Home World adventure from Hank to the boss with two controllers, check spacing/scenes at every size, the garage drive-in/out, saving and continue.
 
-**Phase C (after QA round 3)**
+**Phase C: Dino Land + Candy Land (planned for maximum parallel work, Nov 8)**
+
+Everything below can start **now**, before L33 lands, because each lane builds against the contracts here and guards calls to functions that don't exist yet (`typeof registerWorld==='function'&&registerWorld({...})`). The only hard ordering: Q2a/Q3a (the quest outlines, ~30 minutes) come before the zone lanes mark quest spots and before audio casts new voices.
+
+**Shared contracts (draft; L33 documents the final ones in CLAUDE.md)**
+- **A world is registered by its zone lane**, in its main zone file: `registerWorld({id:'dino', name:'Dino Land', emoji:'🦖', zones:['dino','dino_swamp','dino_volcano',…], plan:[…11 strings of 11 zone letters…], start:[[x,z],[x,z]], portal:{color:'#7ae582', sfx:'portal_roar'}, music:{drive,boss}, questAt:{<quest id>:{giver:[x,z], r, stage:[x,z,w,d], …point lists}}})`. `plan` is the hand-made map (like the Home World's `HOME_PLAN`: one letter per 80×80 chunk, `.` = edge); Arcade builds a random map from `zones` instead. `questAt` works exactly like `HOME_QUEST_AT`.
+- **Sub-zones are ordinary themed zones**, one file each: `src/world/zones/dino_<name>.js` / `candy_<name>.js`, owned by that land's zone lane, listed in `zones/index.json`, with `weight:0` so they never mix into the Home World. Test any time with `__sp.zone('dino_swamp')`.
+- **Quests** use `world:'dino'` / `'candy'` and read positions from the world's `questAt` (like Q1b's `questHomeAt`), so the quests lane never needs coordinates of its own.
+- **Each land is 4 chapters** (car tiers again: you arrive tiny), main quest per chapter, ending at that land's boss (the 3 themed bosses already exist: Rexy / Lava Larry / Mama Stego, Gummo / Gumbo-Tron / Sir Sprinkles). Each land hands out **one new ability** plus cosmetics; hammer, shoot, hover, glide and dozer carry over.
+
+**Wave 1 (start now, all in parallel)**
 
 - [ ] **L33: Worlds + portals** `NEEDS LOGIC` (logic-systems; spec §5)
-  - `src/worlds.js`: `registerWorld({id, name, emoji, zones, start, portal, music})`. Home World = town/farm/park/home; Dino Land and Candy Land become their own worlds and stop being mixed into Home World's NEW WORLD.
-  - After the Home World boss: two portals rise (🦖 jungle swirl + roar, 🍭 sprinkle swirl + giggle); driving in = swirl transition, arrive tiny in that world (cars, abilities, cosmetics carry over). A home portal near each world's start. Arcade: unlocked worlds show on the start screen.
-  - Hand-off: Z5, Z6 (zone lanes), Q2, Q3 (quests lane).
-- [ ] **Z5: Dino Land as a whole world** `NEEDS DESIGN` (zone-dino; needs L33): 3–4 more sub-zones (jungle, volcano, tar-pit swamp, fossil dig, nest hills), each with layouts, scenes and quest spots.
-- [ ] **Z6: Candy Land as a whole world** `NEEDS DESIGN` (zone-candy; needs L33): 3–4 more sub-zones (gumdrop forest, chocolate river, lollipop meadow, cake town, ice-cream mountains), each with layouts, scenes and quest spots.
-- [ ] **Q2 / Q3: Dino Land and Candy Land quest packs** `NEEDS DESIGN` (quests lane; needs Z5 / Z6): 4 chapters each, new givers and land abilities, ending at that land's boss.
+  - `src/worlds.js` (loaded before the zone files): `registerWorld` as above; `homeWorld()` becomes the Home World entry. Adventure: a land is built from its `plan`; Arcade: a random map from its `zones`. Dino and Candy stop being mixed into the Home World's NEW WORLD.
+  - After the Home World boss (and in Arcade after any boss): two portals rise near the fight (look: `buildPortal(kind)` from D21, placeholder swirl until then); drive in = swirl transition, arrive **tiny** at the land's `start` with cars, abilities and cosmetics kept. A home portal near each land's start; the other land's portal opens after that land's boss. Save (L37) stores the current world and unlocked lands. Arcade: unlocked lands appear on the start screen next to 🛏️ / 🌳.
+  - Sounds: `portal_whoosh`, `portal_roar`, `portal_giggle` (AU13, already made). Quest engine: quests only show in their `world`.
+  - Test helpers: `__sp.world('dino')` jumps there, `__sp.portals()` raises them.
+- [ ] **Q2a / Q3a: Dino Land and Candy Land quest outlines** `NEEDS DESIGN` (quests lane; **do first, small PR**). For each land: the 4 chapters, ~10–12 quests (id, giver name + emoji + one-line personality + voice description, steps in a few words, reward), the land's new ability idea, and the **list of spots each quest needs** (giver spot, stage area, point lists, and which sub-zone it belongs in). Put it in `docs/worlds/dino.md` / `docs/worlds/candy.md`. This is the shared script the zone, audio and logic lanes work from.
+- [ ] **Z5: Dino Land as a whole world** `NEEDS DESIGN` (zone-dino): 3–4 sub-zones as their own files (jungle, volcano, tar-pit swamp, fossil dig, nest hills; your pick), each with props by size, scenes and lots, a layout and a spot look. Then the hand-made land `plan`, `start`, and `registerWorld` in `dino.js`. Once Q2a lands: place every quest's spots in `questAt` and build their scenery (like D18 did for the Home World). Split into PRs (sub-zones first, then the plan + quest spots).
+- [ ] **Z6: Candy Land as a whole world** `NEEDS DESIGN` (zone-candy): same as Z5 for Candy Land (gumdrop forest, chocolate river, lollipop meadow, cake town, ice-cream mountains; your pick).
+- [ ] **D21: Portal look** `NEEDS DESIGN` (world-props): `function buildPortal(kind){…}` in objects.js returning a `THREE.Group` at car scale 1 (a ring ~12 across standing on the ground, facing +Z, feet at y=0) for `'dino'` (jungle vines, green-orange swirl), `'candy'` (sprinkles, pink swirl) and `'home'` (the Home World's colors). Tag the swirl disc `userData.swirl=true` (logic spins it). `M()` colors where possible.
+- [ ] **A5: Land critters** `NEEDS DESIGN` (world-animals, optional but fun): new animal kinds for the lands, e.g. baby dinos (`babyrex`, `trike`, `ptero`) and candy critters (`gummybear`, `marshmallow_sheep`), in `src/world/animals.js`. Hand-off: `NEEDS AUDIO` (a sound each) and `NEEDS LOGIC` (register the kinds + herd mixes in the zones' `herds`), so quests can `catch` / `push` them.
+
+**Wave 2 (as soon as the Wave 1 piece it needs lands)**
+
+- [ ] **Q2 / Q3: Dino Land and Candy Land quest packs** `NEEDS DESIGN` (quests lane; after Q2a/Q3a; can be written before Z5/Z6 finish by reading `questAt` with a fallback, like Q1b): `src/world/quests/dino.js` and `candy.js`, givers, all lines, steps, rewards.
+- [ ] **L42: Land abilities** `NEEDS LOGIC` (logic-gameplay; after Q2a/Q3a name them): the one new ability per land (e.g. 🦖 stomp: land a jump to knock over everything around you; 🍭 sugar rush: turbo leaves a candy trail and goes extra fast), ceremony + glyph like the others, always on in Arcade.
+- [ ] **D22: Land ability parts + portal UI** `NEEDS DESIGN` (cars-ui; after L42 names them): `buildCarPart` for the new abilities and cosmetics from Q2/Q3, and any portal / world-picker styles L33 adds.
+- [ ] **AU14: Land sounds and music** `NEEDS AUDIO` (audio): drive music + crash/boom/land/ambient sfx for every new sub-zone (as soon as Z5/Z6 name them), the land ability sounds (L42), critter sounds (A5), and after Q2/Q3: cast and record every new giver.
+
+**Wave 3**
+- [ ] **QA round 4** (qa): portals from the Home World boss, both lands from tiny to their boss in Adventure, Arcade random lands, saving across worlds.
 
 ### Play-test round 2 (Kaden + son, Nov 7): "it was fun!"
 

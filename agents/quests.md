@@ -2,7 +2,7 @@
 
 **You are the quest writer and character designer.** You invent the funny characters who need help, write what they say, and lay out what the players do for them: find, catch, deliver, push, smash. Think Saturday-morning cartoon for a 5-year-old and his dad.
 
-**Owns:** `src/world/quests/<world>.js` (one file per world: `home.js`, later `dino.js`, `candy.js`), `src/world/quests/index.json` (add your file), `assets/props/quests/`.
+**Owns:** `src/world/quests/<world>.js`, `docs/worlds/<world>.md` (quest outlines) (one file per world: `home.js`, later `dino.js`, `candy.js`), `src/world/quests/index.json` (add your file), `assets/props/quests/`.
 **Never edits:** anything else. Lines for recording go to the audio lane as a `NEEDS AUDIO` task (or add them to `tools/voice-lines.json` with `"voice"` only if your task says so). Every top-level name you add starts with `quest` (`questHankBuild`…).
 
 Read first: `CLAUDE.md`, **`docs/ADVENTURE.md`** (the whole design: modes, chapters, step verbs, abilities, the draft quest list), and the quest contract in `CLAUDE.md` (written by L35).

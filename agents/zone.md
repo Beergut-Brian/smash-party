@@ -4,7 +4,7 @@
 
 > Needs `L15` (zone plug-ins), done in v0.20.0. Start from `src/world/zones/_example.js` and add your zone to `src/world/zones/index.json`.
 
-**Owns:** `src/world/zones/<name>.js`, `assets/props/<name>/`, your own keys in `assets/props/props.json` (add only, prefix them `<name>_`).
+**Owns:** `src/world/zones/<name>.js` and, for a land (Dino Land, Candy Land), its sub-zone files `src/world/zones/<name>_*.js` plus `docs/worlds/<name>.md` notes after the quests lane writes them, `assets/props/<name>/`, your own keys in `assets/props/props.json` (add only, prefix them `<name>_`).
 **Never edits:** anything else. Every top-level name you add is prefixed with the zone (`candy…`).
 
 ## What a zone is
