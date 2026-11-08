@@ -33,7 +33,7 @@ const dinoLandOn=()=>typeof landW!=='undefined'&&!!landW&&landW.id==='dino'&&typ
    Point lists: [x,z] points; `goal` = [x,z,r] (a push goal circle); `pieces` / `sneakers` name their points. */
 const DINO_QUEST_AT={
   // chapter 1, Pebble Village (micro–mini): all a few car lengths from the start (P1 at 2.6,304 facing north)
-  gertie_egg:{giver:[9.5,301],r:.8,stage:[13,298,8,8],nest:[11.6,299.4],egg:[15,294.6],
+  gertie_egg:{giver:[9.5,301],r:.8,stage:[11.6,299.4,8,8],nest:[11.6,299.4],egg:[13.6,297.6],         // stage = the nest (push goal)
     leaves:[[9.4,294.8],[16.6,298.4],[13.8,302.4]]},                                   // Gertie's nest, right of the start
   rocky_race:{giver:[-7.4,307],r:.8,stage:[-18,300,24,30],                               // the village gate; logs loop round the huts
     rings:[[-8,296],[-10,288],[-18,286],[-26,289],[-29,298],[-27,309],[-19,313],[-10,310]]},
@@ -43,7 +43,7 @@ const DINO_QUEST_AT={
     sneakers:{nest:[-27,229],ramp:[-14,242]}},                                            // on the giant nest · over the end of the hill ramp
   petra_worms:{giver:[60,262],r:1.5,stage:[80,238,70,50],                                // her hilltop; five hungry nests over the hills
     drops:[[54,222],[74,250],[92,224],[108,250],[102,214]]},
-  rolly_bowling:{giver:[-66,252],r:1.5,stage:[-84,234,30,30],goal:[-84,231,5],           // the bowling hollow
+  rolly_bowling:{giver:[-66,252],r:1.5,stage:[-84,231,30,30],goal:[-84,231,5],                    // the bowling hollow
     boulders:[[-92,218],[-84,216],[-76,218],[-98,224],[-70,224]]},                        // where the boulders start (the slope above it)
   // chapter 3, the swamp (west) and the dig (east) (medium–large)
   digby_bones:{giver:[240,56],r:3,stage:[240,38,50,48],                                  // at the display stand
@@ -51,14 +51,14 @@ const DINO_QUEST_AT={
     mounds:[[234,30],[246,42],[230,42],[252,32],[240,22]]},                               // the rock mounds to smash
   mossy_hoops:{giver:[-194,44],r:3,stage:[-252,40,116,76],                               // his dock on the lagoon's east shore
     rings:[[-212,58],[-232,70],[-262,66],[-288,52],[-290,24],[-264,16],[-240,22],[-222,30]]},
-  rosa_trikes:{giver:[-254,126],r:3,stage:[-236,124,56,56],goal:[-236,110,10]},          // the corral, gate facing south (+Z)
+  rosa_trikes:{giver:[-254,126],r:3,stage:[-236,110,56,56],goal:[-236,110,10]},          // the corral, gate facing south (+Z)
   // chapter 4, Volcano Peak (huge–GIANT)
   theo_rexy:{giver:[18,-236],r:6,stage:[0,-300,140,100]},                                // by the volcano road · the boss arena
   cinder_rocks:{giver:[-214,-266],r:6,stage:[-200,-300,100,80]},                         // her beach chair on the west slope
   gertie_photo:{giver:[176,-262],r:6,stage:[200,-300,120,80]},                           // the long-neck meadow on the east slope
 };
 // places kept free of the zone's own clutter (stages that need room to push, catch or fight): [x,z,r]
-const DINO_KEEP=[[13,298,4.4],[14,285,3.6],[-14,246,4],[-84,231,7.5],[-84,218,4],[-236,110,11.5],[-236,134,10],
+const DINO_KEEP=[[12.6,298.6,4],[14,285,3.6],[-14,246,4],[-84,231,7.5],[-84,218,4],[-236,110,11.5],[-236,134,10],
   [240,34,11],[0,-300,46],[-200,-300,24],[200,-300,30]];
 function dinoLandOk(x,z,r){
   for(const id in DINO_QUEST_AT){const g=DINO_QUEST_AT[id].giver;if(g&&Math.hypot(x-g[0],z-g[1])<r+DINO_QUEST_AT[id].r)return false;}
@@ -108,11 +108,14 @@ const DINO_LAND_SCENES={
 Object.assign(ZONES.dino.scenes,{dino_hungry_nest:DINO_LAND_SCENES.dino_hungry_nest,dino_nursery:DINO_LAND_SCENES.dino_nursery,
   dino_rex_playgroup:DINO_LAND_SCENES.dino_rex_playgroup});
 if(ZONES.dino_volcano)Object.assign(ZONES.dino_volcano.scenes,{dino_cinder_beach:DINO_LAND_SCENES.dino_cinder_beach,dino_ptero_roost:DINO_LAND_SCENES.dino_ptero_roost});
-Object.assign(ZONES.dino.spotLook,{dino_hill:'#8cc63f',dino_hollow:'#5e8a2a'});
+// (Z5c) push goals sit in these spots and filler drops mostly into spots: list only toy-sized props for every size,
+// so nothing big enough to stop the egg / boulders / trikes lands in the nest, hollow or corral
+const dinoLandTiny=l=>Object.fromEntries(['micro','mini','tiny','small','medium','large','huge','mega'].map(k=>[k,l]));
+Object.assign(ZONES.dino.spotLook,{dino_hill:'#8cc63f',dino_hollow:'#5e8a2a',dino_straw:'#e0b25c'});
 Object.assign(ZONES.dino.spots,{dino_hill:{micro:['dino_sprout','dino_eggling'],mini:['dino_fern'],tiny:['dino_nest','dino_flower'],small:['dino_egg','dino_cycad']},
-  dino_hollow:{micro:['dino_amber'],mini:['dino_rock']}});
+  dino_hollow:dinoLandTiny(['dino_amber','dino_rock']),dino_straw:dinoLandTiny(['dino_eggling'])});
 if(ZONES.dino_swamp){const z=ZONES.dino_swamp;Object.assign(z.spotLook,{dino_tardeep:'#1d1c24',dino_corral:'#a7c957'});Object.assign(z.water,{dino_tardeep:2});
-  Object.assign(z.spots,{dino_tardeep:{micro:['dino_bubble'],mini:['dino_bubble'],tiny:['dino_bubble']},dino_corral:{micro:['dino_sprout'],mini:['dino_fern']}});}
+  Object.assign(z.spots,{dino_tardeep:{micro:['dino_bubble'],mini:['dino_bubble'],tiny:['dino_bubble']},dino_corral:dinoLandTiny(['dino_sprout','dino_fern'])});}
 if(ZONES.dino_dig)Object.assign(ZONES.dino_dig.spotLook,{dino_tar:'#2b2a33',dino_tardeep:'#1d1c24'}),ZONES.dino_dig.water=Object.assign(ZONES.dino_dig.water||{},{dino_tar:1,dino_tardeep:2});
 if(ZONES.dino_volcano){const z=ZONES.dino_volcano;Object.assign(z.spotLook,{dino_meadow:'#7fb34a'});
   Object.assign(z.spots,{dino_meadow:{micro:['dino_sprout','dino_eggling'],mini:['dino_fern'],tiny:['dino_flower','dino_nest'],small:['dino_cycad','dino_egg'],medium:['dino_toadstool'],large:['dino_treefern'],huge:['dino_bignest']}});}
@@ -138,9 +141,13 @@ const DINO_LAND_AREAS=[
     dinoL(ctx,'dino_lodge',-24,330,2);for(const [x,z] of [[-14,326],[-33,322],[-10,340],[-30,344]])dinoL(ctx,'dino_palm',x,z,0);
     for(const p of Q.rocky_race.rings)dinoL(ctx,'dino_sprout',p[0]+1.4,p[1]+.6);
     // Gertie's nest (the egg's goal) with flowers round her square, the path the egg rolled down
-    dinoLSp(ctx,'quest_gertie_egg',...Q.gertie_egg.stage,0);dinoL(ctx,'dino_nest',...Q.gertie_egg.nest);
-    dinoLSp(ctx,'dino_trail',13.4,296.8,1.4,5,-.7);
-    for(let i=0;i<8;i++){const a=i/8*Math.PI*2;dinoL(ctx,i%2?'dino_flower':'dino_fern',13+Math.cos(a)*5.2,298+Math.sin(a)*5.2);}
+    // (Z5c) the nest is a straw bed ringed with micro twigs, open toward the egg: a solid tiny nest prop would stop
+    // the egg at its rim (props bigger than the cars push pushables out), so the goal circle sits right in it
+    const [nx,nz]=Q.gertie_egg.nest,[ex,ez]=Q.gertie_egg.egg,open=Math.atan2(ez-nz,ex-nx);
+    dinoLSp(ctx,'quest_gertie_egg',...Q.gertie_egg.stage,0);dinoLSp(ctx,'dino_straw',nx,nz,3,3);
+    dinoLRing(ctx,'dino_bonelet',nx,nz,1.45,1.45,14,0,open);for(const a of [open+2.2,open-2.4])dinoL(ctx,'dino_eggling',nx+Math.cos(a)*.9,nz+Math.sin(a)*.9);
+    dinoLSp(ctx,'dino_trail',(nx+ex)/2+.4,(nz+ez)/2-.3,1.2,3.8,Math.atan2(ex-nx,ez-nz));
+    for(let i=0;i<8;i++){const a=i/8*Math.PI*2;dinoL(ctx,i%2?'dino_flower':'dino_fern',nx+1+Math.cos(a)*5.4,nz-1+Math.sin(a)*5.4);}
     // Mo's nursery
     dinoLSc(ctx,'dino_nursery',14,285,0);
     // the roadside: egglings, sprouts, bones and amber at toy scale on both sides of the start lane
