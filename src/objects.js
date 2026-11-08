@@ -1385,13 +1385,16 @@ Object.assign(SCENES,{
     for(let x=-28;x<=28.1;x+=6.2)for(let z=-28;z<=28.1;z+=6.2){if(Math.hypot(x,z)<17.5||Math.hypot(x+18,z-16)<5)continue;s.place('crops',x,z,0);}
     s.place('saucer',0,0,0);s.place('hay',-18,16);for(let i=0;i<5;i++){const a=i/5*Math.PI*2;s.place('hay',-18+Math.sin(a)*2.6,16+Math.cos(a)*2.6);}
     s.place('scarecrow',-12,-12,0);s.place('pebble',4,6,null,0,4);s.place('pebble',-5,-4,null,0,4);s.place('cone',6,-6);s.place('cone',-6.6,5);}},
-  /* the duck pond (chapter 3): a big pond with an island and a treasure chest on it (needs hover), paddle boats,
-     ducks, reeds and benches round the shore; a crystal piece lies on the bottom at local (10, −6) */
+  /* the duck pond (chapter 3): a big pond with an island and a treasure chest on it, paddle boats, ducks, reeds and
+     benches round the shore. A water_deep moat (four strips, 8 wide, each ≥12 long so cars up to huge can't just wade)
+     rings the island, so reaching the chest (Zorp's crystal piece sits on it) needs 🛸 hover. The strips stay off the
+     island spots (smaller than them, so where they'd overlap the moat would win) */
   duck_pond:{zones:PARKISH,size:'huge',r:30,filler:false,build(s){
     s.spot('lawn',0,0,76,76);s.spot('water',0,0,52,36);s.spot('water',-20,10,18,20);s.spot('water',18,-8,22,26);s.spot('water_deep',10,-6,10,8);
+    s.spot('water_deep',0,9.5,12,8);s.spot('water_deep',0,-9.5,12,8);s.spot('water_deep',-10,0,8,27);s.spot('water_deep',10,0,8,27);
     s.spot('island',0,0,12,9);s.spot('island',1,0,9,11);
     s.place('chest',1.6,.6,0,-.4,4);s.place('tree',-3,-2);s.place('flowers',3.4,-2.4,null,0,2);s.place('pebble',-2.6,2.6,null,0,3);
-    for(const [x,z,t] of [[-14,6,.6],[12,10,-.8],[-6,-12,2.2]])s.place('paperboat',x,z,0,t,9);
+    for(const [x,z,t] of [[-18,6,.6],[17,12,-.8],[-8,-15.5,2.2]])s.place('paperboat',x,z,0,t,9);
     s.herd('duck',-18,-6,5);s.herd('goose',16,12,3);
     for(const [x,z] of [[-27,-8],[-26,4],[-24,16],[27,-14],[28,0],[24,8],[-10,-19],[8,19],[-2,19.5]])s.place('bush',x,z);
     for(const [x,z,t] of [[0,24,Math.PI],[-20,23,Math.PI],[30,14,-Math.PI/2],[-31,-14,Math.PI/2]])s.place('bench',x,z,0,t);
@@ -1602,6 +1605,75 @@ function homeArena(){
   chunkSpot(c0(55,-55),'dirt',55,-55,30,30);homeScene('road_works',58,-48,0,'medium');
   chunkSpot(c0(-55,-55),'lawn',-55,-55,32,32);homeScene('lemonade_stand',-55,-55,0,'small');
 }
+
+/* ---------- D21: portal looks (L33 hook) ----------
+   buildPortal(kind) → a THREE.Group at car scale 1: a ring ~12 across standing on the ground (center y 6.6, like
+   logic's default), facing +Z, feet at y=0, with a spinning swirl disc inside (userData.swirl, logic spins it on z).
+   'home' = a toy ring in the Home World's colors with flowers at its feet, 'dino' = a ring of old stones wrapped in
+   jungle vines with ferns, boulders and a spotted egg, 'candy' = a candy-cane ring covered in sprinkles with lollipops
+   and gumdrops. Parts are merged per color (a few draw calls each) into geometry owned by this portal, because logic
+   disposes a portal's geometries when it goes. Unknown kinds return null (logic's colored default). */
+const PTL_R=6,PTL_Y=6.6,PTL_SHARED=new Set(Object.values(GEO));
+function ptlBake(parts){ // [mesh…] → a group with one merged mesh per material
+  const by=new Map();for(const m of parts){m.updateMatrix();const k=m.material;if(!by.has(k))by.set(k,[]);by.get(k).push(m.geometry.clone().applyMatrix4(m.matrix));if(!PTL_SHARED.has(m.geometry))m.geometry.dispose();}
+  const g=new THREE.Group();
+  for(const [mat,gs] of by){const me=new THREE.Mesh(THREE.mergeGeometries(gs),mat);me.castShadow=true;me.receiveShadow=true;g.add(me);gs.forEach(q=>q.dispose());}
+  return g;}
+function ptlArc(color,R,tube,a0,a1){ // a piece of the ring from angle a0 to a1 (radians, 0 = right, counterclockwise)
+  const m=new THREE.Mesh(new THREE.TorusGeometry(R,tube,10,Math.max(3,Math.round((a1-a0)*10)),a1-a0),M(color));m.rotation.z=a0;m.position.y=PTL_Y;return m;}
+const ptlOn=(a,r=PTL_R)=>[Math.cos(a)*r,PTL_Y+Math.sin(a)*r]; // a point on the ring
+function ptlSwirl(cols,extra){ // the spinning disc: spiral arms in `cols`, then extra(ctx) draws stars / sprinkles on top
+  const cv=document.createElement('canvas');cv.width=cv.height=256;const c=cv.getContext('2d'),n=cols.length*3;
+  c.fillStyle=cols[0];c.fillRect(0,0,256,256);
+  for(let k=0;k<n;k++){c.fillStyle=cols[k%cols.length];c.beginPath();c.moveTo(128,128);
+    for(let t=0;t<=1.001;t+=0.04){const a=(k/n)*Math.PI*2+t*4.5,r=t*130;c.lineTo(128+Math.cos(a)*r,128+Math.sin(a)*r);}
+    for(let t=1;t>=0;t-=0.04){const a=((k+1)/n)*Math.PI*2+t*4.5,r=t*130;c.lineTo(128+Math.cos(a)*r,128+Math.sin(a)*r);}c.fill();}
+  if(extra)extra(c);
+  const g=c.createRadialGradient(128,128,0,128,128,40);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(1,'rgba(255,255,255,0)');
+  c.fillStyle=g;c.beginPath();c.arc(128,128,40,0,Math.PI*2);c.fill();
+  const tex=new THREE.CanvasTexture(cv);tex.colorSpace=THREE.SRGBColorSpace;
+  const d=new THREE.Mesh(new THREE.CircleGeometry(PTL_R-0.6,40),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}));
+  d.position.y=PTL_Y;d.userData.swirl=true;return d;}
+function ptlStars(c,col,n,sz){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,r=40+Math.random()*80,x=128+Math.cos(a)*r,y=128+Math.sin(a)*r,s=sz*(0.6+Math.random()*0.6);
+  c.fillStyle=col;c.beginPath();for(let k=0;k<10;k++){const b=k*Math.PI/5-Math.PI/2,q=k%2?s*0.45:s;c.lineTo(x+Math.cos(b)*q,y+Math.sin(b)*q);}c.fill();}}
+const PTL_LOOK={
+  home(P){ // toy ring: red, yellow, blue, green segments, a white rim inside, yellow feet, grass and flowers
+    const cols=['#ef476f','#ffd60a','#4cc9f0','#06d6a0'],n=12;
+    for(let i=0;i<n;i++)P.push(ptlArc(cols[i%4],PTL_R,0.9,i/n*Math.PI*2,(i+1)/n*Math.PI*2+0.01));
+    P.push(ptlArc('#ffffff',PTL_R-0.75,0.22,0,Math.PI*2));
+    for(const s of [-1,1]){P.push(mk('box',2.6,1.2,2.8,'#ffd60a',s*4.7,0.6,0),mk('box',1.8,0.5,2,'#ef476f',s*4.7,1.45,0));
+      for(const [dx,dz,c] of [[1.9,1.4,'#ff70a6'],[2.6,-1.1,'#ffffff'],[1.4,-1.8,'#ffd60a']]){
+        P.push(mk('cyl',0.1,0.9,0.1,'#52b788',s*(4.7+dx),0.45,dz),mk('sph',0.55,0.4,0.55,c,s*(4.7+dx),0.95,dz),mk('sph',0.22,0.22,0.22,'#ffb703',s*(4.7+dx),1.1,dz));}
+      for(const [dx,dz] of [[-0.2,1.9],[0.9,-2],[3.3,0.4]])P.push(mk('cone',0.7,0.9,0.7,'#80b918',s*(4.7+dx),0.45,dz));}
+    return ptlSwirl(['#4cc9f0','#ffffff','#90e0ef'],c=>ptlStars(c,'#ffd60a',9,12));},
+  dino(P){ // old jungle stones wrapped in vines, ferns and boulders at the feet, a spotted egg
+    const n=14,stone=['#a8977f','#8f7f6b','#b9a88f'];
+    for(let i=0;i<n;i++){const a=(i+0.5)/n*Math.PI*2,[x,y]=ptlOn(a),m=mk('box',2.9,2.0,2.2,stone[i%3],x,y,0);m.rotation.z=a+Math.PI/2;P.push(m);}
+    for(let i=0;i<26;i++){const a=Math.random()*Math.PI*2,[x,y]=ptlOn(a,PTL_R+(Math.random()-.5)*1.4),z=(Math.random()<.5?-1:1)*1.15,
+      m=mk('sph',0.9,0.32,0.65,i%3?'#52b788':'#2d6a4f',x,y,z);m.rotation.set(Math.PI/2,0,Math.random()*Math.PI);P.push(m);}
+    for(let i=0;i<5;i++){const a=Math.PI/2+(i-2)*0.32,[x,y]=ptlOn(a,PTL_R-1.0),L=0.8+(i%2)*0.9;
+      P.push(mk('box',0.18,L,0.18,'#2d6a4f',x,y-L/2,0.6),mk('sph',0.55,0.25,0.4,'#52b788',x,y-L,0.6));}
+    for(const s of [-1,1]){P.push(mk('sph',3.2,2.0,3.0,'#7f6f5f',s*5.2,0.6,0.2),mk('sph',1.6,1.1,1.5,'#968673',s*6.9,0.4,1.4));
+      for(let k=0;k<5;k++){const f=mk('cone',0.5,2.4,0.25,k%2?'#40916c':'#74c69d',s*(7.4+k*0.15),0.9,-1.2+k*0.35);f.rotation.z=s*(-0.9+k*0.35);P.push(f);}}
+    P.push(mk('sph',1.4,1.8,1.4,'#fefae0',-6.6,0.85,1.9));
+    for(const [x,y,z] of [[-6.3,1.3,2.55],[-6.95,0.75,2.5],[-6.1,0.5,2.45]])P.push(mk('sph',0.32,0.32,0.15,'#f8961e',x,y,z));
+    return ptlSwirl(['#7ae582','#f8961e','#38b000'],c=>{for(let i=0;i<14;i++){c.fillStyle=i%2?'#ffd166':'#ffffff';c.beginPath();
+      c.arc(128+Math.cos(i)*(50+i*5),128+Math.sin(i)*(50+i*5),3+i%3,0,Math.PI*2);c.fill();}});},
+  candy(P){ // candy-cane ring covered in sprinkles, frosting feet, lollipops and gumdrops
+    const n=16,spr=['#ffd60a','#4cc9f0','#7ae582','#9d4edd','#ff8fab','#ff9f1c'];
+    for(let i=0;i<n;i++)P.push(ptlArc(i%2?'#ffffff':'#e63946',PTL_R,0.9,i/n*Math.PI*2,(i+1)/n*Math.PI*2+0.01));
+    for(let i=0;i<44;i++){const a=i/44*Math.PI*2+Math.random()*0.1,[x,y]=ptlOn(a,PTL_R+(Math.random()-.5)*0.9),
+      m=mk('box',0.5,0.14,0.14,spr[i%spr.length],x,y,(i%2?1:-1)*0.82);m.rotation.z=Math.random()*Math.PI;P.push(m);}
+    for(const s of [-1,1]){P.push(mk('sph',3.0,1.6,3.0,'#ffc8dd',s*4.8,0.5,0),mk('sph',1.0,1.0,1.0,'#e63946',s*4.8,1.5,0));
+      const lx=s*8.3;P.push(mk('cyl',0.25,6,0.25,'#ffffff',lx,3,0));
+      const pop=mk('cyl',3,0.5,3,s>0?'#ff8fab':'#7ae582',lx,6.6,0);pop.rotation.x=Math.PI/2;P.push(pop);
+      const sw=mk('cyl',1.6,0.6,1.6,'#ffffff',lx,6.6,0);sw.rotation.x=Math.PI/2;P.push(sw);
+      for(const [dx,dz,c] of [[1.6,1.5,'#9d4edd'],[-0.6,2.2,'#ffd60a'],[2.5,-1.2,'#7ae582']])P.push(mk('sph',1.1,0.95,1.1,c,s*(4.8+dx),0.3,dz));}
+    return ptlSwirl(['#ff8fab','#ffffff','#ffc8dd'],c=>{for(let i=0;i<60;i++){const a=Math.random()*Math.PI*2,r=30+Math.random()*95;
+      c.save();c.translate(128+Math.cos(a)*r,128+Math.sin(a)*r);c.rotate(Math.random()*Math.PI);c.fillStyle=spr[i%spr.length];c.fillRect(-6,-2,12,4);c.restore();}});}};
+function buildPortal(kind){
+  const look=PTL_LOOK[kind];if(!look)return null;
+  const P=[],g=new THREE.Group(),sw=look(P);g.add(ptlBake(P));g.add(sw);return g;}
 
 /* ---------- D18: the Grow-Up Garage, outside (L32 hook) ----------
    Car scale 1, centered on the origin (logic scales, places and lifts it). Walls just outside ±GARAGE_HW (43), 14 tall,
