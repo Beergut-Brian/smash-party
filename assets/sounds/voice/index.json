@@ -398,5 +398,20 @@
   "text": "Comet Cruiser!",
   "speak": "Comet Cruiser!",
   "hash": "ee8a1a9c9e06"
+ },
+ "rex_rammer": {
+  "text": "Rex Rammer!",
+  "speak": "Rex Rammer!",
+  "hash": "2c41537fab14"
+ },
+ "taco_tornado": {
+  "text": "Taco Tornado!",
+  "speak": "Taco Tornado!",
+  "hash": "68fc92234eeb"
+ },
+ "stomp_king": {
+  "text": "Stomp King!",
+  "speak": "Stomp King!",
+  "hash": "2e8131a96538"
  }
 }

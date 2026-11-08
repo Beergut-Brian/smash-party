@@ -117,8 +117,9 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Add a test helper (`__sp.zone('candy')` teleports into one). Document the contract in CLAUDE.md, ship an empty example zone, and add `NEEDS DESIGN` tasks for the first two zones (candy, dino).
   - Done (v0.20.0): `registerZone({id, letter, ground, sky, weight, props, sizes, herds, layout})` in core.js; `src/world/zones/index.json` lists zone files for boot.mjs; NEW WORLD mixes in up to two themed zones (one or two blobs each; the first world stays the hand-made map); the sky fades to a zone's tint while you're in it; `__sp.zone('<id>')` paints a 3×3 block of that zone next to the car and drives you in. Template: `src/world/zones/_example.js`. Contract in CLAUDE.md.
 
-- [ ] **AU1: Record the new car names** `NEEDS AUDIO` (audio agent; from PR #7)
+- [x] **AU1: Record the new car names** `NEEDS AUDIO` (audio agent; from PR #7)
   - Rex Rammer, Taco Tornado and Stomp King have no voice clips yet (robot voice for now). Run `make-voices.mjs --dry`, then generate.
+  - Done: rex_rammer, taco_tornado, stomp_king clips (~35 ElevenLabs characters).
 
 - [ ] **D12: More cars for the garage** `NEEDS DESIGN` (cars-ui; before L17 ships)
   - The level-up garage shows 3–4 cars per player from the new tier. Today's counts are tier 0: 3, tier 1: 8, tier 2: 11, tier 3: 5. Add **3+ tier-0 starters** (pedal car, shopping cart, toy scooter) and **4+ tier-3 showstoppers** from the D4 list (rocket sled, robot-leg walker, stegosaurus spike car, hover car) so both players get real choices.
