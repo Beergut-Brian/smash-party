@@ -683,5 +683,140 @@
   "prompt": "Big wooden door bursting open with a creak, a loud bang and a whoosh of fresh air",
   "dur": 1.5,
   "hash": "51da524e9ba3"
+ },
+ "quest_start": {
+  "prompt": "Cheerful little new-adventure jingle: three rising notes and a sparkly flourish, curious and inviting",
+  "dur": 1.6,
+  "hash": "9d5ba706e1eb"
+ },
+ "quest_step_1": {
+  "prompt": "Quick happy got-one ding-ding two-note chime with a tiny sparkle",
+  "dur": 0.6,
+  "hash": "95606422ae43"
+ },
+ "quest_step_2": {
+  "prompt": "Short bright upward three-note blip chime, a tick on a checklist, happy",
+  "dur": 0.6,
+  "hash": "dc19c8b2c47a"
+ },
+ "quest_step_3": {
+  "prompt": "Bouncy two-note marimba-like chirp with a twinkle, a little success",
+  "dur": 0.6,
+  "hash": "1ab5a2b7e7fa"
+ },
+ "quest_done": {
+  "prompt": "Triumphant short quest complete fanfare: a rising run into a big happy chord with sparkles, ta-da!",
+  "dur": 2.4,
+  "hash": "2b86940acc57"
+ },
+ "pickup_1": {
+  "prompt": "Cartoon item pickup: a bright pop and a sparkly upward bling",
+  "dur": 0.5,
+  "hash": "6eb298e6f55e"
+ },
+ "pickup_2": {
+  "prompt": "Cheerful collect sound: a bubbly blip and a little twinkle",
+  "dur": 0.5,
+  "hash": "c338411b2caf"
+ },
+ "pickup_3": {
+  "prompt": "Happy grab sound: a quick zip-up swoosh ending in a shiny ding",
+  "dur": 0.5,
+  "hash": "9bc346bd5da1"
+ },
+ "ability": {
+  "prompt": "Huge magical new power unlocked: a whooshing sparkly rise, a shimmering aaah and a big bright chime burst, celebratory ta-da",
+  "dur": 2.5,
+  "hash": "5244c2465dc5"
+ },
+ "wobble_boing_1": {
+  "prompt": "Rubbery cartoon wobble boing, something jiggles like jelly but does not break, wub-wub-wub",
+  "dur": 0.7,
+  "hash": "bf154b6a0b9a"
+ },
+ "wobble_boing_2": {
+  "prompt": "Springy door-stop twang boing with a wobbly jiggle, funny",
+  "dur": 0.7,
+  "hash": "a31f18c720bf"
+ },
+ "wobble_boing_3": {
+  "prompt": "Bouncy rubber ball boing with a jelly wobble afterwards, silly",
+  "dur": 0.7,
+  "hash": "9978d550e778"
+ },
+ "hover_hum": {
+  "prompt": "Soft smooth humming hover thruster, a gentle steady floaty whirr with a light shimmer, steady tone, kids video game",
+  "dur": 0.6,
+  "hash": "fb7e6c8e2814"
+ },
+ "glide_whoosh_1": {
+  "prompt": "Breezy swooping whoosh of a kite gliding through the air, wind in wings, airy and light",
+  "dur": 1,
+  "hash": "ba27a5beb8a4"
+ },
+ "glide_whoosh_2": {
+  "prompt": "Soft gliding wind swoosh with a flutter of fabric wings, gentle and floaty",
+  "dur": 1,
+  "hash": "c3c22c2066ec"
+ },
+ "egg_plop_1": {
+  "prompt": "Cartoon egg shot: a soft pop launch then a funny plop and a little eggshell crack",
+  "dur": 0.6,
+  "hash": "c1134aaefa8e"
+ },
+ "egg_plop_2": {
+  "prompt": "Silly egg plop, a bouncy boink and a tiny cluck-like squeak",
+  "dur": 0.6,
+  "hash": "0207cf0e91e4"
+ },
+ "egg_plop_3": {
+  "prompt": "Light popping egg shot with a cartoony plop on landing, playful",
+  "dur": 0.6,
+  "hash": "0dc167ce06cf"
+ },
+ "hammer_bonk_1": {
+  "prompt": "Big squeaky toy mallet BONK, a hollow rubbery thump with a squeak",
+  "dur": 0.6,
+  "hash": "69ae5a054888"
+ },
+ "hammer_bonk_2": {
+  "prompt": "Cartoon wooden mallet whack, a chunky hollow clonk with a little ding",
+  "dur": 0.6,
+  "hash": "512bc128092b"
+ },
+ "hammer_bonk_3": {
+  "prompt": "Goofy toy hammer bonk with a springy boing tail",
+  "dur": 0.6,
+  "hash": "8d4af8323730"
+ },
+ "kazoo_honk_1": {
+  "prompt": "A silly short kazoo toot, bzzt, like a party horn, funny",
+  "dur": 0.5,
+  "hash": "3baad1acb9c1"
+ },
+ "kazoo_honk_2": {
+  "prompt": "A goofy two-note kazoo honk, bwee-bwah, playful",
+  "dur": 0.6,
+  "hash": "4188bab09f86"
+ },
+ "kazoo_honk_3": {
+  "prompt": "A happy rising kazoo buzz, bzzzoo-wee, cartoon",
+  "dur": 0.6,
+  "hash": "bb189e9cf83f"
+ },
+ "portal_whoosh": {
+  "prompt": "Magical swirling portal opening: a deep spinning whoosh rising into a bright sparkly shimmer, exciting and wondrous",
+  "dur": 2.5,
+  "hash": "ca7c3c04efd9"
+ },
+ "portal_roar": {
+  "prompt": "A friendly goofy cartoon dinosaur honk-roar echoing out of a swirling jungle portal, with a whoosh, silly not scary",
+  "dur": 2,
+  "hash": "abd6b58a59ac"
+ },
+ "portal_giggle": {
+  "prompt": "A sugary swirling candy portal: sparkly whoosh with high cute giggles and popping sprinkles, sweet and silly",
+  "dur": 2,
+  "hash": "300ece4ebb22"
  }
 }

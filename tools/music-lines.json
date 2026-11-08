@@ -41,6 +41,10 @@
     "bedroom_boss": {
       "prompt": "Goofy toy-soldier boss march, a lullaby turned into a showdown: music box and toy xylophone runs over a bouncy oompah tuba beat, marching toy drums, tin trumpets, wind-up whirs, big and silly, never scary, seamless loop, no ending",
       "seconds": 90
+    },
+    "parade": {
+      "prompt": "Proud, silly hometown parade march for a pompous cartoon mayor: big oompah tuba and bouncy snare drum, a strutting brass-band melody, cymbal crashes, kazoo and slide-whistle jokes, crowd-cheer energy, upbeat and grand but goofy, medium-fast march tempo, seamless loop, no ending",
+      "seconds": 90
     }
   }
 }
