@@ -382,7 +382,7 @@ function levelUp(){
 function updateGrowth(dt){S+=((giant?GROW_S[GROW_S.length-1]:GROW_S[tier])-S)*Math.min(1,dt*3);popT=Math.max(0,popT-dt);
   lvBtn.style.display=levelReady&&state==='play'&&!garage?'block':'none';
   {const qb=levelReady&&questBlocksLevel(),h=qb?`${qb}❗`:LVBTN_HTML;if(lvBtn.dataset.k!==h){lvBtn.dataset.k=h;lvBtn.innerHTML=h;}} // L35: the giver to help first, no words
-  const n=performance.now();if(levelReady&&!garage&&!questBlocksLevel()&&n-lastReadySay>14000){lastReadySay=n;say('Level up ready! Press X or Y!');}}
+  const n=performance.now();if(levelReady&&!garage&&!talkS&&!questBlocksLevel()&&n-lastReadySay>14000){lastReadySay=n;say('Level up ready! Press X or Y!');}}
 const dispScale=()=>S*(1+0.3*popT*Math.sin(popT*22));
 function showBig(txt){const el=$('big');el.textContent=txt;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}
 function sizeUp(){
@@ -1038,7 +1038,7 @@ addEventListener('keydown',e=>{
 addEventListener('keyup',e=>keys.delete(e.code));
 addEventListener('blur',()=>keys.clear());
 const KB={kb1:{u:'KeyW',d:'KeyS',l:'KeyA',r:'KeyD',b:'Space',j:'KeyE',s:'KeyQ',f:'KeyR'},kb2:{u:'ArrowUp',d:'ArrowDown',l:'ArrowLeft',r:'ArrowRight',b:'Enter',j:'ShiftRight',s:'Slash',f:'Period'}};
-function readKB(m){return {x:(keys.has(m.r)?1:0)-(keys.has(m.l)?1:0),z:(keys.has(m.d)?1:0)-(keys.has(m.u)?1:0),boost:keys.has(m.b),jumpP:pressed.has(m.j),swapP:pressed.has(m.s),jump:keys.has(m.j),fire:keys.has(m.f),levelP:pressed.has(m.s)||pressed.has(m.f),joinP:pressed.has(m.b)||pressed.has(m.j)};}
+function readKB(m){return {x:(keys.has(m.r)?1:0)-(keys.has(m.l)?1:0),z:(keys.has(m.d)?1:0)-(keys.has(m.u)?1:0),boost:keys.has(m.b),jumpP:pressed.has(m.j),swapP:pressed.has(m.s),jump:keys.has(m.j),fire:keys.has(m.f),levelP:pressed.has(m.s)||pressed.has(m.f),aP:pressed.has(m.b),joinP:pressed.has(m.b)||pressed.has(m.j)};}
 const gpPrev={},padInfo=[];
 function readGP(){
   const res={};let gps=[];try{gps=navigator.getGamepads?navigator.getGamepads():[];}catch(e){}
@@ -1049,7 +1049,7 @@ function readGP(){
     if(b[14])x=-1;if(b[15])x=1;if(b[12])z=-1;if(b[13])z=1;
     // X and Y both shoot: 8BitDo / Nintendo-style pads swap the X and Y labels, so either one works.
     const ay=gp.axes[1]||0,pay=prev.ay||0,up=P(12)||(ay<-0.6&&pay>=-0.6),down=P(13)||(ay>0.6&&pay<=0.6);
-    res['gp'+gp.index]={x,z,boost:!!(b[0]||b[7]),jumpP:P(1),jump:!!b[1],swapP:P(4)||P(5),fire:!!(b[2]||b[3]),levelP:P(2)||P(3)||P(4)||P(5),joinP:P(0)||P(1)||P(9),
+    res['gp'+gp.index]={x,z,boost:!!(b[0]||b[7]),jumpP:P(1),jump:!!b[1],swapP:P(4)||P(5),fire:!!(b[2]||b[3]),levelP:P(2)||P(3)||P(4)||P(5),aP:P(0),joinP:P(0)||P(1)||P(9),
       startP:P(9),upP:up,downP:down,okP:P(0),backP:P(1)};b.ay=ay;gpPrev[gp.index]=b;
     padInfo.push({id:gp.id,mapping:gp.mapping,pressed:b.map((v,i)=>v?i:-1).filter(i=>i>=0),axes:[...gp.axes].map(a=>+a.toFixed(1))});
     if(b.some(Boolean)&&AC&&AC.state!=='running')AC.resume().catch(()=>{});}
@@ -2425,6 +2425,8 @@ function updateCamera(dt,t){
   const top=bossOn?Math.max(base*CAM_ZOOM,125*Math.max(1,S*0.6)):base*CAM_ZOOM;
   let want=clamp(base+spreadOf(pts)*0.9,base,top);
   if(garageAll()){cx=garage.x;cz=garage.z-garage.sG*(garage.ready?18:7);want=garage.sG*88*Math.max(1,1.78/camera.aspect);} // everyone inside: the whole showroom in view
+  if(talkS&&talkS.gv&&talkS.gv.shown){const g=talkS.gv,tp=[[g.x,g.z],...players.map(p=>[p.x,p.z])];cx=0;cz=0; // L45: frame the giver and the cars
+    tp.forEach(q=>{cx+=q[0];cz+=q[1];});cx/=tp.length;cz/=tp.length;cz+=base*0.12;want=clamp(base*0.7+spreadOf(tp)*0.9,base*0.6,base*CAM_ZOOM);}
   camDist+=(want-camDist)*Math.min(1,dt*2);
   camT.x+=(cx-camT.x)*Math.min(1,dt*4);camT.z+=(cz-camT.z)*Math.min(1,dt*4);
   const el=0.95,shK=clamp(camDist/38,0.06,1);shake*=Math.pow(0.02,dt);const sx=rand(-1,1)*shake*shK,sy=rand(-1,1)*shake*shK;
@@ -2472,6 +2474,9 @@ function loop(now){
   if(state==='pause'){pauseInput(gpIn);updateMusic();renderer.render(scene,camera);pressed.clear();touch.jumpP=false;touch.swapP=false;return;}
   if(state==='play'&&Object.values(gpIn).some(g=>g.startP)){if(garage&&garage.ready)garageGo();else pause();pressed.clear();return;}
   T+=dt; // game time stands still while paused
+  // L45: a talk scene stops the world: only the scene, the givers, the camera and the HUD run
+  if(state==='play'&&(talkS||talkTry(src))){updateTalk(dt,src);updateGivers(dt);updateMusic();updateCamera(dt,T);updateHUD();
+    renderer.render(scene,camera);pressed.clear();touch.jumpP=false;touch.swapP=false;return;}
   if(state==='play'){
     for(const k in src){const s=src[k];if(s.joinP&&players.length<2&&!players.some(p=>p.src===k)){addPlayer(k);s.jumpP=false;}}
     for(const p of players){const s=src[p.src]||{x:0,z:0};if(levelReady&&!garage&&(s.levelP||s.swapP))levelUp();else if(s.fire&&!p.inG&&hasAbility('shoot')){shoot(p);abilUse('shoot');}p.update(dt,s);}
@@ -2506,6 +2511,9 @@ window.__sp={world:id=>id?enterWorld(id):{world:worldId,worlds:Object.keys(WORLD
     if(skipped&&!giant&&!queue.some(q=>q.fn===openGarage))queue.push({t:1.6,fn:openGarage}); // jumped past a garage: open one for where you landed
     return giant?'GIANT':SIZES[tier];}, // jump ahead n sizes (skipGarage: just hand out new cars)
   garage(){openGarage();return garage&&garage.tier;},
+  talk(id){questOn=true;questDefaults();updateGivers(0);let gv=id?questGivers[id]:Object.values(questGivers).find(g=>g.shown); // L45: __sp.talk('hank') opens the talk scene (moves P1 next to the giver)
+    if(!gv||!gv.shown){const q=QUEST_LIST.find(q=>q.giver.id===id),at=q&&questGiverAt(q);if(!at)return 'no giver '+id;__sp.tp(at[0],at[1]+8*Math.max(S,0.3));updateGivers(0);gv=questGivers[id];}
+    if(!gv||!gv.shown)return 'giver not shown';if(talkS)talkClose();questTouch(gv,players[0]);return talkS?{kind:talkS.kind,cards:talkS.cards.map(c=>c.text),goal:talkS.goal}:'no scene';},
   quest(id,finish){questOn=true;questDefaults();const q=id&&QUESTS[id];if(id&&!q)return 'no quest '+id; // __sp.quest() turns Adventure quests on; ('id') starts one; ('id',true) finishes it
     if(q&&(!questA||questA.q!==q))questStart(q);if(q&&finish){questStepEnd(false);questFinish();}return questA?{id:questA.q.id,step:questA.si,do:questA.st&&questA.st.s.do,got:questA.st&&questA.st.got,n:questA.st&&questA.st.n}:questState();},
   garageIn(){if(!garage)return;garage.t=GARAGE_RISE;players.forEach((p,i)=>{p.x=garage.x+(i-(players.length-1)/2)*8*garage.sG;p.z=garage.z+20*garage.sG;p.heading=Math.PI;p.speed=0;});return garage.phase;}, // skip the drive up
