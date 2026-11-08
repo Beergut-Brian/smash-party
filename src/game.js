@@ -427,7 +427,7 @@ const wakeR=()=>3+7*S; // wake things this close to a car (minus their radius): 
 const chunks=new Map();
 const chunkKey=(ci,cj)=>ci+','+cj;
 function getChunk(ci,cj){const k=chunkKey(ci,cj);let c=chunks.get(k);
-  if(!c){c={k,ci,cj,zone:zoneAt(ci,cj),x0:ci*CHUNK-CHUNK/2,z0:cj*CHUNK-CHUNK/2,recs:[],rampList:[],herds:[],gen:false,loaded:false,group:null,box:null};chunks.set(k,c);}
+  if(!c){c={k,ci,cj,zone:zoneAt(ci,cj),x0:ci*CHUNK-CHUNK/2,z0:cj*CHUNK-CHUNK/2,recs:[],rampList:[],herds:[],spots:[],gen:false,loaded:false,group:null,box:null};chunks.set(k,c);}
   return c;}
 const chunkOf=(x,z)=>getChunk(chunkIdx(x),chunkIdx(z));
 // tag every object with its type/arg/chunk so it can be rebuilt and streamed
@@ -440,7 +440,8 @@ function withSeed(seed,fn){const r=Math.random;Math.random=mulberry(seed);try{re
    ctx = {zone, ci, cj, x0, z0, x1, z1, cx, cz, size,
           place(type,x,z,arg,r) → true if placed (stays inside the chunk, off roads, off ramps, no overlaps),
           ramp(x,z,th,L,W,H)    → true if placed,
-          free(x,z,r)           → would a spot of radius r fit?}
+          free(x,z,r)           → would a spot of radius r fit?,
+          spot(kind,x,z,w,d,th) → marks a w×d area (turned th radians) where the size-matched filler of that kind goes (L19)}
    Math.random (and rand/pick) is seeded while a layout runs, so layouts can use them freely. */
 const REC_R={house:3.6,crates:1.5,tower:1.4,pin:1.1,snowman:1.3,fence:1.8,barrel:1.0,cone:0.7,melon:1.1,tree:1.1};
 function spotFree(c,x,z,r){
@@ -455,6 +456,15 @@ function chunkPlace(c,type,x,z,arg,r){
   if(!OBJ[type])return false;r=r||REC_R[type]||(typeof RAD!=='undefined'&&RAD[type])||1.5;
   if(!spotFree(c,x,z,r))return false;
   c.recs.push({type,x,z,arg,r,seed:(Math.random()*1e9)|0,dead:false,back:0});return true;}
+/* L19 spots: a layout marks yards, sidewalks, fields, sand, parking, porches… with ctx.spot(kind,x,z,w,d,th).
+   The size-matched filler then mostly lands inside spots near the cars (SPOT_LEFTOVER of it still goes anywhere),
+   using that kind's props: registerZone({spots:{yard:{tiny:[…]}}}) → SPOT_PROPS.yard.tiny (objects.js) → the
+   zone's normal size list. Spots are clipped to the chunk; they don't block place(). */
+function chunkSpot(c,kind,x,z,w,d,th=0){
+  if(!kind||!(w>0)||!(d>0))return false;const cs=Math.cos(th),sn=Math.sin(th),hx=w/2,hz=d/2;
+  const ex=Math.abs(cs)*hx+Math.abs(sn)*hz,ez=Math.abs(sn)*hx+Math.abs(cs)*hz; // world-space half extents
+  if(x+ex<c.x0||x-ex>c.x0+CHUNK||z+ez<c.z0||z-ez>c.z0+CHUNK)return false;
+  c.spots.push({kind,x,z,hx,hz,cs,sn,ex,ez,area:w*d});return true;}
 function chunkRamp(c,x,z,th,L=11,W=7,H=3.6){
   const m=W+2,sx=Math.sin(th),sz=Math.cos(th);
   for(let k=0;k<=2;k++){const px=x+sx*L*k/2,pz=z+sz*L*k/2;
@@ -467,7 +477,7 @@ function genChunk(c){
   c.gen=true;
   withSeed((c.ci+50)*7919+(c.cj+50)*104729+worldSeed,()=>{
     const ctx={zone:c.zone,ci:c.ci,cj:c.cj,x0:c.x0,z0:c.z0,x1:c.x0+CHUNK,z1:c.z0+CHUNK,cx:c.ci*CHUNK,cz:c.cj*CHUNK,size:CHUNK,
-      place:(type,x,z,arg,r)=>chunkPlace(c,type,x,z,arg,r),ramp:(x,z,th,L,W,H)=>chunkRamp(c,x,z,th,L,W,H),free:(x,z,r)=>spotFree(c,x,z,r),herd:(kind,x,z,n)=>chunkHerd(c,kind,x,z,n)};
+      place:(type,x,z,arg,r)=>chunkPlace(c,type,x,z,arg,r),ramp:(x,z,th,L,W,H)=>chunkRamp(c,x,z,th,L,W,H),free:(x,z,r)=>spotFree(c,x,z,r),spot:(kind,x,z,w,d,th)=>chunkSpot(c,kind,x,z,w,d,th),herd:(kind,x,z,n)=>chunkHerd(c,kind,x,z,n)};
     // TODO(design): ZONE_LAYOUT.town/farm/park/home in objects.js replaces these placeholder fillers (D1)
     const lay=(ZONES[c.zone]&&ZONES[c.zone].layout)||(typeof ZONE_LAYOUT!=='undefined'&&ZONE_LAYOUT[c.zone])||DEFAULT_LAYOUT[c.zone]||DEFAULT_LAYOUT.park;
     lay(ctx);
@@ -948,16 +958,37 @@ function scatterProp(zone,k){ // → [type, scale]
   const zp=(ZONES[zone]&&ZONES[zone].sizes&&ZONES[zone].sizes[SIZES[k]])||(typeof ZONE_PROPS!=='undefined'&&ZONE_PROPS[zone]&&ZONE_PROPS[zone][SIZES[k]]);
   if(zp&&zp.length)return [pick(zp),1];
   const t=pick(DEFAULT_PROPS[zone]||DEFAULT_PROPS.home);return [t,Math.pow(SIZE_STEP,k-(TYPE_SIZE[t]??4))];}
+const SPOT_LEFTOVER=0.15; // share of the filler that ignores spots (a little mess looks lived-in)
+const DEFAULT_SPOT_PROPS={road:['cone','barrel'],sidewalk:['cone','pin','barrel'],parking:['crates','cone','barrel'],yard:['tree','snowman','pin'],
+  porch:['crates','pin'],field:['melon','fence','tree'],sand:['pin','tower','snowman'],path:['cone','pin']};
+const inSpot=(q,x,z)=>{const dx=x-q.x,dz=z-q.z;return Math.abs(dx*q.cs-dz*q.sn)<=q.hx&&Math.abs(dx*q.sn+dz*q.cs)<=q.hz;};
+function spotAt(x,z){const c=chunks.get(chunkKey(chunkIdx(x),chunkIdx(z)));if(!c)return null;for(const q of c.spots)if(inSpot(q,x,z))return q;return null;}
+// a point inside a spot that lies in the ring [d0,d1] around (px,pz), or null when no spot is in reach
+function spotPoint(px,pz,d0,d1){const near=[];let tot=0;
+  for(let ci=chunkIdx(px-d1);ci<=chunkIdx(px+d1);ci++)for(let cj=chunkIdx(pz-d1);cj<=chunkIdx(pz+d1);cj++){const c=chunks.get(chunkKey(ci,cj));if(!c)continue;
+    for(const q of c.spots){const bx0=Math.max(q.x-q.ex,px-d1),bx1=Math.min(q.x+q.ex,px+d1),bz0=Math.max(q.z-q.ez,pz-d1),bz1=Math.min(q.z+q.ez,pz+d1);
+      if(bx0<bx1&&bz0<bz1){const w=(bx1-bx0)*(bz1-bz0);near.push([q,bx0,bx1,bz0,bz1,w]);tot+=w;}}}
+  if(!near.length)return null;
+  for(let t=0;t<8;t++){let r=Math.random()*tot,n=near[near.length-1];for(const e of near)if((r-=e[5])<0){n=e;break;}
+    const x=rand(n[1],n[2]),z=rand(n[3],n[4]),d=Math.hypot(x-px,z-pz);if(d>=d0&&d<=d1&&inSpot(n[0],x,z))return [x,z,n[0]];}
+  return null;}
+function spotProp(zone,kind,k){ // → [type, scale] or null when nothing is listed for this spot kind
+  const zs=ZONES[zone]&&ZONES[zone].spots,l=(zs&&zs[kind]&&zs[kind][SIZES[k]])||(typeof SPOT_PROPS!=='undefined'&&SPOT_PROPS[kind]&&SPOT_PROPS[kind][SIZES[k]]);
+  if(l&&l.length)return [pick(l),1];
+  if(zs||typeof SPOT_PROPS!=='undefined')return null; // design owns spots now: use the zone's own size list
+  const d=DEFAULT_SPOT_PROPS[kind];if(!d)return null;const t=pick(d);return [t,Math.pow(SIZE_STEP,k-(TYPE_SIZE[t]??4))];}
 function spawnScatter(p,fill){
   const Rs=scatR(),moving=Math.abs(p.speed)>2*p.sm;
   for(let tries=0;tries<6;tries++){
     const a=fill||!moving?rand(0,Math.PI*2):p.heading+rand(-1.4,1.4),d=fill?rand(0.2,1)*Rs:rand(1.0,1.4)*Rs;
-    const x=p.x+Math.sin(a)*d,z=p.z+Math.cos(a)*d,k=scatterSize(),r=GROW_S[k]*2.5+0.1;
+    let x=p.x+Math.sin(a)*d,z=p.z+Math.cos(a)*d,sp=null;const k=scatterSize(),r=GROW_S[k]*2.5+0.1;
+    if(Math.random()>SPOT_LEFTOVER){sp=spotAt(x,z);  // L19: land in a spot when there's one nearby
+      if(!sp){const q=spotPoint(p.x,p.z,fill?0.2*Rs:Rs,1.4*Rs);if(q)[x,z,sp]=q;}}
     if(Math.abs(x)>ARENA-r-2||Math.abs(z)>ARENA-r-2||groundH(x,z)>0||groundH(x+r,z)>0||groundH(x-r,z)>0||groundH(x,z+r)>0||groundH(x,z-r)>0)continue;
     if(k>tier&&(onRoad(x,z,r)||(typeof startLane==='function'&&startLane(x,z))))continue; // L26: nothing too big to smash lands on the road or in the start lane
     if(objects.some(o=>o.alive&&Math.abs(o.x-x)<o.r+r+0.3&&Math.abs(o.z-z)<o.r+r+0.3&&Math.hypot(o.x-x,o.z-z)<o.r+r+0.3))continue;
     if(players.some(q=>Math.hypot(q.x-x,q.z-z)<q.r+r+1))continue;
-    const [t,f]=scatterProp(zoneAt(chunkIdx(x),chunkIdx(z)),k);
+    const zn=zoneAt(chunkIdx(x),chunkIdx(z)),[t,f]=(sp&&spotProp(zn,sp.kind,k))||scatterProp(zn,k);
     const o=OBJ[t](x,z,t==='fence'?rand(0,Math.PI):undefined,f);o.scat=true;
     if(fill){o.falling=true;o.fy=rand(6,16)*Math.max(S,0.4);o.vy=0;o.g.position.y=o.fy;}else poolAdopt(o);
     return o;}
@@ -1567,7 +1598,15 @@ function loop(now){
   pressed.clear();touch.jumpP=false;touch.swapP=false;
 }
 propsReady.then(()=>{buildWorld();captureHome();updateStreaming(0,true);last=performance.now();requestAnimationFrame(loop);});
-window.__sp={mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,zone:testZone,zones:ZONES,gold:spawnGold,pad:placePad,pads,
+/* __sp.spots(): draws the spots of the built chunks as see-through tiles (colored by kind) so layouts can be checked; again to hide. */
+let spotView=null;
+function showSpots(on){if(spotView){scene.remove(spotView);spotView.traverse(m=>{if(m.geometry)m.geometry.dispose();});spotView=null;}
+  if(on===false)return 'off';const g=new THREE.Group(),cols={},count={};
+  for(const c of chunks.values())for(const q of c.spots){count[q.kind]=(count[q.kind]||0)+1;
+    const col=cols[q.kind]||(cols[q.kind]=new THREE.MeshBasicMaterial({color:new THREE.Color().setHSL(Object.keys(cols).length*0.17%1,0.9,0.55),transparent:true,opacity:0.35,depthWrite:false}));
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(q.hx*2,q.hz*2),col);m.rotation.set(-Math.PI/2,0,Math.atan2(q.sn,q.cs));m.position.set(q.x,groundH(q.x,q.z)+0.06,q.z);g.add(m);}
+  scene.add(g);spotView=g;return count;}
+window.__sp={spots:(on)=>spotView&&on!==true?showSpots(false):showSpots(on),mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,zone:testZone,zones:ZONES,gold:spawnGold,pad:placePad,pads,
   boss(id){if(!giant){tier=SIZES.length-1;growth=MAX_GROW;levelReady=true;levelUp();newCars(true);}if(!boss)summonBoss(id);return boss&&boss.def.name;}, // __sp.boss('shelldozer')
   level(n=1,skipGarage){garageSkip=!!skipGarage;for(let i=0;i<n&&!giant;i++){growth=GROW_AT[tier+1];levelReady=true;levelUp();}return giant?'GIANT':SIZES[tier];}, // jump ahead n sizes (skipGarage: just hand out new cars)
   garage(){openGarage();return garage&&garage.tier;},garageGo:()=>garageGo(),
