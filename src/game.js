@@ -204,12 +204,15 @@ function updateCollapses(dt){
 function hitBuilding(p,o,dx,dz,rr,spd,vx,vz){
   const diff=o.sz-tier;
   if(diff>=3||(spd<4*p.sm&&!p.air)){bump(p,o,dx,dz,rr,spd);return;}
-  const pw=Math.max(spd,10)*Math.sqrt(Math.max(1,S)),nx=vx/(spd||1),nz=vz/(spd||1);
+  const dozer=p.perk==='bulldozer',pow=p.power+(dozer?1:0);
+  if(diff>0&&pow<POWER_CHIP[diff]){bump(p,o,dx,dz,rr,spd);return;}                   // too weak for something this big: boing
+  const pw=Math.max(spd,10)*Math.sqrt(Math.max(1,S))*(0.8+0.08*p.power),nx=vx/(spd||1),nz=vz/(spd||1);
   if(diff<0){collapse(o,0,vx||dx,vz||dz,pw,true);p.speed*=0.95;return;}               // bigger: flatten it
   const d=Math.hypot(dx,dz)||1,y0=p.y-0.3,y1=p.y+(p.model.h+1)*S;                       // what the car can reach
+  if(diff===0&&dozer){collapse(o,0,vx||dx,vz||dz,pw,true);p.speed*=0.9;return;}      // bulldozer: down in one hit
   if(diff===0){if(o.hitT>T)return;o.hitT=T+0.1;                                       // same size: plow through
     damageBuilding(o,p.x+dx/d*p.r,p.z+dz/d*p.r,p.r+2.5,99,y0,y1,nx,nz,pw);p.speed*=0.85;return;}
-  if(!(o.hitT>T)){o.hitT=T+0.3;damageBuilding(o,p.x,p.z,99,diff===1?2:1,y0,y1,nx,nz,pw*0.6);} // smaller: chip
+  if(!(o.hitT>T)){o.hitT=T+0.3;damageBuilding(o,p.x,p.z,99,(diff===1?2:1)+(pow>=5?1:0),y0,y1,nx,nz,pw*0.6);} // smaller: chip (strong cars chip more)
   bump(p,o,dx,dz,rr,spd);
 }
 // Reference building for D2 and testing (__sp.building). Design's real buildings live in objects.js.
@@ -234,6 +237,19 @@ const WEAPON_BY_TIER=['bubble','bubble','cannon','rocket'];
 const carTierOf=c=>c.tier??CAR_TIER[c.name]??1;
 const carTierNow=()=>Math.min(3,Math.floor((giant?SIZES.length:tier)/2));
 const carWeapon=c=>c.weapon!==undefined?c.weapon:WEAPON_BY_TIER[carTierOf(c)];
+/* L18 car stats + perks. Design sets them on CARS entries: `power` 1–5 (what it can break above its size), `handling` 1–5
+   (turning + grip), `perk`: 'autoRockets' | 'magnet' | 'bulldozer' | 'bouncy' (or none). `speed` stays the real top speed.
+   Missing ones come from tier/size/speed (bigger + higher tier = stronger, faster + smaller = nimbler, so faster cars are weaker).
+   Power rules: anything up to your size smashes as before; buildings 1 size bigger need power 3+ to chip, 2 sizes bigger
+   need 4+; 3+ sizes bigger always boing. bulldozer: same-size buildings fall in one hit and it counts as +1 power. */
+const CAR_PERK={'Big Bouncer':'bouncy','Dino Dozer':'bulldozer','Snow Pusher':'bulldozer','Stomp King':'bulldozer','Rex Rammer':'bulldozer',
+  'Rocket Racer':'autoRockets','Spinny Mixer':'magnet','Cart Crash':'magnet','Shark Attack':'magnet'};
+const PERK_ICON={autoRockets:'🚀',magnet:'🧲',bulldozer:'🚜',bouncy:'🦘'};
+const POWER_CHIP=[0,3,4]; // power needed to chip a building 1 or 2 sizes bigger
+const carPower=c=>c.power??clamp(Math.round(1+carTierOf(c)*1.1+((c.r||2.3)-2.3)*2-((c.speed||25)-25)/6),1,5);
+const carHandling=c=>c.handling??clamp(Math.round(3+(2.4-(c.r||2.3))*2.5+((c.speed||25)-25)/5),1,5);
+const carPerk=c=>c.perk!==undefined?c.perk:(CAR_PERK[c.name]||null);
+function carStats(c){return {speed:c.speed,power:carPower(c),handling:carHandling(c),perk:carPerk(c),weapon:carWeapon(c),tier:carTierOf(c)};}
 function carsInTier(t){for(let d=0;d<4;d++){const l=CARS.map((c,i)=>i).filter(i=>carTierOf(CARS[i])===t-d);if(l.length)return l;}return [0];}
 function newCars(quiet){const l=carsInTier(carTierNow());
   for(const p of players)p.setCar(l[p.idx%l.length],false);
@@ -246,15 +262,29 @@ function newCars(quiet){const l=carsInTier(carTierNow());
 // rockets fly straight and explode. Cannonballs and rockets can hit boss weak spots.
 const BUBBLE_MAT=new THREE.MeshBasicMaterial({color:'#9bf6ff',transparent:true,opacity:0.6,depthWrite:false});
 const shots=[];
-function shoot(p){const w=carWeapon(p.stats);if(!w||T<(p.shotT||0))return;
-  const rk=w==='rocket',bub=w==='bubble';p.shotT=T+(rk?0.55:bub?0.22:0.28);
-  const fx=Math.sin(p.heading),fz=Math.cos(p.heading),sp=(rk?75:bub?22:60)*p.sm+Math.max(0,p.speed),r=(rk?0.5:bub?0.45:0.6)*S;
+function shoot(p,aim,weapon){const w=weapon||carWeapon(p.stats);if(!w||(!weapon&&T<(p.shotT||0)))return;
+  const rk=w==='rocket',bub=w==='bubble';if(!weapon)p.shotT=T+(rk?0.55:bub?0.22:0.28);
+  const hd=aim??p.heading,fx=Math.sin(hd),fz=Math.cos(hd),sp=(rk?75:bub?22:60)*p.sm+Math.max(0,p.speed),r=(rk?0.5:bub?0.45:0.6)*S;
   const m=rk?mk('cone',r*1.2,r*3,r*1.2,'#e63946'):bub?mk('sph',r*2,r*2,r*2,null,0,0,0,BUBBLE_MAT):mk('sph',r*2,r*2,r*2,'#333333');
-  if(rk){m.rotation.order='YXZ';m.rotation.set(Math.PI/2,p.heading,0);}if(bub)m.castShadow=false;
+  if(rk){m.rotation.order='YXZ';m.rotation.set(Math.PI/2,hd,0);}if(bub)m.castShadow=false;
   const x=p.x+fx*(p.r+r*2),z=p.z+fz*(p.r+r*2),y=p.y+1.1*S;m.position.set(x,y,z);scene.add(m);
   shots.push({m,rk,bub,x,y,z,y0:y,vx:fx*sp,vz:fz*sp,vy:rk||bub?0:5*Math.sqrt(S),life:rk?2.2:bub?1.1:1.8,r,p,bounced:false,hits:0,ph:rand(0,6)});
   if(bub){if(!sfxClip('bubble',0.6,rand(0.9,1.2)))tone('sine',rand(500,700),rand(900,1200),0.12,0.12);}
   else{sfxClip(rk?'rocket':'cannon',0.7,rand(0.95,1.05))||sfx.pop();p.kx-=fx*3*p.sm;p.kz-=fz*3*p.sm;}}
+// perks that act on their own (autoRockets, magnet); bouncy + bulldozer live in the jump and hitBuilding code
+const _wpK=new THREE.Vector3();
+function updatePerks(dt){if(state!=='play'||garage)return;
+  for(const p of players){if(!p.perk||(p.perkT-=dt)>0)continue;
+    if(p.perk==='autoRockets'){p.perkT=2.4;const R=p.r*22;let best=null,bd=R;
+      if(boss&&boss.state!=='dead'&&boss.state!=='drop')for(const q of boss.o.parts){if(q.kind!=='weak'||q.gone||q.phase!==boss.phase)continue;
+        q.mesh.getWorldPosition(_wpK);const d=Math.hypot(_wpK.x-p.x,_wpK.z-p.z);if(d<bd*3){bd=d;best={x:_wpK.x,z:_wpK.z};}}
+      if(!best)for(const o of objects){if(!o.alive||o.boss||o.falling||o.sz>tier||o.sz<=tier-3)continue;const d=Math.hypot(o.x-p.x,o.z-p.z);if(d<bd&&d>p.r*1.5){bd=d;best=o;}}
+      if(best){shoot(p,Math.atan2(best.x-p.x,best.z-p.z),'rocket');}else p.perkT=0.6;}
+    else if(p.perk==='magnet'){p.perkT=0.2;const R=p.r*3.5;let n=0;
+      for(const o of objects){if(n>=2)break;if(!o.alive||o.boss||o.bld||o.gold||o.falling||o.rolling||o.sz>=tier)continue;const dx=p.x-o.x,dz=p.z-o.z;
+        if(dx*dx+dz*dz>R*R)continue;n++;if(o.sz<=tier-3)squish(o);else smash(o,dx,dz,12*Math.sqrt(Math.max(1,S)));
+        puff(o.x,0.5*S,o.z,2,0.6*Math.max(S,.3),'#bde0fe');}
+      if(n)tone('sine',rand(900,1300),rand(1400,1800),0.05,0.05);}}}
 function shotEnd(s,i){if(s.rk)explode(s.x,s.z,clamp(S*0.55,0.6,2.4));else puff(s.x,s.y,s.z,3,s.r*2,s.bub?'#cdf7ff':'#dddddd');
   if(s.bub)tone('sine',900,1600,0.06,0.08);scene.remove(s.m);shots.splice(i,1);}
 function updateShots(dt){
@@ -700,7 +730,7 @@ class Player{
   get sm(){return clamp(S<1?Math.pow(S,0.95):Math.pow(S,0.6),0.07,2.3);} // speed scale: slow when small, same as before from size 1 up
   setCar(i,announce){
     if(this.model){this.root.remove(this.model.g);carUnmerge(this.model);}
-    this.carIdx=i;this.stats=CARS[i];this.model=carMerge(this.stats.build());this.root.add(this.model.g);
+    this.carIdx=i;this.stats=CARS[i];const cs=carStats(this.stats);this.power=cs.power;this.handling=cs.handling;this.perk=cs.perk;this.perkT=1;this.model=carMerge(this.stats.build());this.root.add(this.model.g);
     this.nameT=2.5;
     if(announce){sfx.pop();say(this.stats.name+'!');puff(this.x,S,this.z,6,1.6*Math.max(S,.3),'#ffffff');}
     updatePanels();
@@ -713,13 +743,13 @@ class Player{
   update(dt,inp){
     const st=this.stats,sm=this.sm,ds=dispScale();let ix=inp.x||0,iz=inp.z||0;const mag=Math.min(1,Math.hypot(ix,iz));
     let target=0;
-    if(mag>0.2){const want=Math.atan2(ix,iz);const d=angDiff(want,this.heading);const tr=(this.air?1.6:4.3)*dt;
+    if(mag>0.2){const want=Math.atan2(ix,iz);const d=angDiff(want,this.heading);const tr=(this.air?1.6:4.3)*(0.7+0.1*this.handling)*dt;
       this.heading+=clamp(d,-tr,tr);target=st.speed*sm*mag*Math.max(0.25,(1+Math.cos(d))/2);
       if(inp.boost)target=st.speed*sm*1.65*Math.max(0.3,(1+Math.cos(d))/2);}
     else if(inp.boost)target=st.speed*sm*1.65;
     const boosting=inp.boost&&this.speed>5;
     if(inp.boost&&!this.wasBoost)sfx.turbo();this.wasBoost=inp.boost;
-    if(!this.air){const a=(target>this.speed?30:18)*sm;this.speed+=clamp(target-this.speed,-a*dt,a*dt);}
+    if(!this.air){const a=(target>this.speed?30:18)*sm*(0.85+0.05*this.handling);this.speed+=clamp(target-this.speed,-a*dt,a*dt);}
     const fx=Math.sin(this.heading),fz=Math.cos(this.heading);
     this.x+=(fx*this.speed+this.kx)*dt;this.z+=(fz*this.speed+this.kz)*dt;
     const kd=Math.pow(0.05,dt);this.kx*=kd;this.kz*=kd;
@@ -733,7 +763,8 @@ class Player{
       if(gh<this.y-0.4){this.air=true;this.vy=Math.max(5,this.speed*0.5+3);}
       else this.y=gh;
       if(inp.jumpP&&!this.air&&this.stuck){boomOut(this);}
-      else if(inp.jumpP&&!this.air){this.air=true;this.vy=13*clamp(Math.pow(S,0.4),0.33,1.8);sfx.jump();}
+      else if(inp.jumpP&&!this.air){this.air=true;this.vy=13*clamp(Math.pow(S,0.4),0.33,1.8);sfx.jump();
+        if(this.perk==='bouncy'){this.vy*=1.42;sfx.boing();puff(this.x,0.3*S,this.z,5,Math.max(S,.3),'#ffffff');}}
     }else{
       this.vy-=(this.padG||32)*dt;this.y+=this.vy*dt;
       if(this.y<=gh){const imp=-this.vy;this.y=gh;this.air=false;this.vy=0;
@@ -1528,8 +1559,8 @@ function garageLists(t){ // → one list of car entries per player slot: real ca
 const garagePips=(v,lo,hi)=>'●'.repeat(clamp(Math.round(1+(v-lo)/(hi-lo)*4),1,5));
 const GARAGE_WEAPON={bubble:'🫧',cannon:'💣',rocket:'🚀'};
 function garageCard(c,col){const el=document.createElement('div');el.className='garageCard'+(c.placeholder?' soon':'');el.style.setProperty('--pc',col);
-  // icons and dots, never words (speed ⚡, power 💪 until L18 gives real stats, weapon)
-  el.innerHTML=`<b>${c.emoji||'🚗'}${c.placeholder?'❓':''}</b><span>⚡${garagePips(c.speed,20,32)}</span><span>💪${garagePips(c.r*(1+carTierOf(c)*0.15),2,3.6)}</span><span>${GARAGE_WEAPON[carWeapon(c)]||'🫧'}</span>`;
+  // icons and dots, never words: speed ⚡, power 💪, handling 🌀, weapon + perk icon (L18)
+  el.innerHTML=`<b>${c.emoji||'🚗'}${c.placeholder?'❓':''}</b><span>⚡${garagePips(c.speed,20,32)}</span><span>💪${garagePips(carPower(c),1,5)}</span><span>🌀${garagePips(carHandling(c),1,5)}</span><span>${GARAGE_WEAPON[carWeapon(c)]||'🫧'}${carPerk(c)?`<i class="perk">${PERK_ICON[carPerk(c)]||'⭐'}</i>`:''}</span>`;
   $('tags').appendChild(el);return el;}
 function garageShowroom(){
   if(typeof buildGarage==='function'){try{const g=buildGarage();if(g)return g;}catch(e){console.warn('buildGarage',e);}}
@@ -1677,7 +1708,7 @@ function loop(now){
   updateGrowth(dt);updateStreaming(dt);
   if(state==='play'&&!garage){collisions();updateBoss(dt);}
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
-  updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateCombo(dt);if(!garage)updateGold(dt);if(!garage){updatePads(dt);updateScatter(dt);updateAnimals(dt);}updateRollers(dt);updateSpin(dt);updateShots(dt);updateDebris(dt);updateParts(dt);updatePuffs(dt);
+  updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateCombo(dt);if(!garage)updateGold(dt);if(!garage){updatePads(dt);updateScatter(dt);updateAnimals(dt);}updateRollers(dt);updateSpin(dt);updateShots(dt);updatePerks(dt);updateDebris(dt);updateParts(dt);updatePuffs(dt);
   updateMusic();updateCamera(dt,T);updateSignals(dt);cullChunks();updateHUD();
   renderer.render(scene,camera);
   pressed.clear();touch.jumpP=false;touch.swapP=false;
@@ -1696,4 +1727,5 @@ window.__sp={spots:(on)=>spotView&&on!==true?showSpots(false):showSpots(on),mega
   level(n=1,skipGarage){garageSkip=!!skipGarage;for(let i=0;i<n&&!giant;i++){growth=GROW_AT[tier+1];levelReady=true;levelUp();}return giant?'GIANT':SIZES[tier];}, // jump ahead n sizes (skipGarage: just hand out new cars)
   garage(){openGarage();return garage&&garage.tier;},garageGo:()=>garageGo(),
   tp(x,z,i=0){const p=players[i];if(p){p.x=x;p.z=z;p.y=groundH(x,z);p.markT=3;camT.set(x,0,z);}},
+  carStats,perk(name,i=0){const p=players[i];if(!p)return;p.perk=name||null;p.perkT=0.5;return carStats(p.stats);}, // __sp.perk('magnet')
   stats(){let l=0;chunks.forEach(c=>l+=c.loaded);const i=renderer.info.render;return {chunks:l,objects:objects.length,awake:objects.filter(o=>!o.sleep).length,debris:debris.length,calls:i.calls,tris:i.triangles};}};
