@@ -81,6 +81,19 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Keep a quality toggle (high / phone) and test on phone.
   - ✅ Done (v0.13.0): three r186 via import map + `src/boot.mjs`; `M()`/`mk()` make toy-plastic `MeshStandardMaterial` (Lambert on phone); Neutral tone mapping (ACES washed out the toy colors), sky gradient dome, warm sun + bounce light, soft PCF shadows, studio environment light on high; `prop(name, fallback)` GLB loader with `assets/props/props.json`; LOOKS: BEST / FAST toggle in the pause menu (`?q=phone`). Same draw calls as r128 and 60 fps on a real GPU in tests. Follow-up: the town can hit ~1,000+ draw calls (most of it the shadow pass), worth trimming before phone tuning.
 
+- [x] **L13: Rolling hay + spinning windmills** (from Cursor's TODO(logic) notes, v0.14.0)
+  - `{roll:true}` objects (hay) tumble off when hit: they plow through smaller stuff, launch animals, bounce off bigger things, then burst. Windmill blades spin and windmills stay awake so they spin from afar. Any part can spin with `mesh.userData.spin = {axis:'z', speed:1.2}`. `RAD` is now a fallback for `ctx.place` radius.
+  - Cursor: the two `TODO(logic)` notes above `OBJ` in objects.js (and the REC_R one) can be deleted.
+
+- [ ] **L10: Smash combos** (planned with Kaden)
+  - Smashes in quick succession build a combo: a big "×5 COMBO!" pop near the car, each crash a little higher in pitch, a small meter bonus that grows with the combo, and a voice line at milestones (×10, ×25). Shared between both players. Never punishes ending a combo.
+
+- [ ] **L11: Golden surprises** (planned with Kaden)
+  - Rare sparkly gold versions of props/animals (golden chicken, treasure chest, gold crate) hidden around the world, with a twinkle sound when near. Smashing or launching one bursts confetti + coins, plays a fanfare and gives a big meter bonus. Something for a 5-year-old to hunt for. Design can provide gold models later; logic can start with a gold tint + sparkle particles.
+
+- [ ] **L12: Launch pads** (planned with Kaden)
+  - Big bouncy launch pads (rainbow / trampoline style) placed near clusters of smashables, scaled to the players' size so they matter at every size. Driving over one launches the car high with a boing and a slow-motion-ish arc; landing on things smashes them (slam). Design can provide the pad look; logic handles placement, launch and landing.
+
 - [ ] **L5: Tune and test pass**
   - Round 1 (Kaden's first play-test) ✅: slower when small; car tiers (cooler cars unlock every 2 sizes, Y switches within the tier); big cars shoot (X: cannon / rocket, also hits boss weak spots); LEVEL UP button instead of auto-growing; new `micro` bottom size, scatter mostly at your size with bigger things rarer; stuck detection → jump becomes 💥 BOOM.
   - Play-test the whole v2 loop: small, then medium, then giant. Make sure growth pacing feels good in a ~20 minute session with a 5-year-old.
