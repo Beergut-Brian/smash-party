@@ -916,6 +916,7 @@ class Player{
       this.heading+=clamp(d,-tr,tr);target=st.speed*sm*mag*Math.max(0.25,(1+Math.cos(d))/2);
       if(inp.boost)target=st.speed*sm*1.65*Math.max(0.3,(1+Math.cos(d))/2);}
     else if(inp.boost)target=st.speed*sm*1.65;
+    if(sugarRush(this,dt,inp))target*=SUGAR_K; // L42: held turbo turns into a sugar rush
     const boosting=inp.boost&&this.speed>5;
     if(inp.boost&&!this.wasBoost){sfx.turbo();if(kazooOn())kazooToot(this,0.75);}this.wasBoost=inp.boost;
     if(kazooOn()&&Math.abs(this.speed)>8*this.sm&&(this.kazooT-=dt)<=0)kazooToot(this,0.45); // 🎺 a toot now and then while driving
@@ -930,15 +931,17 @@ class Player{
       if(this.speed>10&&this.wallT<=0){sfx.thud();shake=Math.min(1,shake+.3);this.wallT=.4;}this.speed*=0.6;}
     const gh=groundH(this.x,this.z)+garageH(this.x,this.z);
     if(!this.air){this.hoverF=2.5;if(this.partMap&&(this.partMap.hover||this.partMap.glide)){if(this.partMap.hover)this.partMap.hover.visible=false;if(this.partMap.glide)this.partMap.glide.visible=false;}
-      if(gh<this.y-0.4){this.air=true;this.vy=Math.max(5,this.speed*0.5+3);}
+      if(gh<this.y-0.4){this.air=true;this.vy=Math.max(5,this.speed*0.5+3)*(this.rush?1.25:1);this.jumped=false;this.airT=0;}
       else this.y=gh;
       if(inp.jumpP&&!this.air&&this.stuck){boomOut(this);}
-      else if(inp.jumpP&&!this.air){this.air=true;this.vy=13*clamp(Math.pow(S,0.4),0.33,1.8);sfx.jump();
+      else if(inp.jumpP&&!this.air){this.air=true;this.vy=13*clamp(Math.pow(S,0.4),0.33,1.8);sfx.jump();this.jumped=true;this.airT=0;
         if(this.perk==='bouncy'){this.vy*=1.42;sfx.boing();puff(this.x,0.3*S,this.z,5,Math.max(S,.3),'#ffffff');}}
     }else{
       if(!airMoves(this,dt,inp)){this.vy-=(this.padG||32)*dt;this.y+=this.vy*dt;} // L36: hold B to hover / glide
-      if(this.y<=gh){const imp=-this.vy;this.y=gh;this.air=false;this.vy=0;
+      this.airT=(this.airT||0)+dt;
+      if(this.y<=gh){const imp=-this.vy;this.y=gh;this.air=false;this.vy=0;const jumped=this.jumped;this.jumped=false;
         if(this.padG){this.padG=0;slam(this,true);}
+        else if(jumped&&hasAbility('stomp')&&!this.inG&&!garageAll())stomp(this,this.airT); // L42
         else if(imp>15)slam(this);else if(imp>6){sfxIn(zoneXZ(this.x,this.z),'thud');puff(this.x,0.3,this.z,3,1.2*Math.max(S,.3));}}
     }
     let pitch;
@@ -1104,14 +1107,19 @@ $('play').onclick=e=>{e.stopPropagation();startGame();};
    - shoot: X / Y fires the car's weapon (the first shots are eggs, the farmer's gift).
    - hover: hold B in the air to float for a few seconds. glide: keep holding B on the way down for a slow, long fall.
    - dozer: the bulldozer perk on every car.
+   - stomp (L42, 🦖 Dino Land): land a B jump and the ground goes BOOM: a dust ring knocks over what's around the car
+     (about 3 car lengths across, up to ~1.6× after a high jump or a hover), by the usual size rules.
+   - sugarrush (L42, 🍭 Candy Land): hold turbo ~1 s: rainbow glow, ~1.5× turbo speed, a trail of bouncing sweets,
+     farther ramp jumps. Let go and it fizzles out. Land abilities stay off in Adventure until a quest hands them out.
    Cosmetics (Adventure rewards only): hat, crown (parts on the roof), bubbles / sprinkles / confetti (trails), kazoo (engine).
    Each new ability: a ceremony (the car spins up, the part pops on) and a pulsing button glyph with a picture until first use.
    Design hook (D19): `function buildCarPart(id){…}` in cars.js returns a THREE.Group at car scale 1 for 'hammer', 'shoot',
-   'hover', 'glide', 'dozer', 'hat', 'crown'. Roof parts (hammer, shoot, hat, crown) have their origin where they sit on the
+   'hover', 'glide', 'dozer', 'hat', 'crown', and (L42, D22) 'stomp' (optional, e.g. dusty feet; origin at the car's ground
+   center) and 'sugarrush' (a rainbow glow around the car, origin at its ground center, shown only while rushing). Roof parts (hammer, shoot, hat, crown) have their origin where they sit on the
    roof (logic lifts them to the car's height); hover (a ring under the car), glide (wings) and dozer (a blade at the front,
    at z=0; logic moves it to the car's nose) have their origin at the car's ground center. Placeholders until then. */
-const ABIL_ICON={hammer:'🔨',shoot:'🥚',hover:'🛸',glide:'🪁',dozer:'🚜'};
-const ABIL_BTN={shoot:'X',hover:'B',glide:'B'}; // the button you press (shown as a colored pad button, not a word)
+const ABIL_ICON={hammer:'🔨',shoot:'🥚',hover:'🛸',glide:'🪁',dozer:'🚜',stomp:'👣',sugarrush:'🍭'};
+const ABIL_BTN={shoot:'X',hover:'B',glide:'B',stomp:'B',sugarrush:'A'}; // the button you press (shown as a colored pad button, not a word)
 const COS_ICON={hat:'🎉',crown:'👑',bubbles:'🫧',sprinkles:'🍭',confetti:'🎊',kazoo:'🎺'};
 const COS_TRAIL={bubbles:['#cdf7ff','#9bf6ff'],sprinkles:['#ff006e','#ffbe0b','#3a86ff','#06d6a0','#ffffff'],confetti:['#ff595e','#ffca3a','#8ac926','#1982c4','#6a4c93']};
 const ROOF_PARTS=['hammer','shoot','hat','crown'];
@@ -1145,6 +1153,8 @@ function carPartLook(id){
   else if(id==='crown'){g.add(mk('cyl',1.1,0.45,1.1,'#ffd60a',0,0.22,0));for(let i=0;i<5;i++){const a=i/5*Math.PI*2;g.add(mk('cone',0.25,0.45,0.25,'#ffd60a',Math.sin(a)*0.45,0.6,Math.cos(a)*0.45));}}
   else if(id==='hover'){const r=new THREE.Mesh(new THREE.TorusGeometry(1.8,0.2,6,28),new THREE.MeshBasicMaterial({color:'#9bf6ff',transparent:true,opacity:0.8}));r.rotation.x=Math.PI/2;r.position.y=0.2;g.add(r);}
   else if(id==='glide'){for(const s of [-1,1]){const w=mk('box',2.6,0.12,1.2,'#ffffff',s*2.4,1.3,-0.2);w.rotation.z=s*0.15;g.add(w);}}
+  else if(id==='sugarrush'){const r=new THREE.Mesh(new THREE.TorusGeometry(2.1,0.28,6,32),new THREE.MeshBasicMaterial({color:'#ff006e',transparent:true,opacity:0.75,blending:THREE.AdditiveBlending,depthWrite:false}));
+    r.rotation.x=Math.PI/2;r.position.y=0.5;r.userData.rainbow=true;g.add(r);}
   else if(id==='dozer'){g.add(mk('box',3.0,1.0,0.3,'#ffbe0b',0,0.55,0.25),mk('box',0.2,0.2,0.6,'#555555',-0.9,0.55,-0.1),mk('box',0.2,0.2,0.6,'#555555',0.9,0.55,-0.1));}
   return g;}
 function carParts(p){
@@ -1153,7 +1163,7 @@ function carParts(p){
   for(const id of ids){const g=carPartLook(id);
     if(ROOF_PARTS.includes(id))g.position.set(id==='crown'?-0.3:0,p.model.h,id==='hat'||id==='crown'?-0.2:0);
     if(id==='dozer')g.position.z=p.stats.r*1.05;
-    if(id==='hover'||id==='glide')g.visible=false; // only while hovering / gliding
+    if(id==='hover'||id==='glide'||id==='sugarrush')g.visible=false; // only while hovering / gliding / rushing
     p.parts.add(g);p.partMap[id]=g;}}
 // held-B in the air: hover first (fuel), then glide
 function airMoves(p,dt,inp){
@@ -1166,6 +1176,45 @@ function airMoves(p,dt,inp){
     if(!p.wasGlide)sfxClip('glide_whoosh',0.6)||sfx.turbo();abilUse('glide');}
   p.wasGlide=mode==='glide';if(hv)hv.visible=mode==='hover';if(gl)gl.visible=mode==='glide';
   return !!mode;}
+/* L42 🦖 STOMP: a B jump that lands knocks over everything around the car it could smash anyway (same size rules as a
+   hit: smaller things smash, tiny ones squish, same-size buildings lose their ground-floor walls nearby, smaller
+   buildings fall, bigger ones just wobble), and animals bounce up and land fine. ~3 car lengths across, bigger after a
+   long time in the air (a high jump or a hover). Before the hammer: only the dust and the wobble. */
+function stomp(p,airT){
+  const k=clamp(0.75+airT*0.4,1,1.6),R=p.r*3*k,zn=zoneXZ(p.x,p.z),pw=20*Math.sqrt(Math.max(S,0.3))*k;
+  abilUse('stomp');sfxClip('stomp_land',0.9)||(sfxIn(zn,'boom'),tone('sine',90,30,0.5,0.5));sfxIn(zn,'thud');shake=Math.min(2,shake+0.7*k);camKick=Math.max(camKick,0.12*k);
+  flash(p.x,0.4*S,p.z,'#fff3b0',R*0.7,0.35);
+  const dust=(ZONES[zn]&&(ZONES[zn].bossDust||ZONES[zn].ground))||'#d9c9a3';
+  for(let i=0;i<18;i++){const a=i/18*Math.PI*2,c=Math.sin(a),s=Math.cos(a);addPuff(p.x+c*p.r,0.3*S,p.z+s*p.r,rand(0.8,1.4)*p.r*0.5,dust,0.9,c*R*2.2,rand(0.5,1.5)*S,s*R*2.2,0.7);}
+  const smashOk=hasAbility('hammer');
+  for(const o of objects){if(!o.alive||o.falling||o.boss||o.rolling)continue;const dx=o.x-p.x,dz=o.z-p.z,d=Math.hypot(dx,dz);if(d>R+o.r)continue;
+    if(!smashOk||o.sz>tier&&!o.bld){wakeObj(o);o.wob=1;continue;}
+    if(o.roll&&o.sz<=tier){startRoll(o,dx||1,dz,pw*0.6);continue;}
+    if(o.bld){const diff=o.sz-tier,nx=dx/(d||1),nz=dz/(d||1);
+      if(diff<0)queue.push({t:0.04+d/R*0.12,fn:()=>{if(o.alive)collapse(o,0,dx||1,dz,pw,true);}});
+      else if(diff===0)queue.push({t:0.04+d/R*0.12,fn:()=>{if(o.alive)damageBuilding(o,p.x,p.z,R,99,-1,(p.model.h+1)*S,nx,nz,pw);}});
+      else{wakeObj(o);o.wob=1;}continue;}
+    if(o.sz<=tier-3&&!o.gold){squish(o);continue;}
+    queue.push({t:0.04+d/R*0.12,fn:()=>smash(o,dx||1,dz,pw)});} // the ring rolls outward
+  for(const a of animals){const dx=a.x-p.x,dz=a.z-p.z;if(Math.hypot(dx,dz)<R+a.r)a.sz<=tier+1?launchAnimal(a,dx||1,dz,6*p.sm):hopAside(a,dx,dz);}}
+/* L42 🍭 SUGAR RUSH: hold turbo ~1 s (on the ground, moving) and the car rushes: ~1.5× turbo speed, a rainbow glow (the
+   'sugarrush' car part), a trail of bouncing sweets, a slide-whistle; ramps throw it farther (the takeoff is faster and
+   a bit higher). Let go and it fizzles out with a giggle. No meter. → true while rushing (the turbo target is ×SUGAR_K). */
+const SUGAR_HOLD=1,SUGAR_K=1.5,SUGAR_COLS=['#ff006e','#ffbe0b','#3a86ff','#06d6a0','#ffffff','#9b5de5'];
+function sugarRush(p,dt,inp){
+  const on=!!inp.boost&&hasAbility('sugarrush')&&!p.inG&&!(garage&&garage.phase==='wait');
+  p.sugarT=on&&(p.air||Math.abs(p.speed)>4*p.sm)?(p.sugarT||0)+dt:on&&p.rush?p.sugarT:0;
+  const was=!!p.rush;p.rush=on&&p.sugarT>=SUGAR_HOLD;
+  if(p.rush&&!was){sfxClip('sugarrush',0.8)||(tone('sine',380,1500,0.45,0.12),noise(0.4,5000,1,0.08,'highpass'));abilUse('sugarrush');
+    puff(p.x,p.y+0.6*S,p.z,8,1.2*Math.max(S,.2),pick(SUGAR_COLS));}
+  if(!p.rush&&was){sfxClip('sugarrush_end',0.7)||tone('sine',900,300,0.3,0.08);puff(p.x,p.y+0.6*S,p.z,5,Math.max(S,.2),'#ffffff');}
+  let gl=p.partMap&&p.partMap.sugarrush;
+  if(!gl&&(p.rush||was)&&p.parts){if(!p.rushG||p.rushG.parent!==p.parts){p.rushG=carPartLook('sugarrush');p.parts.add(p.rushG);}gl=p.rushG;} // Arcade cars wear no parts: the glow still shows
+  if(gl){gl.visible=p.rush;if(p.rush)gl.traverse(m=>{if(m.userData.rainbow)m.material.color.setHSL((T*1.5)%1,1,0.6);});}
+  if(p.rush&&(p.sweetT=(p.sweetT||0)-dt)<=0){p.sweetT=0.04;const k=Math.max(S,0.12),bx=p.x-Math.sin(p.heading)*p.r,bz=p.z-Math.cos(p.heading)*p.r;
+    const m=mk(Math.random()<0.5?'sph':'box',0.4*k,0.4*k,0.4*k,null,bx+rand(-0.5,0.5)*k,p.y+0.4*k,bz+rand(-0.5,0.5)*k,E(pick(SUGAR_COLS)));m.castShadow=false;
+    addPart(m,0.8,rand(-2,2)*k,rand(3,6)*k,rand(-2,2)*k);}
+  return p.rush;}
 // cosmetic trails + the hammer bonk
 function updateCarExtras(dt){
   for(const p of players){
@@ -1184,7 +1233,7 @@ function abilGlyphs(){if(!questOn){abilHud.innerHTML='';return;}
 :where(.abGlyph){display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:22px;background:#0008;border:4px solid #ffd60a;animation:nwPulse .8s ease-in-out infinite}
 :where(.abGlyph span){font-size:40px}
 :where(.abGlyph b){display:inline-block;width:46px;height:46px;border-radius:50%;font:30px/46px 'Lilita One',sans-serif;text-align:center;color:#fff;border:3px solid #fff}
-:where(.abGlyph b.btnB){background:#e63946}:where(.abGlyph b.btnX){background:#3a86ff}
+:where(.abGlyph b.btnB){background:#e63946}:where(.abGlyph b.btnX){background:#3a86ff}:where(.abGlyph b.btnA){background:#06d6a0}
 :where(#modePick){display:flex;gap:24px;justify-content:center;margin:10px 0 6px}
 :where(#modePick .mp){font-size:72px;line-height:1;padding:14px 30px;border-radius:24px;border:5px solid transparent;background:rgba(255,255,255,.18);cursor:pointer;transition:transform .15s}
 :where(#modePick .mp.sel){border-color:#ffd60a;background:rgba(255,214,10,.3);transform:scale(1.12)}
