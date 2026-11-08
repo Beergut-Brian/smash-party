@@ -18,5 +18,25 @@
   "prompt": "Triumphant victory fanfare, bright and happy, ends on a big final chord",
   "seconds": 12,
   "hash": "da3a37ddceb7"
+ },
+ "candy_drive": {
+  "prompt": "Sweet sugar-rush driving tune like cruising through a candy shop: bouncy bubbly bassline, twinkly music-box and glockenspiel lead, skippy happy groove, seamless loop, no intro and no ending",
+  "seconds": 90,
+  "hash": "7dd9fef6b75d"
+ },
+ "candy_boss": {
+  "prompt": "Goofy giant-dessert boss showdown, fast and dramatic but silly, never scary: oompah tuba bass, wobbly jelly synth, a chorus of kazoos, sparkly runs, seamless loop, no ending",
+  "seconds": 90,
+  "hash": "1144e19ef0a9"
+ },
+ "dino_drive": {
+  "prompt": "Happy jungle stomp like a cartoon dinosaur parade: tribal toy drums and log marimba, bouncy tuba walking bassline, whistled ocarina lead, the odd goofy honk on the beat, seamless loop, no intro and no ending",
+  "seconds": 90,
+  "hash": "e82e7c315b42"
+ },
+ "dino_boss": {
+  "prompt": "Clumsy giant dinosaur boss showdown, silly never scary: big boomy timpani stomps, a low brass riff that trips over itself, rumbling volcano bass, slide whistle and kazoo stabs, rising excitement, seamless loop, no ending",
+  "seconds": 90,
+  "hash": "972ddfaa04f9"
  }
 }

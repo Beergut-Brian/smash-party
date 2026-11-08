@@ -139,7 +139,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - **Sir Sprinkles** 🎂: a walking three-tier birthday cake (same tiers as `candy_cake`, so its storeys pancake the same way) with frosting arms, licorice legs and a candle crown (candles as `whole:true` extras). Weak spots: cherry kneecaps (1), sprinkle patches on the bottom tier (2), the cake-board feet (3). When it's beaten, the candles pop off like fireworks.
   - The zone colors are global constants in `src/world/zones/candy.js` (`CANDY_BRIGHT`, `CANDY_PASTEL`, `CANDY_SCOOP`, `CANDY_RED`…); reuse them. Boss music is the zone's `candy_boss` track (AU3). Voice lines (intro, 2–3 taunts, defeat) go to the audio agent once a name is picked.
 
-- [ ] **AU3: Candy Land sounds + music** `NEEDS AUDIO` (audio; from zone-candy, Z1 ✅; the candy part of AU2. L22 is needed to play them, but they can be generated now). The ids are already set in `src/world/zones/candy.js`. The sound: sugary, bouncy, crunchy and silly, never gross.
+- [x] **AU3: Candy Land sounds + music** `NEEDS AUDIO` (audio; from zone-candy, Z1 ✅; the candy part of AU2. L22 is needed to play them, but they can be generated now). The ids are already set in `src/world/zones/candy.js`. The sound: sugary, bouncy, crunchy and silly, never gross.
   - **Music** (`tools/music-lines.json`, same chiptune style as the other tracks):
     - `candy_drive` (~90 s loop): a sweet sugar-rush driving tune: bouncy bubbly bassline, twinkly music-box / glockenspiel lead, skippy happy groove, like cruising through a candy shop. Seamless loop.
     - `candy_boss` (~90 s loop): a goofy giant-dessert showdown, fast and dramatic but silly: oompah tuba bass, wobbly jelly synth, a chorus of kazoos, sparkly runs. Seamless loop.
@@ -154,6 +154,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
     - `candy_snap_1`…`_3` (~0.6 s): a chocolate-bar snap / gingerbread crack / candy-cane crack (chocolate bars, cookies, canes, gingerbread people and houses).
     - `candy_splat_1`…`_3` (~0.8 s): a big frosting SPLAT with a wobbly cake thud (cupcakes, cupcake houses, ice cream, the sundae, the birthday cake).
   - Voice lines for the candy boss come with B1a/B1 once Kaden + son pick one.
+  - Done: `candy_drive` + `candy_boss` (90 s), 22 sfx (`candy_crunch_1…4`, `candy_pop_1…3`, `candy_squish_1…3`, `candy_boing_1…3`, `candy_gumballs_1…2`, `candy_snap_1…3`, `candy_splat_1…3`, `candy_ambient`). The ambient loop is pre-leveled to about −40 dB mean (same as `dino_ambient`), so one ambient volume works for every zone.
 
 - [ ] **B2: Dino Valley boss** `NEEDS DESIGN` (world-bosses; needs L23 + Z2) — a goofy, clumsy giant dinosaur (big head, tiny arms, never scary).
 - [ ] **B3: Bedroom boss** `NEEDS DESIGN` (world-bosses; needs L23 + L20) — a giant toy (wind-up robot, jack-in-the-box, or a living teddy bear) guarding the door out.
@@ -162,6 +163,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - **Each themed zone** (candy, dino, bedroom, and the core town/farm/park if they don't have their own yet): a looping **drive** track and a **boss** track in that zone's flavor (keep the game's upbeat, kid-friendly style), plus **crash/smash** variants (3+ each), a **boom**, a **landing** sound and a quiet **ambient** loop. Candy: crunches, pops, squishes. Dino: stomps, cartoon roars, leafy crashes. Bedroom: toy squeaks, block clatters, plush thumps.
   - **Each themed boss:** an intro line, 2–3 fight taunts (funny, not scary) and a defeat line.
   - Add them to `tools/*-lines.json`, `--dry` first, then generate. Log total credits used in the PR.
+  - Progress: candy (AU3) and dino (AU5) are done. Still to do: bedroom (once L20 lands), town/farm/park drive/boss tracks and sfx, and the themed boss voice lines (once B1/B2/B3 pick names).
 
 - [x] **Z1: Candy Land zone** `NEEDS DESIGN` (zone-candy agent, see `agents/zone.md`; needs L15 ✅)
   - `src/world/zones/candy.js` from the template: pink/pastel ground and sky, lollipop trees, gumdrops, candy canes, cupcake houses (BP contract), a giant cake mega set piece, 15+ props across micro…mega, bunnies. No real candy brands.
@@ -174,7 +176,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 - [ ] **D14: Dino animals** `NEEDS DESIGN` (world-animals; from Z2)
   - Dino Valley already asks for herds of `trike`, `stego` and `bronto` (`DINO_HERD_KINDS` and `herds` in `src/world/zones/dino.js`); unknown kinds are skipped, so chicks and ducks stand in today.
   - Add `ANIMAL.trike` (baby triceratops, ~1.6 long), `ANIMAL.stego` (~2 long, rounded back plates) and `ANIMAL.bronto` (long neck, ~3 long) in `src/world/animals.js`. Chubby, big eyes, pastel: goofy, never scary. Each needs a sound (AU5).
-- [ ] **AU5: Dino Valley sounds + music** `NEEDS AUDIO` (audio; from zone-dino, Z2 ✅; the dino part of AU2. L22 is needed to play them, but they can be generated now). The ids are already set in `src/world/zones/dino.js` (`music`, `sfx`, `DINO_SFX`). The sound: a sunny, stompy prehistoric jungle, big and boomy but goofy, never scary (no real roars, no growls).
+- [x] **AU5: Dino Valley sounds + music** `NEEDS AUDIO` (audio; from zone-dino, Z2 ✅; the dino part of AU2. L22 is needed to play them, but they can be generated now). The ids are already set in `src/world/zones/dino.js` (`music`, `sfx`, `DINO_SFX`). The sound: a sunny, stompy prehistoric jungle, big and boomy but goofy, never scary (no real roars, no growls).
   - **Music** (`tools/music-lines.json`, same chiptune style as the other tracks):
     - `dino_drive` (~90 s loop): a happy jungle stomp: tribal toy drums and log marimba, a bouncy tuba/bass walking line, a whistled or ocarina lead, the odd goofy honk on the beat. Feels like a cartoon dino parade. Seamless loop.
     - `dino_boss` (~90 s loop): a clumsy giant's showdown: big boomy timpani stomps, a low brass riff that trips over itself, rumbling volcano bass, silly slide-whistle and kazoo stabs, rising excitement. Seamless loop.
@@ -191,6 +193,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
     - `dino_wood_1`…`_3`: a hollow log thunk and splintering crack. `dino_boing_1`…`_2`: a big rubbery mushroom BOING.
     - `dino_volcano_1`…`_2` (~2 s): a huge rumble that ends in a giant goofy volcano BURP and a fizz.
   - **Animal sounds** (once D14 lands; ids = the kind names, like the other animals): `trike` a short happy trumpety honk, `stego` a deep goofy "hoo-hoo" toot, `bronto` a long low friendly foghorn "hoooonk".
+  - Done: `dino_drive` (90 s) + `dino_boss` (take 2 of 2, trimmed to 87.8 s to cut its fade-out), 38 sfx (every id above, incl. `dino_ambient` leveled to −40 dB mean) and the `trike`, `stego`, `bronto` animal sounds, ready for D14.
 - [ ] **B2a: Dino Valley boss ideas** `NEEDS DESIGN` (world-bosses; from zone-dino, Z2 ✅; feeds B2, so pick one with Kaden + son and build it as B2)
   - **Rexy Rumbleton** 🦖: a big clumsy T-rex with a giant head, a wide goofy grin, googly eyes and teeny flappy arms (high `sway`, it teeters when hit). Pastel green with a polka-dot belly. Weak spots: two big toenails (phase 1), two round knee pads (phase 2), the tip of its tail dragging on the ground (phase 3). Each storey falls apart into fat green chunks; the tiny arms pop off `whole:true`.
   - **Lava Larry** 🌋: the zone's smiling `dino_volcano` grown stubby dino legs and a tail, walking. Puffs white smoke rings from its crater (`whole:true` extras) and blinks its googly eyes. Weak spots: glowing orange lava vents low on its sides (1), its rock toes (2), the lava-drip "knees" (3). Its rock rings are its storeys, so it pancakes like the landmark; when beaten it lets out a huge burp of confetti.
@@ -230,11 +233,13 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Problem: the opening "props rain in" fill (`spawnScatter` in game.js) drops mini/tiny props (bushes, gnomes, mailboxes, benches) into the lane and onto the road, so 2 of 3 test runs got boinged within the first 1–3 units.
   - Needed: in `spawnScatter`, skip spots where `typeof startLane!=='undefined'&&startLane(x,z)` unless the prop is a size at or below the players' (or simply skip `onRoad(x,z)` for anything bigger than the players). The default chick flock on the home road could start off the road too.
 
-- [ ] **AU6: Record the garage lines** `NEEDS AUDIO` (audio agent; from L17)
+- [x] **AU6: Record the garage lines** `NEEDS AUDIO` (audio agent; from L17)
   - "Pick your ride!" (garage opens) and "Let's go!" (GO! button shows) are in `tools/voice-lines.json`. Also the 4 placeholder car names when they get real cars (D12).
+  - Done: `pick_your_ride.mp3`, `let_s_go.mp3`, plus the new car names Pedal Putter, Cart Crash, Scoot Zoom.
 
-- [ ] **AU4: Record "Beep beep!"** `NEEDS AUDIO` (audio agent; from L21)
+- [x] **AU4: Record "Beep beep!"** `NEEDS AUDIO` (audio agent; from L21)
   - New line in `tools/voice-lines.json`, played with a synth horn when the cars appear. Run `make-voices.mjs --dry`, then generate.
+  - Done: `beep_beep.mp3`.
 
 - [ ] **L25: GIANT-size and boss fight draw calls** `NEEDS LOGIC` (**high priority**, found in PRs #12 and #13): at GIANT size **every zone** swings around ~1,500 draw calls (zone-dino measured it), and on a real GPU at high quality the boss fight measures **~1,800–3,700 draw calls** (main and branch alike), far over the ~900 budget, and it will stutter on the GTX 1060. Fold in L24 (awake-but-untouched buildings drawn from their proxy). Profile what's drawn at GIANT and during the fight (boss parts, arena debris, explosions, shots, awake buildings at GIANT range) and batch/merge/cap it. Re-measure on the real GPU, not headless (SwiftShader under-reports this: it showed ~500).
 

@@ -413,5 +413,35 @@
   "text": "Stomp King!",
   "speak": "Stomp King!",
   "hash": "2e8131a96538"
+ },
+ "beep_beep": {
+  "text": "Beep beep!",
+  "speak": "Beep beep!",
+  "hash": "8f0f3e13e1fe"
+ },
+ "pick_your_ride": {
+  "text": "Pick your ride!",
+  "speak": "Pick your ride!",
+  "hash": "54f720e50b13"
+ },
+ "let_s_go": {
+  "text": "Let's go!",
+  "speak": "Let's go!",
+  "hash": "b715404f6983"
+ },
+ "pedal_putter": {
+  "text": "Pedal Putter!",
+  "speak": "Pedal Putter!",
+  "hash": "44fe8c1662c7"
+ },
+ "cart_crash": {
+  "text": "Cart Crash!",
+  "speak": "Cart Crash!",
+  "hash": "3786eb90f127"
+ },
+ "scoot_zoom": {
+  "text": "Scoot Zoom!",
+  "speak": "Scoot Zoom!",
+  "hash": "69b97bcf556c"
  }
 }
