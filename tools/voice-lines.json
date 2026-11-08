@@ -5,7 +5,7 @@
     "stability": 0.0
   },
   "prefix": "[excited] ",
-  "notes": "Each line is the exact text the game passes to say(). Car names from src/cars.js and assets/cars/cars.json are added automatically (as 'Name!'). Use {\"text\":…, \"speak\":…} when the spoken wording should differ from the game text. eleven_v3 takes direction tags like [excited], [shouting], [laughing], [whispers]; \"prefix\" applies one to every line, or give a line its own {\"text\":…, \"prefix\":\"[shouting] \"}. v3 stability must be 0.0 (creative), 0.5 or 1.0.",
+  "notes": "Each line is the exact text the game passes to say(). Car names from src/cars.js and assets/cars/cars.json are added automatically (as 'Name!'). Use {\"text\":…, \"speak\":…} when the spoken wording should differ from the game text. eleven_v3 takes direction tags like [excited], [shouting], [laughing], [whispers]; \"prefix\" applies one to every line, or give a line its own {\"text\":…, \"prefix\":\"[shouting] \"}. v3 stability must be 0.0 (creative), 0.5 or 1.0. Character lines: add \"voice\":\"<name>\" (cast in tools/voices.json); the clip becomes <name>__<slug>.mp3 and code calls say(text,{voice:'<name>'}).",
   "lines": [
     "MEGA SMASH!",
     "SUPER SMASH!",

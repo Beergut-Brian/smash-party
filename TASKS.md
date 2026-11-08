@@ -270,9 +270,10 @@ Full spec and contracts: **`docs/ADVENTURE.md`** (read it before any task below)
   - Placeholder Hank quest with a blocky giver so it's testable. `__sp.quest('id')` starts one, `__sp.quest('id',true)` finishes it.
   - Hand-off: Q1 (quests lane) writes the real Home World quests; D19 styles the bubbles.
 
-- [ ] **L34: Character voices** `NEEDS LOGIC` (logic-systems; spec §7)
+- [x] **L34: Character voices** `NEEDS LOGIC` (logic-systems; spec §7)
   - `tools/voices.json` cast (`{"hank":{"voice":"<id>","model":"…","settings":{…},"prefix":"…"}}`), `"voice":"hank"` on lines in `tools/voice-lines.json`, `make-voices.mjs` uses each line's voice (clip id includes the voice; `--dry` shows cost per voice), `say(text,{voice})` in core.js plays it (robot voice fallback, maybe pitched per character). The announcer stays the default.
   - Hand-off: AU13 (audio) casts the voices.
+  - Done (contract in CLAUDE.md, "Character voice"): `tools/voices.json` cast (placeholder `hank` entry with an empty voice id for AU13 to fill), `"voice"` on lines, `make-voices.mjs` per-voice settings + hash, clip id `<voice>__<slug>`, `--dry` cost per voice and uncast counts, `--voice=<name>` filter, errors on unknown voices and duplicate clip ids. Announcer hashes are unchanged (dry run: 0 lines to remake). `say(text,{voice,pitch,rate})` in core.js plays the clip or a per-character robot voice (`robot` pitch/rate from voices.json, else from the name).
 
 - [ ] **D18: Plan the Home World (lots, scenes, quest spots) + garage outside** `NEEDS DESIGN` (world-props; needs L31, L32 for the garage hook)
   - **A planned town, not random props** (Kaden: Kenney's suburban sample scenes are the look). Lot templates with detail at every scale (house, driveway car, fence, mailbox, bike, trash cans, gnome, flowerbed, flowers, toys), mirrored and recolored into streets; a big park next to the neighborhood; a downtown main street; school; the farm belt at the edge; the construction site; the cornfield.

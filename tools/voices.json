@@ -1,0 +1,11 @@
+{
+ "_notes": "Character voices (L34). Each key is a voice name used as \"voice\":\"<name>\" on a line in tools/voice-lines.json and as say(text,{voice:'<name>'}) in code. voice = ElevenLabs voice id (from the voice library or Voice Design); model / settings / prefix default to the announcer's in voice-lines.json. A cast member with an empty voice id is skipped by make-voices.mjs until it's cast (the game uses its robot voice meanwhile). robot = optional {pitch, rate} for that robot voice (default: a pitch picked from the name). desc = the personality notes the audio agent casts from. Keys starting with _ are ignored.",
+ "hank": {
+  "voice": "",
+  "model": "eleven_v3",
+  "settings": { "stability": 0.5 },
+  "prefix": "[gruff] ",
+  "robot": { "pitch": 0.7, "rate": 0.95 },
+  "desc": "Hank: gravelly, friendly old-timer next to the start. Placeholder entry until AU13 casts him."
+ }
+}
