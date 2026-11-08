@@ -5,6 +5,8 @@
    listed in assets/props/props.json (put animal models in assets/props/animals/).
    Kinds: chick, chicken, duck, goose, bunny, cat, dog, pig, sheep, goat, cow, horse. Animals are never destroyed.
    Extra kinds: rooster (joins chicken flocks) and the Dino Valley babies trike, stego, bronto (D14, herded by dino.js).
+   A5 land critters: babyrex, ptero (Dino Land), gummybear, marshmallow_sheep (Candy Land); herd them with
+   ctx.herd(kind,…) or a zone's herds:[[kind,n]], they need no other hookup (sound = sfx clip with the kind's name).
 
    D3 looks: chunky toy animals built from M() spheres/boxes, big heads, short legs and huge googly eyes
    (the two pupils look different ways on purpose). Logic merges each kind into one mesh per color, so every
@@ -199,5 +201,61 @@ const ANIMAL=(()=>{
       tube(g,[[1.1,-0.7,0.38],[0.85,-1.45,0.24],[0.45,-2.05,0.08]],La);
       legs(g,0.4,0.45,-0.55,0.72,0.36,La,Pa,0.1);
       googly(g,0.16,3.02,1.47,0.25);g.scale.setScalar(0.8);return g;}},
+
+    // ---- A5 land critters (Dino Land + Candy Land): same chubby toy style. ----
+    // baby T-rex ~1.75 long (small): peachy coral, cream belly and feet, giant head, teeny flappy arms, one goofy tooth
+    babyrex:{fluff:'#ffa385',build(){const g=new THREE.Group(),Co='#ffa385',Cr='#fff3d6',Sp='#ff7b54';
+      g.add(part('sph',0.82,0.86,1.0,Co,0,0.76,-0.06),part('sph',0.6,0.66,0.6,Cr,0,0.7,0.18));
+      for(const [x,y,z,s] of [[0.2,1.1,-0.3,0.2],[-0.16,1.14,-0.12,0.16],[0.05,1.0,-0.52,0.15]])g.add(bit(s,s*0.45,s,Sp,x,y,z));
+      g.add(part('sph',0.76,0.66,0.8,Co,0,1.32,0.4),part('sph',0.58,0.38,0.46,Co,0,1.17,0.72),part('sph',0.44,0.2,0.36,Cr,0,1.04,0.72));
+      g.add(part('box',0.07,0.08,0.05,WHITE,0.06,1.04,0.88));                                     // the one goofy tooth
+      smile(g,1.16,0.9,0.1,0.25,1.22,0.84,0.13);
+      for(const sd of [1,-1])g.add(rot(part('cyl',0.09,0.24,0.09,Co,sd*0.3,0.86,0.4),1.0,0,-sd*0.3),bit(0.11,0.11,0.11,Cr,sd*0.33,0.8,0.52));
+      for(const sd of [1,-1])g.add(part('cyl',0.27,0.46,0.27,Co,sd*0.24,0.23,-0.05),part('sph',0.32,0.14,0.42,Cr,sd*0.24,0.07,0.05));
+      tube(g,[[0.78,-0.45,0.3],[0.58,-0.95,0.18],[0.36,-1.28,0.06]],Co);
+      googly(g,0.15,1.5,0.66,0.24);g.scale.setScalar(0.8);return g;}},
+
+    // baby pterodactyl ~1.2 long, wings half open (~1.9 across, small): sky blue, butter-yellow wings, orange beak, a swept-back crest
+    ptero:{fluff:'#8ecae6',build(){const g=new THREE.Group(),Bl='#8ecae6',Wg='#ffe5a0',Cr='#fff3d6';
+      g.add(part('sph',0.5,0.56,0.64,Bl,0,0.5,-0.02),part('sph',0.38,0.4,0.34,Cr,0,0.46,0.13));
+      g.add(rot(part('cyl',0.2,0.3,0.2,Bl,0,0.78,0.1),0.3),part('sph',0.46,0.42,0.46,Bl,0,0.96,0.18));
+      g.add(cone(0.16,0.36,0.12,ORANGE,0,0.9,0.52),rot(part('cone',0.12,0.44,0.2,Bl,0,1.16,-0.08),-1.05));
+      for(const sd of [1,-1]){
+        g.add(rot(part('sph',0.86,0.09,0.56,Wg,sd*0.5,0.66,-0.06),0,0,sd*0.32));                    // wing skin
+        g.add(rot(part('cyl',0.07,0.82,0.07,Bl,sd*0.52,0.72,0.17),0,0,sd*(PI/2+0.32)));            // wing arm along the front edge
+        g.add(bit(0.1,0.1,0.1,Bl,sd*0.9,0.86,0.19));}
+      g.add(cone(0.14,0.3,0.1,Bl,0,0.42,-0.42,-PI/2-0.4));
+      smile(g,0.84,0.4,0.06,0.17,0.9,0.36,0.09);
+      googly(g,0.1,1.04,0.36,0.17);birdFeet(g,0.12,0.24,ORANGE,0.12);return g;}},
+
+    // gummy bear ~1.35 tall (tiny): cherry red standing upright, pink tummy and snout, round ears, one arm waving
+    gummybear:{fluff:'#ff4d6d',build(){const g=new THREE.Group(),Rd='#ff4d6d',Lt='#ff99ac';
+      g.add(part('sph',0.64,0.74,0.52,Rd,0,0.58,0),part('sph',0.42,0.5,0.2,Lt,0,0.56,0.19));
+      g.add(part('sph',0.58,0.52,0.5,Rd,0,1.08,0.03));
+      for(const sd of [1,-1])g.add(part('sph',0.2,0.2,0.14,Rd,sd*0.21,1.32,0),bit(0.1,0.1,0.06,Lt,sd*0.21,1.32,0.06));
+      g.add(part('sph',0.26,0.17,0.16,Lt,0,0.99,0.25),part('sph',0.1,0.07,0.06,INK,0,1.04,0.33));
+      smile(g,0.95,0.33,0.06,0.17,1.0,0.25,0.09);
+      g.add(rot(part('sph',0.2,0.38,0.2,Rd,0.34,0.76,0.04),0,0,-0.6),rot(part('sph',0.2,0.38,0.2,Rd,-0.36,0.9,0.04),0,0,1.1));
+      for(const sd of [1,-1])g.add(part('sph',0.25,0.34,0.3,Rd,sd*0.17,0.17,0.04));
+      googly(g,0.11,1.14,0.24,0.17);return g;}},
+
+    // marshmallow sheep ~1.6 long (small): a fluff of white, pink and blue marshmallows, pink marshmallow face and legs, sprinkles on top
+    marshmallow_sheep:{fluff:'#fff8f0',build(){const g=new THREE.Group(),Wm='#fff8f0',Pm='#ffc8dd',Bm='#bde0fe';
+      const C=[0,0.8,-0.08],R=[0.5,0.42,0.66];g.add(part('sph',R[0]*2,R[1]*2,R[2]*2,Wm,...C));
+      // a coat of mini marshmallows standing out of the body: [around (0 = front), up from the side]
+      const coat=[];[[1.4,1,0],[0.95,5,0.3],[0.5,8,0],[0.08,9,0.2]].forEach(([el,n,o])=>{for(let i=0;i<n;i++)coat.push([(i+o)/n*2*PI,el]);});
+      const up=new THREE.Vector3(0,1,0),n=new THREE.Vector3();
+      coat.forEach(([az,el],i)=>{const cx=Math.sin(az)*Math.cos(el),cz=Math.cos(az)*Math.cos(el),cy=Math.sin(el);
+        if(cz>0.55&&el<0.8)return;                                          // keep the face clear
+        const m=part('cyl',0.32,0.3,0.32,[Pm,Bm,Wm][i%3],C[0]+R[0]*cx*1.02,C[1]+R[1]*cy*1.02,C[2]+R[2]*cz*1.02);
+        m.quaternion.setFromUnitVectors(up,n.set(cx/R[0],cy/R[1],cz/R[2]).normalize());g.add(m);});
+      for(const [x,z,ry,c] of [[0.1,0.1,0.4,RED],[-0.12,-0.25,1.5,Bm],[0.16,-0.4,2.4,RED],[-0.18,0.12,0.9,RED],[0.02,-0.08,2.0,Bm],[0.2,-0.12,1.1,Bm]])
+        g.add(rot(part('box',0.13,0.035,0.035,c,x,1.27,z),0,ry,0));
+      g.add(rot(part('cyl',0.5,0.36,0.46,Pm,0,0.98,0.62),PI/2));                                   // marshmallow face
+      for(const sd of [1,-1])g.add(rot(part('cyl',0.22,0.08,0.13,Pm,sd*0.3,1.08,0.56),0,0,sd*0.9));
+      g.add(part('sph',0.2,0.1,0.06,NOSE,0,0.9,0.81));
+      smile(g,0.84,0.81,0.06,0.16,0.9,0.8,0.08);
+      legs(g,0.24,0.32,-0.4,0.42,0.17,Pm);
+      googly(g,0.1,1.04,0.8,0.18);return g;}},
   };
 })();
