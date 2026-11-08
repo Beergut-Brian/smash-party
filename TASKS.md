@@ -133,12 +133,13 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - **Still needed (tier 3, the coolest cars, shown today as blocky ❓ placeholders):** Rocket Sled 🛷, Robo Walker 🤖 (robot legs), Spike-o-saurus 🦕 (stegosaurus spike car), Hover Zoomer 🛸. Use exactly these names in cars.js / cars.json with `tier:3` and the placeholder disappears by itself (or rename: then update `GARAGE_WANTED` in game.js via a `TODO(logic)`). More tier-3 ideas welcome; 8+ gives both players 4 different real cars.
 
 - [ ] **B1+B2 order (Kaden + son picked, Nov 7): build ALL three bosses for each zone, in this order** (world-bosses; set `zone:'candy'` / `zone:'dino'` on each so L23 can pick them)
-  1. **Gummo the Gummy Giant** 🐻 (candy), then **Rexy Rumbleton** 🦖 (dino): first, they're the favorites
+  1. **Gummo the Gummy Giant** 🐻 (candy), then **Rexy Rumbleton** 🦖 (dino): first, they're the favorites ✅ (world-bosses/B1-B2)
   2. **Gumbo-Tron 3000** 🍬 (candy) and **Lava Larry** 🌋 (dino)
   3. **Sir Sprinkles** 🎂 (candy) and **Mama Stegosaurus "Plates"** 🦕 (dino)
   - Concepts and weak-spot ideas are in B1a / B2a below. One PR per pair is fine. Each new boss: add an audio task (AU7) with its intro, 2–3 taunts and defeat line.
 
-- [ ] **B1: Candy Land boss** `NEEDS DESIGN` (world-bosses; needs L23 + Z1) — e.g. a wobbly gummy-bear giant or a gumball-machine robot. Built from `BP` parts in candy colors, weak spots on the outside. Kaden + son pick the concept and name.
+- [x] **B1: Candy Land boss** `NEEDS DESIGN` (world-bosses; needs L23 + Z1) — e.g. a wobbly gummy-bear giant or a gumball-machine robot. Built from `BP` parts in candy colors, weak spots on the outside. Kaden + son pick the concept and name.
+  - Done (world-bosses/B1-B2): Kaden + son picked **Gummo the Gummy Giant** 🐻 (`id:'gummo'`, `zone:'candy'`) in `src/world/bosses.js`: cherry-red gummy bear, lime belly, mismatched googly eyes, buck tooth, party hat with a spinning peppermint, sway 0.17. 50 parts, weak spots gumdrop belly buttons → candy-cane toe caps → the lollipop in each paw. Until L23 lands he joins the random boss pick.
 - [ ] **B1a: Candy Land boss ideas** `NEEDS DESIGN` (world-bosses; from zone-candy, Z1 ✅; feeds B1, so pick one with Kaden + son and build it as B1)
   - **Gummo the Gummy Giant** 🐻: a big wobbly gummy bear (high `sway`, jiggles when hit) in bright candy colors (cherry red body, lime belly). Weak spots: two gumdrop buttons on the belly (phase 1), two candy-cane-striped toe caps (phase 2), a lollipop held low in its paw (phase 3). Each storey falls apart into fat gummy chunks.
   - **Gumbo-Tron 3000** 🍬: a walking gumball-machine robot, a twin of the zone's `candy_gumball` landmark with legs and a coin-slot mouth. Its head is a ball of gumballs (`whole:true` parts) that rain out as it takes damage. Weak spots: two coin-slot knobs on its chest (1), the silver turn-crank hands (2), the red hatch knees (3).
@@ -162,7 +163,10 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Voice lines for the candy boss come with B1a/B1 once Kaden + son pick one.
   - Done: `candy_drive` + `candy_boss` (90 s), 22 sfx (`candy_crunch_1…4`, `candy_pop_1…3`, `candy_squish_1…3`, `candy_boing_1…3`, `candy_gumballs_1…2`, `candy_snap_1…3`, `candy_splat_1…3`, `candy_ambient`). The ambient loop is pre-leveled to about −40 dB mean (same as `dino_ambient`), so one ambient volume works for every zone.
 
-- [ ] **B2: Dino Valley boss** `NEEDS DESIGN` (world-bosses; needs L23 + Z2) — a goofy, clumsy giant dinosaur (big head, tiny arms, never scary).
+- [x] **B2: Dino Valley boss** `NEEDS DESIGN` (world-bosses; needs L23 + Z2) — a goofy, clumsy giant dinosaur (big head, tiny arms, never scary).
+  - Done (world-bosses/B1-B2): Kaden + son picked **Rexy Rumbleton** 🦖 (`id:'rexy'`, `zone:'dino'`): pastel T-rex, big head with a wide grin and buck teeth, googly eyes looking two ways, polka-dot belly, rounded back plates, teeny arms that windmill, tail dragging on the ground, sway 0.13. 57 parts, weak spots big toenails → knee pads → tail tip + tail bump. Joins the random pick until L23.
+- [ ] **AU7: Gummo + Rexy voice lines** `NEEDS AUDIO` (audio; from B1/B2). Add to `tools/voice-lines.json` and generate: `Here comes Gummo the Gummy Giant!`, `Here comes Rexy Rumbleton!`, plus each boss's `taunts` and `defeat` line (exact text in `BOSSES` in `src/world/bosses.js`). Goofy and friendly: Gummo is a squishy, giggly bear; Rexy is a big clumsy happy dino.
+- [ ] **L27: Per-boss taunts and defeat line** `NEEDS LOGIC` (logic; from B1/B2). Bosses can now carry `taunts:[…]` and `defeat:'…'` (Gummo and Rexy do). In `hitWeak`, use `boss.def.taunts` (when present) instead of the generic `'Ouch!','Bonk!','Again! Again!'`, and say `boss.def.defeat` before `'You beat the boss!'`. Fall back to today's lines when a boss has none.
 - [ ] **B3: Bedroom boss** `NEEDS DESIGN` (world-bosses; needs L23 + L20) — a giant toy (wind-up robot, jack-in-the-box, or a living teddy bear) guarding the door out.
 
 - [ ] **AU2: Zone music + sound effects** `NEEDS AUDIO` (audio; needs L22). ElevenLabs credits are plentiful, so go all in:
