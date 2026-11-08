@@ -123,6 +123,43 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 - [ ] **Z2: Dino Valley zone** `NEEDS DESIGN` (zone-dino agent, see `agents/zone.md`; needs L15 ✅)
   - `src/world/zones/dino.js` from the template: warm jungle ground, ferns, palm trees, boulders, volcano mega set piece, giant eggs and bones, 15+ props across micro…mega. Goofy, never scary. Dino animals → `NEEDS DESIGN` for world-animals (+ `NEEDS LOGIC` for their sounds/herds).
 
+### Play-test round 2 (Kaden + son, Nov 7): "it was fun!"
+
+- [ ] **Z3: Inside the House (kid's bedroom) zone** `NEEDS DESIGN` (zone-bedroom agent, see `agents/zone.md`; needs L20)
+  - Micro: crumbs, cereal, gummy bears, crayons, building bricks, marbles, toy cars. Small/medium: plush toys, toy trucks, block towers, a train set, books. Large/huge: bed, dresser, toy chest, bookshelf, desk and chair, lamp. Mega: the door/window you break out through.
+  - Cozy, colorful kid's-room look. CC0 furniture/toy models where possible. Original designs only (no branded toys).
+
+- [ ] **D9: Garage look + car stats and perks** `NEEDS DESIGN` (cars-ui; needs L17 + L18)
+  - Give every recipe car `speed`, `power`, `handling` and a fitting `perk` (rocket cars get `autoRockets`, dozers get `bulldozer`, and so on). Balance: faster cars are weaker, strong cars are slower.
+  - Style the garage: pads, spotlights, the floating stat cards (icons + bars, no text), the picked-car burst, the GO! prompt.
+
+- [ ] **D11: Real neighborhoods** `NEEDS DESIGN` (world-props; needs L19)
+  - Town: houses lined up along streets with yards, fences, driveways and mailboxes; shops on a main street; a park block. Farm: fenced fields with crops in rows, animals in pens, the barn yard. Park: paths, a playground area, the pond.
+  - Mark spots with `ctx.spot()` so the filler lands where it belongs.
+
+- [ ] **L17: Level-up garage (pick your new car)**
+  - Every car-tier unlock (every 2 sizes) opens a **garage** instead of the plain LEVEL UP: the world pauses and both players drop into a small showroom arena with 3–4 parked cars per player from the new tier on glowing pads, each with a **stat card** floating above it.
+  - **Smash a car to pick it** (drive into it, with a big burst, fanfare and the car's name spoken). You then drive the new car around the garage until the other player picks. With one player, only one pick is needed.
+  - When everyone has picked, a big **GO!** prompt (A / START) starts a **fresh world** (`newWorld`) and **resets the combo**.
+  - **Remove LB/RB car switching** from normal play (keep a debug key). The garage is the only way to change cars.
+  - Hand-offs: `NEEDS DESIGN` cars-ui for the garage look + stat cards (D9); voice lines ("Pick your ride!", "Let's go!") for audio.
+
+- [ ] **L18: Car stats and perks + strength-based smashing**
+  - Cars get stats: **speed**, **power** and **handling**, plus an optional **perk**: `autoRockets` (fires at the nearest smashable thing on its own), `magnet` (pulls small stuff in), `bulldozer` (plows through same-size buildings in one hit), `bouncy` (jump x2), and so on. Defaults come from the tier when a car doesn't set them.
+  - **Power decides what you can damage above your size:** weak cars boing off anything bigger (as now). Only **high-power** cars can chip buildings 1–2 sizes above them. Today any car can wreck an over-size house with a few hits; that becomes a strong-car perk.
+  - Expose the stats for the garage stat cards. **Show them as icons and bars, never text** (lightning = speed, fist = power, rocket = perk) since the main player can't read yet.
+  - Hand-off: `NEEDS DESIGN` cars-ui to set stats/perks on every recipe (D9).
+
+- [ ] **L19: Placement that makes sense (neighborhoods, not confetti)**
+  - Today the size-matched filler scatters props anywhere in a chunk, so things look random. Let layouts declare **spots**: `ctx.spot(kind,x,z,w,d)` for yards, sidewalks, fields, playground sand, parking, porches. Filler then only goes into matching spots (garden gnomes in yards, cones on roads, hay in fields), with a little leftover scatter.
+  - Hand-off: `NEEDS DESIGN` world-props to lay out real neighborhoods with spots (D11).
+
+- [ ] **L20: "Inside the House" opening world**
+  - A new world type: the game can **start inside a giant kid's bedroom**. You're micro-sized among snacks and small toys, grow into bigger toys, then furniture, then **break out** (smash the door or window). That transition launches you into the outdoor world at a matching size.
+  - Indoors needs: walls/floor/ceiling instead of sky and roads, no streaming grid (one big room, maybe a hallway), indoor lighting, and a breakout event (a big crash, then the camera flies out to town).
+  - Built on the zone plug-in system as a special zone (`bedroom`) with a `breakout` hook. Start-screen choice: **Bedroom** or **Outside** (pictures, not words).
+  - Hand-off: `NEEDS DESIGN` zone-bedroom (Z3).
+
 - [ ] **L5: Tune and test pass**
   - Round 1 (Kaden's first play-test) ✅: slower when small; car tiers (cooler cars unlock every 2 sizes, Y switches within the tier); big cars shoot (X: cannon / rocket, also hits boss weak spots); LEVEL UP button instead of auto-growing; new `micro` bottom size, scatter mostly at your size with bigger things rarer; stuck detection → jump becomes 💥 BOOM.
   - Play-test the whole v2 loop: small, then medium, then giant. Make sure growth pacing feels good in a ~20 minute session with a 5-year-old.
