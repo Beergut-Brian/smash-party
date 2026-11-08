@@ -230,7 +230,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Problem: the opening "props rain in" fill (`spawnScatter` in game.js) drops mini/tiny props (bushes, gnomes, mailboxes, benches) into the lane and onto the road, so 2 of 3 test runs got boinged within the first 1–3 units.
   - Needed: in `spawnScatter`, skip spots where `typeof startLane!=='undefined'&&startLane(x,z)` unless the prop is a size at or below the players' (or simply skip `onRoad(x,z)` for anything bigger than the players). The default chick flock on the home road could start off the road too.
 
-- [ ] **AU5: Record the garage lines** `NEEDS AUDIO` (audio agent; from L17)
+- [ ] **AU6: Record the garage lines** `NEEDS AUDIO` (audio agent; from L17)
   - "Pick your ride!" (garage opens) and "Let's go!" (GO! button shows) are in `tools/voice-lines.json`. Also the 4 placeholder car names when they get real cars (D12).
 
 - [ ] **AU4: Record "Beep beep!"** `NEEDS AUDIO` (audio agent; from L21)
