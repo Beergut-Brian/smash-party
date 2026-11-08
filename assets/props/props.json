@@ -56,5 +56,21 @@
   "crop-melon":{"file":"crop-melon.glb","scale":1,"y":0,"rotateY":0},
   "snowman":{"file":"snowman.glb","scale":1,"y":0,"rotateY":0},
   "fountain":{"file":"fountain.glb","scale":1,"y":0,"rotateY":0},
-  "windmill-blades":{"file":"windmill-blades.glb","scale":1,"y":0,"rotateY":0}
+  "windmill-blades":{"file":"windmill-blades.glb","scale":1,"y":0,"rotateY":0},
+  "barn-red":{"file":"barn-red.glb","scale":1,"y":0,"rotateY":0},
+  "barn-big":{"file":"barn-big.glb","scale":1,"y":0,"rotateY":0},
+  "watertower":{"file":"watertower.glb","scale":1,"y":0,"rotateY":0},
+  "school-a":{"file":"school-a.glb","scale":1,"y":0,"rotateY":0},
+  "garage-red":{"file":"garage-red.glb","scale":1,"y":0,"rotateY":0},
+  "pavilion":{"file":"pavilion.glb","scale":1,"y":0,"rotateY":0},
+  "castle-mini":{"file":"castle-mini.glb","scale":1,"y":0,"rotateY":0},
+  "silo-tall":{"file":"silo-tall.glb","scale":1,"y":0,"rotateY":0},
+  "slide-chute":{"file":"slide-chute.glb","scale":1,"y":0,"rotateY":0},
+  "ladder":{"file":"ladder.glb","scale":1,"y":0,"rotateY":0},
+  "climb-frame":{"file":"climb-frame.glb","scale":1,"y":0,"rotateY":0},
+  "grandstand":{"file":"grandstand.glb","scale":1,"y":0,"rotateY":0},
+  "tower-a":{"file":"tower-a.glb","scale":1,"y":0,"rotateY":0},
+  "tower-c":{"file":"tower-c.glb","scale":1,"y":0,"rotateY":0},
+  "tower-d":{"file":"tower-d.glb","scale":1,"y":0,"rotateY":0},
+  "ship-large":{"file":"ship-large.glb","scale":1,"y":0,"rotateY":0}
 }
