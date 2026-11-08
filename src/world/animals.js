@@ -4,6 +4,7 @@
    (chicken ~0.7 long, cow ~2.6). Use M(color)/mk() so the quality toggle covers it, or prop('name', fallback) for a GLB
    listed in assets/props/props.json (put animal models in assets/props/animals/).
    Kinds: chick, chicken, duck, goose, bunny, cat, dog, pig, sheep, goat, cow, horse. Animals are never destroyed.
+   Extra kinds: rooster (joins chicken flocks) and the Dino Valley babies trike, stego, bronto (D14, herded by dino.js).
 
    D3 looks: chunky toy animals built from M() spheres/boxes, big heads, short legs and huge googly eyes
    (the two pupils look different ways on purpose). Logic merges each kind into one mesh per color, so every
@@ -16,6 +17,9 @@ const ANIMAL=(()=>{
   // Merged per color by logic either way, so the shapes cost no extra draw calls.
   const LOW={sph:new THREE.SphereGeometry(0.5,12,9),cyl:new THREE.CylinderGeometry(0.5,0.5,1,10),cone:new THREE.ConeGeometry(0.5,1,10)};
   const part=(shape,sx,sy,sz,color,x=0,y=0,z=0)=>{const m=mk(shape,sx,sy,sz,color,x,y,z);if(LOW[shape])m.geometry=LOW[shape];return m;};
+  // small round details (spots, bobbles, cheeks, back plates) on an even cheaper sphere
+  const BIT=new THREE.SphereGeometry(0.5,9,6);
+  const bit=(sx,sy,sz,color,x,y,z)=>{const m=part('sph',sx,sy,sz,color,x,y,z);m.geometry=BIT;return m;};
   // part() with a rotation
   const rot=(m,x=0,y=0,z=0)=>{m.rotation.set(x,y,z);return m;};
   const mesh=(geo,color,x,y,z)=>{const m=new THREE.Mesh(geo,M(color));m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;return m;};
@@ -33,6 +37,14 @@ const ANIMAL=(()=>{
   function birdFeet(g,x,h,col,s){for(const sx of [1,-1]){g.add(part('cyl',s*0.35,h,s*0.35,col,sx*x,h/2,0),part('box',s,s*0.2,s*1.2,col,sx*x,s*0.1,s*0.35));}}
   // cone pointing +Z by default (rx tilts it)
   const cone=(w,h,d,col,x,y,z,rx=PI/2)=>rot(part('cone',w,h,d,col,x,y,z),rx);
+  // a big happy smile (lower half of a thin torus) facing +Z, plus pink cheeks
+  function smile(g,y,z,w,cheekX,cheekY,cheekZ,cs){const m=mesh(new THREE.TorusGeometry(w,w*0.17,5,10,PI),INK,0,y,z);m.rotation.z=PI;g.add(m);
+    for(const sd of [1,-1])g.add(bit(cs,cs*0.7,cs*0.5,PINK,sd*cheekX,cheekY,cheekZ));}
+  // a smooth tapered tube through points [[y,z,r],…] down the middle (necks and tails), round joints between pieces
+  function tube(g,pts,col){for(let i=0;i<pts.length-1;i++){const [y0,z0,r0]=pts[i],[y1,z1,r1]=pts[i+1],dy=y1-y0,dz=z1-z0;
+      const m=mesh(new THREE.CylinderGeometry(r1,r0,Math.hypot(dy,dz),10,1,true),col,0,(y0+y1)/2,(z0+z1)/2);m.rotation.x=Math.atan2(dz,dy);g.add(m);
+      if(i)g.add(part('sph',r0*2,r0*2,r0*2,col,0,y0,z0));}
+    const [y,z,r]=pts[pts.length-1];g.add(part('sph',r*2,r*2,r*2,col,0,y,z));}
 
   return {
     chick:{fluff:'#ffe14d',build(){const g=new THREE.Group(),Y='#ffe14d';
@@ -148,5 +160,44 @@ const ANIMAL=(()=>{
       legs(g,0.3,0.68,-0.8,1.0,0.28,Hb,Hm,0.09);
       g.add(rot(part('sph',0.26,0.95,0.32,Hm,0,1.2,-1.2),0.3));
       googly(g,0.22,2.72,1.42,0.3);return g;}},
+    // ---- Dino Valley babies (D14): chubby, pastel, huge eyes and big smiles. Goofy, never scary. ----
+    // baby triceratops ~1.6 long (small): mint with a peach frill trimmed in pink bobbles, three soft cream horns
+    trike:{fluff:'#9be7c4',build(){const g=new THREE.Group(),Mi='#9be7c4',Cr='#fff3d6',Pe='#ffb38a';
+      g.add(part('sph',0.85,0.72,1.05,Mi,0,0.6,-0.1),part('sph',0.62,0.4,0.72,Cr,0,0.46,0.02));
+      for(const [x,y,z,s] of [[0.22,0.9,-0.2,0.2],[-0.18,0.93,-0.38,0.16],[0.05,0.96,0.02,0.15]])g.add(bit(s,s*0.45,s,Pe,x,y,z));
+      g.add(part('sph',0.7,0.62,0.66,Mi,0,0.78,0.5),part('sph',0.42,0.34,0.36,Mi,0,0.64,0.78));
+      const a=1.1,fc=[1.02,0.28];g.add(rot(part('cyl',1.0,0.08,0.85,Pe,0,fc[0],fc[1]),a));  // frill, leaning back
+      for(let i=0;i<=6;i++){const th=i/6*PI,lx=0.5*Math.cos(th),lz=-0.425*Math.sin(th);
+        g.add(bit(0.17,0.17,0.12,NOSE,lx,fc[0]-lz*Math.sin(a),fc[1]+lz*Math.cos(a)));}
+      for(const sd of [1,-1])g.add(rot(part('cone',0.11,0.3,0.11,Cr,sd*0.17,1.12,0.6),0.6,0,-sd*0.15));
+      g.add(rot(part('cone',0.1,0.17,0.1,Cr,0,0.84,0.92),0.45));
+      smile(g,0.6,0.955,0.1,0.25,0.68,0.74,0.13);
+      legs(g,0.26,0.25,-0.38,0.3,0.24,Mi,Cr,0.12);
+      g.add(cone(0.32,0.5,0.3,Mi,0,0.5,-0.78,-PI/2-0.3));
+      googly(g,0.15,0.9,0.74,0.22);g.scale.setScalar(0.8);return g;}},
+
+    // baby stegosaurus ~2 long (medium): lime with a row of round coral + lemon back plates and four soft tail bobbles
+    stego:{fluff:'#b5e48c',build(){const g=new THREE.Group(),Li='#b5e48c',Cr='#fff3d6',Co='#ffb4a2',Le='#ffe66d';
+      g.add(part('sph',1.0,0.9,1.5,Li,0,0.82,-0.05),part('sph',0.8,0.5,1.1,Cr,0,0.62,0.02));
+      g.add(part('sph',0.5,0.5,0.5,Li,0,0.72,0.62),part('sph',0.64,0.58,0.62,Li,0,0.7,0.95));
+      for(let i=0;i<7;i++){const t=i/6,z=0.5-t*1.15,s=0.22+0.16*Math.sin(t*PI),sd=i%2?1:-1,
+        y=0.82+0.45*Math.sqrt(Math.max(0,1-((z+0.05)/0.76)**2));
+        g.add(rot(bit(0.08,s*1.6,s*1.4,i%2?Co:Le,sd*0.08,y+s*0.45,z),0,0,-sd*0.18));}
+      tube(g,[[0.85,-0.6,0.3],[0.9,-1.05,0.2],[0.86,-1.42,0.1]],Li);
+      for(const sd of [1,-1])for(const z of [-1.2,-1.38])g.add(bit(0.11,0.11,0.11,Co,sd*0.16,0.92,z),rot(part('cyl',0.06,0.2,0.06,Cr,sd*0.1,0.85,z),0,0,-sd*0.9));
+      smile(g,0.58,1.24,0.11,0.26,0.62,1.15,0.13);
+      legs(g,0.3,0.38,-0.42,0.45,0.26,Li,Cr,0.1);
+      googly(g,0.14,0.8,1.16,0.24);g.scale.setScalar(0.8);return g;}},
+
+    // baby brontosaurus ~3 long (medium): lavender with a pale belly, a long bendy neck, tiny head, big smile
+    bronto:{fluff:'#c3b1e1',build(){const g=new THREE.Group(),La='#c3b1e1',Pa='#f3e8ff',Sp='#9d8bd1';
+      g.add(part('sph',1.3,1.15,1.6,La,0,1.15,-0.1),part('sph',1.0,0.7,1.2,Pa,0,0.88,0.05));
+      for(const [x,y,z,s] of [[0.3,1.62,-0.2,0.3],[-0.25,1.6,-0.5,0.26],[0.05,1.7,0.2,0.22],[0.45,1.35,-0.6,0.22]])g.add(bit(s,s*0.4,s,Sp,x,y,z));
+      tube(g,[[1.35,0.45,0.36],[2.05,0.82,0.25],[2.6,1.12,0.22]],La);
+      g.add(part('sph',0.66,0.58,0.7,La,0,2.85,1.25),part('sph',0.5,0.4,0.46,La,0,2.72,1.52));
+      smile(g,2.65,1.74,0.1,0.24,2.74,1.62,0.13);
+      tube(g,[[1.1,-0.7,0.38],[0.85,-1.45,0.24],[0.45,-2.05,0.08]],La);
+      legs(g,0.4,0.45,-0.55,0.72,0.36,La,Pa,0.1);
+      googly(g,0.16,3.02,1.47,0.25);g.scale.setScalar(0.8);return g;}},
   };
 })();
