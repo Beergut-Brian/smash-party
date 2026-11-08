@@ -161,8 +161,9 @@ registerZone({
   },
   spotLook:{dino_lava:'#ff7b00',dino_ash:'#4a3f3a',dino_rockpath:'#a39282',dino_spring:'#7fd8f0'},
   water:{dino_lava:2,dino_spring:1},       // lava is too hot for wheels (hover over it); the springs are for wading
-  herds:[['stego',2],['trike',2]],
+  herds:[['stego',2],['trike',2],['ptero',3]],
   layout(ctx){
+    if(typeof dinoLand==='function'&&dinoLand(ctx))return; // Adventure Dino Land: quest areas are built from dino_land.js
     const kind=dinoMarks('dino_volcano','volcano',['crag','spa','falls','geysers','crag','spa','bridge']).get(ctx.ci+','+ctx.cj);
     if(kind==='volcano'){const p=dinoDrop(ctx,'dino_volcano',0);
       if(p){dinoRing(ctx,p.x,p.z,DINO_R.dino_volcano+4,8,'dino_basalt');dinoRing(ctx,p.x,p.z,DINO_R.dino_volcano+8,10,'dino_magma',.6);}
@@ -176,7 +177,7 @@ registerZone({
     if(kind==='falls'){const p=dinoDrop(ctx,'dino_lavafall',0);if(p)ctx.scene('dino_ember_falls',p.x,p.z,0);
       dinoLavaStream(ctx);dinoAshy(ctx,false);return;}
     if(kind==='geysers'){for(const [dx,dz] of [[-20,-20],[20,20]])ctx.scene('dino_geyser_row',ctx.cx+dx,ctx.cz+dz,(Math.random()*4|0)*Math.PI/2);
-      ctx.scene('dino_warm_nest',ctx.cx+20,ctx.cz-20,0);dinoAshy(ctx,false);return;}
+      ctx.scene('dino_warm_nest',ctx.cx+20,ctx.cz-20,0);if(ctx.scene('dino_ptero_roost',ctx.cx-20,ctx.cz+20,0)===false)dinoHerd(ctx,ctx.cx-20,ctx.cz+20,3);dinoAshy(ctx,false);return;}
     if(kind==='bridge'){const q=Math.random()*4|0;ctx.scene('dino_lava_bridge',ctx.cx+(q&1?20:-20),ctx.cz+(q&2?20:-20),rand(-.4,.4));
       dinoPool(ctx,'dino_spring',12,9,3-q);dinoAshy(ctx,false);return;}
     // wild slopes: a lava stream or two, ash patches, a lookout or a baby volcano now and then, a ramp

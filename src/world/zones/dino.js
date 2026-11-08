@@ -215,6 +215,7 @@ dinoWithSfx(DINO_PROPS,DINO_SFX);
 const DINO_LMS={};
 function dinoHash(i,j,s){let h=Math.imul(i+73,0x9e3779b1)^Math.imul(j-41,0x85ebca6b)^Math.imul(s,0xc2b2ae35);h^=h>>>15;h=Math.imul(h,0x2c1b3c6d);h^=h>>>13;return (h>>>0)/4294967296;}
 function dinoMarks(id,heart,kinds){
+  if(typeof dinoLandMarks==='function'){const m=dinoLandMarks(id);if(m)return m;} // Adventure Dino Land: fixed chunks
   const rows=zoneRows,c=DINO_LMS[id]||(DINO_LMS[id]={rows:null,map:null});if(c.rows===rows)return c.map;c.rows=rows;const map=c.map=new Map();
   const L=ZONES[id]&&ZONES[id].letter,list=[],is=(i,j)=>!!(rows[j]&&rows[j][i]===L);
   rows.forEach((r,j)=>{for(let i=0;i<r.length;i++)if(r[i]===L){let n=0;for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++)if(is(i+di,j+dj))n++;list.push({i,j,n,h:dinoHash(i,j,7)});}});
@@ -234,8 +235,8 @@ function dinoDrop(ctx,type,arg){const r=DINO_R[type]||2,m=r+4;
     if(ctx.place(type,x,z,arg,r))return {x,z};return null;}
 function dinoRing(ctx,x,z,rad,n,type,a0=.3){for(let i=0;i<n;i++){const a=a0+i/n*Math.PI*2;dinoPut(ctx,type,x+Math.cos(a)*rad,z+Math.sin(a)*rad,i%4);}}
 function dinoScatter(ctx,n,types,pad=5){for(let i=0;i<n;i++)dinoPut(ctx,pick(types),rand(ctx.x0+pad,ctx.x1-pad),rand(ctx.z0+pad,ctx.z1-pad),Math.random()*4|0);}
-// dino herds once world-animals adds them (see TASKS.md); until then baby chicks and ducks stand in
-const DINO_HERD_KINDS=['trike','stego','bronto'];
+// dino herds (A5: babyrex + ptero too); chicks and ducks stand in if a kind is missing
+const DINO_HERD_KINDS=['trike','stego','bronto','babyrex','ptero'];
 function dinoHerd(ctx,x,z,n){for(const k of [...DINO_HERD_KINDS].sort(()=>Math.random()-.5))if(ctx.herd(k,x,z,n))return true;return ctx.herd(pick(['chick','duck']),x,z,n+1);}
 function dinoJungle(ctx,dense){ // the wild-jungle filler every dino chunk gets some of
   dinoScatter(ctx,dense?5:3,['dino_palm','dino_palm','dino_treefern']);
@@ -249,7 +250,7 @@ const DINO_SCENES={
   dino_egg_hunt:{size:'tiny',r:6,build(s){s.spot('dino_clearing',0,0,10,10);s.place('dino_nest',0,0);
     for(let i=0;i<6;i++){const a=i/6*Math.PI*2+.4;s.place(i%2?'dino_fern':'dino_flower',Math.sin(a)*3.4,Math.cos(a)*3.4,null,0,i%2?1.65:1);
       s.place('dino_eggling',Math.sin(a+.25)*3.9,Math.cos(a+.25)*3.9);}
-    s.place('dino_stump',3.8,-3.6);s.place('dino_sprout',-4.2,-3.4);}},
+    s.place('dino_stump',3.8,-3.6);s.place('dino_sprout',-4.2,-3.4);s.herd('babyrex',0,-5,2);}},
   // a hatching party: baby dinos peeking out of their eggs around a big egg "cake", with toadstool stools
   dino_hatch_party:{size:'medium',r:10,build(s){s.spot('dino_clearing',0,0,18,18);s.place('dino_egg',0,0,null,0,1.65);
     for(let i=0;i<3;i++){const a=-1+i;s.place('dino_hatch',Math.sin(a)*5.4,-Math.cos(a)*5.4,null,a+Math.PI);}
@@ -306,8 +307,9 @@ registerZone({
     huge:['dino_lodge','dino_bigbones','dino_bignest'],
     mega:['dino_temple','dino_rex']
   },
-  herds:[['trike',3],['stego',2],['bronto',2],['chick',5],['duck',3]],
+  herds:[['trike',3],['stego',2],['bronto',2],['babyrex',4],['ptero',3],['duck',3]],
   layout(ctx){
+    if(typeof dinoLand==='function'&&dinoLand(ctx))return; // Adventure Dino Land: quest areas are built from dino_land.js
     const kind=dinoLandmarks().get(ctx.ci+','+ctx.cj);
     if(kind==='volcano'){const p=dinoDrop(ctx,'dino_volcano',0);
       if(p){dinoRing(ctx,p.x,p.z,DINO_R.dino_volcano+4,8,'dino_boulder');dinoRing(ctx,p.x,p.z,DINO_R.dino_volcano+8,10,'dino_crystal',.6);}

@@ -165,8 +165,9 @@ registerZone({
   },
   spotLook:{dino_bog:'#6fae94',dino_deep:'#3f8c8a',dino_tar:'#2b2a33',dino_mud:'#7a5c3e',dino_island:'#7aa84a',dino_boardwalk:'#b5835a'},
   water:{dino_bog:1,dino_tar:1,dino_deep:2},  // bog + tar: wade (slow, splashy); the deep middle needs hover
-  herds:[['bronto',3],['duck',4],['stego',2]],
+  herds:[['bronto',3],['duck',4],['stego',2],['ptero',2]],
   layout(ctx){
+    if(typeof dinoLand==='function'&&dinoLand(ctx))return; // Adventure Dino Land: quest areas are built from dino_land.js
     const kind=dinoMarks('dino_swamp','treehouse',['turtle','village','boathouse','frogs','tar','turtle','village']).get(ctx.ci+','+ctx.cj);
     if(kind==='treehouse'){const p=dinoDrop(ctx,'dino_treehouse',0);
       if(p){dinoRing(ctx,p.x,p.z,DINO_R.dino_treehouse+3,7,'dino_willow');dinoRing(ctx,p.x,p.z,DINO_R.dino_treehouse+7,9,'dino_mossmound',.5);}
