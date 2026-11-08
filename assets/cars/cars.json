@@ -1,1 +1,223 @@
-[]
+[
+  {
+    "name": "Sunny Cruiser",
+    "emoji": "\ud83d\ude99",
+    "file": "sedan.glb",
+    "speed": 24,
+    "r": 2.14,
+    "scale": 1.765,
+    "y": 0,
+    "rotateY": 0,
+    "height": 2.29,
+    "exhaust": [
+      0,
+      0.8,
+      -2.1
+    ],
+    "tier": 1
+  },
+  {
+    "name": "Zip Hatch",
+    "emoji": "\ud83d\ude97",
+    "file": "hatchback-sports.glb",
+    "speed": 28,
+    "r": 2.14,
+    "scale": 1.579,
+    "y": 0,
+    "rotateY": 0,
+    "height": 1.74,
+    "exhaust": [
+      0,
+      0.61,
+      -2.1
+    ],
+    "tier": 1
+  },
+  {
+    "name": "Buddy Wagon",
+    "emoji": "\ud83d\ude99",
+    "file": "suv.glb",
+    "speed": 23,
+    "r": 2.14,
+    "scale": 1.667,
+    "y": 0,
+    "rotateY": 0,
+    "height": 2.17,
+    "exhaust": [
+      0,
+      0.76,
+      -2.1
+    ],
+    "tier": 1
+  },
+  {
+    "name": "Yellow Cab",
+    "emoji": "\ud83d\ude95",
+    "file": "taxi.glb",
+    "speed": 25,
+    "r": 2.14,
+    "scale": 1.636,
+    "y": 0,
+    "rotateY": 0,
+    "height": 2.45,
+    "exhaust": [
+      0,
+      0.86,
+      -2.1
+    ],
+    "tier": 1
+  },
+  {
+    "name": "Parcel Pal",
+    "emoji": "\ud83d\ude90",
+    "file": "van.glb",
+    "speed": 22,
+    "r": 2.14,
+    "scale": 1.636,
+    "y": 0,
+    "rotateY": 0,
+    "height": 2.21,
+    "exhaust": [
+      0,
+      0.77,
+      -2.1
+    ],
+    "tier": 1
+  },
+  {
+    "name": "Goofy Kart",
+    "emoji": "\ud83c\udfc1",
+    "file": "kart-oozi.glb",
+    "speed": 26,
+    "r": 2.0,
+    "scale": 2.101,
+    "y": 0,
+    "rotateY": 0,
+    "height": 2.79,
+    "exhaust": [
+      0,
+      0.98,
+      -1.35
+    ],
+    "tier": 0
+  },
+  {
+    "name": "Farm Tug",
+    "emoji": "\ud83d\ude9c",
+    "file": "tractor.glb",
+    "speed": 20,
+    "r": 2.14,
+    "scale": 2.044,
+    "y": 0,
+    "rotateY": 0,
+    "height": 3.27,
+    "exhaust": [
+      0,
+      1.14,
+      -2.1
+    ],
+    "tier": 1
+  },
+  {
+    "name": "Haul Buddy",
+    "emoji": "\ud83d\ude9a",
+    "file": "truck.glb",
+    "speed": 22,
+    "r": 2.14,
+    "scale": 1.525,
+    "y": 0,
+    "rotateY": 0,
+    "height": 1.98,
+    "exhaust": [
+      0,
+      0.69,
+      -2.1
+    ],
+    "tier": 2
+  },
+  {
+    "name": "Hose Hero",
+    "emoji": "\ud83d\ude92",
+    "file": "firetruck.glb",
+    "speed": 24,
+    "r": 2.14,
+    "scale": 1.324,
+    "y": 0,
+    "rotateY": 0,
+    "height": 2.25,
+    "exhaust": [
+      0,
+      0.79,
+      -2.1
+    ],
+    "tier": 2
+  },
+  {
+    "name": "Bin Buggy",
+    "emoji": "\ud83d\uddd1\ufe0f",
+    "file": "garbage-truck.glb",
+    "speed": 20,
+    "r": 2.14,
+    "scale": 1.304,
+    "y": 0,
+    "rotateY": 0,
+    "height": 2.09,
+    "exhaust": [
+      0,
+      0.73,
+      -2.1
+    ],
+    "tier": 2
+  },
+  {
+    "name": "Patch Wagon",
+    "emoji": "\ud83d\ude91",
+    "file": "ambulance.glb",
+    "speed": 26,
+    "r": 2.14,
+    "scale": 1.385,
+    "y": 0,
+    "rotateY": 0,
+    "height": 2.49,
+    "exhaust": [
+      0,
+      0.87,
+      -2.1
+    ],
+    "tier": 2
+  },
+  {
+    "name": "Dash Racer",
+    "emoji": "\ud83c\udfce\ufe0f",
+    "file": "race.glb",
+    "speed": 30,
+    "r": 2.14,
+    "scale": 1.758,
+    "y": 0,
+    "rotateY": 0,
+    "height": 1.29,
+    "exhaust": [
+      0,
+      0.45,
+      -2.1
+    ],
+    "tier": 2
+  },
+  {
+    "name": "Comet Cruiser",
+    "emoji": "\u2604\ufe0f",
+    "file": "race-future.glb",
+    "speed": 32,
+    "r": 2.14,
+    "scale": 1.692,
+    "y": 0,
+    "rotateY": 0,
+    "height": 1.41,
+    "exhaust": [
+      0,
+      0.49,
+      -2.1
+    ],
+    "tier": 3
+  }
+]

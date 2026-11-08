@@ -131,6 +131,7 @@ Claude Code's *logic* sessions still own `core.js`, `game.js` and `tools/`. A de
   - Put models in `assets/props/` and `assets/cars/`. Keep each prop under ~5k triangles, cars under ~20k.
   - Buildings still need the L3 part contract to collapse. For a pack building, either keep it one piece (it smashes but doesn't pancake) or split walls/roof into separate meshes in Blender, and tag them in a small manifest.
   - Needs: L9 GLB prop loader for the cleanest path. Cars can start now via `assets/cars/cars.json`.
+  - D8a started: Kenney car kit (CC0, `assets/CREDITS.md`). The driveable cars are in `assets/cars/` and show up in the car swap. Town, farm, and park models are D8b (world lane).
 
 - [ ] **D5: Boss model(s)** (world lane)
   - One original boss for max size, built from L3-contract parts plus `BP(mesh, floor, 'weak')` glowing weak spots. Chunky, funny, not scary. Kaden and son to pick the concept (and maybe name it).

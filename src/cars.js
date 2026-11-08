@@ -92,11 +92,13 @@ function loadModelCars(){
       loader.load('assets/cars/'+def.file,gltf=>{
         const tmpl=gltf.scene;
         tmpl.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
-        CARS.push({name:def.name,emoji:def.emoji||'🚗',speed:def.speed||25,r:def.r||2.3,build:()=>{
+        const car={name:def.name,emoji:def.emoji||'🚗',speed:def.speed||25,r:def.r||2.3,build:()=>{
           const c=base();const m=tmpl.clone(true);
           m.scale.setScalar(def.scale||1);m.position.y=def.y||0;m.rotation.y=def.rotateY||0;c.g.add(m);
           m.traverse(o=>{if(/wheel/i.test(o.name)){const b=new THREE.Box3().setFromObject(o);o.userData.r=Math.max(0.3,(b.max.y-b.min.y)/2);c.wheels.push(o);}});
-          if(def.exhaust)c.ex.set(...def.exhaust);c.h=def.height||3;return c;}});
+          if(def.exhaust)c.ex.set(...def.exhaust);c.h=def.height||3;return c;}};
+        if(def.tier!=null)car.tier=def.tier;if(def.weapon)car.weapon=def.weapon;
+        CARS.push(car);
       },undefined,e=>console.warn('Could not load car model',def.file,e));
     });
   }).catch(()=>{});
