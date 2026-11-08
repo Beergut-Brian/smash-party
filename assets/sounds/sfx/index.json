@@ -188,5 +188,10 @@
   "prompt": "Treasure found fanfare with coins jingling and a happy sparkle chord",
   "dur": 2,
   "hash": "ab6d5276a513"
+ },
+ "pad": {
+  "prompt": "Giant trampoline boing launch, springy and bouncy with a rising whoosh",
+  "dur": 1,
+  "hash": "00876ec75ad7"
  }
 }

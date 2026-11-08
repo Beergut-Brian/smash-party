@@ -303,5 +303,15 @@
   "text": "You found a golden horse!",
   "speak": "You found a golden horse!",
   "hash": "c57c4cb5cc62"
+ },
+ "super_bounce": {
+  "text": "Super bounce!",
+  "speak": "Super bounce!",
+  "hash": "e2f75896e430"
+ },
+ "big_jump": {
+  "text": "Big jump!",
+  "speak": "Big jump!",
+  "hash": "c665c1c5d8e8"
  }
 }

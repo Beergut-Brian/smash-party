@@ -108,11 +108,13 @@ function explode(x,z,e=1){ // e = blast size (1 = a normal barrel); shrunken bar
     if(d<10*e){p.air=true;p.vy=Math.max(p.vy,12*q);p.kx+=dx/d*14*q;p.kz+=dz/d*14*q;}}
   for(const a of animals){const dx=a.x-x,dz=a.z-z,d=Math.hypot(dx,dz);if(d<10*e)launchAnimal(a,dx||1,dz,18*q);}
 }
-function slam(p){
-  shake=Math.min(1.5,shake+0.7);sfx.thud();puff(p.x,0.3,p.z,8,1.8*Math.max(S,.3));
-  for(const o of objects){if(!o.alive||o.falling)continue;const dx=o.x-p.x,dz=o.z-p.z;
-    if(o.sz<=tier&&Math.hypot(dx,dz)<p.r+o.r+3)smash(o,dx,dz,18);}
-  for(const a of animals){const dx=a.x-p.x,dz=a.z-p.z;if(a.sz<=tier&&Math.hypot(dx,dz)<p.r+a.r+3)launchAnimal(a,dx||1,dz,14*p.sm);}
+function slam(p,big){ // landing hard (or from a launch pad: big) smashes what's around the car
+  const R=big?p.r*3.2:p.r+Math.max(3*S,1);
+  shake=Math.min(2,shake+(big?1.1:0.7));sfx.thud();if(big){sfx.boom();flash(p.x,S,p.z,'#ffffff',R*0.6,0.35);}
+  puff(p.x,0.3,p.z,big?14:8,(big?R*0.35:1.8*Math.max(S,.3)));
+  for(const o of objects){if(!o.alive||o.falling||o.boss)continue;const dx=o.x-p.x,dz=o.z-p.z;
+    if(o.sz<=tier&&Math.hypot(dx,dz)<R+o.r)smash(o,dx,dz,18*Math.sqrt(Math.max(S,0.3)));}
+  for(const a of animals){const dx=a.x-p.x,dz=a.z-p.z;if(a.sz<=tier&&Math.hypot(dx,dz)<R+a.r)launchAnimal(a,dx||1,dz,14*p.sm);}
 }
 function addScore(n){
   score+=n;levelScore+=n;
@@ -318,7 +320,7 @@ function grow(n){
 function levelUp(){
   if(!levelReady||giant)return;levelReady=false;
   if(tier>=SIZES.length-1){giant=true;goGiant();return;}
-  const ct=carTierNow();tier++;sizeUp();
+  const ct=carTierNow();tier++;sizeUp();clearPads();
   if(carTierNow()!==ct)queue.push({t:1.6,fn:newCars});}
 function updateGrowth(dt){S+=((giant?GROW_S[GROW_S.length-1]:GROW_S[tier])-S)*Math.min(1,dt*3);popT=Math.max(0,popT-dt);
   lvBtn.style.display=levelReady&&state==='play'?'block':'none';
@@ -346,7 +348,7 @@ function newWorld(){
   for(const d of debris)if(!d.confetti){scene.remove(d.m);d.life=0;}
   worldSeed=(Math.random()*1e9)|0;setZoneMap(randomZoneMap(mulberry(worldSeed)));
   buildWorld();captureHome();
-  growth=0;tier=0;giant=false;levelReady=false;popT=1;nwBtn.style.display='none';goldCount=0;goldHud.style.display='none';
+  growth=0;tier=0;giant=false;levelReady=false;popT=1;clearPads();nwBtn.style.display='none';goldCount=0;goldHud.style.display='none';
   players.forEach(p=>{const st=START_SPOTS[p.idx];p.x=st[0];p.z=st[1];p.y=0;p.vy=0;p.speed=0;p.kx=p.kz=0;p.air=false;p.heading=Math.PI;});
   camT.set(0,0,30);updateStreaming(0,true);newCars(true);
   music('drive');showBig('NEW WORLD!');sfx.fanfare();say('New world! Smash it!');confetti(150);
@@ -647,9 +649,10 @@ class Player{
       if(inp.jumpP&&!this.air&&this.stuck){boomOut(this);}
       else if(inp.jumpP&&!this.air){this.air=true;this.vy=13*clamp(Math.pow(S,0.4),0.33,1.8);sfx.jump();}
     }else{
-      this.vy-=32*dt;this.y+=this.vy*dt;
+      this.vy-=(this.padG||32)*dt;this.y+=this.vy*dt;
       if(this.y<=gh){const imp=-this.vy;this.y=gh;this.air=false;this.vy=0;
-        if(imp>15)slam(this);else if(imp>6){sfx.thud();puff(this.x,0.3,this.z,3,1.2*Math.max(S,.3));}}
+        if(this.padG){this.padG=0;slam(this,true);}
+        else if(imp>15)slam(this);else if(imp>6){sfx.thud();puff(this.x,0.3,this.z,3,1.2*Math.max(S,.3));}}
     }
     let pitch;
     if(!this.air){pitch=Math.atan2(groundH(this.x+fx*1.6,this.z+fz*1.6)-groundH(this.x-fx*1.6,this.z-fz*1.6),3.2);}
@@ -1206,6 +1209,51 @@ function updateGold(dt){
   let ax=v3.x,ay=v3.y;if(v3.z>1){ax=-ax;ay=-ay;}const m=Math.max(Math.abs(ax)/0.88,Math.abs(ay)/0.8,1e-3);ax/=m;ay/=m;
   goldArrow.style.left=((ax+1)/2*innerWidth)+'px';goldArrow.style.top=((1-ay)/2*innerHeight)+'px';goldArrow.style.display='block';}
 
+
+/* ---------- launch pads (L12) ---------- */
+/* Big bouncy pads that turn up near clusters of things you can smash, sized to the cars so they matter at every
+   size. Drive over one: BOING, the car flies up in a slow floaty arc (about as high as a third of the view) and
+   lands with a big slam that smashes everything around it. Pads come and go like scatter and are rebuilt after a
+   LEVEL UP. Design can supply the look: define buildLaunchPad() in objects.js returning a Group ~1 unit radius,
+   facing up, top at y≈0.3 (logic scales it). */
+const PAD_N=3,pads=[];let padT=0;
+function defaultPad(){const g=new THREE.Group(),cols=['#ff006e','#ffbe0b','#06d6a0','#3a86ff','#8338ec'];
+  g.add(mk('cyl',2.15,0.22,2.15,'#ffffff',0,0.11,0));
+  cols.forEach((c,i)=>{const r=2-i*0.38;const m=mk('cyl',r,0.06,r,c,0,0.24+i*0.012,0);m.castShadow=false;g.add(m);});
+  const top=new THREE.Group();top.position.y=0.9;top.userData.arrow=true;
+  const cone=mk('cone',0.55,0.6,0.55,'#ffffff',0,0.3,0),stem=mk('box',0.22,0.5,0.22,'#ffffff',0,-0.15,0);cone.castShadow=stem.castShadow=false;top.add(cone,stem);g.add(top);
+  return g;}
+const padR=()=>Math.max(0.5,2.3*2.2*S); // about twice a car's width so it reads as 'drive here!' from afar
+function placePad(){
+  const R=scatR();
+  for(let t=0;t<20;t++){const p=pick(players);
+    // a cluster: a smashable thing with a few more around it
+    const near=objects.filter(o=>o.alive&&!o.boss&&o.sz<=tier&&!o.falling&&Math.hypot(o.x-p.x,o.z-p.z)<R*1.4);if(!near.length)return;
+    const c=pick(near);if(objects.filter(o=>o.alive&&o.sz<=tier&&Math.hypot(o.x-c.x,o.z-c.z)<10*Math.max(S,0.15)).length<3)continue;
+    // the pad sits between the car and the cluster, so driving toward the stuff hits the pad first
+    const r=padR(),dx=c.x-p.x,dz=c.z-p.z,d=Math.hypot(dx,dz)||1,off=Math.min(d*0.5,r*3+c.r);const x=c.x-dx/d*off,z=c.z-dz/d*off;
+    if(Math.abs(x)>ARENA-r-2||Math.abs(z)>ARENA-r-2||groundH(x,z)>0)continue;
+    if(objects.some(o=>o.alive&&o.sz>=tier-1&&Math.hypot(o.x-x,o.z-z)<o.r+r*0.9)||pads.some(q=>Math.hypot(q.x-x,q.z-z)<q.r*4)||players.some(q=>Math.hypot(q.x-x,q.z-z)<q.r+r*2))continue;
+    const g=(typeof buildLaunchPad!=='undefined'?buildLaunchPad():defaultPad());g.scale.setScalar(r/2.15);g.position.set(x,0,z);scene.add(g);
+    pads.push({g,x,z,r,sq:0});return;}}
+function clearPads(){for(const q of pads)scene.remove(q.g);pads.length=0;}
+function launchFromPad(p,q){
+  const H=0.35*Math.max(4.5,38*Math.pow(S,0.75)),t=1.8; // height relative to the view; always ~1.8s in the air
+  p.padG=8*H/(t*t);p.vy=p.padG*t/2;p.air=true;p.padT=T+1;p.trail&&(p.trail.length=0);
+  const fx=Math.sin(p.heading),fz=Math.cos(p.heading);p.kx+=fx*6*p.sm;p.kz+=fz*6*p.sm;p.speed=Math.max(p.speed,p.stats.speed*p.sm*0.8);
+  q.sq=1;sfxClip('pad',1)||sfx.boing();sfx.jump();puff(q.x,0.3,q.z,8,q.r*0.4,'#ffffff');shake=Math.min(1.2,shake+0.3);
+  const n=performance.now();if(n-lastPadSay>8000&&Math.random()<0.6){lastPadSay=n;say(pick(['Super bounce!','Big jump!','Wheee!']));}}
+let lastPadSay=0;
+function updatePads(dt){
+  if(state!=='play'||!players.length)return;
+  const R=scatR();
+  for(let i=pads.length-1;i>=0;i--){const q=pads[i];let d=1e9;for(const p of players)d=Math.min(d,Math.hypot(q.x-p.x,q.z-p.z));
+    if(d>R*2.4){scene.remove(q.g);pads.splice(i,1);continue;}
+    q.sq=Math.max(0,q.sq-dt*3);const k=q.r/2.15;q.g.scale.set(k*(1+0.15*q.sq),k*(1-0.5*q.sq*Math.sin(q.sq*12)),k*(1+0.15*q.sq));
+    q.g.traverse(m=>{if(m.userData.arrow){m.position.y=0.9+Math.abs(Math.sin(T*3+i))*0.5;m.rotation.y+=dt*2;}});
+    for(const p of players)if(!p.air&&T>(p.padT||0)&&Math.hypot(p.x-q.x,p.z-q.z)<q.r*0.9)launchFromPad(p,q);}
+  if((padT-=dt)<=0){padT=2;if(pads.length<PAD_N)placePad();}}
+
 /* ---------- "can I smash it?" signals ---------- */
 // Pulsing red ring = too big for you, grow first. Green flash = you just got big enough for these.
 // Close to a too-big thing you also get a floating "grow first" badge; bumping one pops "GROW BIGGER!".
@@ -1299,13 +1347,13 @@ function loop(now){
   updateGrowth(dt);updateStreaming(dt);
   if(state==='play'){collisions();updateBoss(dt);}
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
-  updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateCombo(dt);updateGold(dt);updateRollers(dt);updateSpin(dt);updateScatter(dt);updateAnimals(dt);updateShots(dt);updateDebris(dt);updateParts(dt);
+  updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateCombo(dt);updateGold(dt);updatePads(dt);updateRollers(dt);updateSpin(dt);updateScatter(dt);updateAnimals(dt);updateShots(dt);updateDebris(dt);updateParts(dt);
   updateMusic();updateCamera(dt,T);updateSignals(dt);cullChunks();updateHUD();
   renderer.render(scene,camera);
   pressed.clear();touch.jumpP=false;touch.swapP=false;
 }
 propsReady.then(()=>{buildWorld();captureHome();updateStreaming(0,true);last=performance.now();requestAnimationFrame(loop);});
-window.__sp={mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,gold:spawnGold,
+window.__sp={mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,gold:spawnGold,pad:placePad,pads,
   boss(id){if(!giant){tier=SIZES.length-1;growth=MAX_GROW;levelReady=true;levelUp();newCars(true);}if(!boss)summonBoss(id);return boss&&boss.def.name;}, // __sp.boss('shelldozer')
   level(n=1){for(let i=0;i<n&&!giant;i++){growth=GROW_AT[tier+1];levelReady=true;levelUp();}return giant?'GIANT':SIZES[tier];}, // jump ahead n sizes
   tp(x,z,i=0){const p=players[i];if(p){p.x=x;p.z=z;p.y=groundH(x,z);camT.set(x,0,z);}},

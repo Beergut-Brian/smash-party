@@ -173,6 +173,11 @@
       "prompt": "Treasure found fanfare with coins jingling and a happy sparkle chord",
       "dur": 2.0,
       "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
+    },
+    "pad": {
+      "prompt": "Giant trampoline boing launch, springy and bouncy with a rising whoosh",
+      "dur": 1.0,
+      "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
     }
   }
 }
