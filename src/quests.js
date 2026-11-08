@@ -22,7 +22,7 @@ function registerQuest(q){
   if(!q||!q.id||!Array.isArray(q.steps)){console.warn('registerQuest: needs id and steps',q);return;}
   q.world=q.world||'home';q.chapter=clamp(q.chapter||1,1,QUEST_CHAPTERS);q.giver=q.giver||{};q.giver.id=q.giver.id||q.id;
   if(QUESTS[q.id])QUEST_LIST.splice(QUEST_LIST.indexOf(QUESTS[q.id]),1);QUESTS[q.id]=q;QUEST_LIST.push(q);return q;}
-const hasAbility=id=>!questOn||questAbil.has(id); // Arcade: everything is on
+const hasAbility=id=>!questOn||questAbil.has(id)||!QUEST_LIST.some(q=>q.reward&&q.reward.ability===id); // Arcade: everything; Adventure: earned, or no quest gives it out yet
 const questWorld=()=>typeof worldId!=='undefined'?worldId:'home'; // L33 worlds
 const questChapter=()=>carTierNow()+1;
 const questOpen=q=>q.world===questWorld()&&q.chapter<=questChapter()&&!questDone.has(q.id)&&(q.needs||[]).every(n=>questDone.has(n)||questAbil.has(n));

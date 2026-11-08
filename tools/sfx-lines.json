@@ -573,6 +573,42 @@
     "bedroom_door": {
       "prompt": "Big wooden door bursting open with a creak, a loud bang and a whoosh of fresh air",
       "dur": 1.5
+    },
+    "wobble_boing": {
+      "prompt": "Rubbery wobble boing, something jiggles but doesn't break, silly springy",
+      "dur": 0.6
+    },
+    "ability": {
+      "prompt": "Magical power-up: sparkly rising swirl, a pop, then a triumphant ta-da",
+      "dur": 1.8
+    },
+    "hover_hum": {
+      "prompt": "Soft floaty UFO hover hum, wobbly woo-ooo",
+      "dur": 0.6
+    },
+    "glide_whoosh": {
+      "prompt": "Gentle wind whoosh, little wings flapping, glide",
+      "dur": 0.8
+    },
+    "egg_plop": {
+      "prompt": "Cartoon egg launched with a plop and a cluck",
+      "dur": 0.5
+    },
+    "quest_start": {
+      "prompt": "Short adventure jingle, curious and happy, three rising notes",
+      "dur": 1.0
+    },
+    "quest_step": {
+      "prompt": "Happy ding-ding success chime with sparkle",
+      "dur": 0.8
+    },
+    "quest_done": {
+      "prompt": "Big happy quest complete fanfare, cheering kazoo and chimes",
+      "dur": 2.2
+    },
+    "pickup": {
+      "prompt": "Bright pick-up blip with a sparkle, got an item",
+      "dur": 0.5
     }
   }
 }

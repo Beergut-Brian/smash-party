@@ -104,6 +104,7 @@ function breakPart(o,part,nx,nz,power,vyK=1){
 }
 function smash(o,vx,vz,power){
   if(!o.alive)return;
+  if(!hasAbility('hammer')){wakeObj(o);o.wob=1;return;} // L36 Adventure: nothing breaks before the Bonk Hammer
   if(o.bld){collapse(o,0,vx,vz,power,true);return;}
   o.alive=false;wakeObj(o);if(isBreakout(o))breakOut(o);
   if(o.rec){o.rec.dead=true;o.rec.back=T+rand(REGROW[0],REGROW[1]);}
@@ -206,7 +207,7 @@ function updateCollapses(dt){
 function hitBuilding(p,o,dx,dz,rr,spd,vx,vz){
   const diff=o.sz-tier;
   if(diff>=3||(spd<4*p.sm&&!p.air)){bump(p,o,dx,dz,rr,spd);return;}
-  const dozer=p.perk==='bulldozer',pow=p.power+(dozer?1:0);
+  const dozer=dozerOn(p),pow=p.power+(dozer?1:0);
   if(diff>0&&pow<POWER_CHIP[diff]){bump(p,o,dx,dz,rr,spd);return;}                   // too weak for something this big: boing
   const pw=Math.max(spd,10)*Math.sqrt(Math.max(1,S))*(0.8+0.08*p.power),nx=vx/(spd||1),nz=vz/(spd||1);
   if(diff<0){collapse(o,0,vx||dx,vz||dz,pw,true);p.speed*=0.95;return;}               // bigger: flatten it
@@ -267,15 +268,17 @@ const shots=[];
 function shoot(p,aim,weapon){const w=weapon||carWeapon(p.stats);if(!w||(!weapon&&T<(p.shotT||0)))return;
   const rk=w==='rocket',bub=w==='bubble';if(!weapon)p.shotT=T+(rk?0.55:bub?0.22:0.28);
   const hd=aim??p.heading,fx=Math.sin(hd),fz=Math.cos(hd),sp=(rk?75:bub?22:60)*p.sm+Math.max(0,p.speed),r=(rk?0.5:bub?0.45:0.6)*S;
-  const m=rk?mk('cone',r*1.2,r*3,r*1.2,'#e63946'):bub?mk('sph',r*2,r*2,r*2,null,0,0,0,BUBBLE_MAT):mk('sph',r*2,r*2,r*2,'#333333');
+  const egg=!weapon&&!rk&&questOn&&eggShots>0;if(egg)eggShots--; // the farmer's first shots are eggs
+  const m=egg?mk('sph',r*1.7,r*2.2,r*1.7,'#fff8e7'):rk?mk('cone',r*1.2,r*3,r*1.2,'#e63946'):bub?mk('sph',r*2,r*2,r*2,null,0,0,0,BUBBLE_MAT):mk('sph',r*2,r*2,r*2,'#333333');
   if(rk){m.rotation.order='YXZ';m.rotation.set(Math.PI/2,hd,0);}if(bub)m.castShadow=false;
   const x=p.x+fx*(p.r+r*2),z=p.z+fz*(p.r+r*2),y=p.y+1.1*S;m.position.set(x,y,z);scene.add(m);
   shots.push({m,rk,bub,x,y,z,y0:y,vx:fx*sp,vz:fz*sp,vy:rk||bub?0:5*Math.sqrt(S),life:rk?2.2:bub?1.1:1.8,r,p,bounced:false,hits:0,ph:rand(0,6)});
-  if(bub){if(!sfxClip('bubble',0.6,rand(0.9,1.2)))tone('sine',rand(500,700),rand(900,1200),0.12,0.12);}
+  if(egg)sfxClip('egg_plop',0.7,rand(0.9,1.2));
+  if(bub&&!egg){if(!sfxClip('bubble',0.6,rand(0.9,1.2)))tone('sine',rand(500,700),rand(900,1200),0.12,0.12);}
   else{sfxClip(rk?'rocket':'cannon',0.7,rand(0.95,1.05))||sfx.pop();p.kx-=fx*3*p.sm;p.kz-=fz*3*p.sm;}}
 // perks that act on their own (autoRockets, magnet); bouncy + bulldozer live in the jump and hitBuilding code
 const _wpK=new THREE.Vector3();
-function updatePerks(dt){if(state!=='play'||garageAll())return;
+function updatePerks(dt){if(state!=='play'||garageAll()||!hasAbility('hammer'))return;
   for(const p of players){if(!p.perk||(p.perkT-=dt)>0)continue;
     if(p.perk==='autoRockets'){p.perkT=2.4;const R=p.r*22;let best=null,bd=R;
       if(boss&&boss.state!=='dead'&&boss.state!=='drop')for(const q of boss.o.parts){if(q.kind!=='weak'||q.gone||q.phase!==boss.phase)continue;
@@ -389,11 +392,12 @@ const LVBTN_HTML='⬆️ LEVEL UP!<small>press X or Y</small>',lvBtn=document.cr
 lvBtn.onclick=e=>{e.stopPropagation();levelUp();};lvBtn.addEventListener('touchstart',e=>{e.stopPropagation();},{passive:true});document.body.appendChild(lvBtn);
 function goGiant(){
   showBig('GIANT!');sfx.fanfare();queue.push({t:1.3,fn:()=>sfx.fanfare()});say("You're GIANT! Smash everything!");shake=2;popT=1;confetti(220);
+  if(questOn&&QUEST_LIST.some(q=>q.world===questWorld()&&!questDone.has(q.id)&&q.steps.some(s=>s.do==='boss')))return; // Adventure: the boss comes with its quest
   queue.push({t:4,fn:()=>summonBoss()});} // the NEW WORLD button (or, in the bedroom, the door bursting open) comes after the boss is beaten
 // NEW WORLD: shrink back to tiny and roll a fresh, procedurally zoned world. Only ever by choice.
 function newWorld(){
   if(!giant||nwBtn.style.display!=='block')return;
-  rollWorld(false,'outside');
+  rollWorld(false,questOn?'home':'outside'); // Adventure: the Home World again, fresh (portals to new lands come with L33)
   music('drive');showBig('NEW WORLD!');sfx.fanfare();say('New world! Smash it!');confetti(150);players.forEach(p=>introCar(p,2.4));
 }
 // a fresh procedurally zoned world; keepSize (after the garage) keeps the players' size and cars
@@ -406,8 +410,9 @@ function rollWorld(keepSize,kind){ // kind: 'bedroom' | 'outside' | undefined = 
   for(const o of collapsing)scene.remove(o.g);collapsing.length=0;
   for(const a of animals)animalHide(a);animals.length=0;
   for(const d of debris)if(!d.confetti){scene.remove(d.m);d.life=0;}
-  worldSeed=(Math.random()*1e9)|0;setRoom(kind==='bedroom'?ZONES.bedroom:kind==='outside'?null:roomZ);
+  worldSeed=kind==='home'?0:(Math.random()*1e9)|0;setRoom(kind==='bedroom'?ZONES.bedroom:kind==='outside'||kind==='home'?null:roomZ);
   if(roomZ){const n=CHUNKS_HALF*2+1;setZoneMap(Array.from({length:n},()=>roomZ.letter.repeat(n)));}
+  else if(kind==='home'){setZoneMap(ZONE_MAP);homeWorld();}
   else{setZoneMap(randomZoneMap(mulberry(worldSeed),'TFP',pickThemedZones()));buildWorld();captureHome();}
   if(!keepSize){growth=0;tier=0;giant=false;levelReady=false;popT=1;goldCount=0;goldHud.style.display='none';}
   clearPads();nwBtn.style.display='none';
@@ -847,7 +852,7 @@ class Player{
     this.carIdx=i;this.stats=CARS[i];const cs=carStats(this.stats);this.power=cs.power;this.handling=cs.handling;this.perk=cs.perk;this.perkT=1;this.model=carMerge(this.stats.build());this.root.add(this.model.g);
     this.nameT=2.5;
     if(announce){sfx.pop();say(this.stats.name+'!');puff(this.x,S,this.z,6,1.6*Math.max(S,.3),'#ffffff');}
-    updatePanels();
+    carParts(this);updatePanels();
   }
   ensureEngine(){
     if(this.eng||!AC)return;
@@ -873,14 +878,14 @@ class Player{
       if(Math.abs(this.z)>lim){this.z=Math.sign(this.z)*lim;this.kz=-Math.sign(this.z)*6;}
       if(this.speed>10&&this.wallT<=0){sfx.thud();shake=Math.min(1,shake+.3);this.wallT=.4;}this.speed*=0.6;}
     const gh=groundH(this.x,this.z)+garageH(this.x,this.z);
-    if(!this.air){
+    if(!this.air){this.hoverF=2.5;if(this.partMap&&(this.partMap.hover||this.partMap.glide)){if(this.partMap.hover)this.partMap.hover.visible=false;if(this.partMap.glide)this.partMap.glide.visible=false;}
       if(gh<this.y-0.4){this.air=true;this.vy=Math.max(5,this.speed*0.5+3);}
       else this.y=gh;
       if(inp.jumpP&&!this.air&&this.stuck){boomOut(this);}
       else if(inp.jumpP&&!this.air){this.air=true;this.vy=13*clamp(Math.pow(S,0.4),0.33,1.8);sfx.jump();
         if(this.perk==='bouncy'){this.vy*=1.42;sfx.boing();puff(this.x,0.3*S,this.z,5,Math.max(S,.3),'#ffffff');}}
     }else{
-      this.vy-=(this.padG||32)*dt;this.y+=this.vy*dt;
+      if(!airMoves(this,dt,inp)){this.vy-=(this.padG||32)*dt;this.y+=this.vy*dt;} // L36: hold B to hover / glide
       if(this.y<=gh){const imp=-this.vy;this.y=gh;this.air=false;this.vy=0;
         if(this.padG){this.padG=0;slam(this,true);}
         else if(imp>15)slam(this);else if(imp>6){sfxIn(zoneXZ(this.x,this.z),'thud');puff(this.x,0.3,this.z,3,1.2*Math.max(S,.3));}}
@@ -907,7 +912,8 @@ class Player{
         const n=performance.now();if(n-lastStuckSay>10000){lastStuckSay=n;say('Stuck? Press jump to go BOOM!');}}}
     else if(Math.hypot(this.x-this.stuck[0],this.z-this.stuck[1])>this.r*4+0.5||T-this.lastBump>2.5)this.stuck=false;
     this.ensureEngine();
-    if(this.eng){const t=AC.currentTime;this.eng.o.frequency.setTargetAtTime((42+Math.abs(this.speed)/sm*3.2+(boosting?25:0))/Math.sqrt(Math.max(S,0.3)),t,0.06);this.eng.g.gain.setTargetAtTime(0.025+Math.min(1,Math.abs(this.speed)/30)*0.03,t,0.1);}
+    if(this.eng){const t=AC.currentTime,kz=questOn&&questCos.has('kazoo');if(this.eng.o.type!==(kz?'square':'sawtooth'))this.eng.o.type=kz?'square':'sawtooth'; // 🎺 kazoo engine
+      this.eng.o.frequency.setTargetAtTime((kz?2.4+0.2*Math.sin(T*28):1)*(42+Math.abs(this.speed)/sm*3.2+(boosting?25:0))/Math.sqrt(Math.max(S,0.3)),t,0.06);this.eng.g.gain.setTargetAtTime(0.025+Math.min(1,Math.abs(this.speed)/30)*0.03,t,0.1);}
   }
 }
 Player.prototype.updateMarker=function(dt,ds){
@@ -940,6 +946,7 @@ const soundHint=document.createElement('div');soundHint.id='soundHint';soundHint
 // BOOM out of a tight spot: blast away whatever is hemming the car in (no points), and pop the car up
 function boomOut(p){const R=p.r*3+2*S;
   p.stuck=false;p.trail.length=0;p.air=true;p.vy=14*Math.sqrt(Math.max(S,0.3));sfx.boom();say('BOOM!');shake=Math.min(2,shake+1);
+  if(!hasAbility('hammer')){puff(p.x,S,p.z,10,R*0.4,'#ffffff');for(const o of objects)if(o.alive&&Math.hypot(o.x-p.x,o.z-p.z)<R+o.r){wakeObj(o);o.wob=1;}return;} // before the hammer: just a big hop
   flash(p.x,S,p.z,'#ffd166',R,0.4);flash(p.x,S,p.z,'#ff5400',R*0.7,0.5);puff(p.x,S,p.z,10,R*0.5,'#888888');
   for(const o of objects){if(!o.alive||o.boss)continue;const dx=o.x-p.x,dz=o.z-p.z;if(Math.hypot(dx,dz)>R+o.r)continue;
     o.alive=false;wakeObj(o);if(o.rec){o.rec.dead=true;o.rec.gone=[];o.rec.back=T+rand(REGROW[0],REGROW[1]);}
@@ -966,7 +973,8 @@ addEventListener('keydown',e=>{
   if(!keys.has(e.code))pressed.add(e.code);keys.add(e.code);
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Slash','Enter'].includes(e.code))e.preventDefault();
   if(state==='start'&&(e.code==='Space'||e.code==='Enter'))startGame();
-  if(state==='start'&&/^(ArrowLeft|KeyA)$/.test(e.code))setPick('bedroom');if(state==='start'&&/^(ArrowRight|KeyD)$/.test(e.code))setPick('outside');
+  if(state==='start'&&/^(ArrowLeft|KeyA)$/.test(e.code))pickMove(-1,0);if(state==='start'&&/^(ArrowRight|KeyD)$/.test(e.code))pickMove(1,0);
+  if(state==='start'&&/^(ArrowUp|KeyW)$/.test(e.code))pickMove(0,-1);if(state==='start'&&/^(ArrowDown|KeyS)$/.test(e.code))pickMove(0,1);
   if(e.code==='Escape'){if(state==='play')pause();else if(state==='pause')resume();}
   if(e.code==='KeyN'&&state==='play')newWorld();
   if(e.code==='Backquote'&&state==='play'&&!garage)for(const p of players){const l=carsInTier(carTierNow());p.setCar(l[(l.indexOf(p.carIdx)+1)%l.length],true);} // debug: cycle cars (play uses the garage)if(e.code==='KeyM')toggleMute();if(e.code==='KeyF')toggleFS();
@@ -974,7 +982,7 @@ addEventListener('keydown',e=>{
 addEventListener('keyup',e=>keys.delete(e.code));
 addEventListener('blur',()=>keys.clear());
 const KB={kb1:{u:'KeyW',d:'KeyS',l:'KeyA',r:'KeyD',b:'Space',j:'KeyE',s:'KeyQ',f:'KeyR'},kb2:{u:'ArrowUp',d:'ArrowDown',l:'ArrowLeft',r:'ArrowRight',b:'Enter',j:'ShiftRight',s:'Slash',f:'Period'}};
-function readKB(m){return {x:(keys.has(m.r)?1:0)-(keys.has(m.l)?1:0),z:(keys.has(m.d)?1:0)-(keys.has(m.u)?1:0),boost:keys.has(m.b),jumpP:pressed.has(m.j),swapP:pressed.has(m.s),fire:keys.has(m.f),levelP:pressed.has(m.s)||pressed.has(m.f),joinP:pressed.has(m.b)||pressed.has(m.j)};}
+function readKB(m){return {x:(keys.has(m.r)?1:0)-(keys.has(m.l)?1:0),z:(keys.has(m.d)?1:0)-(keys.has(m.u)?1:0),boost:keys.has(m.b),jumpP:pressed.has(m.j),swapP:pressed.has(m.s),jump:keys.has(m.j),fire:keys.has(m.f),levelP:pressed.has(m.s)||pressed.has(m.f),joinP:pressed.has(m.b)||pressed.has(m.j)};}
 const gpPrev={},padInfo=[];
 function readGP(){
   const res={};let gps=[];try{gps=navigator.getGamepads?navigator.getGamepads():[];}catch(e){}
@@ -985,7 +993,7 @@ function readGP(){
     if(b[14])x=-1;if(b[15])x=1;if(b[12])z=-1;if(b[13])z=1;
     // X and Y both shoot: 8BitDo / Nintendo-style pads swap the X and Y labels, so either one works.
     const ay=gp.axes[1]||0,pay=prev.ay||0,up=P(12)||(ay<-0.6&&pay>=-0.6),down=P(13)||(ay>0.6&&pay<=0.6);
-    res['gp'+gp.index]={x,z,boost:!!(b[0]||b[7]),jumpP:P(1),swapP:P(4)||P(5),fire:!!(b[2]||b[3]),levelP:P(2)||P(3)||P(4)||P(5),joinP:P(0)||P(1)||P(9),
+    res['gp'+gp.index]={x,z,boost:!!(b[0]||b[7]),jumpP:P(1),jump:!!b[1],swapP:P(4)||P(5),fire:!!(b[2]||b[3]),levelP:P(2)||P(3)||P(4)||P(5),joinP:P(0)||P(1)||P(9),
       startP:P(9),upP:up,downP:down,okP:P(0),backP:P(1)};b.ay=ay;gpPrev[gp.index]=b;
     padInfo.push({id:gp.id,mapping:gp.mapping,pressed:b.map((v,i)=>v?i:-1).filter(i=>i>=0),axes:[...gp.axes].map(a=>+a.toFixed(1))});
     if(b.some(Boolean)&&AC&&AC.state!=='running')AC.resume().catch(()=>{});}
@@ -1004,7 +1012,7 @@ addEventListener('touchend',endT);addEventListener('touchcancel',endT);
 const btn=(id,down,up)=>{const el=$(id);el.addEventListener('touchstart',e=>{e.preventDefault();initAudio();down();},{passive:false});el.addEventListener('touchend',e=>{e.preventDefault();up&&up();},{passive:false});};
 const bFire=document.createElement('div');bFire.className='tbtn';bFire.id='bFire';bFire.textContent='🎯';bFire.style.display='none';$('touch').appendChild(bFire);
 btn('bFire',()=>touch.fire=true,()=>touch.fire=false);
-btn('bGo',()=>touch.boost=true,()=>touch.boost=false);btn('bJump',()=>touch.jumpP=true);btn('bSwap',()=>touch.swapP=true);
+btn('bGo',()=>touch.boost=true,()=>touch.boost=false);btn('bJump',()=>{touch.jumpP=true;touch.jump=true;},()=>touch.jump=false);btn('bSwap',()=>touch.swapP=true);
 
 /* Start screen: pick where to play with pictures (L20): 🛏️ the bedroom or 🌳 outside. Stick / arrows / A D to switch. */
 let startPick='outside';try{startPick=localStorage.getItem('sp_world')||'outside';}catch(e){}
@@ -1019,11 +1027,119 @@ function setPick(w){if(w!==startPick){startPick=w;sfx.pop();}try{localStorage.se
 for(const b of worldPick.children)b.onclick=e=>{e.stopPropagation();initAudio();setPick(b.dataset.w);startGame();};
 markPick();let pickX=0;
 function startGame(){
-  if(state!=='start')return;state='play';initAudio();if(startPick==='bedroom'&&ZONES.bedroom)rollWorld(true,'bedroom');music('drive');
+  if(state!=='start')return;state='play';initAudio();questOn=gameMode==='adventure';abilGlyphs(); // L36
+  if(!questOn&&startPick==='bedroom'&&ZONES.bedroom)rollWorld(true,'bedroom');music('drive');
   $('start').style.display='none';$('hud').style.display='block';updatePanels();
   if(touchUsed){$('touch').style.display='block';addPlayer('touch');}
 }
 $('play').onclick=e=>{e.stopPropagation();startGame();};
+
+/* ---------- abilities, cosmetics + Adventure / Arcade (L36) ---------- */
+/* 🗺️ Adventure: the hand-made Home World with quests (src/quests.js). You start unable to smash and earn abilities from
+   quests. 🕹️ Arcade: today's game with every ability on. hasAbility(id) (quests.js) is true in Arcade.
+   - hammer: smashing works. Before it, hits wobble + boing + a star puff + a little bounce back; nothing breaks, the meter
+     stays put. Animals still launch (no points), rollers still roll.
+   - shoot: X / Y fires the car's weapon (the first shots are eggs, the farmer's gift).
+   - hover: hold B in the air to float for a few seconds. glide: keep holding B on the way down for a slow, long fall.
+   - dozer: the bulldozer perk on every car.
+   Cosmetics (Adventure rewards only): hat, crown (parts on the roof), bubbles / sprinkles / confetti (trails), kazoo (engine).
+   Each new ability: a ceremony (the car spins up, the part pops on) and a pulsing button glyph with a picture until first use.
+   Design hook (D19): `function buildCarPart(id){…}` in cars.js returns a THREE.Group at car scale 1 for 'hammer', 'shoot',
+   'hover', 'glide', 'dozer', 'hat', 'crown'. Roof parts (hammer, shoot, hat, crown) have their origin where they sit on the
+   roof (logic lifts them to the car's height); hover (a ring under the car), glide (wings) and dozer (a blade at the front,
+   at z=0; logic moves it to the car's nose) have their origin at the car's ground center. Placeholders until then. */
+const ABIL_ICON={hammer:'🔨',shoot:'🥚',hover:'🛸',glide:'🪁',dozer:'🚜'};
+const ABIL_BTN={shoot:'X',hover:'B',glide:'B'}; // the button you press (shown as a colored pad button, not a word)
+const COS_ICON={hat:'🎉',crown:'👑',bubbles:'🫧',sprinkles:'🍭',confetti:'🎊',kazoo:'🎺'};
+const COS_TRAIL={bubbles:['#cdf7ff','#9bf6ff'],sprinkles:['#ff006e','#ffbe0b','#3a86ff','#06d6a0','#ffffff'],confetti:['#ff595e','#ffca3a','#8ac926','#1982c4','#6a4c93']};
+const ROOF_PARTS=['hammer','shoot','hat','crown'];
+let gameMode='adventure';try{gameMode=localStorage.getItem('sp_mode')||'adventure';}catch(e){}
+if(/[?&]arcade\b/.test(location.search))gameMode='arcade';if(questOn)gameMode='adventure';
+const abilUsed=new Set();let eggShots=0;
+const dozerOn=p=>p.perk==='bulldozer'||(questOn&&questAbil.has('dozer'));
+// before the hammer: the thing wobbles, boings and puffs a star; the car bounces back a little. Nothing breaks.
+function noHammerHit(p,o,dx,dz,rr,spd){
+  const d=Math.hypot(dx,dz)||1,nx=dx/d,nz=dz/d;p.x-=nx*(rr-d);p.z-=nz*(rr-d);p.lastBump=T;
+  if(spd<2*p.sm&&!p.air)return;
+  p.kx-=nx*(4*p.sm+spd*0.35);p.kz-=nz*(4*p.sm+spd*0.35);p.speed*=0.35;wakeObj(o);o.wob=1;
+  const n=performance.now();if(n-(o.lastBoing||0)>350){o.lastBoing=n;sfxClip('wobble_boing',0.7,rand(0.9,1.15))||sfx.boing();
+    const k=Math.max(S,0.15);puff(o.x-nx*o.r,o.h*0.6+0.3*k,o.z-nz*o.r,3,0.9*k,'#ffd60a');flash(o.x-nx*o.r,o.h*0.6+0.3*k,o.z-nz*o.r,'#fff3a0',1.4*k,0.3);}}
+// a new ability or cosmetic (quests.js calls these from the reward)
+function grantAbility(id){
+  for(const p of players)carParts(p);
+  showBig(ABIL_ICON[id]||'⭐');sfxClip('ability',1)||sfx.fanfare();confetti(160);
+  for(const p of players){puff(p.x,p.y+p.model.h*S,p.z,14,1.2*Math.max(S,.2),'#ffd60a');flash(p.x,p.y+p.model.h*S,p.z,'#ffffff',2.5*Math.max(S,.2),0.4);}
+  if(id==='shoot')eggShots=12;
+  abilUsed.delete(id);abilGlyphs();}
+function grantCosmetic(id){if(!COS_ICON[id])console.warn('unknown cosmetic',id);for(const p of players)carParts(p);showBig(COS_ICON[id]||'✨');sfx.fanfare();confetti(100);}
+function abilUse(id){if(!questOn||abilUsed.has(id))return;abilUsed.add(id);abilGlyphs();}
+// parts on the car: rebuilt when an ability/cosmetic arrives or the car changes
+function carPartLook(id){
+  if(typeof buildCarPart==='function'){try{const g=buildCarPart(id);if(g)return g;}catch(e){console.warn('buildCarPart',id,e);}}
+  const g=new THREE.Group();
+  if(id==='hammer'){const h=new THREE.Group();h.add(mk('box',0.22,1.3,0.22,'#8d5524',0,0.65,0),mk('box',0.9,0.5,0.5,'#adb5bd',0,1.35,0));h.rotation.x=-0.5;h.position.set(0.55,0,-0.6);h.userData.swing=true;g.add(h);}
+  else if(id==='shoot'){const n=mk('cyl',0.5,0.9,0.5,'#ffffff',0,0.35,0.6);n.rotation.x=Math.PI/2.4;g.add(n,mk('sph',0.42,0.55,0.42,'#fff3e0',-0.6,0.28,-0.4));}
+  else if(id==='hat'){g.add(mk('cone',0.9,1.2,0.9,'#ff006e',0,0.6,0),mk('sph',0.3,0.3,0.3,'#ffd60a',0,1.25,0));}
+  else if(id==='crown'){g.add(mk('cyl',1.1,0.45,1.1,'#ffd60a',0,0.22,0));for(let i=0;i<5;i++){const a=i/5*Math.PI*2;g.add(mk('cone',0.25,0.45,0.25,'#ffd60a',Math.sin(a)*0.45,0.6,Math.cos(a)*0.45));}}
+  else if(id==='hover'){const r=new THREE.Mesh(new THREE.TorusGeometry(1.8,0.2,6,28),new THREE.MeshBasicMaterial({color:'#9bf6ff',transparent:true,opacity:0.8}));r.rotation.x=Math.PI/2;r.position.y=0.2;g.add(r);}
+  else if(id==='glide'){for(const s of [-1,1]){const w=mk('box',2.6,0.12,1.2,'#ffffff',s*2.4,1.3,-0.2);w.rotation.z=s*0.15;g.add(w);}}
+  else if(id==='dozer'){g.add(mk('box',3.0,1.0,0.3,'#ffbe0b',0,0.55,0.25),mk('box',0.2,0.2,0.6,'#555555',-0.9,0.55,-0.1),mk('box',0.2,0.2,0.6,'#555555',0.9,0.55,-0.1));}
+  return g;}
+function carParts(p){
+  if(p.parts){p.root.remove(p.parts);}p.parts=new THREE.Group();p.partMap={};p.root.add(p.parts);if(!questOn)return; // Arcade cars look as they always did
+  const ids=[...questAbil,...questCos].filter(id=>!COS_TRAIL[id]&&id!=='kazoo');
+  for(const id of ids){const g=carPartLook(id);
+    if(ROOF_PARTS.includes(id))g.position.set(id==='crown'?-0.3:0,p.model.h,id==='hat'||id==='crown'?-0.2:0);
+    if(id==='dozer')g.position.z=p.stats.r*1.05;
+    if(id==='hover'||id==='glide')g.visible=false; // only while hovering / gliding
+    p.parts.add(g);p.partMap[id]=g;}}
+// held-B in the air: hover first (fuel), then glide
+function airMoves(p,dt,inp){
+  if(!p.air||p.padG){return false;}
+  const hold=!!inp.jump,hv=p.partMap&&p.partMap.hover,gl=p.partMap&&p.partMap.glide;let mode=null;
+  if(hold&&hasAbility('hover')&&(p.hoverF??0)>0&&p.vy<6){mode='hover';p.hoverF-=dt;p.vy+=(0-p.vy)*Math.min(1,dt*6);p.y+=p.vy*dt;
+    if((p.humT=(p.humT||0)-dt)<=0){p.humT=0.35;sfxClip('hover_hum',0.4)||tone('sine',260+rand(-20,20),300,0.35,0.05);}
+    if(Math.random()<0.4)puff(p.x,p.y,p.z,1,0.5*Math.max(S,.15),'#9bf6ff');abilUse('hover');}
+  else if(hold&&hasAbility('glide')&&p.vy<0){mode='glide';p.vy=Math.max(p.vy-32*0.18*dt,-3*clamp(Math.pow(S,0.4),0.33,1.8));p.y+=p.vy*dt;p.speed=Math.max(p.speed,p.stats.speed*p.sm*0.8);
+    if(!p.wasGlide)sfxClip('glide_whoosh',0.6)||sfx.turbo();abilUse('glide');}
+  p.wasGlide=mode==='glide';if(hv)hv.visible=mode==='hover';if(gl)gl.visible=mode==='glide';
+  return !!mode;}
+// cosmetic trails + the hammer bonk
+function updateCarExtras(dt){
+  for(const p of players){
+    if(p.bonkT>0){p.bonkT-=dt;const h=p.partMap&&p.partMap.hammer;if(h)h.traverse(m=>{if(m.userData.swing)m.rotation.x=-0.5+Math.sin((1-p.bonkT/0.3)*Math.PI)*1.6;});}
+    if(!questOn||Math.abs(p.speed)<p.stats.speed*p.sm*0.3||(p.trailK=(p.trailK||0)-dt)>0)continue;p.trailK=0.05;
+    for(const id of questCos){const cols=COS_TRAIL[id];if(!cols)continue;const k=Math.max(S,0.12),bx=p.x-Math.sin(p.heading)*p.r,bz=p.z-Math.cos(p.heading)*p.r;
+      if(id==='bubbles'){const m=mk('sph',0.5*k,0.5*k,0.5*k,null,bx,p.y+0.6*k,bz,BUBBLE_MAT);m.castShadow=false;addPart(m,1.2,rand(-1,1)*k,2*k,rand(-1,1)*k);}
+      else{const m=mk('box',0.25*k,0.08*k,0.25*k,null,bx+rand(-0.4,0.4)*k,p.y+0.5*k,bz,E(pick(cols)));m.castShadow=false;addPart(m,0.9,rand(-2,2)*k,rand(2,4)*k,rand(-2,2)*k);}}}}
+// pulsing glyphs for abilities you haven't tried yet: the button (a colored pad button) and a picture of what it does
+const abilHud=document.createElement('div');abilHud.id='abilGlyphs';$('hud').appendChild(abilHud);
+function abilGlyphs(){if(!questOn){abilHud.innerHTML='';return;}
+  abilHud.innerHTML=[...questAbil].filter(id=>!abilUsed.has(id)).map(id=>`<div class="abGlyph">${ABIL_BTN[id]?`<b class="btn${ABIL_BTN[id]}">${ABIL_BTN[id]}</b>`:''}<span>${ABIL_ICON[id]||'⭐'}</span></div>`).join('');
+  for(const id of questAbil)if(!ABIL_BTN[id]&&id!=='hammer'&&!abilUsed.has(id))setTimeout(()=>abilUse(id),8000);} // no button (dozer): shows for a bit
+{const st=document.createElement('style');st.textContent=`
+:where(#abilGlyphs){position:absolute;right:18px;bottom:110px;display:flex;flex-direction:column;gap:10px;pointer-events:none;z-index:4}
+:where(.abGlyph){display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:22px;background:#0008;border:4px solid #ffd60a;animation:nwPulse .8s ease-in-out infinite}
+:where(.abGlyph span){font-size:40px}
+:where(.abGlyph b){display:inline-block;width:46px;height:46px;border-radius:50%;font:30px/46px 'Lilita One',sans-serif;text-align:center;color:#fff;border:3px solid #fff}
+:where(.abGlyph b.btnB){background:#e63946}:where(.abGlyph b.btnX){background:#3a86ff}
+:where(#modePick){display:flex;gap:24px;justify-content:center;margin:10px 0 6px}
+:where(#modePick .mp){font-size:72px;line-height:1;padding:14px 30px;border-radius:24px;border:5px solid transparent;background:rgba(255,255,255,.18);cursor:pointer;transition:transform .15s}
+:where(#modePick .mp.sel){border-color:#ffd60a;background:rgba(255,214,10,.3);transform:scale(1.12)}
+:where(#modePick.focus,#worldPick.focus){outline:4px dashed #ffffff88;outline-offset:8px;border-radius:30px}`;document.head.prepend(st);}
+// start screen: 🗺️ Adventure / 🕹️ Arcade (remembered); Arcade then shows the 🛏️ / 🌳 row. Stick up/down picks the row.
+const modePick=document.createElement('div');modePick.id='modePick';
+modePick.innerHTML='<button class="mp" data-m="adventure" title="Adventure">🗺️</button><button class="mp" data-m="arcade" title="Arcade">🕹️</button>';
+let pickRow=0;
+function markMode(){for(const b of modePick.children)b.classList.toggle('sel',b.dataset.m===gameMode);
+  worldPick.style.display=gameMode==='arcade'?'':'none';if(gameMode!=='arcade')pickRow=0;
+  modePick.classList.toggle('focus',pickRow===0&&gameMode==='arcade');worldPick.classList.toggle('focus',pickRow===1);}
+function setMode(m){if(m!==gameMode){gameMode=m;sfx.pop();}try{localStorage.setItem('sp_mode',m);}catch(e){}markMode();}
+function pickMove(dx,dy){if(dy)pickRow=gameMode==='arcade'?clamp(pickRow+dy,0,1):0;
+  if(dx){if(pickRow===0)setMode(dx<0?'adventure':'arcade');else setPick(dx<0?'bedroom':'outside');}markMode();}
+modePick.onclick=e=>e.stopPropagation();for(const b of modePick.children)b.onclick=e=>{e.stopPropagation();initAudio();setMode(b.dataset.m);if(gameMode==='adventure')startGame();};
+worldPick.before(modePick);markMode();
+
 
 /* ---------- pause menu (Esc / START / ⏸) + version ---------- */
 const VERSION=window.GAME_VERSION||'dev';
@@ -1088,10 +1204,11 @@ function collisions(){
       if(dx*dx+dz*dz<rr*rr&&p.y<o.h+o.fy){
         if(o.rolling)continue;
         if(o.roll&&o.sz<=tier&&(spd>4*p.sm||p.air)){startRoll(o,vx||dx,vz||dz,Math.max(spd,10*p.sm));continue;}
+        if(!hasAbility('hammer')){noHammerHit(p,o,dx,dz,rr,spd);continue;} // L36: wobble, boing, star puff
         if(o.sz<=tier-3&&!o.gold){squish(o);continue;}
         if(o.bld){hitBuilding(p,o,dx,dz,rr,spd,vx,vz);continue;}
         if(o.sz>tier){bump(p,o,dx,dz,rr,spd);continue;}
-        if(spd>4*p.sm||p.air){smash(o,vx||dx,vz||dz,Math.max(spd,10)*Math.sqrt(Math.max(1,S)));p.speed*=o.big&&o.sz>=tier?0.8:0.96;}
+        if(spd>4*p.sm||p.air){p.bonkT=0.3;abilUse('hammer');smash(o,vx||dx,vz||dz,Math.max(spd,10)*Math.sqrt(Math.max(1,S)));p.speed*=o.big&&o.sz>=tier?0.8:0.96;}
         else{const d=Math.hypot(dx,dz)||1;p.x-=dx/d*(rr-d);p.z-=dz/d*(rr-d);p.lastBump=T;}}}
     animalHits(p,vx,vz,spd);}
 }
@@ -1451,7 +1568,7 @@ function launchAnimal(a,vx,vz,power){
   a.state='fly';a.bounced=false;a.vy=Math.sqrt(64*H);a.vx=vx/d*power*0.5+rand(-2,2)*S;a.vz=vz/d*power*0.5+rand(-2,2)*S;
   a.spin=[rand(-12,12),rand(-12,12),rand(-12,12)];a.falling=true;
   if(!sfxClip(a.kind,0.9,rand(0.92,1.12)))tone('square',rand(500,900),rand(1200,1800),0.25,0.12);sfxClip('whee',0.35,rand(.9,1.2));
-  puff(a.x,a.y+a.h*.5,a.z,6,Math.max(0.3,a.r*0.9),a.def.fluff||'#ffffff');addScore(2);comboHit();
+  puff(a.x,a.y+a.h*.5,a.z,6,Math.max(0.3,a.r*0.9),a.def.fluff||'#ffffff');if(hasAbility('hammer')){addScore(2);comboHit();}
   const n=performance.now();if(n-lastAnimalSay>9000&&Math.random()<0.35){lastAnimalSay=n;
     say(a.kind==='chicken'||a.kind==='chick'?pick(['Fly, chicken, fly!','Wheee!']):a.kind==='cow'?'Moo-ve over!':a.kind==='duck'||a.kind==='goose'?'Bye bye, birdie!':pick(['Wheee!','Up, up and away!']));}
 }
@@ -1726,7 +1843,7 @@ function goldFound(o,isAnimal){
 let goldSparkT=0,goldTwinkleAt=0;
 function updateGold(dt){
   if(state!=='play'||!players.length)return;
-  if((goldT-=dt)<=0){goldT=rand(35,60);if(!objects.some(o=>o.gold&&o.alive&&o.scat))spawnGold();}
+  if((goldT-=dt)<=0){goldT=rand(35,60);if(hasAbility('hammer')&&!objects.some(o=>o.gold&&o.alive&&o.scat))spawnGold();}
   const R=scatR(),view=R*1.3;let near=null,nd=1e9;const spark=(goldSparkT-=dt)<=0;if(spark)goldSparkT=0.12;
   for(const list of [objects,animals])for(const o of list){if(!o.gold||!o.alive)continue;
     let d=1e9;for(const p of players)d=Math.min(d,Math.hypot(o.x-p.x,o.z-p.z));
@@ -1856,7 +1973,7 @@ function growHint(o){
 const GARAGE_N=4,GARAGE_R=40,GARAGE_HW=43,GARAGE_T=1.5,GARAGE_DOOR=14,GARAGE_WALL=14,GARAGE_FLOOR=0.16,GARAGE_CAR=1.5;
 const GARAGE_RISE=2.2,GARAGE_SINK=1.6,GARAGE_LIFT=0.22; // LIFT: world units the whole garage sits up, so its floor covers roads, curbs and spot tiles (≤0.17)
 let garage=null,garageSkip=false;
-const garageFresh=()=>true; // L36: Adventure keeps the same world and restocks around the exit instead
+const garageFresh=()=>!questOn; // Arcade: a fresh world; Adventure keeps the same world and restocks around the exit
 const garageAll=()=>!!(garage&&garage.phase==='wait'&&players.length&&players.every(p=>p.inG)); // everyone inside: the world waits
 const garageO=()=>(GARAGE_HW+GARAGE_T)*garage.sG; // outer half-size in world units
 function garageOn(x,z,r=0){if(!garage||garage.phase==='sink')return false;const O=garageO()+r;return Math.abs(x-garage.x)<O&&Math.abs(z-garage.z)<O;}
@@ -2057,9 +2174,10 @@ function garageGo(){
   if(garageFresh()){G.ramps=[];rollWorld(true); // a fresh world; the garage lands right behind the start, back door open
     let ax=0,az=0;players.forEach(p=>{ax+=p.x;az+=p.z;});ax/=players.length;az/=players.length;const lim=Math.max(0,WB-O-2);
     G.x=clamp(ax,-lim,lim);G.z=clamp(az+O+rm*1.6,-lim,lim);G.g.position.set(G.x,GARAGE_LIFT,G.z);
-    players.forEach((p,i)=>{p.x=G.x+(i-(players.length-1)/2)*rm*2.6;p.z=G.z-O-rm*3;p.y=groundH(p.x,p.z);p.vy=0;p.air=false;p.kx=p.kz=0;p.heading=Math.PI;p.trail.length=0;});
     camT.set(G.x,0,G.z-O-rm*3);garageClear(false);garageHideRamps();music('drive');}
-  else scatterRain(Math.round(SCAT_N*0.5));
+  else scatterRain(Math.round(SCAT_N*0.5)); // Adventure: the same world, restocked around the exit
+  players.forEach((p,i)=>{if(garageFresh()||p.inG||Math.abs(p.x-G.x)<O+p.r&&Math.abs(p.z-G.z)<O+p.r){ // out the back door
+    p.x=G.x+(i-(players.length-1)/2)*rm*2.6;p.z=G.z-O-rm*3;p.y=groundH(p.x,p.z);p.vy=0;p.air=false;p.kx=p.kz=0;p.heading=Math.PI;p.trail.length=0;}});
   for(const p of players){p.inG=false;p.speed=p.stats.speed*p.sm*0.6;} // rolling out
   G.anyIn=false;for(const m of G.cut)m.visible=false; // roof stays off so it never hides the cars rolling out
   camDist*=1.6;camKick=0.5; // the camera pulls back as you roll out
@@ -2135,28 +2253,29 @@ function loop(now){
   const dt=Math.min(0.05,(now-last)/1000);last=now;
   const gpIn=readGP();
   const src=Object.assign({kb1:readKB(KB.kb1),kb2:readKB(KB.kb2)},gpIn);
-  if(touchUsed)src.touch={x:touch.x,z:touch.z,boost:touch.boost,jumpP:touch.jumpP,swapP:touch.swapP,fire:touch.fire,joinP:touch.boost||touch.jumpP};
+  if(touchUsed)src.touch={x:touch.x,z:touch.z,boost:touch.boost,jumpP:touch.jumpP,jump:touch.jump,swapP:touch.swapP,fire:touch.fire,joinP:touch.boost||touch.jumpP};
   if(state==='start'){const gx=Object.values(gpIn).reduce((a,g)=>Math.abs(g.x||0)>Math.abs(a)?g.x:a,0),sx=gx<-0.6?-1:gx>0.6?1:0;
-    if(sx&&sx!==pickX)setPick(sx<0?'bedroom':'outside');pickX=sx;
+    if(sx&&sx!==pickX)pickMove(sx,0);pickX=sx;for(const k in gpIn){if(gpIn[k].upP)pickMove(0,-1);if(gpIn[k].downP)pickMove(0,1);}
     for(const k in gpIn)if(gpIn[k].joinP){startGame();break;}}
   if(state==='pause'){pauseInput(gpIn);updateMusic();renderer.render(scene,camera);pressed.clear();touch.jumpP=false;touch.swapP=false;return;}
   if(state==='play'&&Object.values(gpIn).some(g=>g.startP)){if(garage&&garage.ready)garageGo();else pause();pressed.clear();return;}
   T+=dt; // game time stands still while paused
   if(state==='play'){
     for(const k in src){const s=src[k];if(s.joinP&&players.length<2&&!players.some(p=>p.src===k)){addPlayer(k);s.jumpP=false;}}
-    for(const p of players){const s=src[p.src]||{x:0,z:0};if(levelReady&&!garage&&(s.levelP||s.swapP))levelUp();else if(s.fire&&!p.inG)shoot(p);p.update(dt,s);}
+    for(const p of players){const s=src[p.src]||{x:0,z:0};if(levelReady&&!garage&&(s.levelP||s.swapP))levelUp();else if(s.fire&&!p.inG&&hasAbility('shoot')){shoot(p);abilUse('shoot');}p.update(dt,s);}
     if(garage)updateGarage(dt,src);
   }
   updateGrowth(dt);updateStreaming(dt);updateQuests(dt);
   if(state==='play'&&!garageAll()){collisions();updateBoss(dt);}
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
-  updateRoom(dt);updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateCombo(dt);if(!garage){updateGold(dt);updatePads(dt);}if(!garageAll()){updateScatter(dt);updateScenes(dt);updateAnimals(dt);}updateRollers(dt);updateSpin(dt);updateShots(dt);updatePerks(dt);updateDebris(dt);updateParts(dt);updatePuffs(dt);
+  updateRoom(dt);updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateCombo(dt);if(!garage){updateGold(dt);updatePads(dt);}if(!garageAll()){updateScatter(dt);updateScenes(dt);updateAnimals(dt);}updateRollers(dt);updateSpin(dt);updateShots(dt);updatePerks(dt);updateCarExtras(dt);updateDebris(dt);updateParts(dt);updatePuffs(dt);
   updateMusic();updateCamera(dt,T);updateSignals(dt);cullChunks();updateHUD();
   renderer.render(scene,camera);
   pressed.clear();touch.jumpP=false;touch.swapP=false;
 }
 questDefaults(); // L35: the placeholder quest when no quest pack registered any
-propsReady.then(()=>{buildWorld();captureHome();updateStreaming(0,true);last=performance.now();requestAnimationFrame(loop);});
+const HOME_SEED=20261108;function homeWorld(){withSeed(HOME_SEED,()=>{buildWorld();captureHome();});} // the hand-made Home World, the same every time
+propsReady.then(()=>{homeWorld();updateStreaming(0,true);last=performance.now();requestAnimationFrame(loop);});
 /* __sp.spots(): draws the spots of the built chunks as see-through tiles (colored by kind) so layouts can be checked; again to hide. */
 let spotView=null;
 function showSpots(on){if(spotView){scene.remove(spotView);spotView.traverse(m=>{if(m.geometry)m.geometry.dispose();});spotView=null;}
