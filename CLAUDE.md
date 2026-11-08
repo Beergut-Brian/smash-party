@@ -33,6 +33,7 @@ If a design change needs new logic (or the other way around), make the part in y
 ## Parallel sessions (rules)
 - Each session edits **only its own files and asset folder** (table above). Need something from another lane? Leave a `// TODO(<lane>):` note or add a task in `TASKS.md`.
 - Work on a branch named after your lane and task (`world-props/D8b`, `world-animals/D3`, `cars/recipes`) and open a PR. Never push straight to `main` from a design lane.
+- **Use your own `git worktree`, never switch branches in the main folder.** Several sessions share this folder; a `git checkout` there silently moves everyone else onto your branch (it already landed a logic commit on the wrong branch once). Start a session with `git worktree add ../smash-party-<lane> -b <lane>/<task> origin/main` and work only in that folder; remove it with `git worktree remove` when merged. The main folder stays on `main`.
 - **Don't bump `version.json` on a branch.** It's bumped once when the PR merges.
 - `assets/props/props.json` is shared: **only add new keys** (no reordering or reformatting) so merges stay clean.
 - In `TASKS.md`, only check off and edit your own task.
