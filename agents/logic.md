@@ -10,6 +10,20 @@
 2. Unchecked `L*` tasks, top to bottom.
 3. `TODO(logic):` notes in design files (`grep -rn "TODO(logic)" src`).
 
+
+## Two logic lanes (run both at once)
+Logic runs as two sessions that split `game.js` by system. Start one with "You are the **logic-systems** agent…" or "…the **logic-gameplay** agent…", read this card, and only take tasks from your list.
+
+| Lane | Tasks (in order) | Sections you mainly touch |
+|---|---|---|
+| **logic-systems** | L22 zone music + sfx → L25 GIANT/boss draw calls (+ L24) → L19 placement spots → L20 Inside the House | `core.js` audio + renderer, streaming/chunks, scatter, batching, world build |
+| **logic-gameplay** | L23 themed bosses → L27 boss taunts/defeat → L18 car stats, perks + strength smashing → D9 hooks | boss section, smashing/damage, players/driving, garage |
+
+- Branch `logic-systems/<task>` or `logic-gameplay/<task>`, own worktree as always.
+- **Stay in your sections.** If you need a change in the other lane's area, keep it small and say so in the PR ("touches spawnScatter for X"), or leave a `NEEDS LOGIC` task for the other lane.
+- New `NEEDS LOGIC` tasks: put `(logic-systems)` or `(logic-gameplay)` after the tag so the right session picks them up.
+- **Pull `main` before each new task.** The other lane merges often.
+
 ## How to work
 - Worktree + branch `logic/<task>` (see `agents/README.md`).
 - Build the **working version with a placeholder look** (blocky, `M(color)`), then hand the look to design: add a `NEEDS DESIGN` task naming the lane and the contract (what to define, where, sizes). Document new contracts in `CLAUDE.md` under "Adding things" and copy it to `AGENTS.md`.

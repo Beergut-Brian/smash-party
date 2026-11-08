@@ -8,7 +8,8 @@ The card tells the agent what it owns, what to work on, how to test, and how to 
 
 | Role | Tool | Owns | Picks up |
 |---|---|---|---|
-| [`logic`](logic.md) | Claude Code | `src/core.js`, `src/game.js`, `src/boot.mjs`, `index.html` loader | `L*` tasks, `NEEDS LOGIC` |
+| [`logic-systems`](logic.md) | Claude Code | `core.js`, `boot.mjs`, and `game.js` systems (audio, rendering, streaming, scatter, world) | L22, L25, L19, L20 |
+| [`logic-gameplay`](logic.md) | Claude Code | `game.js` gameplay (bosses, smashing, players, garage) | L23, L27, L18, D9 hooks |
 | [`audio`](audio.md) | Claude Code (on the Mac with the ElevenLabs key) | `tools/*-lines.json`, generated `assets/sounds/voice|sfx|music/` | New voice lines, car names, animal sounds, music |
 | [`cars-ui`](cars-ui.md) | Cursor | `src/cars.js`, `assets/cars/`, `style.css` | `D4`, `D6`, car/UI `NEEDS DESIGN`, kid car ideas |
 | [`world-props`](world-props.md) | Claude Code | `src/objects.js`, `assets/props/` (top level), `assets/textures/` | `D8b`, `D7`, town/farm/park/home, prop `NEEDS DESIGN` |
