@@ -73,6 +73,13 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Chiptune / 8-bit background music: a calm "driving around" loop, a hype loop for MEGA/size-ups, a boss theme, and a giant/victory fanfare. Loop seamlessly and duck under voice lines.
   - Replace the synth sfx (crash, boom, boing, jump, thud, turbo, pop, fanfare) with generated ones in the same toy/8-bit style, keeping the synth versions as fallback. Keep total audio download small for phones (lazy-load music).
 
+- [ ] **L9: Rendering upgrade: look like a real game** (next up, before L5)
+  - Upgrade three.js r128 → current. Current three ships only as ES modules (no `three.min.js`, no `examples/js`), so add an import map plus a tiny `src/boot.mjs` that imports `three` + `GLTFLoader`, sets `window.THREE` / `THREE.GLTFLoader`, then loads the classic scripts in order. That keeps the plain-script layout and file ownership unchanged. Fix any r128-only APIs it trips on.
+  - Look: `MeshStandardMaterial` (or toon) instead of Lambert, sRGB output + ACES tone mapping, a warm hemisphere + sun setup with softer shadows, a sky gradient, light fog, and optional outlines or SSAO only if a GTX 1060 holds 60fps.
+  - Make `mk()` / `M()` produce the new materials so every existing prop upgrades at once.
+  - A shared **GLB prop loader** for design: `loadProp(name)` returns a cached clone from `assets/props/`, with an optional fallback to the old block-built version until the model exists. Document it in CLAUDE.md.
+  - Keep a quality toggle (high / phone) and test on phone.
+
 - [ ] **L5: Tune and test pass**
   - Round 1 (Kaden's first play-test) ✅: slower when small; car tiers (cooler cars unlock every 2 sizes, Y switches within the tier); big cars shoot (X: cannon / rocket, also hits boss weak spots); LEVEL UP button instead of auto-growing; new `micro` bottom size, scatter mostly at your size with bigger things rarer; stuck detection → jump becomes 💥 BOOM.
   - Play-test the whole v2 loop: small, then medium, then giant. Make sure growth pacing feels good in a ~20 minute session with a 5-year-old.
@@ -93,6 +100,13 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 - [x] **D0 v2: Mini props, size lists, giant stuff** (for L2c)
   - Done: micro props are flowers, pebbles, mushrooms, acorns, toy blocks, soda cans, rubber ducks, and snails. Gnomes and bushes are mini. `ZONE_PROPS` lists real `OBJ` names for town, farm, park, and home from micro through mega, so scatter no longer shrinks dollhouses.
   - Huge and mega already in the world: house, villa, school, fire station, farmhouse, silo, windmill, water tower, gazebo (huge); clock tower, barn, bounce house (mega). All of the box ones use the L3 part contract.
+
+- [ ] **D8: Swap in a free CC0 low-poly art pack** (next up; biggest visual win)
+  - Use **CC0** packs only (free for any use, no attribution needed): Kenney, Quaternius, or KayKit. Pick **one** main style so everything matches. Note the pack and license in `assets/CREDITS.md`.
+  - Start with the **town** (houses, shops, trees, street props) and **cars**, then the farm, park and animals.
+  - Put models in `assets/props/` and `assets/cars/`. Keep each prop under ~5k triangles, cars under ~20k.
+  - Buildings still need the L3 part contract to collapse. For a pack building, either keep it one piece (it smashes but doesn't pancake) or split walls/roof into separate meshes in Blender, and tag them in a small manifest.
+  - Needs: L9 GLB prop loader for the cleanest path. Cars can start now via `assets/cars/cars.json`.
 
 - [ ] **D5: Boss model(s)**
   - One original boss for max size, built from L3-contract parts plus `BP(mesh, floor, 'weak')` glowing weak spots. Chunky, funny, not scary. Kaden and son to pick the concept (and maybe name it).
@@ -135,3 +149,11 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 
 - [ ] **D7: More mega set pieces**
   - Still just ideas: stadium, skyscraper, cargo ship, ferris wheel. Build them with `BP` when a zone has room. The mountain-sized boss is D5.
+
+---
+
+## Art pipeline (GPU server, run by Kaden's agents)
+
+- [ ] **A1: Set up the art factory on the Proxmox GPU server.** Full brief: `docs/ART_PIPELINE.md`.
+- [ ] **A2: Kid-drawn cars.** Photo of a drawing → 3D model → `assets/cars/` + `cars.json` entry, delivered as a PR.
+
