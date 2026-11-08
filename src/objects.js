@@ -646,6 +646,101 @@ const OBJ={
     return sized(x,z,RAD.ship,H,36,'mega',(P,g)=>{kitPieces('ship-large',{mode:'y',cuts:[.3,.62],s}).forEach(pc=>{const hull=pc.cen[1]<H*.3;
       P(kitMesh(pc,null),hull?8:2,!hull,Math.max(.5,Math.min(pc.sz[0],pc.sz[2])/2));});face(g,arg);});};
 }
+/* ---------- D18 scene props ----------
+   Little things the scenes and lots need: picnic food, toys, party bits, stands, a crashed saucer. Block-built with
+   M() colors (they batch by shape for free). Each keeps its size class so the size-matched filler can use it too. */
+Object.assign(RAD,{sandwich:.32,ant:.13,popsicle:.24,paperboat:.24,teacup:.16,toycar:.3,pail:.2,soccerball:.36,
+  bike:.85,cake:.5,sandcastle:.75,wheelbarrow:.75,chest:.55,balloons:.45,kite:.6,laundry:2.3,lemonade:1.6,veggiestand:1.6,
+  goal:2.1,icetruck:2.5,icecone:.5,saucer:3.8});
+const PARTY=['#ff595e','#ffca3a','#8ac926','#1982c4','#6a4c93','#ff70a6','#4cc9f0'];
+// a market stand: counter, striped awning on two posts, goods on top (lemonade pitcher + cups, or veggies)
+function sceneStand(P,g,arg,stripe,goods){
+  P(mk('box',2.6,1.1,1.1,'#fff8e7',0,.55,0),3);P(mk('box',2.7,.12,1.2,'#d4a373',0,1.12,0),1);
+  for(const x of [-1.25,1.25])P(mk('box',.12,2.5,.12,'#d4a373',x,1.3,-.45),1);
+  for(let i=0;i<6;i++)P(mk('box',.5,.1,1.3,i%2?'#ffffff':stripe,-1.25+i*.5,2.55,-.05),1,true,.2);
+  P(mk('box',1.3,.5,.08,stripe,0,.6,.58),1,true,.25);goods(P);face(g,arg);}
+Object.assign(OBJ,{
+  sandwich:(x,z,arg)=>sized(x,z,RAD.sandwich,.26,1,'micro',(P,g)=>{
+    P(mk('box',.5,.07,.42,'#f4d58d',0,.04,0),1,true,.2);P(mk('box',.54,.04,.46,'#70e000',0,.1,0),1,true,.2);
+    P(mk('box',.46,.05,.38,'#ff8fab',0,.14,0),1,true,.18);P(mk('box',.5,.07,.42,'#f4d58d',0,.2,.02),1,true,.2);face(g,arg);}),
+  ant:(x,z,arg)=>sized(x,z,RAD.ant,.12,1,'micro',(P,g)=>{const a=new THREE.Group();
+    a.add(mk('sph',.1,.08,.12,'#2b2d42',0,.05,-.09),mk('sph',.07,.06,.07,'#2b2d42',0,.05,0),mk('sph',.08,.08,.08,'#2b2d42',0,.06,.08),
+      mk('sph',.05,.05,.05,'#ffffff',.025,.09,.11),mk('sph',.05,.05,.05,'#ffffff',-.025,.09,.11));
+    if(Math.random()<.5)a.add(mk('box',.07,.05,.07,'#f4d58d',0,.13,.06)); // carrying a crumb
+    P(a,1,true,.06);face(g,arg);}),
+  popsicle:(x,z,arg)=>sized(x,z,RAD.popsicle,.12,1,'micro',(P,g)=>{
+    P(mk('box',.22,.1,.32,pick(['#ff70a6','#ffbe0b','#4cc9f0','#ff595e']),0,.05,.05),1,true,.12);
+    P(mk('box',.06,.03,.2,'#e9c46a',0,.02,-.2),1,true,.05);P(mk('sph',.2,.02,.14,'#ffc8dd',.1,.01,.12),1);g.rotation.y=rand(0,6.28);}),
+  paperboat:(x,z,arg)=>sized(x,z,RAD.paperboat,.28,1,'micro',(P,g)=>{
+    P(mk('box',.18,.08,.42,'#ffffff',0,.05,0),1,true,.12);P(mk('pyr',.2,.22,.32,'#f1faee',0,.2,0),1,true,.1);face(g,arg);}),
+  teacup:(x,z)=>sized(x,z,RAD.teacup,.16,1,'micro',P=>{
+    P(mk('cyl',.28,.03,.28,'#ffffff',0,.02,0),1,true,.1);P(mk('cyl',.18,.13,.18,pick(['#ffafcc','#a2d2ff','#ffffff']),0,.1,0),1,true,.08);
+    P(mk('cyl',.15,.02,.15,'#9c6644',0,.16,0),1);}),
+  toycar:(x,z,arg)=>sized(x,z,RAD.toycar,.24,1,'micro',(P,g)=>{const c=pick(CAR_COLORS);
+    P(mk('box',.26,.1,.5,c,0,.09,0),1,true,.12);P(mk('box',.22,.09,.24,'#e9f5ff',0,.18,-.03),1,true,.1);
+    for(const [wx,wz] of [[-.13,.15],[.13,.15],[-.13,-.15],[.13,-.15]])P(mk('wheel',.05,.1,.1,'#222222',wx,.05,wz),1);face(g,arg);}),
+  pail:(x,z)=>sized(x,z,RAD.pail,.3,1,'micro',P=>{const c=pick(['#ff595e','#1982c4','#ffca3a','#8ac926']);
+    P(mk('cyl',.3,.28,.3,c,0,.14,0),1,true,.14);P(mk('box',.3,.03,.03,'#ffffff',0,.33,0),1);}),
+  soccerball:(x,z)=>sized(x,z,RAD.soccerball,.72,1,'mini',P=>{const b=new THREE.Group();
+    b.add(mk('sph',.7,.7,.7,'#ffffff',0,.35,0));for(const [a,c] of [[0,.62],[2.1,.5],[4.2,.48]])b.add(mk('sph',.2,.2,.2,'#222222',Math.sin(a)*.27,c,Math.cos(a)*.27));
+    P(b,1,true,.35);},{roll:true}),
+  bike:(x,z,arg)=>sized(x,z,RAD.bike,1,2,'tiny',(P,g)=>{const c=pick(PARTY);
+    for(const wz of [.55,-.55])P(mk('wheel',.08,.62,.62,'#222222',0,.31,wz),1,true,.3);
+    const f=mk('box',.08,.08,1.05,c,0,.62,0);f.rotation.x=.12;P(f,1);P(mk('box',.08,.5,.08,c,0,.5,-.3),1);
+    P(mk('box',.22,.08,.32,'#343a40',0,.82,-.32),1,true,.15);P(mk('box',.62,.06,.06,'#adb5bd',0,.92,.48),1,true,.2);
+    P(mk('box',.08,.36,.08,c,0,.72,.48),1);face(g,arg);}),
+  cake:(x,z)=>sized(x,z,RAD.cake,1,2,'tiny',P=>{
+    P(mk('cyl',1,.42,1,'#ffc8dd',0,.21,0),2);P(mk('cyl',.66,.34,.66,'#fff1e6',0,.59,0),2);P(mk('cyl',1.04,.06,1.04,'#ff70a6',0,.43,0),1);
+    for(let i=0;i<4;i++){const a=i*1.57+.4;P(mk('cyl',.05,.2,.05,PARTY[i],Math.sin(a)*.2,.86,Math.cos(a)*.2),1,true,.04);
+      P(mk('sph',.06,.09,.06,null,Math.sin(a)*.2,1,Math.cos(a)*.2,E('#ffd60a')),1,true,.04);}}),
+  sandcastle:(x,z,arg)=>sized(x,z,RAD.sandcastle,1.1,2,'tiny',(P,g)=>{const s='#e9c46a';
+    P(mk('box',1,.36,1,s,0,.18,0),3);for(const [tx,tz] of [[-.42,-.42],[.42,-.42],[-.42,.42],[.42,.42]]){P(mk('cyl',.3,.5,.3,s,tx,.45,tz),1,true,.15);P(mk('cone',.32,.22,.32,'#f4a261',tx,.81,tz),1,true,.1);}
+    P(mk('box',.36,.4,.36,s,0,.56,0),1,true,.18);P(mk('cyl',.02,.36,.02,'#ffffff',0,.92,0),1);P(mk('box',.16,.1,.02,'#ff595e',.08,1.04,0),1,true,.06);face(g,arg);}),
+  wheelbarrow:(x,z,arg)=>sized(x,z,RAD.wheelbarrow,.8,1,'tiny',(P,g)=>{
+    P(mk('box',.7,.32,.8,pick(['#2a9d8f','#e63946','#457b9d']),0,.5,.05),2);P(mk('wheel',.12,.36,.36,'#222222',0,.18,.52),1,true,.18);
+    for(const sx of [-.28,.28]){P(mk('box',.06,.06,.9,'#6d4c41',sx,.42,-.45),1);P(mk('box',.06,.32,.06,'#6d4c41',sx,.18,-.1),1);}face(g,arg);}),
+  chest:(x,z,arg)=>sized(x,z,RAD.chest,.82,4,'tiny',(P,g)=>{
+    P(mk('box',.9,.5,.6,'#8b5a2b',0,.25,0),2);P(mk('box',.92,.24,.62,'#a0522d',0,.62,-.04),1,true,.3);
+    P(mk('box',.94,.08,.64,'#ffd60a',0,.5,0),1);P(mk('box',.14,.18,.04,'#ffd60a',0,.44,.31),1);
+    for(let i=0;i<3;i++)P(mk('cyl',.16,.05,.16,'#ffd60a',-.25+i*.22,.78,.1),1,true,.06);face(g,arg);}),
+  balloons:(x,z)=>sized(x,z,RAD.balloons,2.9,1,'small',P=>{const b=new THREE.Group(),c=PARTY.slice().sort(()=>Math.random()-.5);
+    b.add(mk('box',.04,1.9,.04,'#ffffff',0,.95,0));
+    [[0,2.5,0],[-.32,2.3,.1],[.3,2.32,-.08]].forEach(([bx,by,bz],i)=>b.add(mk('sph',.55,.66,.55,c[i],bx,by,bz)));
+    P(b,1,true,.4);}),
+  kite:(x,z,arg)=>sized(x,z,RAD.kite,3.4,2,'small',(P,g)=>{const c=pick(PARTY);
+    const st=mk('box',.03,3,.03,'#ffffff',.25,1.5,0);st.rotation.z=-.16;P(st,1);
+    const k=new THREE.Group(),d=mk('box',.9,.9,.05,c,0,0,0);d.rotation.z=Math.PI/4;k.add(d,mk('box',.04,1.25,.07,'#ffffff',0,0,.03));
+    for(let i=0;i<4;i++)k.add(mk('box',.14,.14,.03,PARTY[(i+2)%7],0,-.8-i*.26,0));k.position.set(.55,3.1,0);k.rotation.z=-.3;P(k,1,true,.45);face(g,arg);}),
+  laundry:(x,z,arg)=>sized(x,z,RAD.laundry,2.4,2,'small',(P,g)=>{
+    for(const sx of [-2,2]){P(mk('box',.12,2.3,.12,'#adb5bd',sx,1.15,0),1);P(mk('box',.12,.1,.6,'#adb5bd',sx,2.25,0),1);}
+    P(mk('box',4,.03,.03,'#ffffff',0,2.2,0),1);
+    [[-1.4,'#ffbe0b',.6],[-.6,'#4cc9f0',.5],[.2,'#ff70a6',.7],[1,'#8ac926',.45],[1.6,'#ffffff',.3]].forEach(([lx,c,h])=>P(mk('box',.5,h,.05,c,lx,2.18-h/2,0),1,true,.25));face(g,arg);}),
+  lemonade:(x,z,arg)=>sized(x,z,RAD.lemonade,2.7,3,'medium',(P,g)=>sceneStand(P,g,arg,'#ffd60a',P=>{
+    P(mk('cyl',.32,.5,.32,'#fff3b0',-.6,1.43,0),1,true,.16);for(let i=0;i<3;i++)P(mk('cyl',.16,.22,.16,'#ffffff',.1+i*.3,1.29,.1),1,true,.08);
+    P(mk('sph',.42,.36,.36,'#ffd60a',0,.6,.66),1,true,.18);})),
+  veggiestand:(x,z,arg)=>sized(x,z,RAD.veggiestand,2.7,3,'medium',(P,g)=>sceneStand(P,g,arg,'#2a9d8f',P=>{
+    for(let i=0;i<4;i++)P(mk('sph',.34,.3,.34,['#fb8500','#e63946','#8ac926','#ffd60a'][i],-.9+i*.6,1.32,0),1,true,.15);
+    const cr=mk('cone',.16,.5,.16,'#fb8500',-.7,.6,.68);cr.rotation.x=Math.PI/2;P(cr,1,true,.1);})),
+  goal:(x,z,arg)=>sized(x,z,RAD.goal,2,3,'medium',(P,g)=>{
+    for(const sx of [-1.9,1.9])P(mk('box',.16,1.9,.16,'#ffffff',sx,.95,0),1);P(mk('box',3.96,.16,.16,'#ffffff',0,1.9,0),1);
+    P(mk('box',3.8,1.8,.04,'#dee2e6',0,.9,-.9),2);for(const sx of [-1.9,1.9])P(mk('box',.04,1.8,.9,'#dee2e6',sx,.9,-.45),1);face(g,arg);}),
+  icecone:(x,z)=>sized(x,z,RAD.icecone,1.3,1,'tiny',P=>{
+    const c=mk('cone',.5,.8,.5,'#e9c46a',0,.4,0);c.rotation.x=Math.PI;P(c,1);
+    P(mk('sph',.56,.5,.56,pick(['#ffc8dd','#fff1e6','#8ac926','#9c6644']),0,.95,0),1,true,.25);P(mk('sph',.12,.12,.12,'#e63946',0,1.24,0),1,true,.06);}),
+  icetruck:(x,z,arg)=>sized(x,z,RAD.icetruck,3.4,6,'medium',(P,g)=>{
+    P(mk('box',1.9,1.6,3.8,'#fff1e6',0,1.15,0),5);P(mk('box',1.85,.9,1,'#a2d2ff',0,1.5,1.9),2);P(mk('box',1.96,.25,3.9,'#ff70a6',0,.45,0),2);
+    P(mk('box',.08,.8,1.8,'#ffc8dd',.96,1.35,-.4),1,true,.4);
+    for(const [wx,wz] of [[-.9,1.3],[.9,1.3],[-.9,-1.3],[.9,-1.3]])P(mk('wheel',.3,.7,.7,'#222222',wx,.35,wz),1,true,.3);
+    const c=mk('cone',.7,1,.7,'#e9c46a',0,2.45,-.6);c.rotation.x=Math.PI;P(c,1,true,.35);P(mk('sph',.9,.8,.9,'#ffc8dd',0,3.1,-.6),1,true,.4);
+    P(mk('sph',.18,.18,.18,'#e63946',0,3.55,-.6),1,true,.08);face(g,arg);}),
+  // crashed flying saucer (Zorp & Blip's, the crop-circle quest): tilted, smoking, lights still blinking
+  saucer:(x,z,arg)=>sized(x,z,RAD.saucer,3,14,'large',(P,g)=>{
+    const s=new THREE.Group();s.rotation.z=.22;s.position.y=.7;
+    s.add(mk('sph',6.4,1.3,6.4,'#ced4da',0,0,0),mk('cyl',4.4,.3,4.4,'#adb5bd',0,-.5,0));P(s,6);
+    const d=mk('sph',2.6,2,2.6,'#9bf6ff',.35,1.6,0);P(d,1,true,1);
+    for(let i=0;i<6;i++){const a=i/6*Math.PI*2;P(mk('sph',.4,.4,.4,null,Math.cos(a)*2.95,.7-Math.cos(a)*.65,Math.sin(a)*2.95,E(PARTY[i])),1,true,.2);}
+    for(let i=0;i<3;i++)P(mk('sph',.9-i*.15,.9-i*.15,.9-i*.15,'#e9ecef',-2.2-i*.3,2.2+i*.9,.4),1,true,.4);face(g,arg);})
+});
 /* ---------- start street (D13) ----------
    Both cars start at micro size in the right lane of the home road (x 0…5), facing up the screen (−Z). At that size
    a curb is a wall, a mailbox a tower and a soda can a boulder. */
@@ -692,7 +787,7 @@ function place(type,x,z,arg){
   const tmpR=RAD[type]||1.1;
   if(!spotOK(x,z,tmpR))return null;
   for(const [a,b] of START_STREET)if(Math.hypot(x-a,z-b)<tmpR+.9)return null;
-  if(!MICRO_T.has(type)&&startLane(x,z))return null;
+  if(!MICRO_T.has(type)&&(startLane(x,z)||(z>8&&Math.abs(x)<ROAD_W/2+tmpR)))return null; // D18: the start road stays clear
   for(const o of objects)if(Math.abs(o.x-x)<o.r+tmpR&&Math.hypot(o.x-x,o.z-z)<(o.r+tmpR)*.8)return null; // no stacking
   return OBJ[type](x,z,arg);
 }
@@ -777,7 +872,7 @@ function lotKind(){const r=Math.random();return r<.5?'cottage':r<.78?'house':r<.
 function hoodRoads(ctx){const on=r=>Math.abs(r-Math.round(r/ROAD_EVERY)*ROAD_EVERY)<1;return {v:on(ctx.cx),h:on(ctx.cz)};}
 function hoodSide(ctx,axis,side){const V=axis==='v';
   const p=(u,s)=>V?[ctx.cx+side*s,ctx.cz+u]:[ctx.cx+u,ctx.cz+side*s];
-  const S={p,V,side,face:V?(side<0?1:3):(side<0?0:2),
+  const S={p,V,side,ctx,face:V?(side<0?1:3):(side<0?0:2),th:V?(side<0?Math.PI/2:-Math.PI/2):(side<0?0:Math.PI),
     put(type,u,s,arg,r){const [x,z]=p(u,s);return r?ctx.place(type,x,z,arg,r):put(ctx,type,x,z,arg);},
     spot(kind,u0,u1,s0,s1){const [x,z]=p((u0+u1)/2,(s0+s1)/2);return V?ctx.spot(kind,x,z,s1-s0,u1-u0,0):ctx.spot(kind,x,z,u1-u0,s1-s0,0);},
     // fence pieces are ~4 long; r=1 lets a line of them sit end to end
@@ -803,7 +898,9 @@ function hoodLot(S,uc){
   if(Math.random()<.4)S.put('doghouse',uc+rand(-5,5),rand(back+2,34),S.face);
   if(Math.random()<.2)S.put('swing',uc+rand(-4,4),rand(back+3,33),S.V?1:0);}
 // a houses street side; us = lot centers along the road
-function hoodHouses(S,us){hoodWalk(S,-40,40,3.2);for(const u of us)hoodLot(S,u);S.put('hydrant',pick(us)+8,8.2,0);}
+// D18: each plot is a lot scene (SCENES.lot_*), front on the sidewalk (s 8.8) and back fence at s 38
+function hoodHouses(S,us){hoodWalk(S,-40,40,3.2);for(const u of us){const [x,z]=S.p(u,23.4);if(!S.ctx.scene(pick(LOTS),x,z,S.th))hoodLot(S,u);}
+  S.put('hydrant',pick(us)+8,8.2,0);}
 // a main street side: shops on a wide sidewalk, benches and bins, a parking lot behind
 function hoodShops(S,us,u0,u1){
   hoodWalk(S,u0,u1,4.4);for(const u of us){if(!S.put('shop',u,13.6,S.face))continue;
@@ -943,3 +1040,220 @@ const SPOT_PROPS={
   patch:{micro:['pebble','mushroom','acorn'],mini:['pumpkin'],small:['melon','scarecrow','hay']},
   pen:{micro:['pebble','flowers','acorn'],mini:['bush','pumpkin'],tiny:['trashcan'],small:['hay','fence'],medium:['crates','barrel']}
 };
+/* D18: new spot kinds painted on the ground (blankets, chalk, puddles, mud, kiddie pools, flowerbeds…) */
+Object.assign(SPOT_LOOK,{blanket:'#ef476f',blanket_w:'#fff0f3',chalk:'#ffafcc',chalk_b:'#a2d2ff',chalk_y:'#fdffb6',line:'#ffffff',
+  puddle:'#7cc4f0',mud:'#7f5539',pool:'#48cae4',flowerbed:'#8d5b3a',dirt:'#b08968',pitch:'#5cc04a',stage:'#ffd166',crop_circle:'#e9d8a6'});
+Object.assign(SPOT_PROPS,{flowerbed:{micro:['flowers','mushroom','snail'],mini:['gnome','bush']},puddle:{micro:['toyduck','paperboat','pebble']},
+  pool:{micro:['toyduck'],mini:['beachball']},mud:{micro:['pebble','acorn'],mini:['pumpkin'],small:['hay']},blanket:{micro:['sandwich','teacup','can','popsicle']},
+  chalk:{micro:['pebble','can','toycar']},dirt:{micro:['pebble','can'],tiny:['wheelbarrow'],small:['cone']}});
+MICRO.push('toycar','pail','sandwich','popsicle');
+for(const t of ['toycar','pail','sandwich','popsicle','paperboat','teacup','ant'])MICRO_T.add(t);
+SPOT_PROPS.yard.micro.push('toycar');SPOT_PROPS.backyard.micro.push('toycar','pail');SPOT_PROPS.backyard.tiny.push('bike','wheelbarrow');
+SPOT_PROPS.sand.micro.push('pail');SPOT_PROPS.sand.tiny.push('sandcastle');SPOT_PROPS.lawn.micro.push('sandwich','popsicle');
+SPOT_PROPS.sidewalk.micro.push('popsicle');SPOT_PROPS.sidewalk.tiny.push('bike');SPOT_PROPS.field.tiny.push('wheelbarrow');
+ZONE_PROPS.town.tiny.push('bike');ZONE_PROPS.park.micro.push('pail','sandwich');ZONE_PROPS.park.mini.push('soccerball');ZONE_PROPS.park.tiny.push('sandcastle');
+ZONE_PROPS.park.small.push('kite','balloons');ZONE_PROPS.farm.tiny.push('wheelbarrow');ZONE_PROPS.farm.small.push('laundry');ZONE_PROPS.farm.medium.push('veggiestand');
+
+/* ---------- D18 scenes (L31 contract, see CLAUDE.md "Scenes and lots") ----------
+   Local coordinates, +Z is the front (toward the road or the camera). `size` = the size class of the scene's main
+   props at scale 1. Mixed sizes are on purpose: a lemonade stand has cups and cans around it, so every size has
+   something to find. A scene can be built at any size (×1.65 per step); `sizes` keeps the little stories little. */
+const SMALL_SIZES=['micro','mini','tiny','small'],TOWNISH=['town','home'],PARKISH=['park','home'];
+const faceIn=(x,z)=>Math.atan2(-x,-z); // turn that points a +Z-facing prop at the scene's middle
+function sceneChecks(s,x,z,w,d,nx,nz,kinds){ // a checkered blanket / hopscotch: nx×nz squares, kinds alternate
+  const cw=w/nx,cd=d/nz;for(let i=0;i<nx;i++)for(let j=0;j<nz;j++)if(kinds[(i+j)%kinds.length])s.spot(kinds[(i+j)%kinds.length],x-w/2+cw*(i+.5),z-d/2+cd*(j+.5),cw,cd);}
+const SCENES={
+  /* ---- town + home, little stories (micro…small) ---- */
+  ant_picnic:{zones:['town','park','home'],size:'micro',r:2.6,sizes:SMALL_SIZES,build(s){
+    s.spot('blanket',0,0,2.6,2);sceneChecks(s,0,0,2.6,2,4,3,['blanket_w',null]);
+    s.place('sandwich',0,0,0,.3);s.place('popsicle',.95,.6);s.place('can',-.95,.55);s.place('teacup',.8,-.6);
+    const th=Math.atan2(.34,-.26);for(let i=0;i<7;i++)s.place('ant',-2.6+i*.34,2-i*.26,0,th);}},
+  snail_race:{zones:TOWNISH,size:'micro',r:2.6,sizes:SMALL_SIZES,build(s){
+    s.spot('chalk_b',0,-1.4,3.2,.14);s.spot('chalk_y',0,1.7,3.2,.14);
+    [[-1.1,-1.05],[-.37,-.55],[.37,-.85],[1.1,-.2]].forEach(([x,z])=>s.place('snail',x,z,0));
+    s.place('pebble',-1.9,.1);s.place('pebble',1.9,-.5);s.place('acorn',1.7,1.4);s.place('mushroom',-1.8,1.5);s.place('toyblock',0,2.3);}},
+  gnome_tea:{zones:TOWNISH,size:'mini',r:2.3,sizes:SMALL_SIZES,spot:'yard',build(s){
+    s.place('mushroom',0,0,0,0,2.2);
+    for(let i=0;i<3;i++){const a=i/3*Math.PI*2+.5;s.place('teacup',Math.sin(a)*.55,Math.cos(a)*.55);}
+    for(let i=0;i<4;i++){const a=i/4*Math.PI*2+.3,x=Math.sin(a)*1.3,z=Math.cos(a)*1.3;s.place('gnome',x,z,0,faceIn(x,z));}
+    s.place('flowers',-1.9,-1);s.place('flowers',1.8,-1.3);s.place('flowers',0,-2);}},
+  puddle_boats:{zones:['town','park','home'],size:'micro',r:2.3,sizes:SMALL_SIZES,build(s){
+    s.spot('puddle',0,0,3,2);s.spot('puddle',1.2,.9,1.4,1);
+    s.place('paperboat',0,0,0,.6);s.place('paperboat',.9,.5,0,2);s.place('toyduck',-.8,-.3,0,1);
+    s.place('pebble',1.8,-.2);s.place('pebble',-1.7,.6);s.place('pebble',.3,-1.3);s.place('acorn',-1.4,-1.2);}},
+  hopscotch:{zones:TOWNISH,size:'micro',r:2.6,sizes:SMALL_SIZES,build(s){
+    const K=['chalk','chalk_b','chalk_y'];let n=0;
+    for(const [z,xs] of [[-2,[0]],[-1.2,[0]],[-.4,[-.4,.4]],[.4,[0]],[1.2,[-.4,.4]],[2,[0]]])for(const x of xs)s.spot(K[n++%3],x,z,.74,.74);
+    s.place('pebble',.4,1.2);s.place('pail',1.5,-1.6);s.place('toyblock',-1.4,.8);s.place('can',1.4,.6);s.place('toycar',-1.3,-1.4,0,.4);}},
+  /* ---- town + home, bigger ---- */
+  lemonade_stand:{zones:TOWNISH,size:'medium',r:4.8,build(s){
+    s.place('lemonade',0,0,0);
+    [[0,2.3],[.25,3.5],[-.1,4.7]].forEach(([x,z])=>s.place('toycar',x,z,0,Math.PI,5)); // the line of customers
+    s.place('balloons',1.9,-.6);s.place('cone',-2.1,1.5);s.place('bike',-2.3,-.8,0,.5);s.place('trashcan',2.3,1.3,0);
+    s.place('can',1.2,1.1);s.place('can',-1,1.6);s.place('popsicle',.9,2.2);}},
+  yard_sale:{zones:TOWNISH,size:'small',r:4.8,build(s){
+    s.spot('blanket',0,.4,5,3);sceneChecks(s,0,.4,5,3,5,3,['blanket_w',null]);
+    s.place('picnic',0,-1.9,0);s.place('doghouse',-2.3,-.6,0);s.place('lamp',2.3,-1.2);s.place('crates',-3.6,1.2,null,0,.6);
+    s.place('bike',1.3,1.1,0,1.2);s.place('beachball',-1,1.2);s.place('toyblock',.1,.9,null,0,2.5);s.place('toyblock',.5,1.6,null,0,2.5);
+    s.place('toyduck',-1.8,1.9,0,0,2);s.place('pail',2.2,1.9,0,0,2.5);s.place('toycar',-.5,1.9,0,.3,2.5);}},
+  birthday_party:{zones:['town','park','home'],size:'small',r:5,spot:'backyard',build(s){
+    s.place('picnic',0,0,0);s.place('cake',0,1.5);
+    s.place('balloons',-2.3,-1);s.place('balloons',2.4,-1.2);s.place('balloons',0,-2.1);
+    s.place('toyblock',1.9,1.7,null,0,3);s.place('toyblock',2.6,2.3,null,0,2.6);s.place('beachball',-2.6,1.6);
+    s.place('toycar',-1.3,2.6,0,.4,3);s.place('toycar',1,3,0,-.3,3);s.place('popsicle',-.4,2.4,0,0,2);}},
+  garbage_day:{zones:TOWNISH,size:'tiny',r:3.4,spot:'sidewalk',build(s){
+    for(const x of [-1.8,-.6,.6,1.8])s.place('trashcan',x,0,0);
+    s.place('can',-1.2,1);s.place('can',.2,1.3);s.place('can',1.4,.9);s.place('popsicle',-.5,1.6);s.place('sandwich',1.1,1.8,0,1);
+    s.place('toyduck',2.6,.6,0,2);}},
+  car_wash:{zones:TOWNISH,size:'medium',r:6.5,build(s){
+    s.spot('puddle',0,0,7.4,5);s.spot('puddle',2.6,2.2,3,2);
+    s.place('parked',-1.7,0,0);s.place('parked',1.9,.4,0);s.place('hydrant',-4,2.7);s.place('barrel',3.8,-2.4);
+    s.place('cone',-3,4);s.place('cone',3,4);s.place('pail',-.2,2.4,0,0,3);s.place('pail',.6,-2.6,0,0,3);s.place('paperboat',3.3,2.4,0,.4,2);}},
+  icecream_line:{zones:['town','park','home'],size:'medium',r:6,build(s){
+    s.place('icetruck',0,-.4,0,Math.PI/2);
+    s.place('icecone',-.6,1.9);s.place('icecone',.6,1.9);
+    [[2.6,2.6],[3.6,3.6],[4.6,4.6]].forEach(([x,z])=>s.place('toycar',x,z,0,faceIn(x-.6,z-1.4),5));
+    s.place('bench',-3.4,2.6,0);s.place('trashcan',-3.9,-1.6,0);s.place('popsicle',-1.6,3);s.place('popsicle',1.4,3.4);}},
+  road_works:{zones:TOWNISH,size:'small',r:5,build(s){
+    s.spot('dirt',0,0,4,3);
+    for(let i=0;i<6;i++){const a=i/6*Math.PI*2;s.place('cone',Math.sin(a)*3.2,Math.cos(a)*2.6);}
+    s.place('barrel',3.3,-2.9);s.place('crates',-3.6,-2,null,0,.6);s.place('wheelbarrow',1,.5,0,.6,1.5);s.place('lamp',-3.8,1.8);
+    for(const [x,z] of [[-.8,.4],[-.2,-.6],[.6,-.2],[-1.2,-.5]])s.place('pebble',x,z,null,0,2.4);}},
+  /* ---- farm ---- */
+  pumpkin_patch:{zones:['farm'],size:'mini',r:3.4,build(s){
+    s.spot('patch',0,0,5,4.4);for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)if(i||j)s.place('pumpkin',i*1.4,j*1.3);
+    s.place('scarecrow',0,0,0,0,.45);s.place('wheelbarrow',2.9,1.6,0,-.5);s.place('flowers',-2.8,1.8);s.place('mushroom',-2.6,-1.8);}},
+  veggie_stand:{zones:['farm'],size:'medium',r:4.6,build(s){
+    s.place('veggiestand',0,0,0);
+    [[-1.2,1.7],[-.2,2],[.9,1.8]].forEach(([x,z])=>s.place('pumpkin',x,z,null,0,1.8));
+    s.place('hay',-2.6,-.8);s.place('hay',2.6,-.6);s.place('wheelbarrow',2.4,1.9,0,-.4,1.6);s.place('crates',-2.8,1.6,null,0,.6);}},
+  hay_maze:{zones:['farm'],size:'small',r:7.5,build(s){
+    const G=2.6,wall=[[-2,-2],[-1,-2],[0,-2],[1,-2],[2,-2],[-2,-1],[2,-1],[-2,0],[0,0],[2,0],[-2,1],[0,1],[2,1],[-2,2],[-1,2],[1,2],[2,2],[1,-1]];
+    for(const [i,j] of wall)s.place('hay',i*G,j*G);s.spot('field',0,0,13,13);
+    s.place('pumpkin',-1*G,-1*G,null,0,1.6);s.place('scarecrow',-1*G,G*1,0);s.place('flowers',G,-1.2*G,null,0,3);}},
+  pig_pen:{zones:['farm'],size:'small',r:5.6,build(s){
+    s.spot('mud',0,0,7,7);
+    for(const t of [-2.1,2.1]){s.place('fence',t,-4.2,0);s.place('fence',-4.2,t,Math.PI/2);s.place('fence',4.2,t,Math.PI/2);}
+    s.place('fence',2.1,4.2,0); // the gate's open on the left of the front
+    s.herd('pig',0,0,3);s.place('trashcan',2.5,-2.5,0);s.place('hay',-2.5,-2.6);s.place('pumpkin',-2.6,2.4);s.place('pebble',1,1,null,0,3);}},
+  chicken_yard:{zones:['farm'],size:'medium',r:5,build(s){
+    s.place('coop',0,-1.8,0);s.herd('chicken',0,2,5);s.place('hay',-3.2,.8);s.place('pumpkin',2.9,1.8);
+    s.place('wheelbarrow',3,-1.4,0,-.6);s.place('flowers',-2.2,3);s.place('flowers',1.4,3.4);}},
+  laundry_day:{zones:['farm','town','home'],size:'small',r:4.4,spot:'backyard',build(s){
+    s.place('laundry',0,0,0);s.place('trashcan',-1.4,1.2,0);s.place('wheelbarrow',2.4,1.2,0,-.6);s.place('pail',-.4,1.4,0,0,2.5);
+    if(s.zone==='farm')s.herd('chicken',0,2.8,3);else s.place('beachball',1,2.4);}},
+  tractor_parade:{zones:['farm'],size:'large',r:10,build(s){
+    for(const x of [-6,0,6]){s.place('tractor',x,0,0,Math.PI/2);s.place('balloons',x-1.6,1.4,null,0,.8);}
+    s.place('hay',-8.6,2.6);s.place('hay',8.6,-2.4);s.place('cone',9.4,1.6);s.place('cone',-9.4,-1.6);s.place('flowers',3,3,null,0,3);}},
+  /* ---- park ---- */
+  picnic_blanket:{zones:PARKISH,size:'small',r:4.6,build(s){
+    s.spot('blanket',0,0,3.6,2.8);sceneChecks(s,0,0,3.6,2.8,4,3,['blanket_w',null]);
+    s.place('sandwich',-.6,.2,0,.4,3);s.place('teacup',.6,-.4,null,0,3);s.place('teacup',1.1,.5,null,0,3);s.place('cake',.1,-.7);
+    s.place('beachball',2.6,1.4);s.place('tree',0,-3.8);s.place('trashcan',-2.8,-1.8,0);s.herd('duck',-3.2,2.2,3);}},
+  sandcastle_day:{zones:PARKISH,size:'tiny',r:3.2,build(s){
+    s.spot('sand',0,0,5.4,4.2);s.place('sandcastle',0,0,0);
+    s.place('pail',1.4,.9,null,0,1.6);s.place('pail',-1.4,1.1,null,0,1.6);s.place('toyduck',1.7,-.9,0,2,1.4);
+    s.place('toyblock',-1.6,-.8,null,0,1.6);s.place('beachball',-2.2,-1.4);s.place('soccerball',2.3,1.6);}},
+  kite_field:{zones:PARKISH,size:'small',r:6.6,build(s){
+    s.place('kite',-3.6,-1,0);s.place('kite',0,-2.6,0);s.place('kite',3.8,-.6,0);
+    s.place('bench',0,3.6,0,Math.PI);s.place('beachball',-2,2.2);s.place('soccerball',2.4,2);s.place('flowers',-4.4,2.6,null,0,3);}},
+  soccer_game:{zones:PARKISH,size:'medium',r:9.4,build(s){
+    s.spot('pitch',0,0,17,10.6);s.spot('line',0,0,.24,10.6);s.spot('line',0,0,2.4,.24);
+    s.place('goal',-7.6,0,0,Math.PI/2);s.place('goal',7.6,0,0,-Math.PI/2);s.place('soccerball',0,0,null,0,2.4);
+    for(const [x,z] of [[-8.4,-5.2],[8.4,-5.2],[-8.4,5.2],[8.4,5.2]])s.place('cone',x,z);
+    s.place('bench',-3,6.8,0,Math.PI);s.place('bench',3,6.8,0,Math.PI);s.place('trashcan',0,7.2,0);}},
+  concert:{zones:PARKISH,size:'small',r:5.6,build(s){
+    s.spot('stage',0,-2.4,6,2.6);s.place('lamp',-3.5,-3.4);s.place('lamp',3.5,-3.4);
+    s.place('toyblock',-2,-2.6,null,0,3.5);s.place('toyblock',2,-2.6,null,0,3.5);s.place('toyduck',0,-2.4,0,0,3.5); // the star of the show
+    s.place('balloons',-2.9,-1);s.place('balloons',2.9,-1);
+    for(const [x,z] of [[-1.4,1.3],[1.4,1.3],[-1.4,3.1],[1.4,3.1]])s.place('bench',x,z,0,Math.PI);}},
+  playground_corner:{zones:PARKISH,size:'small',r:5.6,build(s){
+    s.spot('sand',0,-.4,8,5.6);s.place('swing',-2.2,-1,0);s.place('slide',2.4,-.8,0);s.place('beachball',0,1.4);
+    s.place('pail',-1,1.8,null,0,2.5);s.place('bench',0,3.8,0,Math.PI);s.place('trashcan',3.6,2.8,0);}},
+
+  /* ---- lots: a whole house plot, from the house down to the flowers (layouts only, filler:false) ----
+     16 wide (x ±8) and 29 deep (z ±14.6), front edge on the sidewalk. Mirrored at random (seeded) so a street of a
+     few templates doesn't repeat; houses pick their own colors. */
+  lot_family:{zones:TOWNISH,size:'huge',r:16,filler:false,build(s){const m=Math.random()<.5?1:-1,X=v=>v*m;
+    s.spot('yard',0,7.6,16,14);s.spot('backyard',0,-9.6,16,10);s.spot('path',X(-1),8.6,1.6,12);s.spot('parking',X(5.7),6,3.4,17.2);
+    s.spot('flowerbed',X(-5),4.6,4.4,1.3);
+    s.place('house',X(-1),-1.2,0);if(Math.random()<.8)s.place('parked',X(5.7),9,0);
+    s.place('mailbox',X(-2.4),13.6,0);s.place('bike',X(3.4),4,0,m*.4);s.place('trashcan',X(7.4),1,0);s.place('trashcan',X(7.4),-.3,0);
+    s.place('fence',X(-5.6),14,0);for(const x of [-5.85,-1.95,1.95,5.85])s.place('fence',x,-14.2,0);
+    s.place('gnome',X(-2.3),5.6,0,m*.5);s.place('gnome',X(.3),11.4,0,-m*.4);
+    for(const x of [-6.6,-5.5,-4.4,-3.3])s.place('flowers',X(x),4.6);
+    s.place('pebble',X(.1),6.6);s.place('pebble',X(-2),9.4);s.place('toycar',X(2.2),12.4,0,m*.8);s.place('toyduck',X(-6),9.4,0,1);
+    s.place('tree',X(-5),-10);s.place('acorn',X(-3.4),-8.4);s.place('mushroom',X(-6.6),-12.2);
+    if(Math.random()<.5){s.place('doghouse',X(3.6),-10.4,0);s.place('beachball',X(0),-7.6);}
+    else{s.place('swing',X(3.2),-10.4,0);s.place('toyblock',X(.4),-7.8);s.place('toyblock',X(.9),-8.3);}}},
+  lot_garden:{zones:TOWNISH,size:'huge',r:16,filler:false,build(s){const m=Math.random()<.5?1:-1,X=v=>v*m;
+    s.spot('yard',0,7.6,16,14);s.spot('backyard',0,-9.6,16,10);s.spot('path',0,8.6,1.6,12);
+    s.spot('flowerbed',-3.6,8,3.4,1.2);s.spot('flowerbed',3.6,8,3.4,1.2);s.spot('patch',X(4.2),-9.6,6.4,7);
+    s.place('cottage',X(-.4),-1.6,0);s.place('fence',-5.6,14,0);s.place('fence',5.6,14,0);
+    for(const x of [-4.8,-3.6,-2.4,2.4,3.6,4.8])s.place('flowers',x,8);
+    s.place('gnome',-1.3,11.6,0,.4);s.place('gnome',1.3,10.4,0,-.4);s.place('gnome',X(-5.4),3.4,0,m*.7);
+    s.place('birdbath',X(-5.4),5.2);s.place('bench',X(5.2),4.4,0);s.place('mailbox',X(-2.6),13.4,0);s.place('snail',.2,6.4,0,.3);
+    for(let i=0;i<3;i++)for(let j=0;j<2;j++)s.place('pumpkin',X(2.4+i*1.8),-11.2+j*2.6);s.place('wheelbarrow',X(4.4),-6.4,0,m*.5);
+    s.place('laundry',X(-3),-8.6,0);s.place('tree',X(-6),-12.4);s.place('mushroom',X(-4.8),-12.6);s.place('mushroom',X(-6.6),-11);}},
+  lot_party:{zones:TOWNISH,size:'huge',r:16,filler:false,build(s){const m=Math.random()<.5?1:-1,X=v=>v*m;
+    s.spot('yard',0,7.6,16,14);s.spot('backyard',0,-11.4,16,6.4);s.spot('path',0,8.6,1.6,11.6);s.spot('parking',X(6.4),6.6,3,16);
+    s.spot('pool',X(-3.4),-12,6,3.4);
+    s.place('villa',0,-3.6,0);s.place('parked',X(6.4),9.4,0);
+    for(const x of [-7,-5.2,-3.4])s.place('bush',X(x),12.6);s.place('lamp',X(-1.9),12);
+    s.place('mailbox',X(1.9),13.4,0);s.place('balloons',X(2.6),13);s.place('balloons',X(-1.2),2.8);
+    s.place('toyduck',X(-4.2),-12,0,1);s.place('toyduck',X(-2.6),-11.6,0,2);s.place('beachball',X(-.2),-12.6);
+    s.place('picnic',X(4),-12,0);s.place('cake',X(4),-10.2);s.place('balloons',X(6.6),-12.8);
+    for(const x of [-5.85,-1.95,1.95,5.85])s.place('fence',x,-14.2,0);
+    s.place('flowers',X(-1.6),6);s.place('flowers',X(1.6),6);s.place('popsicle',X(-4),8);}},
+  lot_kids:{zones:TOWNISH,size:'huge',r:16,filler:false,build(s){const m=Math.random()<.5?1:-1,X=v=>v*m;
+    s.spot('yard',0,7.6,16,14);s.spot('backyard',0,-9.6,16,10);s.spot('parking',X(6.1),6,3.2,17.2);s.spot('sand',X(-5),6.4,4.6,4.6);
+    sceneChecks(s,X(6.1),7,1.6,4.8,2,6,['chalk','chalk_b','chalk_y']);
+    s.place('house',X(1),-1.6,0);
+    s.place('sandcastle',X(-5),6.4,0);s.place('pail',X(-6.5),7.6);s.place('pail',X(-3.6),5);s.place('toyblock',X(-4.4),8);
+    s.place('bike',X(3.7),4.2,0,m*.3);s.place('bike',X(4.2),5.6,0,m*.6);s.place('toycar',X(1.4),9.6,0,1);s.place('toycar',X(2.2),10.6,0,2.4);
+    s.place('soccerball',X(-1),10.4);s.place('beachball',X(-6.8),11.6);s.place('mailbox',X(-2),13.6,0);s.place('trashcan',X(7.6),-.8,0);
+    s.place('slide',X(-5),-10,0);s.place('swing',X(3),-10.4,0);s.place('flowers',X(-1.8),4.4);s.place('flowers',X(-.6),4.4);}},
+};
+const LOTS=['lot_family','lot_family','lot_garden','lot_party','lot_kids'];
+
+/* ---------- D18: the Grow-Up Garage, outside (L32 hook) ----------
+   Car scale 1, centered on the origin (logic scales, places and lifts it). Walls just outside ±GARAGE_HW (43), 14 tall,
+   a 14-wide roll-up door in the middle of the front (+Z) and back (−Z). Cream walls on a red base, candy-stripe band,
+   blue corner pillars, big windows down the sides, and a roof sign with a car between two grow-up arrows (no words).
+   The roof, front wall, sign and beacon are cutaway parts (hidden while someone's inside). */
+function buildGarageBuilding(){
+  const H=43,T=1.5,O=H+T,W=14,D=7,DH=10,g=new THREE.Group(),cut=new THREE.Group();
+  const add=(m,c)=>{(c?cut:g).add(m);return m;},WALL='#fff1d6',BASE='#ff6b6b',TRIM='#ffd60a',PIL='#4cc9f0',WIN='#a0e7ff';
+  add(mk('box',O*2,3.1,O*2,'#2b2f45',0,-1.45,0)).castShadow=false; // floor slab: top at 0.1, reaches down to meet the ground
+  const stripes=(len,n,c,fn)=>{for(let i=0;i<n;i++){const a=-len/2+len/n*(i+.5);add(fn(a,len/n,i%2?'#ffffff':'#ff595e'),c);}};
+  for(const sx of [-1,1]){const x=sx*(H+T/2);
+    add(mk('box',T,W,O*2,WALL,x,W/2,0));add(mk('box',T+.3,2,O*2,BASE,x,1,0));
+    stripes(O*2,12,false,(a,l,c)=>mk('box',T+.3,1.6,l,c,x,W-1.4,a));
+    for(const z of [-28,-9,10,29]){add(mk('box',T+.4,4.4,7,'#ffffff',x,7.4,z));add(mk('box',T+.6,3.6,6.2,WIN,x,7.4,z));}}
+  for(const zs of [1,-1]){const z=zs*(H+T/2),pw=O-D,c=zs>0;
+    for(const sx of [-1,1]){add(mk('box',pw,W,T,WALL,sx*(D+pw/2),W/2,z),c);add(mk('box',pw,2,T+.3,BASE,sx*(D+pw/2),1,z),c);
+      stripes(pw,6,c,(a,l,col)=>mk('box',l,1.6,T+.3,col,sx*(D+pw/2)+a,W-1.4,z));
+      add(mk('box',1.2,DH,T+.5,TRIM,sx*(D+.6),DH/2,z),c);}
+    add(mk('box',D*2,W-DH,T,WALL,0,DH+(W-DH)/2,z),c);add(mk('box',D*2+2.4,1.2,T+.5,TRIM,0,DH+.6,z),c);
+    // roll-up door: slats merged into one vertex-colored mesh, origin at its center (logic squashes it up to open)
+    const dg=new THREE.Group(),n=8,cols=zs>0?['#ff9f1c','#ffbf69']:['#ff006e','#ff70a6'];
+    for(let i=0;i<n;i++)dg.add(mk('box',D*2-.3,DH/n-.12,.5,cols[i%2],0,-DH/2+DH/n*(i+.5),0));
+    dg.add(mk('box',2.4,.5,.7,'#343a40',0,-DH/2+1.2,0));
+    const door=new THREE.Mesh(blocksGeo(dg),kitVCMat('#ffffff'));door.position.set(0,DH/2,z);door.castShadow=door.receiveShadow=true;
+    door.userData.door=zs>0?'front':'back';if(c)door.userData.cutaway=true;g.add(door);}
+  for(const sx of [-1,1])for(const zs of [-1,1])add(mk('box',3.2,W+1.6,3.2,PIL,sx*O,(W+1.6)/2,zs*O),zs>0); // corner pillars
+  for(const sx of [-1,1]){const k=add(mk('box',O-D,1,T*.9,TRIM,sx*(D+(O-D)/2),.5,H+T/2));k.castShadow=false;} // low curb that stays when the front wall hides
+  add(mk('box',O*2+1,1,O*2+1,'#3a86ff',0,W+.5,0),true);
+  for(const sx of [-1,1])add(mk('box',1,1.4,O*2+1,TRIM,sx*(O+.5),W+1.2,0),true);
+  for(const zs of [-1,1])add(mk('box',O*2+1,1.4,1,TRIM,0,W+1.2,zs*(O+.5)),true);
+  // roof sign over the front door: a red car between two green grow-up arrows
+  const sz=O+.6;add(mk('box',34,9,.8,'#ffffff',0,W+5.4,sz),true);add(mk('box',35,.8,1,TRIM,0,W+10.2,sz),true);add(mk('box',35,.8,1,TRIM,0,W+.6,sz),true);
+  add(mk('box',10,2.6,.5,'#e63946',0,W+4.6,sz+.5),true);add(mk('box',5.6,2.2,.5,'#9bf6ff',-.4,W+6.9,sz+.45),true);
+  for(const wx of [-3.2,3.2]){const w=mk('cyl',2.4,.6,2.4,'#222222',wx,W+3.2,sz+.75);w.rotation.x=Math.PI/2;add(w,true);}
+  for(const ax of [-12,12]){add(mk('box',2,4.4,.5,'#06d6a0',ax,W+4.2,sz+.5),true);add(mk('pyr',5,3.2,.6,'#06d6a0',ax,W+8,sz+.5),true);}
+  add(mk('cyl',3.2,1.8,3.2,'#ffffff',0,W+2,0),true).castShadow=false;
+  if(typeof BEAM_MAT!=='undefined'){const beam=add(new THREE.Mesh(GEO.cyl,BEAM_MAT),true);beam.scale.set(2.4,140,2.4);beam.position.y=W+70;beam.castShadow=false;}
+  if(typeof carMerge==='function')carMerge({g:cut});cut.userData.cutaway=true;g.add(cut);
+  const arm=new THREE.Group();arm.position.set(0,W+3.6,0);arm.userData.beacon=true;arm.userData.cutaway=true;
+  arm.add(mk('box',5.4,1.3,1.3,null,0,0,0,E('#ffd60a')),mk('box',1.3,1.3,5.4,null,0,0,0,E('#ff9f1c')),mk('sph',1.6,1.6,1.6,null,0,.4,0,E('#ff595e')));g.add(arm);
+  return g;}
