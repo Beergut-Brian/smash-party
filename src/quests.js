@@ -110,7 +110,32 @@ function questGiverHide(gv){scene.remove(gv.g);if(gv.m&&typeof carUnmerge==='fun
 const _qv=new THREE.Vector3();
 function questProj(el,x,y,z,show){if(!show){el.style.display='none';return;}_qv.set(x,y,z).project(camera);
   if(_qv.z>1||Math.abs(_qv.x)>1.1||Math.abs(_qv.y)>1.1){el.style.display='none';return;}
-  el.style.display='';el.style.left=((_qv.x+1)/2*innerWidth)+'px';el.style.top=((1-_qv.y)/2*innerHeight)+'px';}
+  const px=(_qv.x+1)/2*innerWidth;let py=(1-_qv.y)/2*innerHeight;
+  el.style.display='';el.style.left=px+'px';
+  // L53: a balloon/bubble that would sit under a HUD box (the smash meter when a giver is straight ahead at micro)
+  // drops to just below it. The element hangs above its point (translate -50%,-100%), so its box is [py-h, py].
+  for(const r of questHudBoxes()){if(r.top>innerHeight/2||py>r.bottom+260||px<r.left-90||px>r.right+90)continue; // top HUD only; cheap test, then its real size
+    const w=el.offsetWidth,h=el.offsetHeight;if(px+w/2>r.left&&px-w/2<r.right&&py-h<r.bottom+6)py=r.bottom+6+h;}
+  el.style.top=py+'px';}
+// L53: screen boxes of the HUD pieces the quest arrow and the giver balloons keep clear of; re-read twice a second
+// (they show and hide: the quest HUD, the mini-map) and on resize.
+const QUEST_HUD_IDS=['sizeHud','questHud','miniMap','meterWrap','corner','p0','p1'];let questHudRects=[],questHudRT=0;
+function questHudBoxes(){const now=performance.now();if(now<questHudRT)return questHudRects;questHudRT=now+500;questHudRects=[];
+  for(const id of QUEST_HUD_IDS){const e=document.getElementById(id);if(!e)continue;const r=e.getBoundingClientRect();if(r.width>2&&r.height>2)questHudRects.push(r);}
+  if(questArrowEl.offsetWidth)questArrowR=questArrowEl.offsetWidth/2;
+  return questHudRects;}
+addEventListener('resize',()=>{questHudRT=0;});
+// L53: slide the edge arrow (center px,py) along the screen edge it's on until it clears every HUD box; a box in the
+// middle of the top (the smash meter) or bottom edge can also be cleared by stepping inward, whichever is the shortest move
+let questArrowR=44;
+function questArrowClear(px,py,side){const pad=questArrowR+6,W=innerWidth,H=innerHeight;
+  for(let pass=0;pass<4;pass++){let moved=false;
+    for(const r of questHudBoxes()){const l=r.left-pad,rt=r.right+pad,t=r.top-pad,b=r.bottom+pad;if(px<=l||px>=rt||py<=t||py>=b)continue;
+      const c=side?[[px,t],[px,b]]:[[l,py],[rt,py],[px,py<H/2?b:t]]; // left/right edge: up or down; top/bottom: sideways or inward
+      let best=null,bd=1e9;for(const q of c){if(q[0]<pad||q[0]>W-pad||q[1]<pad||q[1]>H-pad)continue;const d=Math.abs(q[0]-px)+Math.abs(q[1]-py);if(d<bd){bd=d;best=q;}}
+      if(best){px=best[0];py=best[1];moved=true;}}
+    if(!moved)break;}
+  return [px,py];}
 // driving into a giver
 // (and pressing A next to one, L45): a new quest or a reminder opens the talk scene
 function questTouch(gv,p){
@@ -437,7 +462,8 @@ function questArrowSet(tg){
   const k=Math.max(1.6*qS(),camDist*0.05);questArrow3.scale.set(k,k*1.5,k);questArrow3.position.set(tg[0],groundH(tg[0],tg[1])+4*qS()+k*(0.5+0.3*Math.sin(T*5)),tg[1]);questArrow3.rotation.y=T*2;
   _qv.set(tg[0],qS(),tg[1]).project(camera);
   if(_qv.z>1||Math.abs(_qv.x)>0.92||Math.abs(_qv.y)>0.85){let ax=_qv.x,ay=_qv.y;if(_qv.z>1){ax=-ax;ay=-ay;}const m=Math.max(Math.abs(ax)/0.88,Math.abs(ay)/0.8,1e-3);
-    questArrowEl.textContent=tg[2]||'⭐';questArrowEl.style.left=((ax/m+1)/2*innerWidth)+'px';questArrowEl.style.top=((1-ay/m)/2*innerHeight)+'px';questArrowEl.style.display='block';}
+    const [px,py]=questArrowClear((ax/m+1)/2*innerWidth,(1-ay/m)/2*innerHeight,Math.abs(ax)/0.88>=Math.abs(ay)/0.8);
+    questArrowEl.textContent=tg[2]||'⭐';questArrowEl.style.left=px+'px';questArrowEl.style.top=py+'px';questArrowEl.style.display='block';}
   // far away: a trail of sparkles on the ground from the cars toward it
   if((questSparkT-=1/60)<=0&&players.length){questSparkT=0.12;const p=players[0],dx=tg[0]-p.x,dz=tg[1]-p.z,d=Math.hypot(dx,dz);
     if(d>scatR()*0.7){const step=(T*6|0)%7+1,gap=Math.max(1.2,4*qS());if(step*gap<d-p.r*2){const x=p.x+dx/d*step*gap*1.0,z=p.z+dz/d*step*gap;
