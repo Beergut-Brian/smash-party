@@ -838,7 +838,7 @@ function scatterRain(n){for(let i=0;i<n;i++)queue.push({t:0.3+i*0.05,fn:()=>{if(
    and a puff of feathers/fluff; they land, get dizzy, shake it off and wander again. Too-big animals boing you
    back (red ring like any too-big thing), way-smaller ones hop out of the way. A launch gives a small meter bonus,
    never growth. If one lands far from home it sneaks back while nobody's looking.
-   Design: `const ANIMAL={chicken:{build(){…return group},fluff:'#fff'},…}` in objects.js replaces these placeholders.
+   Design: `const ANIMAL={chicken:{build(){…return group},fluff:'#fff'},…}` in src/world/animals.js replaces these placeholders.
    build() returns a THREE.Group facing +Z, feet at y=0, real-ish size (a chicken ~0.7 long, a cow ~2.6).
    Herds: zone layouts call ctx.herd(kind,x,z,n); chunks without any get a default mix from ZONE_HERDS.
    Sound: sfxClip(kind) from tools/sfx-lines.json. */
@@ -956,7 +956,7 @@ function updateAnimals(dt){
    stuff around it smashes) and has glowing weak spots in phases. Drive into the glowing spots together; when a
    phase's spots are gone the boss gets mad and the next ones light up. Beat the last phase and it collapses floor
    by floor, then the celebration and the NEW WORLD button. No timer, no damage, no losing.
-   Design: `const BOSSES=[{id,name,emoji,sway,build(P,g){…}},…]` in objects.js replaces the placeholders below.
+   Design: `const BOSSES=[{id,name,emoji,sway,build(P,g){…}},…]` in src/world/bosses.js replaces the placeholders below.
    build() works like makeObj's: register parts with P(BP(mesh,floor,kind),chunks,whole,half) at "1x" scale
    (about 11 tall, radius ~3.6; logic scales it up ×BOSS_SCALE). Weak spots: P(bossWeak(mesh,floor,phase),3) with
    phase 1, 2, 3…, placed low (under ~3.5 tall at 1x) and on the outside so a giant car can reach them. */

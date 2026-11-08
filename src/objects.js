@@ -1,4 +1,4 @@
-/* Smash Party — SMASHABLE OBJECTS & ARENA LAYOUT. Owner: Cursor (design). Depends on core.js helpers. */
+/* Smash Party — WORLD: smashable objects (OBJ), buildings, zone layouts, arena, respawn mix. Owner: world-props session (Claude Code design). Depends on core.js helpers. */
 /* ---------- smashable objects ---------- */
 let objects=[];
 function makeObj(x,z,r,h,points,build,opts={}){
@@ -7,7 +7,7 @@ function makeObj(x,z,r,h,points,build,opts={}){
   const P=(mesh,n=4,whole=false,half=0.5)=>{g.add(mesh);o.parts.push({mesh,n,whole,half});return mesh;};
   build(P,g,o);scene.add(g);objects.push(o);return o;
 }
-function prop(x,z,r,h,points,size,build,extra){
+function sized(x,z,r,h,points,size,build,extra){
   const o=extra||{};o.size=size;if(size==='large'||size==='huge'||size==='mega')o.big=true;
   return makeObj(x,z,r,h,points,build,o);
 }
@@ -47,7 +47,7 @@ const OBJ={
   cone:(x,z)=>makeObj(x,z,.7,1.6,1,P=>{P(mk('cone',1.2,1.6,1.2,'#ff7b00',0,.8,0),1,true,.6);},{size:'small'}),
   barrel:(x,z)=>makeObj(x,z,1.0,1.9,6,P=>{P(mk('cyl',1.7,1.9,1.7,'#e63946',0,.95,0),6);P(mk('cyl',1.75,.35,1.75,'#ffd60a',0,.95,0),2);P(mk('cyl',1.0,.1,1.0,'#9d0208',0,1.92,0),1);},{explosive:true,size:'medium'}),
   tower:(x,z)=>{const k=4+(Math.random()*5|0);return makeObj(x,z,1.4,k*1.8,k,P=>{const s=Math.random()*7|0;for(let i=0;i<k;i++){const b=mk('box',1.8,1.8,1.8,BLOCK[(i+s)%7],0,.9+i*1.8,0);b.rotation.y=rand(-.25,.25);P(b,1,true,.9);}},{size:'large',big:true});},
-  house:(x,z)=>prop(x,z,3.6,6.2,14,'huge',(P,g)=>{
+  house:(x,z)=>sized(x,z,3.6,6.2,14,'huge',(P,g)=>{
     const wall=pick(PASTEL),rf=pick(ROOF);
     story(P,4.8,4.8,3.2,0,0,wall,2);
     P(BP(mk('box',1,1.6,.16,'#7f4f24',0,.8,2.25),0,'extra'),1,true,.35);
@@ -64,21 +64,21 @@ const OBJ={
   tree:(x,z)=>makeObj(x,z,1.1,6,3,P=>{P(mk('cyl',.6,3,.6,'#8d5524',0,1.5,0),3);P(mk('sph',3.4,3.4,3.4,pick(['#ff006e','#06d6a0','#ffbe0b','#8338ec','#3a86ff']),0,4.4,0),1,true,1.6);},{size:'large',big:true}),
   fence:(x,z,ry=0)=>makeObj(x,z,2.1,1.7,2,(P,g)=>{for(let i=0;i<5;i++)P(mk('box',.35,1.7,.18,'#ffffff',-1.6+i*.8,.85,0),1,true,.4);
     P(mk('box',4,.22,.14,'#eeeeee',0,.5,-.15),2);P(mk('box',4,.22,.14,'#eeeeee',0,1.2,-.15),2);g.rotation.y=ry;},{size:'small'}),
-  cottage:(x,z,arg)=>prop(x,z,RAD.cottage,4.4,6,'large',(P,g)=>{
+  cottage:(x,z,arg)=>sized(x,z,RAD.cottage,4.4,6,'large',(P,g)=>{
     const wall=pick(PASTEL),rf=pick(ROOF);
     story(P,3.8,3.8,2.4,0,0,wall,2);
     P(BP(mk('box',.8,1.3,.14,'#7f4f24',0,.65,1.8),0,'extra'),1,true,.3);
     P(BP(mk('box',.7,.7,.12,'#a0e7ff',-1,1.5,1.85),0,'extra'),1,true,.2);
     roofOf(P,5,5,1.6,3.2,1,rf);face(g,arg);
   },{building:true}),
-  villa:(x,z,arg)=>prop(x,z,RAD.villa,8,18,'huge',(P,g)=>{
+  villa:(x,z,arg)=>sized(x,z,RAD.villa,8,18,'huge',(P,g)=>{
     const wall=pick(PASTEL),rf=pick(ROOF);
     story(P,6.6,5.4,2.8,0,0,'#f8f9fa',2);slab(P,6.2,5,2.8,0,'#fff');
     story(P,4.2,3.8,2.2,2.8,1,wall,2);
     P(BP(mk('box',1.1,1.8,.14,'#7f4f24',0,.9,2.6),0,'extra'),1,true,.35);
     roofOf(P,7.4,6.2,2,6.1,2,rf);P(BP(mk('box',.55,1.2,.55,'#b5651d',2,6.6,0),2,'extra'),1,true,.3);face(g,arg);
   },{building:true}),
-  shop:(x,z,arg)=>prop(x,z,RAD.shop,5.2,10,'large',(P,g)=>{
+  shop:(x,z,arg)=>sized(x,z,RAD.shop,5.2,10,'large',(P,g)=>{
     story(P,5.8,4.6,2.8,0,0,'#fff3bf',2);
     P(BP(mk('box',6.2,.3,1.4,'#e63946',0,2.95,1.7),0,'extra'),1,true,.3);
     P(BP(mk('box',2,1.4,.12,'#8ecae6',-1.3,1.6,2.2),0,'extra'),1,true,.25);
@@ -87,7 +87,7 @@ const OBJ={
     P(BP(mk('box',2.2,.6,.1,pick(BLOCK),0,3.5,1.9),1,'extra'),1,true,.25);
     roofOf(P,6.4,5.2,1.2,3.6,1,pick(ROOF));face(g,arg);
   },{building:true}),
-  school:(x,z,arg)=>prop(x,z,RAD.school,8,22,'huge',(P,g)=>{
+  school:(x,z,arg)=>sized(x,z,RAD.school,8,22,'huge',(P,g)=>{
     story(P,11.2,5.2,3.4,0,0,'#f8f1e3',3);slab(P,10.8,4.8,3.4,0,'#fff');
     story(P,3.4,4,2.4,3.4,1,'#f8f1e3',2);
     P(BP(mk('box',1.4,2,.14,'#6f4e37',0,1,2.5),0,'extra'),1,true,.35);
@@ -96,7 +96,7 @@ const OBJ={
     P(BP(mk('cyl',.08,1.6,.08,'#ddd',1.2,7.4,0),2,'extra'),1);
     P(BP(mk('box',.65,.35,.06,'#ffbe0b',1.55,7.9,0),2,'extra'),1,true,.15);face(g,arg);
   },{building:true}),
-  firestation:(x,z,arg)=>prop(x,z,RAD.firestation,8,20,'huge',(P,g)=>{
+  firestation:(x,z,arg)=>sized(x,z,RAD.firestation,8,20,'huge',(P,g)=>{
     story(P,9,5.8,3.6,0,0,'#d62828',3);
     P(BP(mk('box',9.2,.3,6,'#fff',0,2.1,0),0,'extra'),1,true,.3);
     P(BP(mk('box',2.2,2.2,.14,'#1d3557',-2.2,1.2,2.8),0,'extra'),1,true,.4);
@@ -104,26 +104,26 @@ const OBJ={
     story(P,2.8,2.8,2.6,3.6,1,'#d62828',2);slab(P,2.6,2.6,6.2,1,'#fff');
     P(BP(mk('box',.4,.3,.3,null,-1.2,6.5,-.6,glow('#ff1e1e')),1,'extra'),1);face(g,arg);
   },{building:true}),
-  watertower:(x,z)=>prop(x,z,RAD.watertower,13,16,'huge',P=>{
+  watertower:(x,z)=>sized(x,z,RAD.watertower,13,16,'huge',P=>{
     [[-1.2,-1.2],[1.2,-1.2],[-1.2,1.2],[1.2,1.2]].forEach(([x,z])=>P(mk('cyl',.26,7.2,.26,'#ced4da',x,3.6,z),2));
     P(mk('cyl',3.3,2.8,3.3,'#4895ef',0,8.4,0),5);P(mk('cyl',3.45,.4,3.45,'#fff',0,9.5,0),2);P(mk('cone',3,1.4,3,'#e63946',0,10.6,0),3);
     P(mk('box',.9,.45,.1,'#ffd60a',0,8.4,1.7),1);}),
-  mailbox:(x,z,arg)=>prop(x,z,RAD.mailbox,1.5,1,'tiny',(P,g)=>{
+  mailbox:(x,z,arg)=>sized(x,z,RAD.mailbox,1.5,1,'tiny',(P,g)=>{
     P(mk('box',.14,1,.14,'#6d4c41',0,.5,0),1);P(mk('box',.62,.4,.85,pick(['#3a86ff','#e63946','#2a9d8f']),0,1.15,0),1,true,.3);
     P(mk('box',.08,.26,.22,'#ffbe0b',.36,1.28,0),1);face(g,arg);}),
-  lamp:(x,z)=>prop(x,z,RAD.lamp,4.2,2,'small',P=>{
+  lamp:(x,z)=>sized(x,z,RAD.lamp,4.2,2,'small',P=>{
     P(mk('cyl',.16,3.2,.16,'#343a40',0,1.6,0),2);P(mk('box',.7,.22,.7,'#343a40',0,3.3,0),1);
     P(mk('box',.5,.32,.5,null,0,3.05,0,glow('#fff6a0')),1,true,.25);}),
-  hydrant:(x,z)=>prop(x,z,RAD.hydrant,1.15,1,'tiny',P=>{
+  hydrant:(x,z)=>sized(x,z,RAD.hydrant,1.15,1,'tiny',P=>{
     P(mk('cyl',.42,.85,.42,'#e63946',0,.45,0),2);P(mk('cyl',.26,.24,.26,'#ffd60a',0,.95,0),1);
     const a=mk('cyl',.14,.4,.14,'#dee2e6',.32,.5,0);a.rotation.z=Math.PI/2;P(a,1);
     const b=mk('cyl',.14,.4,.14,'#dee2e6',-.32,.5,0);b.rotation.z=Math.PI/2;P(b,1);}),
-  parked:(x,z,arg)=>prop(x,z,RAD.parked,2.2,4,'medium',(P,g)=>{
+  parked:(x,z,arg)=>sized(x,z,RAD.parked,2.2,4,'medium',(P,g)=>{
     const body=pick(CAR_COLORS),van=Math.random()<.35;
     P(mk('box',1.7,.65,3.5,body,0,.8,0),5);P(mk('box',1.55,van?1.15:.65,van?2.2:1.5,'#edf2fb',0,van?1.45:1.35,van?-.15:.35),3);
     [[-.8,1.15],[.8,1.15],[-.8,-1.15],[.8,-1.15]].forEach(([x,z])=>P(mk('wheel',.32,.62,.62,'#222',x,.32,z),1,true,.28));
     P(mk('box',.32,.18,.08,null,-.45,.78,1.78,glow('#fff6a0')),1);P(mk('box',.32,.18,.08,null,.45,.78,1.78,glow('#fff6a0')),1);face(g,arg);}),
-  boss:(x,z,arg)=>prop(x,z,RAD.boss,16,40,'mega',(P,g)=>{
+  boss:(x,z,arg)=>sized(x,z,RAD.boss,16,40,'mega',(P,g)=>{
     const cols=['#f4a261','#e9c46a','#2a9d8f','#e76f51'];
     for(let i=0;i<4;i++){const w=10-i*1.5;story(P,w,w,2.5,i*2.6,i,cols[i],2);
       P(BP(mk('box',1.15,.7,.16,'#caf0f8',-w*.18,i*2.6+1.35,w/2+.05),i,'extra'),1,true,.2);
@@ -131,7 +131,7 @@ const OBJ={
     roofOf(P,6.2,6.2,2.4,11.5,4,'#e63946');
     P(BP(mk('cyl',.16,1.5,.16,'#dee2e6',0,12.6,0),4,'extra'),1);P(BP(mk('sph',.55,.55,.55,'#ffd60a',0,13.5,0),4,'extra'),1,true,.25);face(g,arg);
   },{building:true}),
-  barn:(x,z,arg)=>prop(x,z,RAD.barn,9,32,'mega',(P,g)=>{
+  barn:(x,z,arg)=>sized(x,z,RAD.barn,9,32,'mega',(P,g)=>{
     story(P,11,7,4.6,0,0,'#c1121f',3);
     P(BP(mk('box',11.2,.35,7.2,'#f8f9fa',0,3.4,0),0,'extra'),1,true,.4);
     P(BP(mk('box',2.8,3,.14,'#f8f9fa',0,1.6,3.4),0,'extra'),1,true,.5);
@@ -139,10 +139,10 @@ const OBJ={
     const x2=mk('box',2.6,.18,.08,'#c1121f',0,1.6,3.52);x2.rotation.z=-.75;P(BP(x2,0,'extra'),1,true,.3);
     roofOf(P,12,8,2.6,6.2,1,'#6d4c41');P(BP(mk('box',1.3,1.3,1.3,'#f8f9fa',0,7.4,0),1,'extra'),1,true,.4);face(g,arg);
   },{building:true}),
-  silo:(x,z)=>prop(x,z,RAD.silo,12,14,'huge',P=>{
+  silo:(x,z)=>sized(x,z,RAD.silo,12,14,'huge',P=>{
     P(mk('cyl',4,8.4,4,'#dee2e6',0,4.2,0),6);P(mk('cyl',4.15,.4,4.15,'#e63946',0,6.6,0),2);P(mk('sph',4,2.2,4,'#f8f9fa',0,9,0),3);
     P(mk('box',1.1,1.8,.1,'#6d4c41',0,1.1,2.05),1);}),
-  farmhouse:(x,z,arg)=>prop(x,z,RAD.farmhouse,6.4,12,'huge',(P,g)=>{
+  farmhouse:(x,z,arg)=>sized(x,z,RAD.farmhouse,6.4,12,'huge',(P,g)=>{
     story(P,5.8,4.6,3,0,0,'#f8f9fa',2);
     P(BP(mk('box',1,.1,1.4,'#c1121f',0,.55,2.5),0,'extra'),1,true,.25);
     P(BP(mk('box',.95,1.7,.12,'#6f4e37',0,.85,2.2),0,'extra'),1,true,.3);
@@ -150,98 +150,98 @@ const OBJ={
     P(BP(mk('box',.8,.8,.12,'#90e0ef',1.5,1.8,2.25),0,'extra'),1,true,.2);
     roofOf(P,7,5.6,2,4.1,1,'#2a9d8f');P(BP(mk('cyl',.3,1,.3,'#6d4c41',1.8,4.6,0),1,'extra'),1,true,.25);face(g,arg);
   },{building:true}),
-  hay:(x,z)=>prop(x,z,RAD.hay,1.6,2,'small',P=>{
+  hay:(x,z)=>sized(x,z,RAD.hay,1.6,2,'small',P=>{
     const b=new THREE.Group();
     const body=mk('cyl',1.55,1.45,1.55,'#e9c46a',0,.8,0);body.rotation.z=Math.PI/2;b.add(body);
     const band=mk('cyl',1.62,.2,1.62,'#bc6c25',0,.8,0);band.rotation.z=Math.PI/2;b.add(band);
     P(b,1,true,.8);
   },{roll:true}),
-  crops:(x,z,arg)=>prop(x,z,RAD.crops,1.2,3,'small',(P,g)=>{
+  crops:(x,z,arg)=>sized(x,z,RAD.crops,1.2,3,'small',(P,g)=>{
     P(mk('box',4.4,.22,2,'#bc6c25',0,.11,0),2);const corn=Math.random()<.5;
     for(let i=-2;i<=2;i++)P(mk(corn?'cone':'sph',.5,.65,.5,corn?'#ffd60a':'#70e000',i*.8,.5,0),1,true,.25);face(g,arg);}),
-  pond:(x,z)=>prop(x,z,RAD.pond,.7,8,'medium',P=>{
+  pond:(x,z)=>sized(x,z,RAD.pond,.7,8,'medium',P=>{
     P(mk('cyl',9, .28,9,'#48cae4',0,.16,0),5);P(mk('cyl',7.2,.1,7.2,'#0096c7',0,.32,0),3);
     [[1.8,.8],[-1.4,1.5],[.2,-1.6]].forEach(([x,z])=>P(mk('cyl',1,.08,1,'#2d6a4f',x,.42,z),1,true,.2));}),
-  windmill:(x,z,arg)=>prop(x,z,RAD.windmill,12,16,'huge',(P,g)=>{
+  windmill:(x,z,arg)=>sized(x,z,RAD.windmill,12,16,'huge',(P,g)=>{
     P(mk('cyl',2.1,6.4,2.1,'#f4f1de',0,3.2,0),6);P(mk('cone',2.5,1.8,2.5,'#e07a5f',0,7.2,0),3);P(mk('box',.35,.35,1,'#6d4c41',0,5.4,1.15),1);
     const hub=mk('cyl',.45,.4,.45,'#333',0,5.5,1.55);hub.rotation.x=Math.PI/2;P(hub,1,true,.25);
     for(let i=0;i<4;i++){const b=mk('box',.28,3.6,.1,'#f8f4e3',0,5.5,1.7);b.rotation.z=i*Math.PI/2;P(b,1,true,.3);}
     face(g,arg);}),
-  coop:(x,z,arg)=>prop(x,z,RAD.coop,3.2,6,'medium',(P,g)=>{
+  coop:(x,z,arg)=>sized(x,z,RAD.coop,3.2,6,'medium',(P,g)=>{
     P(mk('box',3.4,2,3,'#f4a261',0,1,0),5);P(mk('pyr',4.2,1.2,3.8,'#6d4c41',0,2.4,0),3);P(mk('box',.65,.7,.08,'#6d4c41',.7,.6,1.54),1);
     const ramp=mk('box',.7,.1,1.3,'#ddb892',.7,.32,2.05);ramp.rotation.x=-.45;P(ramp,1);face(g,arg);}),
-  scarecrow:(x,z,arg)=>prop(x,z,RAD.scarecrow,3.3,2,'small',(P,g)=>{
+  scarecrow:(x,z,arg)=>sized(x,z,RAD.scarecrow,3.3,2,'small',(P,g)=>{
     const b=new THREE.Group();
     b.add(mk('cyl',.12,2.5,.12,'#6d4c41',0,1.25,0),mk('box',1.7,.1,.1,'#6d4c41',0,1.9,0),mk('sph',.65,.65,.65,'#e9c46a',0,2.45,0),mk('cyl',.5,.35,.5,'#3a86ff',0,2.8,0));
     b.add(mk('sph',.14,.14,.14,'#111',-.12,2.5,.28),mk('sph',.14,.14,.14,'#111',.12,2.5,.28));
     P(b,1,true,.65);face(g,arg);}),
-  tractor:(x,z,arg)=>prop(x,z,RAD.tractor,2.6,8,'large',(P,g)=>{
+  tractor:(x,z,arg)=>sized(x,z,RAD.tractor,2.6,8,'large',(P,g)=>{
     P(mk('box',1.5,.75,2.5,'#2d6a4f',0,.85,.15),4);P(mk('box',1.25,1,1.15,'#95d5b2',0,1.6,.65),3);P(mk('cyl',.18,.6,.18,'#333',0,2.25,-.4),1);
     P(mk('wheel',.4,1.45,1.45,'#222',-.85,.72,-.65),1,true,.55);P(mk('wheel',.4,1.45,1.45,'#222',.85,.72,-.65),1,true,.55);
     P(mk('wheel',.28,.75,.75,'#ffd60a',-.72,.42,1.05),1,true,.32);P(mk('wheel',.28,.75,.75,'#ffd60a',.72,.42,1.05),1,true,.32);face(g,arg);}),
-  swing:(x,z,arg)=>prop(x,z,RAD.swing,3.6,4,'small',(P,g)=>{
+  swing:(x,z,arg)=>sized(x,z,RAD.swing,3.6,4,'small',(P,g)=>{
     [[-1.55,-.75],[1.55,-.75],[-1.55,.75],[1.55,.75]].forEach(([x,z])=>P(mk('box',.28,3.3,.28,'#457b9d',x,1.65,z),1));
     P(mk('box',3.5,.26,.26,'#1d3557',0,3.25,0),1);
     [-.6,.6].forEach((x,i)=>{P(mk('box',.1,1.6,.1,'#ced4da',x-.28,2.3,0),1);P(mk('box',.1,1.6,.1,'#ced4da',x+.28,2.3,0),1);
       P(mk('box',.85,.22,.55,i?'#ffbe0b':'#e63946',x,1.4,0),1,true,.3);});face(g,arg);}),
-  slide:(x,z,arg)=>prop(x,z,RAD.slide,2.5,4,'small',(P,g)=>{
+  slide:(x,z,arg)=>sized(x,z,RAD.slide,2.5,4,'small',(P,g)=>{
     P(mk('box',1.3,1.45,1.1,'#3a86ff',0,.72,-.7),3);const chute=mk('box',1.2,.16,2.6,'#ffbe0b',0,1.05,.65);chute.rotation.x=-.5;P(chute,2);
     P(mk('box',.1,1.3,.1,'#1d3557',-.5,.65,-.7),1);P(mk('box',.1,1.3,.1,'#1d3557',.5,.65,-.7),1);face(g,arg);}),
-  gym:(x,z,arg)=>prop(x,z,RAD.gym,5.2,8,'large',(P,g)=>{
+  gym:(x,z,arg)=>sized(x,z,RAD.gym,5.2,8,'large',(P,g)=>{
     const cols=['#e63946','#ffbe0b','#3a86ff','#06d6a0'];
     [[-1.7,-1.7],[1.7,-1.7],[-1.7,1.7],[1.7,1.7]].forEach(([x,z],i)=>P(mk('cyl',.28,4.4,.28,cols[i],x,2.2,z),2));
     P(mk('box',4.2,.28,4.2,'#8338ec',0,4.4,0),3);P(mk('box',3.6,.18,.18,'#ffd60a',0,2.4,-1.7),1);
     P(mk('box',.18,.18,3.6,'#ff006e',1.7,1.6,0),1);P(mk('box',.18,.18,3.6,'#06d6a0',-1.7,3.1,0),1);face(g,arg);}),
-  fountain:(x,z)=>prop(x,z,RAD.fountain,3.4,8,'large',P=>{
+  fountain:(x,z)=>sized(x,z,RAD.fountain,3.4,8,'large',P=>{
     P(mk('cyl',5.2,.5,5.2,'#8ecae6',0,.25,0),4);P(mk('cyl',1.1,1.8,1.1,'#f4f1de',0,1.2,0),3);P(mk('sph',1.15,1.15,1.15,'#48cae4',0,2.4,0),1,true,.5);}),
-  bench:(x,z,arg)=>prop(x,z,RAD.bench,1.15,1,'tiny',(P,g)=>{
+  bench:(x,z,arg)=>sized(x,z,RAD.bench,1.15,1,'tiny',(P,g)=>{
     P(mk('box',2,.12,.55,'#bc6c25',0,.55,0),1,true,.3);P(mk('box',2,.6,.1,'#bc6c25',0,.9,-.22),1);
     P(mk('box',.1,.5,.45,'#6d4c41',-.85,.28,0),1);P(mk('box',.1,.5,.45,'#6d4c41',.85,.28,0),1);face(g,arg);}),
-  picnic:(x,z,arg)=>prop(x,z,RAD.picnic,1.3,3,'small',(P,g)=>{
+  picnic:(x,z,arg)=>sized(x,z,RAD.picnic,1.3,3,'small',(P,g)=>{
     P(mk('box',2,.12,1.1,'#e9c46a',0,.78,0),2);P(mk('box',1.8,.1,.35,'#bc6c25',0,.5,.75),1);P(mk('box',1.8,.1,.35,'#bc6c25',0,.5,-.75),1);
     P(mk('box',.1,.75,.1,'#6d4c41',-.75,.38,.35),1);P(mk('box',.1,.75,.1,'#6d4c41',.75,.38,-.35),1);
     if(Math.random()<.55)P(mk('sph',.35,.35,.35,'#ef476f',.3,1.05,0),1,true,.18);face(g,arg);}),
-  gazebo:(x,z)=>prop(x,z,RAD.gazebo,5.8,14,'huge',P=>{
+  gazebo:(x,z)=>sized(x,z,RAD.gazebo,5.8,14,'huge',P=>{
     P(mk('cyl',6,.28,6,'#f8f9fa',0,.16,0),3);[[-1.9,-1.9],[1.9,-1.9],[-1.9,1.9],[1.9,1.9]].forEach(([x,z])=>P(mk('cyl',.26,3,.26,'#fff',x,1.7,z),2));
     P(mk('pyr',7,2,7,'#e63946',0,4.3,0),4);P(mk('sph',.45,.45,.45,'#ffd60a',0,5.4,0),1,true,.22);}),
-  bounce:(x,z,arg)=>prop(x,z,RAD.bounce,6.2,26,'mega',(P,g)=>{
+  bounce:(x,z,arg)=>sized(x,z,RAD.bounce,6.2,26,'mega',(P,g)=>{
     P(mk('box',9.6,3.8,7,'#ff70a6',0,1.9,0),8);P(mk('box',9.9,1,7.3,'#ffd166',0,4.1,0),3);
     [[-4.1,-2.9],[4.1,-2.9],[-4.1,2.9],[4.1,2.9]].forEach(([x,z],i)=>P(mk('cyl',1.5,6.4,1.5,['#4cc9f0','#06d6a0','#ffbe0b','#8338ec'][i],x,3.2,z),2));
     P(mk('box',2,2,.12,'#1d3557',0,1.2,3.56),1);face(g,arg);}),
-  bush:(x,z)=>prop(x,z,RAD.bush,1.3,1,'mini',P=>{
+  bush:(x,z)=>sized(x,z,RAD.bush,1.3,1,'mini',P=>{
     const c=pick(['#2d6a4f','#40916c','#52b788']);
     P(mk('sph',1.2,.95,1.2,c,0,.5,0),1,true,.5);P(mk('sph',.7,.6,.7,c,.35,.8,.15),1,true,.3);}),
-  flowers:(x,z)=>prop(x,z,RAD.flowers,.45,1,'micro',P=>{
+  flowers:(x,z)=>sized(x,z,RAD.flowers,.45,1,'micro',P=>{
     P(mk('box',.52,.16,.3,'#bc6c25',0,.08,0),1);
     ['#e63946','#ffbe0b','#8338ec'].forEach((c,i)=>P(mk('sph',.13,.13,.13,c,-.16+i*.16,.24,0),1,true,.06));}),
-  pebble:(x,z)=>prop(x,z,RAD.pebble,.22,1,'micro',P=>{
+  pebble:(x,z)=>sized(x,z,RAD.pebble,.22,1,'micro',P=>{
     const c=pick(['#adb5bd','#ced4da','#d4a373','#6c757d']);
     P(mk('sph',.38,.22,.32,c,0,.1,0),1,true,.12);
     if(Math.random()<.5)P(mk('sph',.2,.14,.18,c,.16,.07,.06),1,true,.08);}),
-  mushroom:(x,z)=>prop(x,z,RAD.mushroom,.42,1,'micro',P=>{
+  mushroom:(x,z)=>sized(x,z,RAD.mushroom,.42,1,'micro',P=>{
     P(mk('cyl',.14,.26,.14,'#f8f9fa',0,.13,0),1);
     P(mk('sph',.42,.24,.42,pick(['#e63946','#ff006e','#ffbe0b']),0,.3,0),1,true,.12);
     P(mk('sph',.07,.07,.07,'#fff',.08,.34,.12),1);}),
-  acorn:(x,z)=>prop(x,z,RAD.acorn,.3,1,'micro',P=>{
+  acorn:(x,z)=>sized(x,z,RAD.acorn,.3,1,'micro',P=>{
     P(mk('sph',.26,.3,.26,'#bc6c25',0,.12,0),1,true,.1);
     P(mk('sph',.24,.14,.24,'#6d4c41',0,.26,0),1,true,.08);
     P(mk('cyl',.04,.14,.04,'#2d6a4f',0,.36,0),1);}),
-  toyblock:(x,z)=>prop(x,z,RAD.toyblock,.4,1,'micro',P=>{
+  toyblock:(x,z)=>sized(x,z,RAD.toyblock,.4,1,'micro',P=>{
     const b=mk('box',.4,.4,.4,pick(BLOCK),0,.2,0);b.rotation.y=rand(0,1.2);P(b,1,true,.18);}),
-  can:(x,z)=>prop(x,z,RAD.can,.42,1,'micro',P=>{
+  can:(x,z)=>sized(x,z,RAD.can,.42,1,'micro',P=>{
     P(mk('cyl',.2,.44,.2,pick(['#e63946','#3a86ff','#06d6a0','#ffbe0b']),0,.22,0),1,true,.14);
     P(mk('cyl',.21,.05,.21,'#f8f9fa',0,.43,0),1);}),
-  toyduck:(x,z)=>prop(x,z,RAD.toyduck,.4,1,'micro',P=>{
+  toyduck:(x,z)=>sized(x,z,RAD.toyduck,.4,1,'micro',P=>{
     P(mk('sph',.38,.28,.44,'#ffd60a',0,.16,0),1,true,.14);
     P(mk('sph',.2,.18,.2,'#ffd60a',0,.32,.14),1,true,.08);
     const bill=mk('cone',.06,.14,.06,'#fb8500',0,.3,.3);bill.rotation.x=Math.PI/2;P(bill,1);
     P(mk('sph',.05,.05,.05,'#111',.05,.36,.22),1);}),
-  gnome:(x,z,arg)=>prop(x,z,RAD.gnome,.7,1,'mini',(P,g)=>{
+  gnome:(x,z,arg)=>sized(x,z,RAD.gnome,.7,1,'mini',(P,g)=>{
     P(mk('cyl',.2,.36,.2,pick(['#3a86ff','#2a9d8f','#e63946']),0,.18,0),1);
     P(mk('sph',.24,.24,.24,'#ffd6a5',0,.44,0),1,true,.1);
     P(mk('cone',.3,.32,.3,'#e63946',0,.66,0),1,true,.12);
     P(mk('sph',.05,.05,.05,'#111',-.05,.46,.1),1);P(mk('sph',.05,.05,.05,'#111',.05,.46,.1),1);face(g,arg);}),
-  snail:(x,z,arg)=>prop(x,z,RAD.snail,.32,1,'micro',(P,g)=>{
+  snail:(x,z,arg)=>sized(x,z,RAD.snail,.32,1,'micro',(P,g)=>{
     P(mk('sph',.34,.28,.34,pick(['#bc6c25','#e9c46a','#f4a261']),0,.16,0),1,true,.12);
     P(mk('sph',.16,.12,.2,'#fff3bf',0,.1,.2),1,true,.08);
     P(mk('sph',.045,.045,.045,'#111',.04,.14,.28),1);face(g,arg);})

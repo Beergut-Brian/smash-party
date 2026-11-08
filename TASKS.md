@@ -96,7 +96,9 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 ## Design lanes (two design agents)
 Design is split by file so both can run at once without conflicts:
 - **Cursor = Cars & UI:** `src/cars.js`, `assets/cars/`, `style.css`. Tasks: D8a, recipe system, D6, D4.
-- **Claude Code (design session) = World:** `src/objects.js`, `assets/props/`. Tasks: D8b, D3, D5, D7.
+- **world-props** (Claude Code design): `src/objects.js`, `assets/props/`. Tasks: D8b, then D7.
+- **world-animals** (Claude Code design): `src/world/animals.js`, `assets/props/animals/`. Task: D3.
+- **world-bosses** (Claude Code design): `src/world/bosses.js`, `assets/props/bosses/`. Task: D5.
 Claude Code's *logic* sessions still own `core.js`, `game.js` and `tools/`. A design session never edits those; it leaves `// TODO(logic):` notes.
 
 - [x] **D0: Size classes + growth HUD styling** (from L2)
@@ -116,7 +118,7 @@ Claude Code's *logic* sessions still own `core.js`, `game.js` and `tools/`. A de
   - Buildings still need the L3 part contract to collapse. For a pack building, either keep it one piece (it smashes but doesn't pancake) or split walls/roof into separate meshes in Blender, and tag them in a small manifest.
   - Needs: L9 GLB prop loader for the cleanest path. Cars can start now via `assets/cars/cars.json`.
 
-- [ ] **D5: Boss model(s)** (World: Claude Code design)
+- [ ] **D5: Boss model(s)** (world lane)
   - One original boss for max size, built from L3-contract parts plus `BP(mesh, floor, 'weak')` glowing weak spots. Chunky, funny, not scary. Kaden and son to pick the concept (and maybe name it).
   - Needs: L6 spec. ✅ L6 is done. The format is in `CLAUDE.md` under "Boss". Logic has three blocky placeholders to replace or polish (Kaden picked all three ideas, one random per world): **Clankzilla** (junk robot), **Shelldozer** (crab carrying a sandcastle), **King Wobbles** (wobbly block king). New bosses welcome; Kaden and son will invent more.
 
@@ -142,7 +144,7 @@ Claude Code's *logic* sessions still own `core.js`, `game.js` and `tools/`. A de
   - Done for the box buildings: house, cottage, villa, shop, school, fire station, clock tower, barn, and farmhouse use `BP` walls (about 8–12 per storey), slabs, a roof, and whole extras (doors, windows). They pass `{building:true}`.
   - Still one-piece (fine to smash, they do not pancake): water tower, silo, gazebo, coop, windmill, and the little smash-tower. A later pass can shell those if they should collapse too.
 
-- [ ] **D3: Farm and park animals** (World: Claude Code design)
+- [ ] **D3: Farm and park animals** (world lane)
   - Cute, chunky, low-poly: chicken, rooster, duck, cow, pig, sheep, goat, horse, dog, cat, bunny, goose.
   - Built as single whole pieces (they get launched intact, never broken). Big googly eyes encouraged.
   - Needs: L4 (animal format and how they're registered). ✅ L4 is done. The format is in `CLAUDE.md` under "Animal"; logic has blocky placeholders in `ANIMAL_DEFAULT` (game.js) to replace. Animal sounds are already recorded.
@@ -155,7 +157,7 @@ Claude Code's *logic* sessions still own `core.js`, `game.js` and `tools/`. A de
   - **Son-designed car:** reserved spot. Ask him for a name, color and silly feature.
   - Each car: 4–5 units long, faces +Z, `speed` 20–32, `r` 2–2.8. Scales automatically once L2 lands.
 
-- [ ] **D7: More mega set pieces** (World: Claude Code design)
+- [ ] **D7: More mega set pieces** (world lane)
   - Still just ideas: stadium, skyscraper, cargo ship, ferris wheel. Build them with `BP` when a zone has room. The mountain-sized boss is D5.
 
 ---

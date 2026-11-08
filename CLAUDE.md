@@ -10,25 +10,37 @@ A co-op driving-and-smashing game for a dad and his 5-year-old, played on a TV w
 - Must run smoothly at 1080p on a GTX 1060. Computer only (TV via PC + controllers); phone/touch support isn't needed, so don't spend time on it.
 
 ## Layout & who owns what
-Three lanes work on this repo at the same time: **logic** (Claude Code), **cars & UI** (Cursor) and **world** (a Claude Code *design* session). Stay in your lane to avoid merge conflicts.
+Several lanes work on this repo at the same time: **logic** (Claude Code), **cars & UI** (Cursor), and three **world** lanes run as separate Claude Code design sessions: **world-props**, **world-animals** and **world-bosses**. Stay in your lane to avoid merge conflicts.
 
 | File | Owner | What's in it |
 |---|---|---|
 | `src/cars.js` | **Cursor** (cars & UI) | Block-built car models + the `CARS` list, model-car loader |
-| `src/objects.js` | **Claude Code design session** (world) | Smashable objects (`OBJ`), arena layout (`buildWorld`), respawn mix (`SPAWN_W`) |
+| `src/objects.js` | **world-props** session | Smashable objects (`OBJ`), buildings, mega set pieces, zone layouts (`ZONE_LAYOUT`, `ZONE_PROPS`), arena (`buildWorld`), respawn mix (`SPAWN_W`). Its builder helper is `sized(x,z,r,h,points,size,build,extra)` |
+| `src/world/animals.js` | **world-animals** session | `ANIMAL` looks |
+| `src/world/bosses.js` | **world-bosses** session | `BOSSES` models |
 | `style.css` | **Cursor** (cars & UI) | All UI styles |
-| `assets/**` | **Cursor**: `assets/cars/`, UI art. **World session**: `assets/props/`, `assets/textures/` | `.glb` models, `cars.json`, textures, sounds (except the generated `assets/sounds/voice/`, `sfx/` and `music/`) |
+| `assets/**` | **Cursor**: `assets/cars/`, UI art. **world-props**: `assets/props/` (top level), `assets/textures/`. **world-animals**: `assets/props/animals/`. **world-bosses**: `assets/props/bosses/` | `.glb` models, `cars.json`, textures, sounds (except the generated `assets/sounds/voice/`, `sfx/` and `music/`) |
 | `tools/`, `assets/sounds/voice/`, `sfx/`, `music/` | **Claude Code** (logic) | ElevenLabs generators (`make-voices.mjs`, `make-sfx.mjs`, `make-music.mjs`), their lists (`*-lines.json`), and the generated mp3s + `index.json` |
 | `src/core.js` | **Claude Code** (logic) | Helpers (`mk`, `M`, `E`, `rand`…), renderer, scene, ground/roads/walls, ramps + `groundH`, audio |
 | `src/game.js` | **Claude Code** (logic) | Debris, smashing, scoring, respawn, celebration, players/driving, input, collisions, camera, HUD, main loop |
 | `src/boot.mjs` | **Claude Code** (logic) | Imports three.js + addons, sets `window.THREE`, loads the plain scripts in order |
 | `index.html`, `CLAUDE.md` | Shared | Change rarely; mention it in the commit message |
 
-Scripts are plain (no modules); `src/boot.mjs` loads them in order: `core.js` → `cars.js` → `objects.js` → `game.js`. Materials: use `M(color)` / `mk()` (toy-plastic `MeshStandardMaterial` on high, Lambert on FAST) or `litMat({...})` for custom ones, so the quality toggle covers them. **Prefer `M(color)`:** sleeping props, scatter and debris are batched by shape with the color per instance, so `M()` colors are nearly free to draw, while each custom material adds its own draw call per chunk. Top-level `const`/`function` names are shared across files, so never reuse a name.
+Scripts are plain (no modules); `src/boot.mjs` loads them in order: `core.js` → `cars.js` → `objects.js` → `world/animals.js` → `world/bosses.js` → `game.js`. Materials: use `M(color)` / `mk()` (toy-plastic `MeshStandardMaterial` on high, Lambert on FAST) or `litMat({...})` for custom ones, so the quality toggle covers them. **Prefer `M(color)`:** sleeping props, scatter and debris are batched by shape with the color per instance, so `M()` colors are nearly free to draw, while each custom material adds its own draw call per chunk. Top-level `const`/`function` names are shared across files, so never reuse a name.
 
 If a design change needs new logic (or the other way around), make the part in your own file and leave a `// TODO(logic):` or `// TODO(design):` note for the other tool instead of editing their file.
 
+## Parallel sessions (rules)
+- Each session edits **only its own files and asset folder** (table above). Need something from another lane? Leave a `// TODO(<lane>):` note or add a task in `TASKS.md`.
+- Work on a branch named after your lane and task (`world-props/D8b`, `world-animals/D3`, `cars/recipes`) and open a PR. Never push straight to `main` from a design lane.
+- **Don't bump `version.json` on a branch.** It's bumped once when the PR merges.
+- `assets/props/props.json` is shared: **only add new keys** (no reordering or reformatting) so merges stay clean.
+- In `TASKS.md`, only check off and edit your own task.
+- Top-level names are global across all scripts: prefix new helpers in a world file with the lane (`animal…`, `boss…`) so two lanes never define the same name. (The GLB loader is `prop(name, fallback)` in core.js; don't define another `prop`.)
+
 ## Tasks
+`AGENTS.md` must stay an exact copy of this file (Cursor reads it): after editing either, copy it over the other.
+
 Check `TASKS.md` before starting. Take the top unchecked task in your section, check it off in the same commit as the work, and add follow-up tasks for the other tool when needed.
 
 ## Git workflow
@@ -61,8 +73,8 @@ Check `TASKS.md` before starting. Take the top unchecked task in your section, c
 - **Voice line:** call `say('Exact Text!')` in code and add the same text to `tools/voice-lines.json` (car names are picked up automatically). Then on the machine with the ElevenLabs key in `.env`, run `node --env-file=.env tools/make-voices.mjs` (`--dry` first to see what it will make and the character cost). It only generates new or changed lines. Lines without a clip use the browser's robot voice, so nothing breaks while a line is waiting for a recording.
 - **Music:** tracks live in `tools/music-lines.json` (`title`, `drive`, `boss`, `victory`), made with `node --env-file=.env tools/make-music.mjs` (`--only=boss` to redo one). Code switches tracks with `music('boss')` or `music('victory',{loop:false,then:'drive'})`.
 - **Sound effect:** add `id: {prompt, dur}` to `tools/sfx-lines.json` (ids like `crash_1`, `crash_2` are random variants of `crash`; the built-in `sfx.*` sounds use clips with the same names when they exist), run `node --env-file=.env tools/make-sfx.mjs`, and play it with `sfxClip('id')` (it returns false if the clip isn't there, so keep a synth fallback).
-- **Animal:** define `const ANIMAL={chicken:{build(){…return group},fluff:'#ffffff'},…}` in `objects.js` to replace logic's placeholder looks (`ANIMAL_DEFAULT` in game.js). `build()` returns a `THREE.Group` facing +Z with its feet at y=0, real-ish size (chicken ~0.7 long, cow ~2.6); size class is worked out from its size. `fluff` is the puff color when launched. Kinds today: chick, chicken, duck, goose, bunny, cat, dog, pig, sheep, goat, cow, horse (each has a sound in `sfx-lines.json`; a new kind needs one too). Zone layouts place herds with `ctx.herd(kind,x,z,n)`; chunks without herds get a default mix from `ZONE_HERDS`.
-- **Boss:** define `const BOSSES=[{id,name,emoji,sway,build(P,g){…}},…]` in `objects.js` to replace logic's placeholders (`BOSS_DEFAULT`: Clankzilla, Shelldozer, King Wobbles). A random one drops in each world once the players are GIANT. `build` works like a building: `P(BP(mesh,floor,kind),chunks,whole,half)` at 1x scale (about 11 tall, radius ~3.6; logic scales it ×`BOSS_SCALE`). Weak spots: `P(bossWeak(mesh,floor,phase),3)` with phase 1, 2, 3… (2 per phase works well), placed low (under ~3.5 at 1x) and on the outside. Add `Here comes <Name>!` to `tools/voice-lines.json`. Test with `__sp.boss('id')`.
+- **Animal** (in `src/world/animals.js`)**:** fill `const ANIMAL={chicken:{build(){…return group},fluff:'#ffffff'},…}` to replace logic's placeholder looks (`ANIMAL_DEFAULT` in game.js). `build()` returns a `THREE.Group` facing +Z with its feet at y=0, real-ish size (chicken ~0.7 long, cow ~2.6); size class is worked out from its size. `fluff` is the puff color when launched. Kinds today: chick, chicken, duck, goose, bunny, cat, dog, pig, sheep, goat, cow, horse (each has a sound in `sfx-lines.json`; a new kind needs one too). Zone layouts place herds with `ctx.herd(kind,x,z,n)`; chunks without herds get a default mix from `ZONE_HERDS`.
+- **Boss** (in `src/world/bosses.js`)**:** fill `const BOSSES=[{id,name,emoji,sway,build(P,g){…}},…]` to replace logic's placeholders (`BOSS_DEFAULT`: Clankzilla, Shelldozer, King Wobbles). A random one drops in each world once the players are GIANT. `build` works like a building: `P(BP(mesh,floor,kind),chunks,whole,half)` at 1x scale (about 11 tall, radius ~3.6; logic scales it ×`BOSS_SCALE`). Weak spots: `P(bossWeak(mesh,floor,phase),3)` with phase 1, 2, 3… (2 per phase works well), placed low (under ~3.5 at 1x) and on the outside. Add `Here comes <Name>!` to `tools/voice-lines.json`. Test with `__sp.boss('id')`.
 
 ## Testing
 - Serve locally (`python3 -m http.server`) — the game (ES module boot) and models only load over http, not `file://`. `?q=phone` / `?q=high` forces a quality (also in the pause menu).
