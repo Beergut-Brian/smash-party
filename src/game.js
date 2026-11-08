@@ -374,7 +374,8 @@ function grow(n){
   if(growth>=next&&!levelReady){levelReady=true;lastReadySay=0;sfxClip('levelup_ready',0.8)||sfx.pop();}}
 function levelUp(){
   if(!levelReady||giant||garage||queue.some(q=>q.fn===openGarage))return;
-  if(questBlocksLevel()){questNudge();return;} // L35 Adventure: the chapter's main quest comes before the next garagelevelReady=false; // finish the garage first
+  if(questBlocksLevel()){questNudge();return;} // L35 Adventure: the chapter's main quest comes before the next garage
+  levelReady=false; // finish the garage first
   if(tier>=SIZES.length-1){giant=true;goGiant();return;}
   const ct=carTierNow();tier++;sizeUp();clearPads();
   if(carTierNow()!==ct)queue.push({t:1.6,fn:openGarage});saveGame();} // L37 // new car tier: the garage rises to pick one in
@@ -1219,7 +1220,7 @@ function snapshot(){
 function saveGame(){if(!questOn||(state!=='play'&&state!=='pause'))return;advSave=snapshot();lsSet(SAVE_KEY,advSave);}
 function wipeSave(){advSave=null;try{localStorage.removeItem(SAVE_KEY);}catch(e){}markSave();}
 function applySnap(s){
-  growth=s.growth||0;tier=clamp(s.tier|0,0,SIZES.length-1);giant=!!s.giant;levelReady=!!s.levelReady;S=giant?GROW_S[GROW_S.length-1]:GROW_S[tier];
+  growth=s.growth||0;tier=clamp(s.tier|0,0,SIZES.length-1);giant=!!s.giant;levelReady=!!s.levelReady&&!giant&&growth>=(GROW_AT[tier+1]??1/0);S=giant?GROW_S[GROW_S.length-1]:GROW_S[tier];
   score=s.score||0;levelScore=s.levelScore||0;level=s.level||1;goal=s.goal||100;smashCount=s.smashCount||0;
   (s.used||[]).forEach(i=>abilUsed.add(i));eggShots=s.eggs||0;snapCars=s.cars||null;snapGarage=!!s.garage;
   if(s.quests)questLoad({...s.quests,active:null}); // abilities + cosmetics first, so the world and cars come out right
