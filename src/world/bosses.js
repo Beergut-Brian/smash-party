@@ -27,7 +27,13 @@
                    Weak spots: 1 coin-slot knobs (chest) · 2 silver turn-crank hands · 3 red hatch knees.
    Lava Larry 🌋    (dino) the smiling volcano on four stubby legs with a rocky tail, googly eyes, lava drips and smoke
                    rings puffing out of his crater.
-                   Weak spots: 1 glowing lava vents (sides) · 2 rock toes (front feet) · 3 lava-drip knees (back legs). */
+                   Weak spots: 1 glowing lava vents (sides) · 2 rock toes (front feet) · 3 lava-drip knees (back legs).
+   Sir Sprinkles 🎂 (candy) a walking three-tier birthday cake on red licorice legs and cake-board feet, frosting
+                   arms, a happy face on the middle tier and a crown of candles (they fly off like fireworks).
+                   Weak spots: 1 cherry kneecaps · 2 sprinkle patches on the bottom tier · 3 the cake-board feet.
+   Mama Stegosaurus "Plates" 🦕 (dino) a chunky pastel stego with a row of giant colorful back plates (they fly off
+                   whole), eyelashes, a flower bow, and a spotted egg balanced on her tail.
+                   Weak spots: 1 painted belly spots (sides) · 2 tail-spike thumbs on the ground · 3 front feet. */
 
 // helpers (prefixed boss… so no other lane collides)
 function bossRot(m,x=0,y=0,z=0){m.rotation.set(x,y,z);return m;}
@@ -324,5 +330,78 @@ const BOSSES=[
     P(BP(mk('sph',1.4,0.8,1.4,glow,0,y+0.3,0),4,'roof'),1,true,0.5);
     for(const [dy,s,dx] of [[1.1,2.2,0],[2.3,1.6,0.35]]){const ring=new THREE.Mesh(BOSS_RING,M('#ffffff'));  // puffy smoke rings
       ring.scale.set(s,s,s*1.6);ring.position.set(dx,y+dy,-dx);ring.rotation.x=Math.PI/2;ring.castShadow=true;P(BP(ring,4,'extra'),1,true,0.5);}
+  }},
+
+  {id:'sirsprinkles',zone:'candy',name:'Sir Sprinkles',emoji:'🎂',sway:0.1,
+   taunts:['Happy birthday to ME!','Want a slice? Come and get it!','I\'m the sweetest cake in town!'],
+   defeat:'Make a wish! Pop pop pop! Thanks for the party!',
+   build(P,g,o){
+    const lic='#c1121f',board='#e9ecef',spr=['#ff006e','#3a86ff','#06d6a0','#ffbe0b','#8338ec'];
+    // a tier: n wall slabs in a ring of radius R, then a frosting plate on top
+    const tier=(f,R,h,y,n,cols,frost)=>{const w=2*R*Math.tan(Math.PI/n)*1.08;
+      for(let i=0;i<n;i++){const a=(i+0.5)/n*Math.PI*2;P(BP(bossRot(mk('box',w,h,0.9,cols[i%2],Math.sin(a)*(R-0.45),y+h/2,Math.cos(a)*(R-0.45)),0,a),f,'wall'),3);}
+      P(BP(mk('cyl',R*2+0.5,0.45,R*2+0.5,frost,0,y+h+0.22,0),f,'slab'),3);return y+h+0.45;};
+    // floor 0: cake-board feet, red licorice legs with cherry kneecaps
+    for(const sx of [-1,1]){const x=sx*1.25;
+      P(BP(mk('cyl',2.1,0.35,2.4,board,x,0.18,0.35),0,'wall'),3);                        // cake-board foot
+      P(bossWeak(mk('cyl',1.2,0.45,0.8,'#ffd60a',x,0.25,1.45),0,3),3);                   // phase 3: the cake-board feet (toes)
+      P(BP(mk('cyl',0.85,1.8,0.85,lic,x,1.25,0),0,'wall'),3);                             // licorice leg
+      for(const y of [0.8,1.45])P(BP(mk('cyl',0.95,0.15,0.95,'#ffffff',x,y,0),0,'extra'),1,true,0.3); // candy stripes
+      P(bossWeak(mk('sph',0.95,0.95,0.95,'#ffd60a',x,1.35,0.55),0,1),3);}                // phase 1: cherry kneecaps
+    P(BP(mk('cyl',6.8,0.3,6.8,board,0,2.2,0),0,'slab'),3);                               // the cake board
+    // floor 1: bottom tier (pink), sprinkle patches, frosting arms
+    let y=tier(1,3.2,2.4,2.35,8,['#ffafcc','#ffc8dd'],'#fffaf5');
+    for(const sx of [-1,1])P(bossWeak(mk('sph',1.15,1,0.6,'#ffd60a',sx*1.55,3.05,2.75),1,2),3); // phase 2: sprinkle patches
+    for(let i=0;i<6;i++){const a=i*1.05+0.3;P(BP(bossRot(mk('box',0.45,0.14,0.14,spr[i%5],Math.sin(a)*3.25,3.9+(i%2)*0.5,Math.cos(a)*3.25),0,a,i),1,'extra'),1,true,0.2);}
+    for(const sx of [-1,1]){
+      P(BP(bossRot(mk('sph',0.95,2.6,0.95,'#fffaf5',sx*3.55,4.2,0.4),0,0,sx*0.45),1,'extra'),2,true,0.6); // frosting arm
+      P(BP(mk('sph',1.1,1,1.1,'#ff8fab',sx*4.1,3.05,0.6),1,'extra'),1,true,0.4);}          // frosting-swirl hand
+    // floor 2: middle tier (vanilla) with the happy face
+    const y2=y;y=tier(2,2.3,2.2,y,6,['#fffaf5','#fff1f6'],'#ff8fab');
+    bossEye(P,2,-0.7,y2+1.35,2.25,1.05,-0.8,0.8);bossEye(P,2,0.7,y2+1.35,2.25,1.2,1,-0.6);
+    P(BP(bossSmile('#5c3317',0,y2+0.85,2.2,1.6,0.9,1.4),2,'extra'),1,true,0.3);
+    for(const sx of [-1,1])P(BP(mk('sph',0.55,0.38,0.2,'#ff8fab',sx*1.3,y2+0.65,2.05),2,'extra'),1,true,0.2);
+    // floor 3: top tier (mint)
+    y=tier(3,1.5,1.7,y,4,['#b9fbc0','#d8f3dc'],'#fffaf5');
+    // floor 4: a crown of candles and a cherry on top
+    for(let i=0;i<5;i++){const a=i/5*Math.PI*2+0.3,cx=Math.sin(a)*1.05,cz=Math.cos(a)*1.05;
+      P(BP(mk('cyl',0.32,1.3,0.32,spr[i],cx,y+0.65,cz),4,'roof'),1,true,0.5);
+      P(BP(mk('cone',0.32,0.55,0.32,'#ffbe0b',cx,y+1.6,cz),4,'roof'),1,true,0.3);}
+    P(BP(mk('sph',0.9,0.9,0.9,'#e63946',0,y+0.4,0),4,'roof'),1,true,0.4);
+  }},
+
+  {id:'mamastego',zone:'dino',name:'Mama Stegosaurus',emoji:'🦕',sway:0.06,
+   taunts:['Careful, kiddos! Mama\'s coming through!','Look at my pretty plates!','Shh! Don\'t wake my egg!'],
+   defeat:'Oh my! Time to go keep my egg warm. Bye bye, sweeties!',
+   build(P,g,o){
+    const body='#a0c4ff',dk='#7aa6e8',belly='#fff1c1',ink='#22223b',plates=['#ff8fab','#ffbe0b','#80ed99','#9b5de5','#4cc9f0'];
+    // floor 0: four sturdy legs, toes, the tail dragging on the ground (spikes + an egg on top)
+    for(const sx of [-1,1])for(const sz of [-1,1]){const x=sx*1.5,z=sz*1.8;
+      P(BP(mk('cyl',1.5,2.5,1.5,body,x,1.25,z),0,'wall'),3);
+      P(BP(mk('sph',1.7,0.7,1.9,dk,x,0.35,z+0.2),0,'wall'),2);}
+    for(const sx of [-1,1])P(bossWeak(mk('sph',1.1,0.8,0.9,'#ffd60a',sx*1.5,0.45,2.9),0,3),3); // phase 3: front feet
+    for(const [y,z,s] of [[2.7,-3.6,2],[1.7,-4.9,1.55],[0.95,-6,1.15]])P(BP(mk('sph',s,s*0.85,s*1.25,body,0,y,z),0,'extra'),2,true,s*0.4);
+    for(const sx of [-1,1]){P(BP(bossRot(mk('cone',0.5,1.5,0.5,'#fff4dc',sx*0.85,1.2,-6.4),0,0,-sx*1.1),0,'extra'),1,true,0.3); // tail spikes
+      P(bossWeak(mk('sph',0.95,0.85,0.95,'#ffd60a',sx*0.75,0.55,-6.05),0,2),3);}         // phase 2: tail-spike thumbs
+    P(BP(mk('sph',1.4,1.8,1.4,'#fff1c1',0,4.25,-4.3),0,'extra'),2,true,0.6);              // the egg on her tail
+    for(const [dx,dy,c] of [[-0.45,0.3,0],[0.4,-0.2,4],[0,0.75,2]])P(BP(mk('sph',0.4,0.4,0.2,plates[c],dx,4.25+dy,-3.62),0,'extra'),1,true,0.15);
+    P(BP(mk('box',4,0.5,5,dk,0,2.6,0),0,'slab'),3);                                      // hips
+    // floor 1: big round body, belly, painted belly spots, the head and neck
+    for(const sx of [-1,1])for(const sz of [-1,1])P(BP(mk('sph',3,3.4,4.4,body,sx*0.8,4.2,sz*1.1),1,'wall'),3);
+    P(BP(mk('sph',3.4,1.4,5.6,belly,0,3,0),1,'extra'),2,true,1);
+    for(const sx of [-1,1])P(bossWeak(mk('sph',0.6,1.1,1.1,'#ffd60a',sx*2.25,3.3,0.4),1,1),3); // phase 1: belly spots
+    P(BP(mk('sph',1.6,1.6,2.2,body,0,4,3.4),1,'extra'),2,true,0.7);                       // neck
+    P(BP(mk('sph',2.5,2.1,2.5,body,0,4.2,4.7),1,'extra'),3,true,0.8);                     // head
+    for(const sx of [-1,1]){const ex=sx*0.62;
+      P(BP(mk('sph',1.15,1.15,0.8,'#ffffff',ex,4.85,5.7),1,'extra'),1,true,0.4);
+      P(BP(mk('sph',0.55,0.55,0.35,ink,ex+sx*0.1,4.8,6.05),1,'extra'),1,true,0.2);
+      for(const k of [-1,0,1])P(BP(bossRot(mk('box',0.08,0.45,0.08,ink,ex+k*0.28,5.5,5.75),0,0,k*0.4+sx*0.2),1,'extra'),1,true,0.1); // eyelashes
+      P(BP(mk('sph',0.5,0.32,0.2,'#ff8fab',sx*0.95,4.05,5.6),1,'extra'),1,true,0.15);}
+    P(BP(bossSmile(ink,0,4.1,5.85,1,0.55,1.2),1,'extra'),1,true,0.2);
+    for(const sx of [-1,1])P(BP(mk('sph',0.55,0.5,0.35,'#ff006e',0.75+sx*0.3,5.3,4.3),1,'extra'),1,true,0.2); // flower bow
+    // floor 2: the row of giant pastel back plates (each flies off whole)
+    const pl=[[2.3,1.6],[1.1,2.4],[-0.2,2.9],[-1.5,2.5],[-2.7,1.8]];
+    pl.forEach(([z,s],i)=>{const x=(i%2?0.4:-0.4);
+      P(BP(bossRot(mk('box',0.35,s,s,plates[i],x,5.6+s*0.45,z),Math.PI/4),2,'roof'),1,true,s*0.5);});
   }}
 ];
