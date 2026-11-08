@@ -132,7 +132,7 @@ function portalGo(kind,pl){
   portalFx.style.setProperty('--pc',w.portal.color);portalFx.style.setProperty('--pc2',w.portal.color2||'#ffffff');portalFx.classList.add('on');
   sfxClip('portal_whoosh',1)||sfx.turbo();if(w.portal.sfx)sfxClip(w.portal.sfx,0.8);if(pl)puff(pl.x,pl.y+S,pl.z,14,3*S,w.portal.color);
   portalTo={kind,t:0.9};}
-// go to a world: shrink back to tiny at its start, keeping cars, abilities and cosmetics
+// go to a world: shrink back to the smallest size (micro, tier 0 = chapter 1, L44) at its start, keeping cars, abilities and cosmetics
 function enterWorld(id){
   const w=WORLDS[id];if(!w||(id!=='home'&&!worldOk(w)))return 'unknown world: '+id+' (registered: '+Object.keys(WORLDS).join(', ')+')';
   rollWorld(false,id==='home'?(questOn?'home':'outside'):id,{keepCars:true});
