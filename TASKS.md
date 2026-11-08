@@ -339,6 +339,7 @@ Full spec and contracts: **`docs/ADVENTURE.md`** (read it before any task below)
   - Sfx: portal whoosh + roar (dino) + giggle (candy), hammer bonk, egg plop, hover hum, glide whoosh, kazoo engine, quest start / step / done jingles, the wobble-but-don't-break boing. Music: the parade march.
 
 - [ ] **D20: Quest stage scenes for the Home World** `NEEDS DESIGN` (world-props; needs L38; from Q1). Each id below is a quest's `stage` in `src/world/quests/home.js`; add them to `SCENES` (`filler:false`) so L38's scene-at-a-point helper can build them at the players' size around `stageAt`. Leave the quest's things (items, flocks, rings, drop spots, goal circle) to the engine: the stage is the set dressing that makes the spot read at a glance, with open ground in the middle for driving. Sizes are the chapter's first size; footprint ≈ `stageR`×4.5 car lengths.
+  - Reviewer: do **after Q1b**. D18 part 2 already built `hank_yard`, `garry_garden`, `crop_circle`, `crate_site`, `sheep_pen` and `duck_pond`, and Q1b points the pack at those ids and at `HOME_QUEST_AT`; only build the stages that are still missing after that.
   - `hank_yard` (micro, r≈1, at the lamp post on the start sidewalk ~[9.6,40]): a toy construction corner: a sand pile, tipped toy wheelbarrow, two cones, a little "dig here" flag.
   - `garry_garden` (micro, r≈3, left sidewalk ~[−9.8,46.5]): a garden bed ring of flowers and mushrooms with a tiny tea table in the middle (the gnomes' home; the green goal circle sits there).
   - `fern_pasture` (tiny, r≈8, melon patch ~[44,40]): a fenced pasture with gaps, a coop, two hay bales (one tall one for "the rooster"), a feed bucket, Fern's basket.
@@ -347,7 +348,7 @@ Full spec and contracts: **`docs/ADVENTURE.md`** (read it before any task below)
   - `zorp_crop_circle` (medium, r≈22, farm ~[−244,−86]): a crop circle pressed into a corn field, scattered haystacks round the edge, scorch marks, a broken antenna (the saucer is the giver).
   - `dot_crate_yard` (medium, r≈20, home edge ~[122,−100]): a fenced demolition yard: gate, a crane or wrecking ball as a landmark, warning signs, cones (the engine spawns the 40 crates and barrels).
   - `woolly_pen` (huge, r≈40, farm ~[246,240]): a round sheep pen with an open gate facing the field (the goal circle is its middle), a water trough, a gate sign.
-- [ ] **L39: Quest engine follow-ups from Q1** `NEEDS LOGIC` (logic-gameplay; from Q1)
+- [ ] **L40: Quest engine follow-ups from Q1** `NEEDS LOGIC` (logic-gameplay; from Q1)
   - Per-line voice: let a quest line be `{text, voice}` (or a step `voice`) so Zorp and Blip can alternate; today the whole quest speaks in `giver.voice`. Blip has no lines yet; the quests lane splits Zorp & Blip's lines once this lands.
   - Stage ids that don't exist yet should be skipped quietly once L38 lands (all 8 Home stages are waiting on D20).
   - A `find` item at a fixed spot (`at:[[x,z]]`) on top of a prop (the Zorp crystal in the duck pond, a smashable medium pond) is only reachable once the pond is smashed; fine with the hammer, but worth a `find` option that clears or lifts the item above whatever it sits on.
