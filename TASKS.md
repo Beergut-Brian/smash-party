@@ -167,8 +167,34 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Done: zone `candy` (letter C, frosting-pink ground, pink sky). 20 block-built props: micro wrapped candy / jelly beans / peppermints; mini gumdrops / mini lollipops / cookies; tiny candy canes / cupcakes; small lollipops / rolling donuts / marshmallow stacks; medium ice-cream cones / chocolate bars / gingerbread folks; large swirl-lollipop trees / candy-cane arches / **cupcake houses** (BP); huge **gingerbread houses** (BP, 2 storeys) / gumball machines; mega **three-tier birthday cake** (BP) / giant sundae. One cake, gumball machine and sundae per map; other chunks are cupcake-house streets, lollipop groves or gingerbread lanes, with 1–2 ramps and bunny/chick herds. Test: `__sp.zone('candy')`.
   - Draw calls (`__sp.stats().calls`, same spot, high quality): small 172 / medium 370 (both under the normal world's 227 / 540); mega 1684 vs 1505 for the normal world, which is already over the ~700 goal at mega size.
 
-- [ ] **Z2: Dino Valley zone** `NEEDS DESIGN` (zone-dino agent, see `agents/zone.md`; needs L15 ✅)
+- [x] **Z2: Dino Valley zone** `NEEDS DESIGN` (zone-dino agent, see `agents/zone.md`; needs L15 ✅)
   - `src/world/zones/dino.js` from the template: warm jungle ground, ferns, palm trees, boulders, volcano mega set piece, giant eggs and bones, 15+ props across micro…mega. Goofy, never scary. Dino animals → `NEEDS DESIGN` for world-animals (+ `NEEDS LOGIC` for their sounds/herds).
+  - Done: `src/world/zones/dino.js` (letter D, jungle ground, teal/warm sky). 28 block-built props, 3–4 per size: eggs, sprouts, bones, amber (micro) · ferns, rocks, shells · nests, stumps, flowers · big eggs, cycads, bones, crystals · boulders, hatchling eggs, logs, toadstools · palms, tree ferns, stone huts (BP), ribcages · a timber lodge (BP), a grinning long-neck skeleton, a giant nest · a stepped temple (BP), a hedge T-rex and a smiling volcano (BP, one per world, at the heart of the dino blob). Landmark chunks: volcano, temple, rex, villages (lodge + huts), skeleton, nest, dig site; the rest is wild jungle with ramps. Draw calls about the same as town/park (tiny ~170, medium ~295, huge ~455).
+- [ ] **D14: Dino animals** `NEEDS DESIGN` (world-animals; from Z2)
+  - Dino Valley already asks for herds of `trike`, `stego` and `bronto` (`DINO_HERD_KINDS` and `herds` in `src/world/zones/dino.js`); unknown kinds are skipped, so chicks and ducks stand in today.
+  - Add `ANIMAL.trike` (baby triceratops, ~1.6 long), `ANIMAL.stego` (~2 long, rounded back plates) and `ANIMAL.bronto` (long neck, ~3 long) in `src/world/animals.js`. Chubby, big eyes, pastel: goofy, never scary. Each needs a sound (AU5).
+- [ ] **AU5: Dino Valley sounds + music** `NEEDS AUDIO` (audio; from zone-dino, Z2 ✅; the dino part of AU2. L22 is needed to play them, but they can be generated now). The ids are already set in `src/world/zones/dino.js` (`music`, `sfx`, `DINO_SFX`). The sound: a sunny, stompy prehistoric jungle, big and boomy but goofy, never scary (no real roars, no growls).
+  - **Music** (`tools/music-lines.json`, same chiptune style as the other tracks):
+    - `dino_drive` (~90 s loop): a happy jungle stomp: tribal toy drums and log marimba, a bouncy tuba/bass walking line, a whistled or ocarina lead, the odd goofy honk on the beat. Feels like a cartoon dino parade. Seamless loop.
+    - `dino_boss` (~90 s loop): a clumsy giant's showdown: big boomy timpani stomps, a low brass riff that trips over itself, rumbling volcano bass, silly slide-whistle and kazoo stabs, rising excitement. Seamless loop.
+  - **Zone sfx** (`tools/sfx-lines.json`; the `_1…` variants are picked at random):
+    - `dino_crash_1`…`_4` (default crash, ~0.6 s): a leafy jungle smash with snapping twigs, a crunchy stone crumble, a hollow wooden clonk, a rustly bush burst.
+    - `dino_boom_1`…`_3` (boom, ~1.3 s): a deep volcano KA-BOOM with a rumbly echo and a pitter-patter of falling pebbles, ending in a little lava "bloop".
+    - `dino_stomp_1`…`_3` (land, ~0.5 s): a heavy cartoon dino-foot STOMP on soft jungle ground, a thump with a tiny ground shake.
+    - `dino_ambient` (~20 s loop, very quiet): warm jungle air, chirpy birds and frogs, a distant friendly dino honk, a soft volcano rumble far away now and then.
+  - **Per-prop sfx** (`DINO_SFX`; 2–3 variants each, ~0.5 s unless noted):
+    - `dino_egg_1`…`_3`: a big eggshell CRACK and crunch (cartoon, no gooey sounds). `dino_hatch_1`…`_2` (~0.9 s): an egg crack then a tiny happy baby-dino squeak.
+    - `dino_bone_1`…`_3`: hollow wooden-xylophone bone clatter, like a pile of giant bones falling over.
+    - `dino_leafy_1`…`_3`: a whooshy rustle of big palm fronds and ferns with a springy swish.
+    - `dino_rock_1`…`_3`: chunky stone blocks tumbling and crumbling. `dino_crystal_1`…`_3`: a sparkly glassy crystal shatter with a chime.
+    - `dino_wood_1`…`_3`: a hollow log thunk and splintering crack. `dino_boing_1`…`_2`: a big rubbery mushroom BOING.
+    - `dino_volcano_1`…`_2` (~2 s): a huge rumble that ends in a giant goofy volcano BURP and a fizz.
+  - **Animal sounds** (once D14 lands; ids = the kind names, like the other animals): `trike` a short happy trumpety honk, `stego` a deep goofy "hoo-hoo" toot, `bronto` a long low friendly foghorn "hoooonk".
+- [ ] **B2a: Dino Valley boss ideas** `NEEDS DESIGN` (world-bosses; from zone-dino, Z2 ✅; feeds B2, so pick one with Kaden + son and build it as B2)
+  - **Rexy Rumbleton** 🦖: a big clumsy T-rex with a giant head, a wide goofy grin, googly eyes and teeny flappy arms (high `sway`, it teeters when hit). Pastel green with a polka-dot belly. Weak spots: two big toenails (phase 1), two round knee pads (phase 2), the tip of its tail dragging on the ground (phase 3). Each storey falls apart into fat green chunks; the tiny arms pop off `whole:true`.
+  - **Lava Larry** 🌋: the zone's smiling `dino_volcano` grown stubby dino legs and a tail, walking. Puffs white smoke rings from its crater (`whole:true` extras) and blinks its googly eyes. Weak spots: glowing orange lava vents low on its sides (1), its rock toes (2), the lava-drip "knees" (3). Its rock rings are its storeys, so it pancakes like the landmark; when beaten it lets out a huge burp of confetti.
+  - **Mama Stegosaurus "Plates"** 🦕: a chunky stegosaurus whose back plates are a row of giant colorful pastel plates (each a `whole:true` extra that flies off), with a giant egg balanced on her tail. Weak spots: her four painted belly spots low on her sides (1), the tail-spike thumbs near the ground (2), her front feet (3). When beaten the egg on her tail hatches a baby that waves bye.
+  - Zone colors are global constants in `src/world/zones/dino.js` (`DINO_LEAF`, `DINO_STONE`, `DINO_EGG`, `DINO_SPOT`, `DINO_BONE`, `DINO_LAVA`, `DINO_GLOW`…), and `dinoEyes(P,x,y,z,size,floor)` makes the googly eyes; reuse them. Boss music is the zone's `dino_boss` track (AU5). Voice lines (intro, 2–3 funny taunts, defeat) go to the audio agent once a name is picked.
 
 ### Play-test round 2 (Kaden + son, Nov 7): "it was fun!"
 
