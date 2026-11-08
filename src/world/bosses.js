@@ -21,13 +21,21 @@
                    Weak spots: 1 gumdrop belly buttons · 2 candy-cane toe caps · 3 the two lollipops (held low).
    Rexy Rumbleton 🦖 (dino) a clumsy pastel T-rex: giant head, wide toothy grin, googly eyes, polka-dot belly,
                    rounded back plates and teeny arms that windmill. Teeters when hit.
-                   Weak spots: 1 big toenails · 2 round knee pads · 3 the tail tip + tail bump dragging on the ground. */
+                   Weak spots: 1 big toenails · 2 round knee pads · 3 the tail tip + tail bump dragging on the ground.
+   Gumbo-Tron 3000 🍬 (candy) a walking gumball-machine robot: red base body with a coin-slot mouth, a glass-globe head
+                   full of gumballs (they fly out whole), googly eyes on the glass, a ring of gumballs twirling on top.
+                   Weak spots: 1 coin-slot knobs (chest) · 2 silver turn-crank hands · 3 red hatch knees.
+   Lava Larry 🌋    (dino) the smiling volcano on four stubby legs with a rocky tail, googly eyes, lava drips and smoke
+                   rings puffing out of his crater.
+                   Weak spots: 1 glowing lava vents (sides) · 2 rock toes (front feet) · 3 lava-drip knees (back legs). */
 
 // helpers (prefixed boss… so no other lane collides)
 function bossRot(m,x=0,y=0,z=0){m.rotation.set(x,y,z);return m;}
 function bossGroup(x,y,z,...kids){const g=new THREE.Group();g.position.set(x,y,z);for(const k of kids)g.add(k);return g;}
 // a smile: the bottom half of a ring (one shared geometry), scaled to fit a face
 const BOSS_SMILE=new THREE.TorusGeometry(0.5,0.12,8,18,Math.PI);
+const BOSS_RING=new THREE.TorusGeometry(0.5,0.17,8,20); // smoke rings
+function bossTilt(m,rx,ry){m.rotation.order='YXZ';m.rotation.set(rx,ry,0);return m;}   // turn around Y, then tip around X
 function bossSmile(color,x,y,z,sx,sy,sz){const m=new THREE.Mesh(BOSS_SMILE,M(color));m.scale.set(sx,sy,sz);m.position.set(x,y,z);m.rotation.z=Math.PI;m.castShadow=true;return m;}
 // a googly eye: white ball + black pupil nudged toward (lx,ly) so each eye can look a different silly way
 function bossEye(P,floor,x,y,z,s,lx,ly){
@@ -241,5 +249,80 @@ const BOSSES=[
     bossEye(P,2,-0.85,10.15,2,1.3,-0.8,1);bossEye(P,2,0.85,10.15,2,1.1,1,-0.6);            // googly eyes looking two ways
     // floor 3: a row of rounded head bumps
     for(const [z,c] of [[1.4,0],[0.3,2],[-0.8,1]])P(BP(mk('sph',0.8,0.7,0.8,spots[c],0,10.45,z),3,'roof'),1,true,0.35);
-    o.spin=arms;}}
+    o.spin=arms;}},
+
+  {id:'gumbotron',zone:'candy',name:'Gumbo-Tron 3000',emoji:'🍬',sway:0.07,
+   taunts:['Insert coin to play! Just kidding!','Beep boop! Gumball attack!','My gumballs are extra bouncy!'],
+   defeat:'Out of order! Out of order! Free gumballs for everyone!',
+   build(P,g,o){
+    const red='#e63946',silver='#ced4da',steel='#adb5bd',glass='#fff0f6',balls=['#ff006e','#ff4d6d','#8338ec','#3a86ff','#06d6a0','#ffbe0b','#fb5607'];
+    // floor 0: chunky silver feet, red robot legs with hatch knees
+    for(const sx of [-1,1]){const x=sx*1.25;
+      P(BP(mk('box',1.9,0.6,2.5,silver,x,0.3,0.3),0,'wall'),4);                           // foot
+      P(BP(mk('cyl',1.35,1.8,1.35,red,x,1.45,0),0,'wall'),4);                             // leg
+      P(BP(mk('cyl',1.55,0.25,1.55,steel,x,0.75,0),0,'extra'),1,true,0.4);                // ankle ring
+      P(bossWeak(mk('sph',0.95,0.95,0.7,'#ffd60a',x,1.5,0.75),0,3),3);}                  // phase 3: red hatch knees
+    P(BP(mk('cyl',4,0.5,3.4,steel,0,2.55,0),0,'slab'),3);                                 // hips
+    // floor 1: the red machine base with a coin-slot mouth, crank arms
+    P(BP(mk('box',3.8,3,0.5,red,0,4.3,1.5),1,'wall'),5);P(BP(mk('box',3.8,3,0.5,red,0,4.3,-1.5),1,'wall'),5);
+    for(const sx of [-1,1])P(BP(mk('box',0.5,3,2.6,red,sx*1.65,4.3,0),1,'wall'),4);
+    P(BP(mk('box',1.6,1,0.15,silver,0,4.75,1.8),1,'extra'),1,true,0.4);                   // coin-slot plate
+    P(BP(mk('box',1,0.18,0.1,'#22223b',0,4.8,1.88),1,'extra'),1,true,0.3);                // the coin slot (its mouth)
+    P(BP(mk('box',1.3,0.7,0.15,silver,0,3.55,1.8),1,'extra'),1,true,0.4);                 // gumball door
+    for(const sx of [-1,1])P(bossWeak(mk('sph',0.85,0.85,0.6,'#ffd60a',sx*1.1,3.15,1.9),1,1),3); // phase 1: coin-slot knobs
+    P(BP(mk('box',0.8,0.8,0.1,'#ffbe0b',-1.1,5.3,1.79),1,'extra'),1,true,0.3);            // a sticker
+    P(BP(mk('box',4.2,0.5,3.6,red,0,6.05,0),1,'slab'),4);                                  // top of the base
+    for(const sx of [-1,1]){
+      P(BP(bossRot(mk('cyl',0.6,2.2,0.6,steel,sx*2.35,4.3,0.3),0,0,sx*0.25),1,'extra'),2,true,0.6); // arm
+      for(const y of [3.9,4.6])P(BP(mk('cyl',0.8,0.18,0.8,'#495057',sx*2.3,y,0.3),1,'extra'),1,true,0.3); // accordion rings
+      P(BP(bossRot(mk('cyl',0.25,1.1,0.25,silver,sx*2.7,2.95,0.85),Math.PI/2),1,'extra'),1,true,0.3); // crank handle
+      P(bossWeak(mk('sph',1,1,1,'#ffd60a',sx*2.65,2.85,0.25),1,2),3);}                    // phase 2: turn-crank hands
+    // floor 2: the glass globe head full of gumballs, googly eyes on the glass
+    for(const sx of [-1,1])P(BP(mk('sph',3.6,4.4,4.6,glass,sx*0.55,8.4,0),2,'wall'),4);
+    const n=16;for(let i=0;i<n;i++){const yy=1-(i+0.5)/n*2,rr=Math.sqrt(1-yy*yy),a=i*2.39996;
+      if(Math.cos(a)*rr>0.35&&yy>-0.75&&yy<0.55)continue;                                 // keep the face clear
+      P(BP(mk('sph',1.05,1.05,1.05,balls[i%balls.length],Math.sin(a)*rr*2.35,8.4+yy*2.1,Math.cos(a)*rr*2.3),2,'extra'),1,true,0.5);}
+    bossEye(P,2,-0.75,8.7,2.15,1.15,-1,0.8);bossEye(P,2,0.75,8.7,2.15,1.15,1,0.8);
+    P(BP(bossSmile('#22223b',0,7.9,2.15,1.4,0.8,1.2),2,'extra'),1,true,0.3);
+    // floor 3: red cap, knob and a ring of gumballs twirling on top
+    P(BP(mk('cyl',2.6,0.6,2.6,red,0,10.6,0),3,'roof'),2,true,0.9);
+    P(BP(mk('sph',0.8,0.8,0.8,red,0,11.1,0),3,'roof'),1,true,0.3);
+    const twirl=bossGroup(0,11.4,0,mk('cyl',0.12,0.9,0.12,steel,0,0.1,0),
+      ...[0,1,2,3].map(i=>{const a=i/4*Math.PI*2;return mk('sph',0.55,0.55,0.55,balls[i*2],Math.sin(a)*0.9,0.5,Math.cos(a)*0.9);}));
+    twirl.userData.spin={axis:'y',speed:3};P(BP(twirl,3,'roof'),1,true,0.6);
+    o.spin=[twirl];}},
+
+  {id:'lavalarry',zone:'dino',name:'Lava Larry',emoji:'🌋',sway:0.05,
+   taunts:['Rumble rumble! Hee hee!','I feel a big burp coming!','Hot lava hugs for everyone!'],
+   defeat:'BUUURP! Ahh, much better. Bye bye!',
+   build(P,g,o){
+    const rock=['#8d7b68','#a39282','#7f6a59'],lava='#ff6d00',glow='#ffd60a',ink='#22223b';
+    // floor 0: four stubby legs, rock toes, a rocky tail
+    for(const sx of [-1,1])for(const sz of [-1,1]){const x=sx*1.9,z=sz*1.5;
+      P(BP(mk('cyl',1.5,1.7,1.5,rock[sz>0?0:2],x,0.85,z),0,'wall'),3);}
+    for(const sx of [-1,1]){const x=sx*1.9;
+      for(const tx of [-0.45,0.45])P(BP(mk('sph',0.55,0.45,0.6,rock[1],x+tx,0.25,2.4),0,'extra'),1,true,0.2);
+      P(bossWeak(mk('sph',0.9,0.75,0.9,'#ffd60a',x,0.4,2.45),0,2),3);                    // phase 2: rock toes
+      P(BP(mk('box',0.35,0.9,0.2,lava,sx*2.6,1.35,-1.1),0,'extra'),1,true,0.3);           // lava drip
+      P(bossWeak(mk('sph',0.95,0.95,0.95,'#ffd60a',sx*2.6,1,-1.6),0,3),3);}              // phase 3: lava-drip knees
+    for(const [y,z,s,c] of [[1.9,-3.6,1.7,0],[1.2,-4.6,1.3,1],[0.6,-5.4,0.95,2]])P(BP(mk('sph',s,s*0.85,s*1.2,rock[c],0,y,z),0,'extra'),2,true,s*0.4);
+    P(BP(mk('sph',0.6,0.5,0.6,lava,0,0.75,-5.95),0,'extra'),1,true,0.25);                 // glowing tail tip
+    P(BP(mk('cyl',6.6,0.5,6,rock[2],0,1.9,0),0,'slab'),3);
+    // floors 1–3: three leaning rings of rock, smaller each storey (like the zone's volcano)
+    const R=[3.1,2.3,1.6],H=[3,2.7,2.4],lean=0.28;let y=2.15;const ys=[];
+    for(let f=0;f<3;f++){const w=2*R[f]*Math.tan(Math.PI/6)*1.2;ys.push(y);
+      for(let i=0;i<6;i++){const a=i/6*Math.PI*2;P(BP(bossTilt(mk('box',w,H[f],1.3,rock[(i+f)%3],Math.sin(a)*R[f],y+H[f]/2,Math.cos(a)*R[f]),-lean,a),f+1,'wall'),3);}
+      P(BP(mk('cyl',R[f]*1.9,0.4,R[f]*1.9,rock[f],0,y+H[f]-0.2,0),f+1,'slab'),3);y+=H[f];}
+    for(const sx of [-1,1])P(bossWeak(mk('sph',1.1,1.1,1.1,'#ffd60a',sx*3.45,3.1,0.4),1,1),3); // phase 1: lava vents (sides)
+    // the happy face on the front: googly eyes + a wide smile, rosy cheeks
+    bossEye(P,2,-0.9,ys[1]+1.5,R[1]+0.55,1.3,-0.7,1);bossEye(P,2,0.9,ys[1]+1.5,R[1]+0.55,1.3,0.9,-0.5);
+    P(BP(bossSmile(ink,0,ys[1]+0.3,R[0]+0.35,2.4,1.1,1.6),1,'extra'),1,true,0.4);
+    for(const sx of [-1,1])P(BP(mk('sph',0.7,0.45,0.25,'#ff8fab',sx*1.65,ys[1]+0.05,R[0]+0.25),1,'extra'),1,true,0.2);
+    for(const a of [0.75,-0.75,2.4,-2.4])P(BP(bossTilt(mk('box',0.75,0.3,2.4,lava,Math.sin(a)*2.3,ys[2]+1.1,Math.cos(a)*2.3),1.29,a),3,'extra'),1,true,0.4); // lava drips running down
+    // floor 4: lava crater, glowing blob and smoke rings
+    P(BP(mk('cyl',3,0.4,3,lava,0,y+0.05,0),4,'roof'),3);
+    P(BP(mk('sph',1.4,0.8,1.4,glow,0,y+0.3,0),4,'roof'),1,true,0.5);
+    for(const [dy,s,dx] of [[1.1,2.2,0],[2.3,1.6,0.35]]){const ring=new THREE.Mesh(BOSS_RING,M('#ffffff'));  // puffy smoke rings
+      ring.scale.set(s,s,s*1.6);ring.position.set(dx,y+dy,-dx);ring.rotation.x=Math.PI/2;ring.castShadow=true;P(BP(ring,4,'extra'),1,true,0.5);}
+  }}
 ];
