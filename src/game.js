@@ -369,13 +369,15 @@ function grow(n){
   if(giant)return;const next=GROW_AT[tier+1];growth=Math.min(next,growth+n);
   if(growth>=next&&!levelReady){levelReady=true;lastReadySay=0;sfxClip('levelup_ready',0.8)||sfx.pop();}}
 function levelUp(){
-  if(!levelReady||giant||garage||queue.some(q=>q.fn===openGarage))return;levelReady=false; // finish the garage first
+  if(!levelReady||giant||garage||queue.some(q=>q.fn===openGarage))return;
+  if(questBlocksLevel()){questNudge();return;} // L35 Adventure: the chapter's main quest comes before the next garagelevelReady=false; // finish the garage first
   if(tier>=SIZES.length-1){giant=true;goGiant();return;}
   const ct=carTierNow();tier++;sizeUp();clearPads();
   if(carTierNow()!==ct)queue.push({t:1.6,fn:openGarage});} // new car tier: the garage rises to pick one in
 function updateGrowth(dt){S+=((giant?GROW_S[GROW_S.length-1]:GROW_S[tier])-S)*Math.min(1,dt*3);popT=Math.max(0,popT-dt);
   lvBtn.style.display=levelReady&&state==='play'&&!garage?'block':'none';
-  const n=performance.now();if(levelReady&&!garage&&n-lastReadySay>14000){lastReadySay=n;say('Level up ready! Press X or Y!');}}
+  {const qb=levelReady&&questBlocksLevel(),h=qb?`${qb}❗`:LVBTN_HTML;if(lvBtn.dataset.k!==h){lvBtn.dataset.k=h;lvBtn.innerHTML=h;}} // L35: the giver to help first, no words
+  const n=performance.now();if(levelReady&&!garage&&!questBlocksLevel()&&n-lastReadySay>14000){lastReadySay=n;say('Level up ready! Press X or Y!');}}
 const dispScale=()=>S*(1+0.3*popT*Math.sin(popT*22));
 function showBig(txt){const el=$('big');el.textContent=txt;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}
 function sizeUp(){
@@ -383,7 +385,7 @@ function sizeUp(){
   showBig('LEVEL UP!');greenT=4;scatterRain(Math.round(SCAT_N*0.4));sfxClip('levelup',1)||sfx.fanfare();say('LEVEL UP!');shake=Math.min(2,shake+1.2);popT=1.2;
   for(const p of players){puff(p.x,S,p.z,12,1.2*Math.max(S,.3),'#ffd60a');flash(p.x,S,p.z,'#ffd60a',3*Math.max(S,.3),0.5);}}
 // the big glowing LEVEL UP button (also Y on a controller, Q or / on the keyboard)
-const lvBtn=document.createElement('button');lvBtn.id='levelUp';lvBtn.innerHTML='⬆️ LEVEL UP!<small>press X or Y</small>';
+const LVBTN_HTML='⬆️ LEVEL UP!<small>press X or Y</small>',lvBtn=document.createElement('button');lvBtn.id='levelUp';lvBtn.innerHTML=LVBTN_HTML;
 lvBtn.onclick=e=>{e.stopPropagation();levelUp();};lvBtn.addEventListener('touchstart',e=>{e.stopPropagation();},{passive:true});document.body.appendChild(lvBtn);
 function goGiant(){
   showBig('GIANT!');sfx.fanfare();queue.push({t:1.3,fn:()=>sfx.fanfare()});say("You're GIANT! Smash everything!");shake=2;popT=1;confetti(220);
@@ -413,6 +415,7 @@ function rollWorld(keepSize,kind){ // kind: 'bedroom' | 'outside' | undefined = 
   if(players.length===2&&Math.hypot(players[0].x-players[1].x,players[0].z-players[1].z)<players[0].r*2.5)besideCar(players[1],players[0]); // big cars: room for both
   {const a=spawnSpot(0);camT.set(a[0],0,a[1]);}updateStreaming(0,true);if(!keepSize)newCars(true);
   if(reG&&keepSize)queue.push({t:1.6,fn:openGarage});
+  questWorldChanged(); // L35: the active quest step rebuilds its things in the new world
 }
 const nwBtn=document.createElement('button');nwBtn.id='newWorld';nwBtn.innerHTML='🌍 NEW WORLD!<small>START / N / tap</small>';
 nwBtn.onclick=e=>{e.stopPropagation();newWorld();};nwBtn.addEventListener('touchstart',e=>{e.stopPropagation();},{passive:true});
@@ -1954,7 +1957,7 @@ function loop(now){
     for(const p of players){const s=src[p.src]||{x:0,z:0};if(levelReady&&!garage&&(s.levelP||s.swapP))levelUp();else if(s.fire&&!p.inG)shoot(p);p.update(dt,s);}
     if(garage)updateGarage(dt,src);
   }
-  updateGrowth(dt);updateStreaming(dt);
+  updateGrowth(dt);updateStreaming(dt);updateQuests(dt);
   if(state==='play'&&!garageAll()){collisions();updateBoss(dt);}
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
   updateRoom(dt);updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateCombo(dt);if(!garage){updateGold(dt);updatePads(dt);}if(!garageAll()){updateScatter(dt);updateAnimals(dt);}updateRollers(dt);updateSpin(dt);updateShots(dt);updatePerks(dt);updateDebris(dt);updateParts(dt);updatePuffs(dt);
@@ -1962,6 +1965,7 @@ function loop(now){
   renderer.render(scene,camera);
   pressed.clear();touch.jumpP=false;touch.swapP=false;
 }
+questDefaults(); // L35: the placeholder quest when no quest pack registered any
 propsReady.then(()=>{buildWorld();captureHome();updateStreaming(0,true);last=performance.now();requestAnimationFrame(loop);});
 /* __sp.spots(): draws the spots of the built chunks as see-through tiles (colored by kind) so layouts can be checked; again to hide. */
 let spotView=null;
@@ -1978,6 +1982,8 @@ window.__sp={room:(on=true)=>{rollWorld(true,on?"bedroom":"outside");return on?"
     if(skipped&&!giant&&!queue.some(q=>q.fn===openGarage))queue.push({t:1.6,fn:openGarage}); // jumped past a garage: open one for where you landed
     return giant?'GIANT':SIZES[tier];}, // jump ahead n sizes (skipGarage: just hand out new cars)
   garage(){openGarage();return garage&&garage.tier;},
+  quest(id,finish){questOn=true;questDefaults();const q=id&&QUESTS[id];if(id&&!q)return 'no quest '+id; // __sp.quest() turns Adventure quests on; ('id') starts one; ('id',true) finishes it
+    if(q&&(!questA||questA.q!==q))questStart(q);if(q&&finish){questStepEnd(false);questFinish();}return questA?{id:questA.q.id,step:questA.si,do:questA.st&&questA.st.s.do,got:questA.st&&questA.st.got,n:questA.st&&questA.st.n}:questState();},
   garageIn(){if(!garage)return;garage.t=GARAGE_RISE;players.forEach((p,i)=>{p.x=garage.x+(i-(players.length-1)/2)*8*garage.sG;p.z=garage.z+20*garage.sG;p.heading=Math.PI;p.speed=0;});return garage.phase;}, // skip the drive up
   garageGo(){if(!garage)return;__sp.garageIn();updateGarage(0,{});for(const p of players)if(garage.picked[p.idx]==null){const pd=garage.pads.find(q=>q.owner===p.idx&&!q.gone);if(pd)garagePick(p,pd);}garage.ready=true;garageGo();return !!garage&&garage.phase;},
   garageInfo(){const G=garage;return G&&{phase:G.phase,x:+G.x.toFixed(1),z:+G.z.toFixed(1),s:G.sG,in:players.map(p=>!!p.inG),picked:G.picked,ready:G.ready,front:+G.frontK.toFixed(2),back:+G.backK.toFixed(2),pads:G.pads.length,p:players.map(p=>[+p.x.toFixed(1),+p.z.toFixed(1)])};},
