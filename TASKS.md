@@ -454,7 +454,7 @@ Passed: boot with no script errors, version on the start screen, both players jo
   - Seen: "GOLDEN!" and "×93 COMBO!" drawn on top of each other in the middle of the screen (an unreadable jumble); in a boss fight a see-through "KABOOM!" spans the boss while "×164 COMBO!" sits right on both cars, so you can't see your own car for a moment.
   - Repro: GIANT (`__sp.level(7,true)`), `__sp.mega()` near a golden prop or `__sp.boss('clankzilla')` + `__sp.explode(x,z)` a few times next to it.
   - Expected: one banner at a time (or stacked), and the combo label offset so it never covers the cars. Positioning is in game.js (`showBig`, the combo label placement); if a style change isn't enough, add a `NEEDS LOGIC` task.
-  - ✅ Done (`cars/QA3`): `#big` moved into the top band under the meter (smaller, shorter linger); `#combo` lifts ~14vh above the car anchor and caps at 52px so it no longer sits on the cars or stacks through GOLDEN/KABOOM. Style-only — no logic change.
+  - ✅ Done (`cars/QA3`): `#big` moved into the top band under the meter (smaller, shorter linger); `#combo` lifts ~22vh above the car anchor and caps at 52px so it no longer sits on the cars or stacks through GOLDEN/KABOOM. Style-only — no logic change.
 - [ ] **QA4: Switching LOOKS in the pause menu throws away the game** `NEEDS LOGIC` (logic-systems, `setQuality` in core.js)
   - Repro: play to any size, Esc → "LOOKS: BEST (switch to FAST)" → the page reloads to the start screen at micro size and players must rejoin.
   - Expected: switch without a reload, or label it clearly (e.g. "restarts") so a long session isn't wiped by accident.
