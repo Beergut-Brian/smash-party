@@ -289,6 +289,8 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Expose the stats for the garage stat cards. **Show them as icons and bars, never text** (lightning = speed, fist = power, rocket = perk) since the main player can't read yet.
   - Hand-off: `NEEDS DESIGN` cars-ui to set stats/perks on every recipe (D9).
 
+- [ ] **L28: Cheap bosses** `NEEDS LOGIC` (logic-systems; found reviewing PRs #21/#22). After L25 most fights are ~600–800 calls, but **Gumbo-Tron 3000** still measures ~1,600 (lots of separate gumball parts). Draw each boss's untouched parts merged per material (like the cars), splitting a part out only when it's hit or flies off, so any boss design stays cheap. Re-measure all 7 bosses on the real GPU.
+
 - [ ] **L19: Placement that makes sense (neighborhoods, not confetti)**
   - Today the size-matched filler scatters props anywhere in a chunk, so things look random. Let layouts declare **spots**: `ctx.spot(kind,x,z,w,d)` for yards, sidewalks, fields, playground sand, parking, porches. Filler then only goes into matching spots (garden gnomes in yards, cones on roads, hay in fields), with a little leftover scatter.
   - Hand-off: `NEEDS DESIGN` world-props to lay out real neighborhoods with spots (D11).
