@@ -161,6 +161,7 @@ Claude Code's *logic* sessions still own `core.js`, `game.js` and `tools/`. A de
   - Needs: L9 GLB prop loader for the cleanest path. Cars can start now via `assets/cars/cars.json`.
   - D8a started: Kenney car kit (CC0, `assets/CREDITS.md`). The driveable cars are in `assets/cars/` and show up in the car swap. Town, farm, and park models are D8b (world lane).
   - ✅ **D8b done** (world-props/D8b): town, farm and park use Kenney CC0 models (City Kit Suburban + Commercial + Roads, Nature Kit, Fantasy Town, Holiday Kit, Car Kit; credited in `assets/CREDITS.md`). 58 models in `assets/props/`, baked by `assets/props/bake.mjs` into one mesh with vertex colors each (no textures). In `objects.js`, `kitPieces()` slices each model once (cached, shared by every size): buildings into storeys of walls + roof with the L3 part contract (they still pancake), trees/flowers by color (leaves fly off whole), snowmen into balls. Houses, cottages, villas, shops, the tall boss building, farmhouse, trees, bushes, flowers, mushrooms, pebbles, lamps, cones, benches, parked cars, tractor, fences, crops, melons, snowmen, fountain and windmill sails all switched; every type keeps its block version as the fallback. Still block-built: school, fire station, water tower, barn, silo, coop, hay, scarecrow, playground, gazebo, bounce house and the home-arena toys.
+  - ✅ **Landmarks converted** (world-props/D7): barn (Styloo Cozy Farm, CC0), school (Kenney Modular Buildings, plus a block flagpole), fire station (Kenney Racing Kit garage painted red, plus the block hose tower and siren), water tower (KayKit City Builder), silo (Kenney Industrial stack recolored, plus a dome), gazebo (Kenney Pirate Kit pavilion, random roof color), bounce house (Kenney Minigolf castle in party colors), slide (Mini Skate quarter pipe + Platformer ladder) and climbing gym (Mini Skate frame). Still block-built: swing (no CC0 model fits), coop, hay, scarecrow and the home-arena toys. `kitPieces` mode `bld` now takes `{eave, noCap}` for models outside the city kits.
   - Draw calls: each building slice is its own instanced batch while asleep, so a chunk shares one model + wall color per building type (roofs still vary per house) and walls are 4 per storey (`KIT_GRID=2`) for now. Back to 8 per storey (`KIT_GRID=3`) after **L15**.
 
 - [x] **D5: Boss model(s)** (world lane)
@@ -206,8 +207,13 @@ Claude Code's *logic* sessions still own `core.js`, `game.js` and `tools/`. A de
   - Each car: 4–5 units long, faces +Z, `speed` 20–32, `r` 2–2.8. Scales automatically once L2 lands.
   - Started: `PARTS` + `RECIPES` in `src/cars.js`. Yellow Cab, Hose Hero, and Dash Racer are Kenney bases with paint and parts. New from this list: Honk Bus (school bus), Snow Pusher (snowplow), Spinny Mixer (cement mixer).
 
-- [ ] **D7: More mega set pieces** (world lane)
+- [x] **D7: More mega set pieces** (world lane)
   - Still just ideas: stadium, skyscraper, cargo ship, ferris wheel. Build them with `BP` when a zone has room. The mountain-sized boss is D5.
+  - Done (world-props/D7), one landmark each per world (`pickLandmarks`: `sky` in town; `stadium`, `ferris` and `ship` in park), all `mega` with block fallbacks:
+    - **Skyscraper** (`skyscraper`): Kenney Modular Buildings towers (4–6 storeys, ~19–30 tall), sliced with the L3 contract so floors pancake; uses `o.proxy` while asleep. Also in `ZONE_PROPS.town.mega`.
+    - **Stadium** (`stadium`, radius 13): eight Kenney Racing Kit grandstands (walls + roof each) around a pitch with goals and a big ball.
+    - **Ferris wheel** (`ferris`): original block build; the wheel is merged into one mesh and spins, and flies off whole when the legs break. Landmark only, because spinning things never sleep.
+    - **Ship** (`ship`): the Kenney Pirate Kit ship run aground, ringed by barrels (chain blasts) and crates. Also in `ZONE_PROPS.park.mega`.
 
 ---
 

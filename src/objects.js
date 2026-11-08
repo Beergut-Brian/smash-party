@@ -34,10 +34,10 @@ const CAR_COLORS=['#ff006e','#3a86ff','#ffbe0b','#06d6a0','#8338ec','#fb5607'];
    TODO(logic): copy these into REC_R as a fallback for place() calls that omit r. */
 const RAD={
   crates:1.5,cone:.7,barrel:1,tower:1.4,house:3.6,pin:1.1,melon:1.1,snowman:1.3,tree:1.1,fence:2.1,
-  cottage:2.7,villa:4.6,shop:3.8,school:6.6,firestation:5.6,watertower:3.2,mailbox:.55,lamp:.6,hydrant:.5,
+  cottage:2.7,villa:4.6,shop:3.8,school:6.6,firestation:5.6,watertower:4.2,mailbox:.55,lamp:.6,hydrant:.5,
   parked:2.2,boss:6.8,barn:7.2,silo:2.5,farmhouse:4,hay:1.25,crops:2.6,pond:4.8,windmill:3.6,coop:2.4,
   scarecrow:.9,tractor:2.7,swing:1.9,slide:1.9,gym:3.2,fountain:2.9,bench:1.3,picnic:1.7,gazebo:3.8,
-  bounce:5.8,bush:.9,flowers:.32,pebble:.26,mushroom:.3,acorn:.22,toyblock:.28,can:.2,toyduck:.3,gnome:.26,snail:.28
+  bounce:5.8,skyscraper:6.6,stadium:13,ferris:6.2,ship:7,bush:.9,flowers:.32,pebble:.26,mushroom:.3,acorn:.22,toyblock:.28,can:.2,toyduck:.3,gnome:.26,snail:.28
 };
 /* ---------- CC0 pack models (D8b: Kenney kits, see assets/CREDITS.md) ---------- */
 /* Pack models are baked by assets/props/bake.mjs into one mesh with vertex colors. Here each model is cut into
@@ -120,7 +120,7 @@ function kitPiece(T,key){
   if(C)geo.setAttribute('color',new THREE.BufferAttribute(C,3));geo.computeBoundingSphere();geo.userData.kit=key;
   return {geo,key,cen,sz,D,flat,area:T.reduce((s,t)=>s+kitArea(t),0)};
 }
-/* o: {mode, s (scale), ry (quarter turns), cuts (mode 'y': heights as fractions of the model), floors (mode 'bld')} */
+/* o: {mode, s (scale), ry (quarter turns), cuts (mode 'y': heights as fractions of the model), floors, eave, noCap (mode 'bld')} */
 function kitPieces(name,o={}){
   // the cut is the same at every scale (parts are unit boxes), so geometry is shared by every size of a model
   const s=o.s||1,id=name+'|'+JSON.stringify(Object.assign({},o,{s:1}));
@@ -139,11 +139,12 @@ function kitCutUp(name,o){
   }else if(o.mode==='bld'){
     // walls: everything below the eave except the green accent; roof: the accent (turned white so it takes the
     // roof tint) plus everything above the eave (gables, chimneys, flat-roof parapets)
-    const st=KIT_STOREY*s,base=0.04*s,fl=o.floors||1,eave=fl*st+base;let walls=[],roof=[];
+    // o.eave (models outside the city kits): the roof starts at this fraction of the model's height, storeys split it evenly
+    const fl=o.floors||1,base=o.eave?0:0.04*s,st=o.eave?o.eave*kitBox(T)[4]/fl:KIT_STOREY*s,eave=fl*st+base;let walls=[],roof=[];
     // the accent up top becomes one flat white piece: a plain M() color, so each house can get its own roof color for
     // free. Accent lower down (porch roofs, planters) stays with the walls, whitened so it takes the wall color.
     const cap=[],white=t=>t.map(p=>{const l=Math.max(p[6],p[7],p[8]);return p.slice(0,6).concat([l,l,l]);});
-    T.forEach((t,i)=>{const acc=kitGreen(src[i][0]);
+    T.forEach((t,i)=>{const acc=!o.noCap&&kitGreen(src[i][0]); // noCap: the model has no green city-kit roof accent
       if(acc&&kitMid(t,1)>eave-st*0.3){cap.push(t.map(p=>p.slice(0,6).concat([1,1,1])));return;}
       const [lo,hi]=kitClip([acc?white(t):t],1,eave);walls.push(...lo);roof.push(...hi);});
     for(const t of cap)add('roof|'+fl+'|cap',t);
@@ -174,11 +175,11 @@ const kitFloors=name=>{const h=kitBox(kitTris(name))[4];return Math.max(1,/^comm
 // vertex-color material; userData.plainVC = only its color differs (for logic's instanced batching, see KIT_GRID)
 function kitVCMat(hex){let m=kitMats[hex];if(!m){m=kitMats[hex]=litMat({color:hex,vertexColors:true});m.userData.plainVC=true;}return m;}
 /* building from a city-kit model with the L3 part contract. Returns the sleep proxy (see kitProxy). */
-function kitBuilding(P,name,s,wall,roof,floors){
+function kitBuilding(P,name,s,wall,roof,floors,cut){
   floors=floors||kitFloors(name);
-  for(const pc of kitPieces(name,{mode:'bld',s,floors}))
+  for(const pc of kitPieces(name,Object.assign({mode:'bld',s,floors},cut)))
     P(BP(kitMesh(pc,/\|cap$/.test(pc.key)?roof:wall),pc.floor,pc.kind),pc.kind==='roof'?4:2);
-  return kitProxy(name,s,wall,roof,floors);
+  return kitProxy(name,s,wall,roof,floors,cut);
 }
 /* Sleep proxy: the intact building as just two meshes (everything in the wall color merged into one vertex-colored
    mesh + the roof cap in its flat roof color), in the object's local space and NOT added to it. Geometry is cached
@@ -186,10 +187,10 @@ function kitBuilding(P,name,s,wall,roof,floors){
    lost no parts, drawing o.proxy instead of its parts makes it 2 draw calls per model per chunk however finely it is
    sliced (NEEDS LOGIC task in TASKS.md). */
 const kitProxyGeo={};
-function kitProxy(name,s,wall,roof,floors){
-  const id=name+'|'+floors;let G=kitProxyGeo[id];
+function kitProxy(name,s,wall,roof,floors,cut){
+  const id=name+'|'+floors+JSON.stringify(cut||{});let G=kitProxyGeo[id];
   if(!G){const parts={rest:[],cap:[]},m=new THREE.Matrix4();
-    for(const pc of kitPieces(name,{mode:'bld',s:1,floors})){
+    for(const pc of kitPieces(name,Object.assign({mode:'bld',s:1,floors},cut))){
       const g=pc.geo.clone().applyMatrix4(m.compose(new THREE.Vector3(...pc.cen),new THREE.Quaternion(),new THREE.Vector3(...pc.sz)));
       const cap=/\|cap$/.test(pc.key),n=g.attributes.position.count,c=new Float32Array(n*3),src=g.attributes.color;
       for(let i=0;i<n;i++)for(let k=0;k<3;k++)c[i*3+k]=cap?1:(src?src.array[i*3+k]:1)*pc.D[k];
@@ -232,8 +233,30 @@ const KIT={
   melon:['crop-melon'],
   snowman:['snowman'],
   fountain:['fountain'],
-  windmill:['windmill-blades']
+  windmill:['windmill-blades'],
+  // D8c: the last block-built landmarks (cozy-farm barns, KayKit water tower, Kenney modular/racing/pirate/minigolf/skate kits)
+  barn:['barn-red','barn-big'],
+  school:['school-a'],
+  firestation:['garage-red'],
+  watertower:['watertower'],
+  silo:['silo-tall'],
+  gazebo:['pavilion'],
+  bounce:['castle-mini'],
+  slide:['slide-chute'],
+  gym:['climb-frame'],
+  // D7 mega set pieces
+  skyscraper:['tower-a','tower-c','tower-d'],
+  stadium:['grandstand'],
+  ship:['ship-large']
 };
+/* merge a group of mk() blocks into one geometry with their colors as vertex colors (cached: every wheel is the same) */
+let ferrisCache=null;
+function ferrisGeo(grp){
+  if(ferrisCache)return ferrisCache;const list=[];grp.updateMatrixWorld(true);
+  grp.traverse(m=>{if(!m.isMesh)return;const g=m.geometry.clone().toNonIndexed().applyMatrix4(m.matrixWorld),n=g.attributes.position.count,c=new Float32Array(n*3),col=m.material.color;
+    for(let i=0;i<n;i++){c[i*3]=col.r;c[i*3+1]=col.g;c[i*3+2]=col.b;}g.setAttribute('color',new THREE.BufferAttribute(c,3));g.deleteAttribute('uv');list.push(g);});
+  return ferrisCache=THREE.mergeGeometries(list);
+}
 const LEAVES=['#3fb950','#2d8f4e','#52b788','#3fb950','#74c69d','#f7a325','#ff70a6','#9b5de5']; // mostly green, a few candy trees
 /* Chickens and ducks are herds (ctx.herd), not smashables, so L4 launches them. */
 const OBJ={
@@ -438,7 +461,37 @@ const OBJ={
   snail:(x,z,arg)=>sized(x,z,RAD.snail,.32,1,'micro',(P,g)=>{
     P(mk('sph',.34,.28,.34,pick(['#bc6c25','#e9c46a','#f4a261']),0,.16,0),1,true,.12);
     P(mk('sph',.16,.12,.2,'#fff3bf',0,.1,.2),1,true,.08);
-    P(mk('sph',.045,.045,.045,'#111',.04,.14,.28),1);face(g,arg);})
+    P(mk('sph',.045,.045,.045,'#111',.04,.14,.28),1);face(g,arg);}),
+  /* ---- D7 mega set pieces (block versions; the Kenney looks below replace skyscraper, stadium and ship) ---- */
+  skyscraper:(x,z,arg)=>sized(x,z,RAD.skyscraper,26,50,'mega',(P,g)=>{
+    const c=pick(['#bde0fe','#ffc8dd','#d8f3dc','#fff3bf']);
+    for(let i=0;i<6;i++){story(P,8,8,4,i*4.2,i,c,2);slab(P,7.6,7.6,i*4.2+4.1,i,'#f8f9fa');}
+    roofOf(P,8.4,8.4,1.6,25.9,6,'#457b9d');face(g,arg);
+  },{building:true}),
+  stadium:(x,z,arg)=>sized(x,z,RAD.stadium,7,60,'mega',(P,g)=>{
+    P(BP(mk('box',13,.2,13,'#52b788',0,.1,0),0,'extra'),3);
+    for(let i=0;i<4;i++){const a=i*Math.PI/2,R=9.5,cx=Math.sin(a)*R,cz=Math.cos(a)*R;
+      for(const k of [-1,0,1]){const tx=Math.cos(a)*k*5.5,tz=-Math.sin(a)*k*5.5,st=mk('box',5.2,5,4,pick(BLOCK),cx+tx,2.5,cz+tz);st.rotation.y=a;P(BP(st,0,'wall'),3);}
+      const rf=mk('box',17,.4,4.6,'#f8f9fa',cx,5.3,cz);rf.rotation.y=a;P(BP(rf,1,'roof'),4);}
+    P(BP(mk('sph',1.4,1.4,1.4,'#ffffff',0,.9,0),0,'extra'),1,true,.7);
+  },{building:true}),
+  // Ferris wheel: original, block-built. The wheel spins (so it stays awake: landmark only, never in ZONE_PROPS) and
+  // flies off whole when the legs go. Its ~35 blocks are merged into one vertex-colored mesh: 1 draw call, not 35.
+  ferris:(x,z,arg)=>sized(x,z,RAD.ferris,19,30,'mega',(P,g)=>{
+    const hub=10.5,R=7.6,cols=['#e63946','#ffbe0b','#3a86ff','#06d6a0','#8338ec','#ff006e','#fb5607','#4cc9f0'];
+    P(mk('box',10,.5,4.4,'#f8f9fa',0,.25,0),3);
+    for(const zz of [-1.4,1.4])for(const sx of [-1,1]){const l=mk('box',.55,Math.hypot(4.2,hub),.55,'#ced4da',sx*2.1,hub/2,zz);l.rotation.z=sx*Math.atan2(4.2,hub);P(l,3);}
+    const w=new THREE.Group();
+    w.add(mk('wheel',3.4,1.3,1.3,'#495057',0,0,0));
+    for(let i=0;i<16;i++){const a=i/16*Math.PI*2,seg=mk('box',3.1,.32,.32,'#f8f9fa',Math.cos(a)*R,Math.sin(a)*R,0);seg.rotation.z=a+Math.PI/2;w.add(seg);}
+    for(let i=0;i<8;i++){const a=i/8*Math.PI*2,sp=mk('box',R,.18,.18,'#dee2e6',Math.cos(a)*R/2,Math.sin(a)*R/2,0);sp.rotation.z=a;w.add(sp);
+      w.add(mk('box',1.5,1.3,1.5,cols[i],Math.cos(a)*R,Math.sin(a)*R-.9,0));}
+    const wheel=new THREE.Mesh(ferrisGeo(w),kitVCMat('#ffffff'));wheel.position.set(0,hub,0);wheel.userData.spin={axis:'z',speed:.35};
+    wheel.castShadow=wheel.receiveShadow=true;P(wheel,1,true,R);face(g,arg);}),
+  ship:(x,z,arg)=>sized(x,z,RAD.ship,9,36,'mega',(P,g)=>{
+    P(mk('box',4.4,2.4,11,'#9c6644',0,1.2,0),8);P(mk('pyr',4.4,3,3,'#9c6644',0,1.2,6.4),3);
+    for(const [zz,h] of [[-2.5,7],[2.2,8.4]]){P(mk('cyl',.35,h,.35,'#6d4c41',0,2.4+h/2,zz),2);P(mk('box',4.6,3.6,.2,'#f8f9fa',0,2.4+h*.62,zz+.3),1,true,1.4);}
+    face(g,arg);})
 };
 /* D8b: Kenney looks. Each builder picks a model (seeded, so a chunk always rebuilds the same) and falls back to the
    block version above when none of its models loaded. Sizes, radii and points stay as they were. */
@@ -504,6 +557,74 @@ const OBJ={
       const sail=new THREE.Group();sail.position.set(0,5.5,1.8);sail.userData.spin={axis:'z',speed:1.1};
       for(const pc of kitPieces('windmill-blades',{mode:'one',s,ry:1})){const m=kitMesh(pc,null);m.position.set(0,0,0);sail.add(m);}
       P(sail,1,true,.4);face(g,arg);});};
+
+  /* ---- D8c: the last block-built landmarks ----
+     Models outside the city kits slice with cut {eave, noCap}: eave = where the roof starts (fraction of height).
+     Landmarks with block extras on top (school flag, fire tower) keep no o.proxy, since a proxy would hide the extras. */
+  const kitColor=(pc,c)=>{const m=kitMesh(pc,null);if(c)m.material=pc.flat?M(c):kitVCMat(c);return m;};
+  const kitBld=(type,size,pts,cut,wallOf,extra,floors)=>(x,z,arg)=>{
+    const name=kitAt(KIT[type],x,z,[...type].reduce((h,c)=>h*31+c.charCodeAt(0),7)%9973);if(!name)return B[type](x,z,arg);
+    const s=kitFit(name,RAD[type]),H=kitH(name,s),fl=floors?floors(name):1;let proxy;
+    const o=sized(x,z,RAD[type],H,pts,size,(P,g)=>{proxy=kitBuilding(P,name,s,wallOf?wallOf(x,z):'#ffffff','#ffffff',fl,cut);
+      if(extra)extra(P,H,fl,s);face(g,arg);},{building:true,big:true});
+    if(!extra)o.proxy=proxy;return o;};
+  OBJ.barn=kitBld('barn','mega',32,{noCap:true,eave:.5});
+  // schoolhouse: long side to the front, flagpole on the roof
+  OBJ.school=kitBld('school','huge',22,{noCap:true,eave:.52,ry:1},null,(P,H,fl)=>{
+    P(BP(mk('cyl',.14,2.8,.14,'#dee2e6',0,H+1.2,0),fl,'extra'),1);P(BP(mk('box',1.2,.7,.06,'#ffbe0b',.62,H+2.2,0),fl,'extra'),1,true,.3);});
+  // fire station: the racing kit's red-door garage painted red, with the block hose tower + siren on the roof
+  OBJ.firestation=kitBld('firestation','huge',20,{noCap:true,eave:.86},()=>'#ff8f8f',(P,H,fl)=>{
+    story(P,2.8,2.8,2.6,H,fl,'#d62828',2);slab(P,2.6,2.6,H+2.6,fl,'#fff');
+    P(BP(mk('box',.55,.38,.55,null,0,H+2.95,0,glow('#ff1e1e')),fl,'extra'),1);});
+  OBJ.skyscraper=kitBld('skyscraper','mega',50,{noCap:true,eave:.93},(x,z)=>['#ffffff','#cfe8ff','#ffd6e7','#d8f3dc'][Math.floor(kitHash(x,z,23)*4)],null,
+    name=>({'tower-a':4,'tower-c':5,'tower-d':6})[name]||4);
+  OBJ.watertower=(x,z,arg)=>{if(!kitHas('watertower'))return B.watertower(x,z,arg);const s=kitFit('watertower',RAD.watertower);
+    return sized(x,z,RAD.watertower,kitH('watertower',s),16,'huge',(P,g)=>{kitProp(P,'watertower',s,{cut:{mode:'y',cuts:[.42,.78]},n:5,whole:false});face(g,arg);});};
+  // silo: the industrial stack in farm colors (silver body, red band) with a white dome
+  OBJ.silo=(x,z,arg)=>{if(!kitHas('silo-tall'))return B.silo(x,z,arg);const s=kitFitH('silo-tall',9),H=9;
+    return sized(x,z,RAD.silo,H+1.6,14,'huge',(P,g)=>{
+      for(const pc of leafy('silo-tall',s))P(kitColor(pc,pc.D[0]>pc.D[2]*1.6?'#e63946':'#e9ecef'),5);
+      P(mk('sph',s*.62,s*.42,s*.62,'#f8f9fa',0,H,0),3);P(mk('box',1.1,1.8,.1,'#6d4c41',0,1.1,s*.5),1);face(g,arg);});};
+  OBJ.gazebo=(x,z,arg)=>{if(!kitHas('pavilion'))return B.gazebo(x,z,arg);const s=kitFit('pavilion',RAD.gazebo),H=kitH('pavilion',s);
+    return sized(x,z,RAD.gazebo,H,14,'huge',P=>{P(mk('cyl',RAD.gazebo*1.75,.28,RAD.gazebo*1.75,'#f8f9fa',0,.16,0),3);
+      const rf=pick(['#e63946','#3a86ff','#ffbe0b','#8338ec','#2a9d8f']);
+      // two bands (posts, roof) instead of one part per color: ~10 batches per chunk → 2
+      for(const pc of kitPieces('pavilion',{mode:'y',cuts:[.5],s})){const top=pc.cen[1]>H*.5;P(kitColor(pc,top?rf:'#ffffff'),top?5:2);}
+      P(mk('sph',.7,.7,.7,'#ffd60a',0,H+.25,0),1,true,.35);});};
+  // bouncy castle: the minigolf castle blown up and painted in party colors
+  OBJ.bounce=(x,z,arg)=>{if(!kitHas('castle-mini'))return B.bounce(x,z,arg);const s=kitFit('castle-mini',RAD.bounce),cols=['#ff70a6','#ffd166','#4cc9f0','#06d6a0','#8338ec','#ff006e'];
+    return sized(x,z,RAD.bounce,kitH('castle-mini',s),26,'mega',(P,g)=>{leafy('castle-mini',s).forEach((pc,i)=>P(kitColor(pc,cols[i%cols.length]),6));face(g,arg);});};
+  // slide: the skate kit's quarter pipe as the chute, a ladder up its tall end
+  OBJ.slide=(x,z,arg)=>{if(!kitHas('slide-chute'))return B.slide(x,z,arg);const s=kitFitH('slide-chute',2.4);
+    return sized(x,z,RAD.slide,2.5,4,'small',(P,g)=>{
+      leafy('slide-chute',s).forEach((pc,i)=>P(kitColor(pc,['#ffbe0b','#3a86ff'][i%2]),2));
+      if(kitHas('ladder')){const T=kitTris('slide-chute'),b=kitBox(T),top=T.flat().filter(p=>p[1]>b[4]*.8);
+        const ax=top.reduce((a,p)=>a+p[0],0)/top.length,az=top.reduce((a,p)=>a+p[2],0)/top.length,alongX=Math.abs(ax)>Math.abs(az);
+        const sl=kitFitH('ladder',2.6),ry=alongX?1:0,off=((alongX?b[3]:b[5])*s+.15)*Math.sign(alongX?ax:az);
+        for(const pc of kitPieces('ladder',{mode:'one',s:sl,ry})){const m=kitColor(pc,'#e63946');if(alongX)m.position.x+=off;else m.position.z+=off;P(m,1,true,.3);}}
+      face(g,arg);});};
+  // climbing gym: the skate kit's wooden frame in playground colors with a deck on top
+  OBJ.gym=(x,z,arg)=>{if(!kitHas('climb-frame'))return B.gym(x,z,arg);const s=kitFit('climb-frame',RAD.gym),H=kitH('climb-frame',s),cols=['#e63946','#ffbe0b','#3a86ff','#06d6a0'];
+    return sized(x,z,RAD.gym,H+.3,8,'large',(P,g)=>{leafy('climb-frame',s).forEach((pc,i)=>P(kitColor(pc,cols[i%4]),2));
+      P(mk('box',s*.8,.26,s*.8,'#8338ec',0,H*.72,0),3);face(g,arg);});};
+  // stadium (D7): eight racing-kit grandstands round a pitch, two per side. Each stand is a building (walls + roof).
+  OBJ.stadium=(x,z,arg)=>{if(!kitHas('grandstand'))return B.stadium(x,z,arg);const name='grandstand',b=kitBox(kitTris(name));
+    const s=10/((b[3]-b[0])*2),w=(b[3]-b[0])*s,d=(b[5]-b[2])*s,R=7+d/2,FLIP=Math.PI; // FLIP: the stands' seats face -Z
+    return sized(x,z,RAD.stadium,kitH(name,s),60,'mega',(P,g)=>{
+      P(BP(mk('box',14,.2,14,'#52b788',0,.1,0),0,'extra'),3);P(BP(mk('box',.3,.22,14,'#ffffff',0,.12,0),0,'extra'),1);
+      for(const zz of [-6.4,6.4]){P(BP(mk('box',3.4,1.6,.3,'#ffffff',0,.8,zz),0,'extra'),1,true,.5);}
+      P(BP(mk('sph',1.4,1.4,1.4,'#ffffff',0,.9,0),0,'extra'),1,true,.7);
+      for(let i=0;i<4;i++){const a=i*Math.PI/2;
+        for(const k of [-.5,.5]){const cx=k*w,cz=R,th=a+FLIP,ca=Math.cos(a),sa=Math.sin(a),ct=Math.cos(th),st=Math.sin(th);
+          const X=cx*ca+cz*sa,Z=-cx*sa+cz*ca;
+          for(const pc of kitPieces(name,{mode:'bld',s,floors:1,noCap:true,eave:.72})){const m=kitMesh(pc,null),px=pc.cen[0],pz=pc.cen[2];
+            m.position.set(X+px*ct+pz*st,pc.cen[1],Z-px*st+pz*ct);m.rotation.y=th;P(BP(m,pc.floor,pc.kind),pc.kind==='roof'?4:3);}}}
+      face(g,arg);},{building:true,big:true});};
+  // ship (D7): the pirate kit's big ship run aground, in three bands (hull shatters, rigging + sails fly off whole);
+  // one part per color would be 24 batches per chunk
+  OBJ.ship=(x,z,arg)=>{if(!kitHas('ship-large'))return B.ship(x,z,arg);const s=kitFit('ship-large',RAD.ship),H=kitH('ship-large',s);
+    return sized(x,z,RAD.ship,H,36,'mega',(P,g)=>{kitPieces('ship-large',{mode:'y',cuts:[.3,.62],s}).forEach(pc=>{const hull=pc.cen[1]<H*.3;
+      P(kitMesh(pc,null),hull?8:2,!hull,Math.max(.5,Math.min(pc.sz[0],pc.sz[2])/2));});face(g,arg);});};
 }
 const START_SPOTS=[[-6,48],[6,48]];
 function spotOK(x,z,r){
@@ -567,7 +688,9 @@ function pickLandmarks(rows){
   return {
     boss:take('T',101),school:take('T',211),fire:take('T',307),tower:take('T',419),
     barn:take('F',503),mill:take('F',617),silo:take('F',719),farmpond:take('F',821),coop:take('F',919),
-    fountain:take('P',1021),play:take('P',1117),gazebo:take('P',1223),bounce:take('P',1307),ducks:take('P',1423)
+    fountain:take('P',1021),play:take('P',1117),gazebo:take('P',1223),bounce:take('P',1307),ducks:take('P',1423),
+    // D7 set pieces, taken last so the older landmarks stay where they were
+    sky:take('T',1511),stadium:take('P',1613),ferris:take('P',1709),ship:take('P',1801)
   };
 }
 /* Recomputed when a new world swaps zoneRows, so landmarks follow the new map. */
@@ -592,6 +715,7 @@ const ZONE_LAYOUT={
     if(at(LM.boss,ctx)){const p=drop(ctx,'boss',0);if(p){ring(ctx,p.x,p.z,RAD.boss+2.6,6,'lamp');ring(ctx,p.x,p.z,RAD.boss+5.4,4,'hydrant');}crumbs(ctx,4,['parked','mailbox','bush']);return;}
     if(at(LM.school,ctx)){const p=drop(ctx,'school',0);if(p){put(ctx,'bench',p.x-4,p.z+RAD.school+2.6,0);put(ctx,'bench',p.x+4,p.z+RAD.school+2.6,0);put(ctx,'flowers',p.x,p.z+RAD.school+2.2,0);}crumbs(ctx,5,['tree','bush','lamp']);return;}
     if(at(LM.fire,ctx)){const p=drop(ctx,'firestation',0);if(p){ring(ctx,p.x,p.z,RAD.firestation+2.2,4,'hydrant');put(ctx,'parked',p.x+RAD.firestation+4,p.z,1);}crumbs(ctx,3,['cone','lamp']);return;}
+    if(at(LM.sky,ctx)){const p=drop(ctx,'skyscraper',0);if(p){ring(ctx,p.x,p.z,RAD.skyscraper+2.6,6,'lamp');put(ctx,'parked',p.x+RAD.skyscraper+5,p.z+4,1);put(ctx,'parked',p.x-RAD.skyscraper-5,p.z-4,3);}crumbs(ctx,4,['hydrant','mailbox','bush','cone']);return;}
     if(at(LM.tower,ctx)){const p=drop(ctx,'watertower',0);if(p)ring(ctx,p.x,p.z,RAD.watertower+4.2,5,'cottage');crumbs(ctx,4,['tree','mailbox']);return;}
     for(const z of [ctx.z0+18,ctx.z1-18]){
       for(let k=0;k<4;k++){
@@ -628,6 +752,9 @@ const ZONE_LAYOUT={
     if(at(LM.play,ctx)){const p=drop(ctx,'gym',0);if(p){put(ctx,'swing',p.x+7,p.z+1,1);put(ctx,'slide',p.x-7,p.z+1,0);put(ctx,'bench',p.x+6,p.z-5,0);put(ctx,'bench',p.x-5,p.z-5,2);put(ctx,'flowers',p.x,p.z+6,0);ring(ctx,p.x,p.z,14,6,'tree');}return;}
     if(at(LM.gazebo,ctx)){const p=drop(ctx,'gazebo',0);if(p){ring(ctx,p.x,p.z,RAD.gazebo+2.4,4,'picnic');ring(ctx,p.x,p.z,RAD.gazebo+4.2,6,'flowers');}crumbs(ctx,4,['tree','bench']);return;}
     if(at(LM.bounce,ctx)){const p=drop(ctx,'bounce',0);if(p)ring(ctx,p.x,p.z,RAD.bounce+2,8,'cone');ctx.ramp(ctx.cx+18,ctx.cz,Math.PI/2);crumbs(ctx,3,['bench','flowers']);return;}
+    if(at(LM.stadium,ctx)){const p=drop(ctx,'stadium',0);if(p)ring(ctx,p.x,p.z,RAD.stadium+3,8,'lamp');crumbs(ctx,4,['cone','bench','flowers']);return;}
+    if(at(LM.ferris,ctx)){const p=drop(ctx,'ferris',0);if(p){ring(ctx,p.x,p.z,RAD.ferris+3,6,'flowers');put(ctx,'picnic',p.x+RAD.ferris+5,p.z+3,1);put(ctx,'bench',p.x-RAD.ferris-4,p.z+3,3);}crumbs(ctx,4,['tree','bush','cone']);return;}
+    if(at(LM.ship,ctx)){const p=drop(ctx,'ship',0);if(p){ring(ctx,p.x,p.z,RAD.ship+3,6,'barrel');ring(ctx,p.x,p.z,RAD.ship+6,5,'crates');}crumbs(ctx,3,['tree','pebble']);return;}
     if(at(LM.ducks,ctx)){const p=drop(ctx,'pond',0);if(p){ctx.herd('duck',p.x+RAD.pond+3,p.z,6);put(ctx,'bench',p.x+RAD.pond+2.6,p.z+2,1);put(ctx,'bench',p.x-RAD.pond-2.6,p.z-2,3);}crumbs(ctx,4,['tree','flowers','bush']);return;}
     for(let i=0;i<7;i++)put(ctx,'tree',rand(ctx.x0+8,ctx.x1-8),rand(ctx.z0+8,ctx.z1-8),0);
     for(let i=0;i<3;i++)put(ctx,'bench',rand(ctx.x0+10,ctx.x1-10),rand(ctx.z0+10,ctx.z1-10),Math.random()*4|0);
@@ -648,8 +775,8 @@ const ZONE_LAYOUT={
 /* Scatter lists for L2c. One entry per size the zone should rain in. Landmarks stay in the layouts. */
 const MICRO=['flowers','pebble','mushroom','acorn','toyblock','can','toyduck','snail'];
 const ZONE_PROPS={
-  town:{micro:MICRO,mini:['bush','gnome'],tiny:['hydrant','mailbox','bench'],small:['cone','lamp','pin'],medium:['barrel','crates','parked','snowman'],large:['tree','tower','shop','cottage'],huge:['house','villa'],mega:['bounce']},
+  town:{micro:MICRO,mini:['bush','gnome'],tiny:['hydrant','mailbox','bench'],small:['cone','lamp','pin'],medium:['barrel','crates','parked','snowman'],large:['tree','tower','shop','cottage'],huge:['house','villa'],mega:['bounce','skyscraper']},
   farm:{micro:['flowers','pebble','mushroom','acorn'],mini:['bush','gnome'],tiny:['mailbox'],small:['fence','crops','hay','scarecrow','cone'],medium:['melon','crates','barrel','coop'],large:['tree','tractor'],huge:['farmhouse','silo','windmill'],mega:['barn']},
-  park:{micro:['flowers','pebble','mushroom','toyduck','acorn'],mini:['bush','gnome'],tiny:['bench'],small:['cone','pin','swing','slide'],medium:['picnic','snowman'],large:['tree','fountain','gym'],huge:['gazebo'],mega:['bounce']},
+  park:{micro:['flowers','pebble','mushroom','toyduck','acorn'],mini:['bush','gnome'],tiny:['bench'],small:['cone','pin','swing','slide'],medium:['picnic','snowman'],large:['tree','fountain','gym'],huge:['gazebo'],mega:['bounce','ship']},
   home:{micro:MICRO,mini:['bush','gnome'],tiny:['hydrant','mailbox','bench'],small:['cone','pin','melon','fence'],medium:['barrel','crates','snowman'],large:['tree','tower'],huge:['house'],mega:['bounce']}
 };
