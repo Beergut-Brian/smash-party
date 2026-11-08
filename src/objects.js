@@ -39,9 +39,203 @@ const RAD={
   scarecrow:.9,tractor:2.7,swing:1.9,slide:1.9,gym:3.2,fountain:2.9,bench:1.3,picnic:1.7,gazebo:3.8,
   bounce:5.8,bush:.9,flowers:.32,pebble:.26,mushroom:.3,acorn:.22,toyblock:.28,can:.2,toyduck:.3,gnome:.26,snail:.28
 };
-/* TODO(logic): o.roll (hay) should keep tumbling along the ground after the hit.
-   TODO(logic): spin the four windmill boards in front of the hub.
-   Chickens and ducks are herds (ctx.herd), not smashables, so L4 launches them. */
+/* ---------- CC0 pack models (D8b: Kenney kits, see assets/CREDITS.md) ---------- */
+/* Pack models are baked by assets/props/bake.mjs into one mesh with vertex colors. Here each model is cut into
+   game parts once (cached) and every copy reuses those geometries:
+   - kitPieces(name,{mode:'one'})    the whole model as one part
+   - kitPieces(name,{mode:'color'})  one part per color (tree trunk + leaves, flower stem + petals…)
+   - kitPieces(name,{mode:'y',cuts}) horizontal bands (snowman balls)
+   - kitPieces(name,{mode:'bld'})    a building: every storey cut into a KIT_GRID×KIT_GRID grid of walls
+     plus the roof, so the L3 collapse contract still works (walls hold up the floors above).
+   Each part's geometry is a unit box around its own center (mesh.position/scale carry it), so debris from a
+   shattered part comes out the part's size, and its material color is the part's main color (debris matches).
+   Single-color parts use M(color) and batch for free; multi-color parts use a vertex-color material. */
+const KIT_STOREY=0.4;   // Kenney city kits: one storey = 0.4 model units
+/* Walls per storey = KIT_GRID² minus the middle: 2 → 4 corner walls, 3 → 8 walls + a slab (the contract's 8–12).
+   Every piece is its own instanced batch while a building sleeps, so 2 for now to stay near the draw-call budget.
+   Switch to 3 once logic draws sleeping buildings from o.proxy (NEEDS LOGIC task "L15" in TASKS.md). */
+const KIT_GRID=2;
+const kitSrc={},kitCut={},kitMats={};
+const kitHas=name=>!!(typeof propModels!=='undefined'&&propModels[name]);
+/* Per-chunk street style: every copy of a building type in one chunk shares its model and wall color, so sleeping
+   copies draw as one instanced batch per part instead of one per house (the next chunk over gets a different look).
+   Roof caps are plain M() colors, so each house still gets its own roof color for free. Once logic batches
+   userData.plainVC materials with a per-instance color (L15), wall colors can go per house too. */
+function kitHash(x,z,salt){const ci=Math.round(x/CHUNK),cj=Math.round(z/CHUNK);let h=Math.imul((ci+97)*73856093^(cj+89)*19349663,0x9e3779b1)^Math.imul(salt+1,0x85ebca6b);
+  h^=h>>>15;h=Math.imul(h,0x2c1b3c6d);h^=h>>>12;h=Math.imul(h,0x297a2d39);h^=h>>>15;return (h>>>0)/4294967296;}
+const kitAt=(list,x,z,salt)=>{const ok=(list||[]).filter(kitHas);return ok.length?ok[Math.floor(kitHash(x,z,salt)*ok.length)]:null;};
+// small props: each chunk stocks two of a type's models (seeded pick between them), same reason as kitAt
+function kitNear(list,x,z){const ok=(list||[]).filter(kitHas);if(ok.length<3)return ok.length?pick(ok):null;
+  const salt=list.length*131+list[0].length,i=Math.floor(kitHash(x,z,salt)*ok.length),j=(i+1+Math.floor(kitHash(x,z,salt+1)*(ok.length-1)))%ok.length;
+  return Math.random()<.5?ok[i]:ok[j];}
+const kitGreen=p=>p[7]>p[6]*1.3&&p[7]>p[8]*1.05; // the city kits' green accent (roofs, awnings)
+// triangle soup of the model, feet at y=0 and footprint centered: [[x,y,z,nx,ny,nz,r,g,b]×3, …]
+function kitTris(name){
+  if(kitSrc[name])return kitSrc[name];
+  const root=prop(name);root.updateMatrixWorld(true);const T=[],v=new THREE.Vector3(),n=new THREE.Vector3(),nm=new THREE.Matrix3();
+  root.traverse(m=>{if(!m.isMesh)return;const g=m.geometry,pa=g.attributes.position,na=g.attributes.normal,ca=g.attributes.color,ix=g.index,mc=m.material.color||new THREE.Color(1,1,1);
+    nm.getNormalMatrix(m.matrixWorld);const cnt=ix?ix.count:pa.count;let tri=[];
+    for(let k=0;k<cnt;k++){const i=ix?ix.getX(k):k;v.fromBufferAttribute(pa,i).applyMatrix4(m.matrixWorld);
+      if(na)n.fromBufferAttribute(na,i).applyMatrix3(nm).normalize();else n.set(0,1,0);
+      tri.push([v.x,v.y,v.z,n.x,n.y,n.z,ca?ca.getX(i)*mc.r:mc.r,ca?ca.getY(i)*mc.g:mc.g,ca?ca.getZ(i)*mc.b:mc.b]);
+      if(tri.length===3){T.push(tri);tri=[];}}});
+  let x0=1e9,x1=-1e9,y0=1e9,z0=1e9,z1=-1e9;
+  for(const t of T)for(const p of t){x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);y0=Math.min(y0,p[1]);z0=Math.min(z0,p[2]);z1=Math.max(z1,p[2]);}
+  const cx=(x0+x1)/2,cz=(z0+z1)/2;for(const t of T)for(const p of t){p[0]-=cx;p[1]-=y0;p[2]-=cz;}
+  return kitSrc[name]=T;
+}
+function kitBox(T){const b=[1e9,1e9,1e9,-1e9,-1e9,-1e9];for(const t of T)for(const p of t)for(let k=0;k<3;k++){b[k]=Math.min(b[k],p[k]);b[k+3]=Math.max(b[k+3],p[k]);}return b;}
+const kitMid=(t,k)=>(t[0][k]+t[1][k]+t[2][k])/3;
+// split triangles by the plane (axis ax = c); returns [below, above]
+function kitClip(T,ax,c){
+  const lo=[],hi=[],lerp=(a,b,f)=>a.map((x,i)=>x+(b[i]-x)*f);
+  for(const t of T){
+    const s=t.map(p=>p[ax]-c);
+    if(s.every(d=>d<=1e-6)){lo.push(t);continue;}if(s.every(d=>d>=-1e-6)){hi.push(t);continue;}
+    const A=[],B=[];
+    for(let i=0;i<3;i++){const p=t[i],q=t[(i+1)%3],sp=s[i],sq=s[(i+1)%3];
+      if(sp<=0)A.push(p);if(sp>=0)B.push(p);
+      if((sp<0&&sq>0)||(sp>0&&sq<0)){const m=lerp(p,q,sp/(sp-sq));A.push(m);B.push(m);}}
+    for(const [poly,out] of [[A,lo],[B,hi]])for(let i=1;i+1<poly.length;i++)out.push([poly[0],poly[i],poly[i+1]]);
+  }
+  return [lo,hi];
+}
+const kitArea=t=>{const a=t[0],b=t[1],c=t[2],ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2],vx=c[0]-a[0],vy=c[1]-a[1],vz=c[2]-a[2];
+  return Math.hypot(uy*vz-uz*vy,uz*vx-ux*vz,ux*vy-uy*vx)/2;};
+// one part: unit-box geometry around its center + its main color (D). Vertex colors are stored divided by D, so
+// material color D (times a tint) brings them back, and debris (which takes the material color) comes out D.
+function kitPiece(T,key){
+  const b=kitBox(T),cen=[(b[0]+b[3])/2,(b[1]+b[4])/2,(b[2]+b[5])/2],sz=[0,1,2].map(k=>Math.max(0.02,b[k+3]-b[k]));
+  const hist=new Map();let best=T[0][0],bw=-1;
+  for(const t of T){const a=kitArea(t)+1e-9;for(const p of t){const q=((p[6]*24)|0)+','+((p[7]*24)|0)+','+((p[8]*24)|0);const e=hist.get(q)||{w:0,c:p};e.w+=a;hist.set(q,e);if(e.w>bw){bw=e.w;best=e.c;}}}
+  const D=[best[6],best[7],best[8]].map(x=>Math.max(0.02,x));
+  let flat=true;for(const t of T){for(const p of t)if(Math.abs(p[6]-D[0])>0.04||Math.abs(p[7]-D[1])>0.04||Math.abs(p[8]-D[2])>0.04){flat=false;break;}if(!flat)break;}
+  const n=T.length*3,P=new Float32Array(n*3),N=new Float32Array(n*3),C=flat?null:new Float32Array(n*3);let i=0;
+  for(const t of T)for(const p of t){
+    for(let k=0;k<3;k++)P[i+k]=(p[k]-cen[k])/sz[k];
+    const nx=p[3]*sz[0],ny=p[4]*sz[1],nz=p[5]*sz[2],l=Math.hypot(nx,ny,nz)||1;N[i]=nx/l;N[i+1]=ny/l;N[i+2]=nz/l;
+    if(C)for(let k=0;k<3;k++)C[i+k]=p[6+k]/D[k];
+    i+=3;}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(P,3));geo.setAttribute('normal',new THREE.BufferAttribute(N,3));
+  if(C)geo.setAttribute('color',new THREE.BufferAttribute(C,3));geo.computeBoundingSphere();geo.userData.kit=key;
+  return {geo,key,cen,sz,D,flat,area:T.reduce((s,t)=>s+kitArea(t),0)};
+}
+/* o: {mode, s (scale), ry (quarter turns), cuts (mode 'y': heights as fractions of the model), floors (mode 'bld')} */
+function kitPieces(name,o={}){
+  // the cut is the same at every scale (parts are unit boxes), so geometry is shared by every size of a model
+  const s=o.s||1,id=name+'|'+JSON.stringify(Object.assign({},o,{s:1}));
+  if(!kitCut[id])kitCut[id]=kitCutUp(name,o);
+  return s===1?kitCut[id]:kitCut[id].map(p=>Object.assign({},p,{cen:p.cen.map(v=>v*s),sz:p.sz.map(v=>v*s)}));
+}
+function kitCutUp(name,o){
+  const s=1,ry=(o.ry||0)*Math.PI/2,cs=Math.cos(ry),sn=Math.sin(ry),src=kitTris(name);
+  let T=src.map(t=>t.map(p=>{const x=p[0]*s,z=p[2]*s;return [x*cs+z*sn,p[1]*s,-x*sn+z*cs,p[3]*cs+p[5]*sn,p[4],-p[3]*sn+p[5]*cs,p[6],p[7],p[8]];}));
+  const groups=new Map(),add=(k,t)=>{let g=groups.get(k);if(!g)groups.set(k,g=[]);g.push(t);};
+  if(o.mode==='color'){
+    for(const t of T){const c=t[0];add(((c[6]*12)|0)+','+((c[7]*12)|0)+','+((c[8]*12)|0),t);}
+  }else if(o.mode==='y'){
+    const H=kitBox(T)[4];let rest=T;const cuts=o.cuts||[0.5];
+    cuts.forEach((f,i)=>{const [lo,hi]=kitClip(rest,1,f*H);lo.forEach(t=>add('y'+i,t));rest=hi;});rest.forEach(t=>add('y'+cuts.length,t));
+  }else if(o.mode==='bld'){
+    // walls: everything below the eave except the green accent; roof: the accent (turned white so it takes the
+    // roof tint) plus everything above the eave (gables, chimneys, flat-roof parapets)
+    const st=KIT_STOREY*s,base=0.04*s,fl=o.floors||1,eave=fl*st+base;let walls=[],roof=[];
+    // the accent up top becomes one flat white piece: a plain M() color, so each house can get its own roof color for
+    // free. Accent lower down (porch roofs, planters) stays with the walls, whitened so it takes the wall color.
+    const cap=[],white=t=>t.map(p=>{const l=Math.max(p[6],p[7],p[8]);return p.slice(0,6).concat([l,l,l]);});
+    T.forEach((t,i)=>{const acc=kitGreen(src[i][0]);
+      if(acc&&kitMid(t,1)>eave-st*0.3){cap.push(t.map(p=>p.slice(0,6).concat([1,1,1])));return;}
+      const [lo,hi]=kitClip([acc?white(t):t],1,eave);walls.push(...lo);roof.push(...hi);});
+    for(const t of cap)add('roof|'+fl+'|cap',t);
+    // KIT_GRID×KIT_GRID cells per storey: the outer ones are walls, a middle one (3×3 only) is the slab
+    const b=kitBox(walls.length?walls:T),G=KIT_GRID,xc=[],zc=[];for(let i=1;i<G;i++){xc.push(b[0]+(b[3]-b[0])*i/G);zc.push(b[2]+(b[5]-b[2])*i/G);}
+    const cell=(v,cs)=>{let i=0;while(i<cs.length&&v>=cs[i])i++;return i;};
+    for(let f=1;f<fl;f++)walls=kitClip(walls,1,f*st+base).flat();
+    for(const c of xc)walls=kitClip(walls,0,c).flat();for(const c of zc)walls=kitClip(walls,2,c).flat();
+    for(const t of walls){const f=clamp(Math.floor((kitMid(t,1)-base)/st),0,fl-1),ix=cell(kitMid(t,0),xc),iz=cell(kitMid(t,2),zc);
+      add(ix>0&&ix<G-1&&iz>0&&iz<G-1?'slab|'+f:'wall|'+f+'|'+ix+iz,t);}
+    for(const t of roof)add('roof|'+fl,t); // the rest above the eave (gables, chimneys, parapets) as one piece
+  }else T.forEach(t=>add('all',t));
+  const out=[];for(const [k,g] of groups){const p=kitPiece(g,k),bits=k.split("|");p.geo.userData.kit=name+"|"+k;if(o.mode==='bld'){p.kind=bits[0];p.floor=+bits[1];}out.push(p);}
+  out.sort((a,b)=>b.area-a.area);
+  return out;
+}
+function kitMesh(pc,tint){
+  const t=new THREE.Color(tint||'#ffffff'),c=new THREE.Color(pc.D[0]*t.r,pc.D[1]*t.g,pc.D[2]*t.b),hex='#'+c.getHexString(); // THREE.Color is linear, like the vertex colors
+  const mat=pc.flat?M(hex):kitVCMat(hex);
+  const m=new THREE.Mesh(pc.geo,mat);m.position.set(pc.cen[0],pc.cen[1],pc.cen[2]);m.scale.set(pc.sz[0],pc.sz[1],pc.sz[2]);
+  m.castShadow=true;m.receiveShadow=true;return m;
+}
+// scale that fits a model's footprint into a circle of radius r (the placement radius in RAD), or its height to h
+function kitFit(name,r){const b=kitBox(kitTris(name));return r*1.9/Math.hypot(b[3]-b[0],b[5]-b[2]);}
+function kitFitH(name,h){return h/Math.max(0.01,kitBox(kitTris(name))[4]);}
+// storeys under the roof: suburban houses carry ~0.3 of pitched roof on top, commercial blocks a thin parapet
+const kitFloors=name=>{const h=kitBox(kitTris(name))[4];return Math.max(1,/^commercial/.test(name)?Math.floor((h-0.05)/KIT_STOREY):Math.round((h-0.3)/KIT_STOREY));};
+// vertex-color material; userData.plainVC = only its color differs (for logic's instanced batching, see KIT_GRID)
+function kitVCMat(hex){let m=kitMats[hex];if(!m){m=kitMats[hex]=litMat({color:hex,vertexColors:true});m.userData.plainVC=true;}return m;}
+/* building from a city-kit model with the L3 part contract. Returns the sleep proxy (see kitProxy). */
+function kitBuilding(P,name,s,wall,roof,floors){
+  floors=floors||kitFloors(name);
+  for(const pc of kitPieces(name,{mode:'bld',s,floors}))
+    P(BP(kitMesh(pc,/\|cap$/.test(pc.key)?roof:wall),pc.floor,pc.kind),pc.kind==='roof'?4:2);
+  return kitProxy(name,s,wall,roof,floors);
+}
+/* Sleep proxy: the intact building as just two meshes (everything in the wall color merged into one vertex-colored
+   mesh + the roof cap in its flat roof color), in the object's local space and NOT added to it. Geometry is cached
+   per model, so every copy of a model shares it. Handed to logic as o.proxy: while a building is asleep and has
+   lost no parts, drawing o.proxy instead of its parts makes it 2 draw calls per model per chunk however finely it is
+   sliced (NEEDS LOGIC task in TASKS.md). */
+const kitProxyGeo={};
+function kitProxy(name,s,wall,roof,floors){
+  const id=name+'|'+floors;let G=kitProxyGeo[id];
+  if(!G){const parts={rest:[],cap:[]},m=new THREE.Matrix4();
+    for(const pc of kitPieces(name,{mode:'bld',s:1,floors})){
+      const g=pc.geo.clone().applyMatrix4(m.compose(new THREE.Vector3(...pc.cen),new THREE.Quaternion(),new THREE.Vector3(...pc.sz)));
+      const cap=/\|cap$/.test(pc.key),n=g.attributes.position.count,c=new Float32Array(n*3),src=g.attributes.color;
+      for(let i=0;i<n;i++)for(let k=0;k<3;k++)c[i*3+k]=cap?1:(src?src.array[i*3+k]:1)*pc.D[k];
+      if(cap)g.deleteAttribute('color');else g.setAttribute('color',new THREE.BufferAttribute(c,3));
+      parts[cap?'cap':'rest'].push(g);}
+    G=kitProxyGeo[id]={rest:parts.rest.length?THREE.mergeGeometries(parts.rest):null,cap:parts.cap.length?THREE.mergeGeometries(parts.cap):null};}
+  const out=[];
+  if(G.rest){const r=new THREE.Mesh(G.rest,kitVCMat('#'+new THREE.Color(wall||'#ffffff').getHexString()));out.push(r);}
+  if(G.cap)out.push(new THREE.Mesh(G.cap,M(roof||'#ffffff')));
+  for(const m of out){m.scale.setScalar(s);m.castShadow=m.receiveShadow=true;}
+  return out;
+}
+/* a small prop. opts: cut (kitPieces options), n (chunks), whole (fly off intact, default true), tint(piece,i) */
+function kitProp(P,name,s,o={}){
+  const pcs=kitPieces(name,Object.assign({mode:'one',s},o.cut||{}));
+  pcs.forEach((pc,i)=>P(kitMesh(pc,(o.tint&&o.tint(pc,i))||null),o.n||1,o.whole!==false,Math.max(.08,Math.min(pc.sz[0],pc.sz[1],pc.sz[2])/2)));
+  return pcs;
+}
+/* Kenney models (assets/props/props.json) behind each smashable. If none of a type's models loaded, the block
+   version below is used instead, so the game still runs from file:// or with a missing file. */
+const KIT={
+  cottage:['suburban-g','suburban-h','suburban-i','suburban-m'],
+  house:['suburban-b','suburban-c','suburban-d','suburban-e','suburban-f','suburban-k','suburban-n','suburban-o','suburban-r','suburban-s','suburban-t','suburban-u'],
+  villa:['suburban-b','suburban-d','suburban-f','suburban-n','suburban-t'], // only used if no house model loads
+  farmhouse:['suburban-e','suburban-r','suburban-u'],
+  shop:['commercial-c','commercial-e'],
+  boss:['commercial-l'],
+  tree:['tree-default','tree-oak','tree-fat','tree-detailed','tree-tall'],
+  bush:['bush','bush-detailed','bush-large'],
+  flowers:['flower-red','flower-yellow','flower-purple'],
+  mushroom:['mushroom-red','mushroom-tan'],
+  pebble:['stone-small','rock-small'],
+  lamp:['lamp-square','lamp-curved'],
+  cone:['traffic-cone'],
+  bench:['bench'],
+  parked:['car-sedan','car-van','car-taxi','car-suv','car-police','car-delivery','car-truck'],
+  tractor:['car-tractor'],
+  fence:['fence-simple','fence-planks'],
+  crops:['crop-corn','crop-wheat','crop-pumpkin','crop-carrot','crop-leafs'],
+  melon:['crop-melon'],
+  snowman:['snowman'],
+  fountain:['fountain'],
+  windmill:['windmill-blades']
+};
+const LEAVES=['#3fb950','#2d8f4e','#52b788','#3fb950','#74c69d','#f7a325','#ff70a6','#9b5de5']; // mostly green, a few candy trees
+/* Chickens and ducks are herds (ctx.herd), not smashables, so L4 launches them. */
 const OBJ={
   crates:(x,z)=>{const k=1+(Math.random()*3|0);return makeObj(x,z,1.5,2.1*k,2*k,P=>{for(let i=0;i<k;i++){const c=mk('box',2.1,2.1,2.1,pick(['#c68b59','#b5835a','#d4a373']),0,1.05+i*2.1,0);c.rotation.y=rand(-.4,.4);P(c,5);}},{size:'medium'});},
   cone:(x,z)=>makeObj(x,z,.7,1.6,1,P=>{P(mk('cone',1.2,1.6,1.2,'#ff7b00',0,.8,0),1,true,.6);},{size:'small'}),
@@ -246,6 +440,71 @@ const OBJ={
     P(mk('sph',.16,.12,.2,'#fff3bf',0,.1,.2),1,true,.08);
     P(mk('sph',.045,.045,.045,'#111',.04,.14,.28),1);face(g,arg);})
 };
+/* D8b: Kenney looks. Each builder picks a model (seeded, so a chunk always rebuilds the same) and falls back to the
+   block version above when none of its models loaded. Sizes, radii and points stay as they were. */
+{
+  const B=Object.assign({},OBJ);
+  const kitIsGreen=D=>D[1]>D[0]*1.2&&D[1]>D[2]*1.05;
+  const leafy=(name,s)=>kitPieces(name,{mode:'color',s});
+  // tree-like: green parts fly off whole (recolored), the rest shatters
+  const plant=(P,name,s,leaf,n=3)=>{for(const pc of leafy(name,s)){const g=kitIsGreen(pc.D),m=kitMesh(pc,null);
+    if(g&&leaf&&pc.flat)m.material=M(leaf);P(m,g?1:n,g,Math.max(.1,Math.min(pc.sz[0],pc.sz[2])/2));}};
+  // buildings: model + colors come from the chunk (kitAt), so a street's copies batch together
+  // `like`: share another type's model and colors in the chunk (a villa is a bigger copy of the street's house)
+  const bld=(type,size,pts,floorsOf,walls,roofs,big,like)=>{const key=like||type,k=[...key].reduce((h,c)=>h*31+c.charCodeAt(0),7)%9973;return (x,z,arg)=>{
+    const name=kitAt(KIT[key],x,z,k);if(!name)return B[type](x,z,arg);
+    const s=kitFit(name,RAD[type]),wall=walls[Math.floor(kitHash(x,z,k+1)*walls.length)],roof=pick(roofs); // walls: per chunk, roof: per house
+    let proxy;const o=sized(x,z,RAD[type],kitH(name,s),pts,size,(P,g)=>{proxy=kitBuilding(P,name,s,wall,roof,floorsOf&&floorsOf(name));
+      if(arg===undefined)g.rotation.y=(Math.random()*4|0)*Math.PI/2;else face(g,arg);},{building:true,big});
+    o.proxy=proxy;return o;};};
+  const simple=(type,size,pts,scaleOf,opts,extra)=>(x,z,arg)=>{
+    const name=kitNear(KIT[type],x,z);if(!name)return B[type](x,z,arg);
+    const s=scaleOf(name);
+    return sized(x,z,RAD[type],kitH(name,s),pts,size,(P,g)=>{kitProp(P,name,s,typeof opts==='function'?opts():opts);
+      if(type==='fence')g.rotation.y=arg||0;else face(g,arg);},extra);};
+  const W=['#ffffff'],SHOP=['#fff3bf','#ffd6a5','#caffbf','#9bf6ff','#ffc6ff','#ffffff'];
+  const kitH=(name,s)=>kitBox(kitTris(name))[4]*s;
+
+  OBJ.cottage=bld('cottage','large',6,null,PASTEL,ROOF);
+  OBJ.house=bld('house','huge',14,null,PASTEL,ROOF,true);
+  OBJ.villa=bld('villa','huge',18,null,PASTEL,ROOF,true,'house');
+  OBJ.farmhouse=bld('farmhouse','huge',12,null,W,['#2a9d8f','#c1121f','#6d4c41'],true);
+  OBJ.shop=bld('shop','large',10,null,SHOP,W);
+  OBJ.boss=bld('boss','mega',40,null,['#f4a261','#e9c46a','#8ecae6','#ffffff'],W,true);
+
+  OBJ.tree=(x,z,arg)=>{const name=kitNear(KIT.tree,x,z);if(!name)return B.tree(x,z,arg);const s=kitFitH(name,6);
+    return makeObj(x,z,1.1,6,3,(P,g)=>{plant(P,name,s,pick(LEAVES));g.rotation.y=rand(0,6.28);},{size:'large',big:true});};
+  OBJ.bush=(x,z,arg)=>{const name=kitNear(KIT.bush,x,z);if(!name)return B.bush(x,z,arg);const s=kitFit(name,RAD.bush);
+    return sized(x,z,RAD.bush,kitH(name,s),1,'mini',(P,g)=>{plant(P,name,s,pick(['#2d8f4e','#3fb950','#52b788']));g.rotation.y=rand(0,6.28);});};
+  OBJ.flowers=(x,z,arg)=>{const name=kitNear(KIT.flowers,x,z);if(!name)return B.flowers(x,z,arg);const s=kitFitH(name,.45);
+    return sized(x,z,RAD.flowers,.45,1,'micro',(P,g)=>{for(const pc of leafy(name,s))P(kitMesh(pc,null),1,!kitIsGreen(pc.D),.06);g.rotation.y=rand(0,6.28);});};
+  OBJ.mushroom=(x,z,arg)=>{const name=kitNear(KIT.mushroom,x,z);if(!name)return B.mushroom(x,z,arg);const s=kitFitH(name,.42);
+    return sized(x,z,RAD.mushroom,.42,1,'micro',(P,g)=>{leafy(name,s).forEach((pc,i)=>P(kitMesh(pc,null),1,true,.1));g.rotation.y=rand(0,6.28);});};
+  OBJ.pebble=simple('pebble','micro',1,name=>kitFit(name,RAD.pebble),{});
+  OBJ.lamp=simple('lamp','small',2,name=>kitFitH(name,4.2),{tint:()=>'#7d8597'}); // the kit's pale grey poles vanish on the grass
+  OBJ.cone=simple('cone','small',1,name=>kitFitH(name,1.6),{});
+  OBJ.bench=simple('bench','tiny',1,name=>kitFit(name,RAD.bench),{});
+  OBJ.parked=simple('parked','medium',4,name=>kitFit(name,RAD.parked),{n:5,whole:false});
+  OBJ.tractor=simple('tractor','large',8,name=>kitFit(name,RAD.tractor),{n:6,whole:false});
+  OBJ.fence=simple('fence','small',2,name=>kitFit(name,RAD.fence),{cut:{mode:'color'},n:2,whole:false});
+  OBJ.melon=simple('melon','small',3,name=>kitFitH(name,1.6),{cut:{mode:'color'}});
+  OBJ.snowman=simple('snowman','medium',5,name=>kitFitH(name,5.6),{cut:{mode:'y',cuts:[.42,.72]}});
+  OBJ.crops=(x,z,arg)=>{const plants=KIT.crops.filter(kitHas);if(!plants.length||!kitHas('crop-dirt'))return B.crops(x,z,arg);
+    const kind=pick(plants),sd=kitFit('crop-dirt',RAD.crops)*.95,sp=kitFitH(kind,kind==='crop-corn'?1.5:.9);
+    return sized(x,z,RAD.crops,1.2,3,'small',(P,g)=>{kitProp(P,'crop-dirt',sd,{n:2,whole:false});
+      for(let i=-2;i<=2;i++)for(const pc of leafy(kind,sp)){const m=kitMesh(pc,null);m.position.x+=i*.85;P(m,1,true,.25);}face(g,arg);});};
+  OBJ.fountain=(x,z,arg)=>{const name=kitNear(KIT.fountain,x,z);if(!name)return B.fountain(x,z,arg);const s=kitFit(name,RAD.fountain);
+    return sized(x,z,RAD.fountain,3.4,8,'large',P=>{for(const pc of leafy(name,s))P(kitMesh(pc,null),4);
+      P(mk('cyl',.8,1.6,.8,'#f4f1de',0,kitH(name,s)+.6,0),2);P(mk('sph',1.15,1.15,1.15,'#48cae4',0,kitH(name,s)+1.9,0),1,true,.5);});};
+  // windmill: the block tower keeps its shape, the sails become the kit's wooden sails (spinning, see setupSpin)
+  OBJ.windmill=(x,z,arg)=>{if(!kitHas('windmill-blades'))return B.windmill(x,z,arg);const s=4.2/3.11;
+    return sized(x,z,RAD.windmill,12,16,'huge',(P,g)=>{
+      P(mk('cyl',2.1,6.4,2.1,'#f4f1de',0,3.2,0),6);P(mk('cone',2.5,1.8,2.5,'#e07a5f',0,7.2,0),3);P(mk('box',.35,.35,1,'#6d4c41',0,5.4,1.15),1);
+      const hub=mk('cyl',.45,.4,.45,'#333',0,5.5,1.55);hub.rotation.x=Math.PI/2;P(hub,1,true,.25);
+      const sail=new THREE.Group();sail.position.set(0,5.5,1.8);sail.userData.spin={axis:'z',speed:1.1};
+      for(const pc of kitPieces('windmill-blades',{mode:'one',s,ry:1})){const m=kitMesh(pc,null);m.position.set(0,0,0);sail.add(m);}
+      P(sail,1,true,.4);face(g,arg);});};
+}
 const START_SPOTS=[[-6,48],[6,48]];
 function spotOK(x,z,r){
   if(Math.abs(x)>ARENA-r-1||Math.abs(z)>ARENA-r-1)return false;
@@ -324,7 +583,7 @@ function drop(ctx,type,arg){
 }
 function ring(ctx,x,z,rad,n,type){for(let i=0;i<n;i++){const a=i/n*Math.PI*2+0.2;put(ctx,type,x+Math.cos(a)*rad,z+Math.sin(a)*rad,i%4);}}
 function crumbs(ctx,n,types){for(let i=0;i<n;i++)put(ctx,pick(types),rand(ctx.x0+7,ctx.x1-7),rand(ctx.z0+7,ctx.z1-7),Math.random()*4|0);}
-function maybeRamp(ctx){if(Math.random()<0.42)ctx.ramp(rand(ctx.x0+14,ctx.x1-14),rand(ctx.z0+14,ctx.z1-14),(Math.random()*4|0)*Math.PI/2);}
+function propsRamp(ctx){if(Math.random()<0.42)ctx.ramp(rand(ctx.x0+14,ctx.x1-14),rand(ctx.z0+14,ctx.z1-14),(Math.random()*4|0)*Math.PI/2);}
 function lotKind(){const r=Math.random();return r<.5?'cottage':r<.78?'house':r<.9?'shop':'villa';}
 
 const ZONE_LAYOUT={
@@ -345,7 +604,7 @@ const ZONE_LAYOUT={
       put(ctx,'lamp',x,ctx.cz-12,0);put(ctx,'parked',x,ctx.cz+12,k%2);if(Math.random()<.5)put(ctx,'hydrant',x+5,ctx.cz-12,0);
     }
     put(ctx,'tree',ctx.x0+10,ctx.z0+10,0);put(ctx,'tree',ctx.x1-10,ctx.z1-10,0);put(ctx,'bush',ctx.x0+10,ctx.z1-12,0);
-    maybeRamp(ctx);
+    propsRamp(ctx);
   },
   farm(ctx){
     const LM=landmarks();
@@ -361,7 +620,7 @@ const ZONE_LAYOUT={
     if(Math.random()<.45)put(ctx,'tractor',ctx.x0+16,ctx.z1-18,0);
     if(Math.random()<.55)ctx.herd('chicken',ctx.cx-4,ctx.cz+8,4);
     put(ctx,'tree',ctx.x1-12,ctx.z0+12,0);put(ctx,'bush',ctx.x0+12,ctx.z0+14,0);
-    maybeRamp(ctx);
+    propsRamp(ctx);
   },
   park(ctx){
     const LM=landmarks();
@@ -376,7 +635,7 @@ const ZONE_LAYOUT={
     crumbs(ctx,5,['bush','flowers','cone']);
     if(Math.random()<.3){const px=rand(ctx.x0+16,ctx.x1-16),pz=rand(ctx.z0+18,ctx.z1-16);
       for(let row=0;row<4;row++)for(let k=0;k<=row;k++)put(ctx,'pin',px+(k-row/2)*3.2,pz-row*3,0);}
-    maybeRamp(ctx);
+    propsRamp(ctx);
   },
   /* Dress the margin of the home chunks. The hand-built arena (inside ±HOME) rejects placement. */
   home(ctx){
