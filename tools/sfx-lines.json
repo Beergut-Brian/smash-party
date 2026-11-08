@@ -627,6 +627,14 @@
       "prompt": "Bouncy rubber ball boing with a jelly wobble afterwards, silly",
       "dur": 0.7
     },
+    "splash_1": {
+      "prompt": "Cartoon toy car splashing into a shallow pond, a bright wet SPLOOSH with droplets",
+      "dur": 0.8
+    },
+    "splash_2": {
+      "prompt": "Small cartoon water splash, a quick playful sploosh and sprinkle of drops",
+      "dur": 0.6
+    },
     "hover_hum": {
       "prompt": "Soft smooth humming hover thruster, a gentle steady floaty whirr with a light shimmer, steady tone, kids video game",
       "dur": 0.6,
