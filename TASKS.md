@@ -143,12 +143,20 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Town: houses lined up along streets with yards, fences, driveways and mailboxes; shops on a main street; a park block. Farm: fenced fields with crops in rows, animals in pens, the barn yard. Park: paths, a playground area, the pond.
   - Mark spots with `ctx.spot()` so the filler lands where it belongs.
 
-- [ ] **L21: Camera follows your size + "where's my car?"** (play-test round 2; do before L17)
+- [x] **L21: Camera follows your size + "where's my car?"** (play-test round 2; do before L17)
   - The start feels zoomed out and you lose your car. **Keep each car about the same size on screen at every size:** the camera distance scales with the players' size (close at micro, pulling back as you grow), with gentle easing on size-ups (a little "whoosh" pull-back is a nice size-up moment). Let the **world** make you feel small (giant curbs, flowers, mailboxes towering over you), not the camera.
   - Two players far apart: frame both, but clamp the zoom-out and gently pull the trailing car along instead of shrinking both cars to specks.
   - **Easy to find your car:** a bright player-colored ring and a bobbing arrow/marker above each car (P1/P2 color), bigger on spawn and after respawn/teleport/garage, fading to subtle while driving. A short spotlight + "beep beep!" intro on start.
   - **Start on a street:** spawn both players on a sidewalk/street spot in a town chunk, surrounded by micro props (pebbles, flowers, soda cans, leaves), with a curb and a mailbox towering over them, instead of open grass. (Ties into L19 spots; until then, pick a fixed street spot in the home area.)
   - Hand-off: `NEEDS DESIGN` world-props for a hand-placed "start street" set-dressing (curb, sidewalk cracks, puddle, toy-sized clutter) once the spawn spot exists.
+  - Done: camera distance = 38 × car scale (a bit less above size 1), eased, with a little whoosh pull-back on LEVEL UP; near plane, shake, shadows and confetti scale with it, and the scatter radius follows the camera so the view stays full of your-size props. Two players: zoom out to 2.1× at most, then the trailing car (the one not driving away) is pulled along; one that ends up way off (teleport) pops back beside the other. A late joiner spawns next to the first player. Markers: a bobbing arrow in the player's color above each car, drawn through buildings; strong with a spotlight beam on spawn, NEW WORLD, new car and teleport; faint while driving; brighter again after ~3s parked. The P1/P2 tag sits on top of the arrow. A "beep beep!" horn + voice on start and NEW WORLD. Spawn: right lane of the home road (`SPAWN_DEFAULT`, overridable with `START_STREET`, see CLAUDE.md). Also fixed a crash (`o.inst is not iterable`) when a pooled scatter prop was removed while asleep.
+  - Draw calls (1600×900, high): micro start 357 (main: 419), medium home ~745 (~940), medium town ~360 (331), huge town 795–995 (835), boss fight ~2.2–2.6k (main ~1.9–2.1k in the same run; noisy with debris).
+
+- [ ] **D13: Start street set-dressing** `NEEDS DESIGN` (world-props; from L21)
+  - The cars now start at micro size in the right lane of the home road (`SPAWN_DEFAULT` in game.js: [2.6,48] and [3.8,48.6], facing −Z). The camera is close, so props around it look giant. Dress the spot: a curb + sidewalk along the road edge (x≈5), sidewalk cracks, a puddle, a mailbox towering over the cars, toy-sized clutter (pebbles, leaves, soda cans, flowers). Move the spot with `const START_STREET=[[x,z],[x,z]]` in objects.js if a better one fits. Keep the first few meters in front of the cars drivable.
+
+- [ ] **AU2: Record "Beep beep!"** `NEEDS AUDIO` (audio agent; from L21)
+  - New line in `tools/voice-lines.json`, played with a synth horn when the cars appear. Run `make-voices.mjs --dry`, then generate.
 
 - [ ] **L17: Level-up garage (pick your new car)**
   - Every car-tier unlock (every 2 sizes) opens a **garage** instead of the plain LEVEL UP: the world pauses and both players drop into a small showroom arena with 3–4 parked cars per player from the new tier on glowing pads, each with a **stat card** floating above it.
