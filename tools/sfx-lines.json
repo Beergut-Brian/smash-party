@@ -687,6 +687,36 @@
       "dur": 0.6,
       "style": ""
     },
+    "dino_roar_1": {
+      "prompt": "A cute little cartoon dinosaur roar, rawwr, playful not scary, for kids",
+      "dur": 0.9,
+      "style": ""
+    },
+    "dino_roar_2": {
+      "prompt": "A goofy toy dinosaur roar with a squeaky end, rawr-eek, funny",
+      "dur": 0.9,
+      "style": ""
+    },
+    "siren_woo_1": {
+      "prompt": "A goofy cartoon toy siren, woo-woo, silly and bouncy, for kids",
+      "dur": 0.9,
+      "style": ""
+    },
+    "siren_woo_2": {
+      "prompt": "A silly slide-whistle style police siren, wee-ooo wee-ooo, cartoon",
+      "dur": 1.0,
+      "style": ""
+    },
+    "burp_horn_1": {
+      "prompt": "A big fizzy cartoon soda burp, funny, bubbly, for kids",
+      "dur": 0.8,
+      "style": ""
+    },
+    "burp_horn_2": {
+      "prompt": "A long silly bubbly burp that ends in a fizz pop, cartoon",
+      "dur": 0.9,
+      "style": ""
+    },
     "portal_whoosh": {
       "prompt": "Magical swirling portal opening: a deep spinning whoosh rising into a bright sparkly shimmer, exciting and wondrous",
       "dur": 2.5
@@ -710,6 +740,216 @@
     "sugarrush_end": {
       "prompt": "A sugary fizz winding down like a deflating balloon, ending in a tiny cute giggle",
       "dur": 1.0
+    },
+    "babyrex": {
+      "prompt": "Tiny cartoon baby T-rex squeaky little rawr, cute and silly, like a toy",
+      "dur": 0.8
+    },
+    "ptero": {
+      "prompt": "Chirpy baby pterodactyl skree, a bright kazoo-like bird squawk with a flap of little wings",
+      "dur": 0.8
+    },
+    "gummybear": {
+      "prompt": "Bouncy squishy gummy bear boing-boop, jiggly rubbery wobble and a cute squeak",
+      "dur": 0.7
+    },
+    "marshmallow_sheep": {
+      "prompt": "Soft puffy marshmallow sheep bleat, a fluffy muffled baa-mallow, cute and silly",
+      "dur": 1.0
+    },
+    "candy_forest_ambient": {
+      "prompt": "Soft breeze through cotton candy trees, tiny sugar-crystal wind chimes, a far-off cute bunny squeak now and then, quiet background ambience, soft, gentle, kids video game, no music",
+      "dur": 20,
+      "style": ""
+    },
+    "candy_river_ambient": {
+      "prompt": "A slow thick chocolate river burbling and glooping, a gentle far away waterfall, the odd distant duck quack, quiet background ambience, soft, gentle, kids video game, no music",
+      "dur": 20,
+      "style": ""
+    },
+    "candy_peaks_ambient": {
+      "prompt": "A light cold mountain wind whoosh, a soft-serve ice cream machine humming far away, a tinkle of falling sprinkles, quiet background ambience, soft, gentle, kids video game, no music",
+      "dur": 20,
+      "style": ""
+    },
+    "candy_tinkle_1": {
+      "prompt": "Sugar crystals shattering like glass wind chimes, sparkly tinkle",
+      "dur": 0.6
+    },
+    "candy_tinkle_2": {
+      "prompt": "Sprinkles scattering everywhere with a bright glassy chime cascade",
+      "dur": 0.6
+    },
+    "candy_tinkle_3": {
+      "prompt": "Rock candy crystal breaking, crisp glassy crack and little chimes",
+      "dur": 0.6
+    },
+    "candy_stretch_1": {
+      "prompt": "Licorice vine stretching then snapping with a rubbery twang",
+      "dur": 0.6
+    },
+    "candy_stretch_2": {
+      "prompt": "Long chewy candy rope stretched tight and released, a boingy rubber twang",
+      "dur": 0.6
+    },
+    "candy_stretch_3": {
+      "prompt": "Rubbery licorice whip snap, a stretchy creak then a springy thwang",
+      "dur": 0.6
+    },
+    "candy_splosh_1": {
+      "prompt": "Big thick chocolate SPLOSH, a heavy gloopy splash with drips",
+      "dur": 1.0
+    },
+    "candy_splosh_2": {
+      "prompt": "Chocolate fountain splash, a gooey wet sploosh and pitter of chocolate drops",
+      "dur": 1.0
+    },
+    "candy_splosh_3": {
+      "prompt": "A giant scoop of melted chocolate plopping in, a deep gloopy splash",
+      "dur": 1.0
+    },
+    "candy_scoop_1": {
+      "prompt": "Soft cold ice cream scoop plop, a squishy creamy splat",
+      "dur": 0.6
+    },
+    "candy_scoop_2": {
+      "prompt": "Big ice cream scoop falling over with a soft mushy splat",
+      "dur": 0.6
+    },
+    "candy_scoop_3": {
+      "prompt": "Soft-serve ice cream swirl squishing flat, a creamy squelch and plop",
+      "dur": 0.6
+    },
+    "candy_icecrack_1": {
+      "prompt": "Popsicle cracking in half with a frosty crunch",
+      "dur": 0.6
+    },
+    "candy_icecrack_2": {
+      "prompt": "Icy popsicle snap, crisp frozen crack and a sprinkle of ice bits",
+      "dur": 0.6
+    },
+    "candy_icecrack_3": {
+      "prompt": "Frozen snow cone crunching apart, a cold crispy crackle",
+      "dur": 0.6
+    },
+    "dino_volcano_crash_1": {
+      "prompt": "Chunky rock crumble with a little lava sizzle",
+      "dur": 0.6
+    },
+    "dino_volcano_crash_2": {
+      "prompt": "Volcanic stone blocks tumbling down with a hot hiss",
+      "dur": 0.6
+    },
+    "dino_volcano_crash_3": {
+      "prompt": "Crunchy lava rock smash, gravelly crumble and a fizzy sizzle",
+      "dur": 0.6
+    },
+    "dino_volcano_ambient": {
+      "prompt": "A low friendly volcano rumble, bubbling lava blorps, a soft hiss of steam now and then, quiet background ambience, soft, gentle, kids video game, no music",
+      "dur": 20,
+      "style": ""
+    },
+    "dino_steam_1": {
+      "prompt": "Cartoon steam geyser whoosh ending in a happy kettle toot",
+      "dur": 0.8
+    },
+    "dino_steam_2": {
+      "prompt": "A puff of hot spring steam, a breathy whoosh with a little whistle",
+      "dur": 0.8
+    },
+    "dino_steam_3": {
+      "prompt": "Steam vent blast, a hissing woosh and a goofy toot-toot",
+      "dur": 0.8
+    },
+    "dino_lava_1": {
+      "prompt": "A thick goofy lava BLORP, a big gloopy bubble popping",
+      "dur": 0.6
+    },
+    "dino_lava_2": {
+      "prompt": "Magma blob plopping with a deep silly bloop and a sizzle",
+      "dur": 0.6
+    },
+    "dino_swamp_crash_1": {
+      "prompt": "Wet leafy splat-crunch, soggy branches snapping",
+      "dur": 0.6
+    },
+    "dino_swamp_crash_2": {
+      "prompt": "Mossy swamp plants smashed with a wet crunchy squish",
+      "dur": 0.6
+    },
+    "dino_swamp_crash_3": {
+      "prompt": "Soggy reeds and lily pads splatting apart, a wet leafy crunch",
+      "dur": 0.6
+    },
+    "dino_swamp_splat_1": {
+      "prompt": "Heavy squelchy mud landing, a thick wet SPLAT",
+      "dur": 0.5
+    },
+    "dino_swamp_splat_2": {
+      "prompt": "Big goopy swamp mud plop landing, cartoon",
+      "dur": 0.5
+    },
+    "dino_swamp_splat_3": {
+      "prompt": "Thumping landing in sticky mud, a deep squelch",
+      "dur": 0.5
+    },
+    "dino_swamp_ambient": {
+      "prompt": "Croaky frogs, buzzy dragonflies, a slow bubbling tar pit, a far-off happy long-neck dinosaur hoot, quiet background ambience, soft, gentle, kids video game, no music",
+      "dur": 20,
+      "style": ""
+    },
+    "dino_squelch_1": {
+      "prompt": "Sticky tar squelch ending with a gloopy pop",
+      "dur": 0.6
+    },
+    "dino_squelch_2": {
+      "prompt": "Mud pie squished flat, a wet squelch and a little pop",
+      "dur": 0.6
+    },
+    "dino_squelch_3": {
+      "prompt": "Squishy moss mound squelch, a gooey suck and plop",
+      "dur": 0.6
+    },
+    "dino_dig_crash_1": {
+      "prompt": "Dry sandy crumble with a clatter of bones",
+      "dur": 0.6
+    },
+    "dino_dig_crash_2": {
+      "prompt": "Sandstone breaking apart, a dusty crunch and a hollow bone rattle",
+      "dur": 0.6
+    },
+    "dino_dig_crash_3": {
+      "prompt": "A pile of fossils and dry dirt tumbling, sandy crunch and woody bone clacks",
+      "dur": 0.6
+    },
+    "dino_dig_thump_1": {
+      "prompt": "Soft sandy thud landing with a hiss of pouring sand",
+      "dur": 0.5
+    },
+    "dino_dig_thump_2": {
+      "prompt": "Car landing in dry sand, a muffled whump and sand spray",
+      "dur": 0.5
+    },
+    "dino_dig_thump_3": {
+      "prompt": "A punchy cartoon THUD landing in a sand pile, with a dusty sand spray",
+      "dur": 0.5
+    },
+    "dino_dig_ambient": {
+      "prompt": "A warm desert breeze, a distant pickaxe tink-tink, a soft brush swish, a happy hawk-like bird call far away, quiet background ambience, soft, gentle, kids video game, no music",
+      "dur": 20,
+      "style": ""
+    },
+    "dino_sand_1": {
+      "prompt": "A canvas tent flumping over and sand pouring out",
+      "dur": 0.6
+    },
+    "dino_sand_2": {
+      "prompt": "A bucket of sand tipping over, a hollow clunk and a sand pour",
+      "dur": 0.6
+    },
+    "dino_sand_3": {
+      "prompt": "Sandy canvas whump with a shushing sand spill",
+      "dur": 0.6
     }
   }
 }

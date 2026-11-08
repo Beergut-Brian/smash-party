@@ -465,18 +465,30 @@ function loadModelCars(){
 }
 loadModelCars();
 
-/* D19: Grow-Up Garage showroom v2 (L32 hook). Car scale 1, floor top at y=0, decals ≥0.04 above it. Fills the
-   building's square inside (±GARAGE_HW=43): a tiled floor, a candy-wedge turntable (~GARAGE_R=40) under the parked cars,
-   a drive lane from the front door (+Z) to the back door (−Z) with GO chevrons, a checkered finish line and a green
+/* D26: Grow-Up Garage showroom v3 (L32 hook, L49 pad layout). Car scale 1, floor top at y=0, decals ≥0.04 above it.
+   Fills the building's square inside (±GARAGE_HW=43): each player gets a half in their color (P1 left, P2 right) with
+   parking bays (open to the lane) and a ring where logic's pads stand (garageRows' GARAGE_COLS / GARAGE_ROWZ), a drive lane from the front door (+Z) to the back door (−Z) with GO chevrons, a checkered finish line and a green
    GO arrow sign over the back door (the building in objects.js carries the doors themselves). No words. */
 function buildGarage(){
-  const g=new THREE.Group(),R=38,H=42.4,D=7,flat=(m)=>{m.castShadow=false;m.receiveShadow=true;g.add(m);return m;};
+  const g=new THREE.Group(),H=42.4,D=7,flat=(m)=>{m.castShadow=false;m.receiveShadow=true;g.add(m);return m;};
   flat(mk('box',H*2,.3,H*2,'#2b2d42',0,-.15,0)); // base floor, fills the square to the walls
-  for(let i=-3;i<=3;i++)for(let j=-3;j<=3;j++)if((i+j)&1)flat(mk('box',12,.04,12,'#33364f',i*12,.02,j*12)); // big soft floor tiles
-  const wedges=['#ff6b6b','#ffd60a','#06d6a0','#3a86ff','#9b5de5','#ff9f1c','#48cae4','#f72585'];
-  for(let i=0;i<8;i++){const w=new THREE.Mesh(new THREE.CircleGeometry(R,20,i*Math.PI/4,Math.PI/4),M(wedges[i]));
-    w.rotation.x=-Math.PI/2;w.position.y=.06;flat(w);}
-  const rim=new THREE.Mesh(new THREE.RingGeometry(R,R+1.2,48),M('#ffffff'));rim.rotation.x=-Math.PI/2;rim.position.y=.07;flat(rim);
+  // D26 (L49): one side per player in their color (P1 left, P2 right), parking bays where logic puts the pads
+  const pc=typeof PCOL!=='undefined'?PCOL:['#ff9f1c','#2ec4f6'],two=typeof players==='undefined'||players.length!==1;
+  const tint=(c,k)=>'#'+new THREE.Color('#2b2d42').lerp(new THREE.Color(c),k).getHexString();
+  const sides=two?[[-1,pc[0]],[1,pc[1]]]:[[-1,pc[0]],[1,pc[0]]];
+  for(const [sx,c] of sides){const w=H-D-1.2,cx=sx*(D+1.2+w/2);
+    flat(mk('box',w,.04,H*2-3,tint(c,.35),cx,.03,0));          // the player's half of the floor
+    flat(mk('box',w,.04,1,c,cx,.06,-H+2),mk('box',w,.04,1,c,cx,.06,H-2)); // colored edge stripes
+    flat(mk('box',1,.04,H*2-3,c,sx*(H-1.6),.06,0));
+    for(let z=-36;z<=36;z+=12)flat(mk('box',4,.04,4,tint(c,.5),sx*(H-5),.05,z));} // tiles by the wall
+  // parking bays where logic puts the pads (garageRows): open toward the drive lane, a glow ring for each pad to sit in
+  const bays=two?[[10.5,-20],[31,-20],[10.5,6],[31,6]].flatMap(([x,z])=>[[-x,z,pc[0]],[x,z,pc[1]]])
+    :[-30,-10.5,10.5,30].map(x=>[x,-8,pc[0]]);
+  const rows=new Map();for(const [x,z] of bays)rows.set(Math.sign(x)+':'+z,[Math.sign(x),z]);
+  for(const [sx,z] of rows.values()){const x0=D+.8,w=H-2.6-x0; // lines between the rows, one between the two columns
+    for(const sz of [-1,1])flat(mk('box',w,.04,.5,'#ffffff',sx*(x0+w/2),.09,z+sz*7.5));
+    flat(mk('box',.5,.04,15,'#ffffff',sx*20.5,.09,z));}
+  for(const [x,z,c] of bays){const ring=new THREE.Mesh(new THREE.RingGeometry(4.7,5.4,32),M(tint(c,.8)));ring.rotation.x=-Math.PI/2;ring.position.set(x,.1,z);flat(ring);}
   // the drive lane: front door → back door
   flat(mk('box',D*2,.04,H*2,'#3a3f5c',0,.1,0));
   for(const sx of [-1,1])flat(mk('box',.6,.04,H*2,'#ffffff',sx*(D-.3),.12,0));
@@ -485,8 +497,6 @@ function buildGarage(){
     for(const sx of [-1,1]){const c=flat(mk('box',1.3,.04,6,'#3ddc97',sx*1.9,.13,z));c.rotation.y=sx*0.75;}}
   for(let i=0;i<7;i++)for(let j=0;j<2;j++)flat(mk('box',2,.04,2,(i+j)%2?'#111111':'#ffffff',(i-3)*2,.14,-H+1.4+j*2)); // finish line
   for(let i=0;i<7;i++)flat(mk('box',2,.04,1.4,i%2?'#111111':'#ffd60a',(i-3)*2,.14,H-1)); // hazard stripe at the way in
-  // hub in the middle of the turntable
-  flat(mk('cyl',7,.06,7,'#ffffff',0,.16,0));flat(mk('cyl',3.6,.06,3.6,'#ffd60a',0,.2,0));
   // finish posts either side of the back door + the GO sign over it (inside face of the back wall)
   for(const sx of [-1,1])for(let k=0;k<5;k++)g.add(mk('box',1.2,2,1.2,k%2?'#111111':'#ffffff',sx*(D+1.6),1+k*2,-H+.4));
   g.add(mk('box',D*2+4.4,3.6,.6,'#06d6a0',0,12,-H+.2),mk('box',D*2+5,.5,.7,'#ffffff',0,13.9,-H+.2),mk('box',D*2+5,.5,.7,'#ffffff',0,10.1,-H+.2));
@@ -508,7 +518,10 @@ function buildGarage(){
 /* D19: ability + cosmetic parts on the car (L36 hook `buildCarPart(id)`, game.js `carPartLook`). Car scale 1.
    Roof parts (hammer, shoot, hat, crown): origin where they sit on the roof. hover / glide / dozer: origin at the car's
    ground center (logic moves the dozer blade to the nose). A child with userData.swing swings on each smash
-   (logic sets its rotation.x = -0.5 + swing, so it rests at -0.5 with the pivot at its origin). */
+   (logic sets its rotation.x = -0.5 + swing, so it rests at -0.5 with the pivot at its origin).
+   D22: land parts. stomp (dino-claw mud flaps, ground center, always on), sugarrush (rainbow glow, ground center, own
+   materials so logic can cycle the userData.rainbow ones), roof cosmetics eggshell / cherry / bandhat (like hat),
+   dinotail (origin at the back bumper at ground level, tail toward −Z; its child with userData.wag can swing on y). */
 function buildCarPart(id){
   const g=new THREE.Group();
   if(id==='hammer'){ // a big squeaky toy mallet on a little roof stand
@@ -550,6 +563,49 @@ function buildCarPart(id){
     g.add(mk('box',3.3,.22,.38,'#495057',0,.08,.28),mk('box',3.3,.14,.36,'#e08a00',0,1.18,.26));
     for(const sx of [-1,1])g.add(mk('box',.5,.6,.05,'#212529',sx*.7,.62,.5));
     for(const sx of [-1,1]){g.add(mk('box',.22,.7,.32,'#212529',sx*1.0,.65,.48),mk('box',.24,.24,1,'#555555',sx*.9,.6,-.3));}}
+  // D22: land abilities (L42) and land cosmetics (Q2a/Q3a, L44)
+  else if(id==='stomp'){ // 🦖 dino-claw mud flaps behind the rear wheels (origin at the car's ground center; always on)
+    for(const sx of [-1,1]){const f=new THREE.Group();f.position.set(sx*.95,.12,-2.3);
+      f.add(mk('box',.72,.7,.1,'#57cc99',0,.4,0),mk('box',.76,.12,.14,'#2d6a4f',0,.76,0)); // flap + its bar
+      for(const sp of [-.24,0,.24]){const t=mk('cone',.16,.3,.16,'#fff8ec',sp,.02,-.04);t.rotation.x=Math.PI;f.add(t);} // claws
+      f.add(mk('sph',.2,.06,.24,'#2d6a4f',0,.42,-.06)); // footprint dot on the flap
+      for(const sp of [-.16,0,.16])f.add(mk('sph',.08,.05,.08,'#2d6a4f',sp,.6,-.06));
+      g.add(f);}}
+  else if(id==='sugarrush'){ // 🍭 rainbow glow round the car while rushing (origin at ground center; logic cycles userData.rainbow colors)
+    const add=(c,o)=>new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:o,blending:THREE.AdditiveBlending,depthWrite:false});
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(2.2,.3,6,36),add('#ff006e',.8));ring.rotation.x=Math.PI/2;ring.position.y=.35;ring.userData.rainbow=true;g.add(ring);
+    const ring2=new THREE.Mesh(new THREE.TorusGeometry(1.7,.16,6,32),add('#ffffff',.6));ring2.rotation.x=Math.PI/2;ring2.position.y=.9;g.add(ring2);
+    const halo=new THREE.Mesh(new THREE.CylinderGeometry(2.35,2.1,1.6,28,1,true),add('#ff70a6',.22));halo.position.y=.8;halo.userData.rainbow=true;g.add(halo);
+    const sweets=['#ffd60a','#06d6a0','#3a86ff','#ff9f1c','#c77dff','#ffffff'];
+    for(let i=0;i<6;i++){const a=i/6*Math.PI*2+.3,x=Math.sin(a)*2.25,z=Math.cos(a)*2.25; // little candy stars riding the ring
+      const c=new THREE.Mesh(new THREE.OctahedronGeometry(.28),add(sweets[i],.9));c.position.set(x,.35+(i%2)*.5,z);c.rotation.set(a,a,0);g.add(c);}}
+  else if(id==='dinotail'){ // 🦕 a chunky green tail with orange back plates (origin at the back bumper, ground level; points −Z)
+    const t=new THREE.Group();t.position.y=.95;t.rotation.x=.18;t.scale.setScalar(1.4);t.userData.wag=true;
+    const seg=[[.9,.75,0],[.72,.6,-.75],[.54,.46,-1.4],[.36,.32,-1.95],[.22,.2,-2.35]];
+    seg.forEach(([w,h,z],i)=>{const m=mk('sph',w,h,.95-i*.1,i%2?'#52b788':'#57cc99',0,-i*.08,z);t.add(m);
+      if(i<4)t.add(mk('pyr',.12,.42-i*.06,.36-i*.04,'#ff9f1c',0,h*.5-i*.08+.12,z));}); // back plates
+    t.add(mk('cone',.16,.3,.16,'#fff8ec',.12,-.3,-2.4),mk('cone',.16,.3,.16,'#fff8ec',-.12,-.3,-2.4)); // tail spikes
+    for(const [x,z] of [[.3,-.2],[-.28,-.9],[.2,-1.5]])t.add(mk('sph',.18,.12,.2,'#ffd166',x,.3-z*.02,z)); // spots
+    g.add(t);}
+  else if(id==='eggshell'){ // 🥚 a cracked eggshell on the roof with a chick peeking out
+    g.add(mk('sph',1.24,1,1.24,'#fff3d6',0,.42,0));
+    for(let i=0;i<9;i++){const a=i/9*Math.PI*2,x=Math.sin(a)*.6,z=Math.cos(a)*.6; // zigzag cracked rim
+      const tooth=mk('pyr',.32,.3,.12,'#fff3d6',x,.86,z);tooth.rotation.y=a;g.add(tooth);}
+    for(const [x,y,z] of [[.4,.4,.3],[-.35,.3,-.35],[.1,.25,-.55]])g.add(mk('sph',.18,.14,.08,'#b5e48c',x,y,z)); // speckles
+    g.add(mk('sph',.62,.6,.6,'#ffd60a',0,1.0,0),mk('pyr',.2,.18,.22,'#ff9f1c',0,1.0,.33)); // chick + beak
+    for(const sx of [-1,1])g.add(mk('sph',.1,.12,.06,'#222222',sx*.15,1.12,.27));
+    g.add(mk('sph',.18,.24,.12,'#ffd60a',0,1.38,-.05));} // tuft
+  else if(id==='cherry'){ // 🍒 a big cherry on a whipped-cream dollop
+    g.add(mk('cyl',1.2,.22,1.2,'#fff8ec',0,.11,0),mk('sph',1.05,.5,1.05,'#fff8ec',0,.3,0),mk('cone',.5,.4,.5,'#fff8ec',0,.62,0));
+    g.add(mk('sph',1,.92,1,'#d00000',0,1.05,0),mk('sph',.26,.2,.18,'#ff8fa3',.2,1.3,.34)); // cherry + shine
+    const st=mk('cyl',.07,.75,.07,'#386641',.1,1.75,-.05);st.rotation.z=-.35;g.add(st);
+    const lf=mk('sph',.4,.08,.2,'#57cc99',.36,1.95,-.05);lf.rotation.z=.4;g.add(lf);}
+  else if(id==='bandhat'){ // 💂 a marching-band hat: tall red shako, gold band, black visor, big white plume
+    g.add(mk('cyl',1.0,.95,1.0,'#e63946',0,.6,0),mk('cyl',1.06,.16,1.06,'#ffd60a',0,.2,0),mk('cyl',1.06,.12,1.06,'#ffd60a',0,1.04,0));
+    g.add(mk('cyl',1.0,.08,1.0,'#212529',0,1.1,0),mk('box',.8,.08,.42,'#212529',0,.16,.55)); // top + visor
+    g.add(mk('sph',.26,.3,.1,'#ffd60a',0,.62,.5)); // badge
+    g.add(mk('cyl',.08,.22,.08,'#ffd60a',0,1.22,0));
+    for(const [x,y,z,r] of [[0,1.45,0,.5],[.12,1.75,-.05,.42],[-.1,1.98,.02,.34],[.05,2.18,0,.24]])g.add(mk('sph',r,r*1.1,r,'#ffffff',x,y,z));} // fluffy plume
   else return null;
   return g;
 }

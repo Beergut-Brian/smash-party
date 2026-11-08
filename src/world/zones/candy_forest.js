@@ -5,7 +5,7 @@
 const CANDY_GUM=['#ff006e','#ffbe0b','#06d6a0','#8338ec','#fb5607','#3a86ff'];
 const CANDY_PRETZEL='#b5651d',CANDY_LICORICE=['#d00000','#2b2d42'];
 Object.assign(CANDY_R,{crystal:.3,shroom:.45,licorice:.4,gumtree:1,jelly:.8,gumbush:1.4,cottontree:1.3,bigtree:2.6,
-  gumhut:3,treehouse:4.4,gummount:9});
+  gumhut:3,treehouse:4.4,gummount:9,donutshop:4.2});
 
 const CANDY_FOREST_PROPS={
   /* ---- micro ---- */
@@ -63,6 +63,15 @@ const CANDY_FOREST_PROPS={
     candyFace(g,arg);},{building:true}),
   /* ---- huge ---- */
   // gumdrop treehouse (BP): 8 pretzel stilts hold up a gum hut; licorice ladder down the front
+  // Officer Glaze's donut shop (BP, Z6 part 2): a pink-and-white shop under a chocolate roof, a giant frosted donut on top
+  candy_donutshop:(x,z,arg)=>sized(x,z,CANDY_R.donutshop,9.4,10,'large',(P,g)=>{
+    candyStory(P,7,5.6,3.4,0,0,['#ffc6ff','#ffffff'],3);
+    P(BP(mk('box',7.8,.5,6.4,'#8d5524',0,3.65,0),1,'roof'),3);
+    P(BP(candyMk('ring',4,4,4,CANDY_DOUGH,0,6.6,0),1,'extra'),3,true,1);P(BP(candyMk('ring',4.05,4.05,2.2,'#ff8fab',0,6.6,.45),1,'extra'),2,true,.8);
+    for(let i=0;i<7;i++){const a=i/7*Math.PI*2+.2,s=mk('box',.5,.14,.14,pick(CANDY_BRIGHT),Math.cos(a)*2,6.6+Math.sin(a)*2,.95);s.rotation.z=a*2;P(BP(s,1,'extra'),1);}
+    for(let i=0;i<5;i++)P(BP(candyRot(mk('box',1.4,.18,1.3,i%2?'#ffffff':'#ff8fab',-2.8+i*1.4,2.9,3.4),.4),0,'extra'),1,true,.3);
+    P(BP(mk('box',1.2,2,.15,CANDY_CHOCO,1.9,1,3.18),0,'extra'),1,true,.4);P(BP(mk('box',2.8,1.4,.15,'#a0e7ff',-1.2,1.6,3.18),0,'extra'),1,true,.4);
+    candyFace(g,arg);},{building:true}),
   candy_treehouse:(x,z,arg)=>sized(x,z,CANDY_R.treehouse,11,16,'huge',(P,g)=>{const a=pick(CANDY_GUM),b=pick(CANDY_PASTEL);
     for(let i=0;i<8;i++){const t=(i+.5)/8*Math.PI*2;P(BP(mk('cyl',.6,4.2,.6,CANDY_PRETZEL,Math.sin(t)*2.6,2.1,Math.cos(t)*2.6),0,'wall'),2);}
     P(BP(mk('cyl',7.4,.5,7.4,CANDY_DOUGH,0,4.45,0),0,'slab'),3);
@@ -85,7 +94,7 @@ const CANDY_FOREST_PROPS={
 };
 candySfx(CANDY_FOREST_PROPS,{
   candy_crystal:'candy_tinkle',candy_licorice:'candy_stretch',
-  candy_shroom:'candy_boing',candy_jelly:'candy_boing',candy_gumbush:'candy_boing',candy_gumhut:'candy_boing',candy_gummount:'candy_boing',
+  candy_shroom:'candy_boing',candy_jelly:'candy_boing',candy_gumbush:'candy_boing',candy_gumhut:'candy_boing',candy_donutshop:'candy_boing',candy_gummount:'candy_boing',
   candy_gumtree:'candy_snap',candy_bigtree:'candy_snap',candy_treehouse:'candy_snap',candy_cottontree:'candy_squish'
 });
 
@@ -109,7 +118,7 @@ const CANDY_FOREST_SCENES={
     s.place('candy_bigtree',-7,-6);s.place('candy_gumtree',7,-5.5);s.place('candy_gumtree',8.4,-1.5);
     s.place('candy_jelly',-5,3);s.place('candy_jelly',-6.4,4.4);s.place('candy_gumbush',6,4);
     for(let i=0;i<4;i++){s.place('candy_licorice',-3.2-i*1.4,8.6);s.place('candy_licorice',3.2+i*1.4,8.6);}
-    s.herd('bunny',4,1,3);}},
+    s.herd(CANDY_BEAR,4,1,3);}},
   // the treehouse: big gumdrop trees around it, a hut next door, a jump over the path
   candy_treehouse_lot:{size:'huge',r:13,sizes:['huge','mega'],build(s){
     s.spot('glade',0,0,24,22,0);s.spot('sugar_path',0,9,4,8,0);
@@ -122,12 +131,13 @@ const CANDY_GLADE={micro:['candy_crystal','candy_beans','candy_mint'],mini:['can
 
 /* ---------- layout: a winding sugar path through the trees, a scene or two, one Gumdrop Mountain per map ---------- */
 function candyForestLayout(ctx){
+  if(candyLand(ctx))return;
   candyRamps(ctx,1);
   const pz=ctx.cz+rand(-12,12),ph=rand(0,6);
   for(let i=0;i<5;i++){const t=ph+i*1.3;ctx.spot('sugar_path',ctx.x0+8+i*16,pz+Math.sin(t)*4,17.5,4,-Math.atan(.325*Math.cos(t)));}
   for(let i=0;i<2;i++)ctx.spot('glade',rand(ctx.x0+12,ctx.x1-12),rand(ctx.z0+12,ctx.z1-12),rand(12,18),rand(10,16),rand(0,1.5));
   if(candyIsSlot(ctx,'candy_forest','mid')){const p=candyDrop(ctx,'candy_gummount',0);
-    if(p){candyRingOf(ctx,p.x,p.z,CANDY_R.gummount+3,10,'candy_gumtree');candyRingOf(ctx,p.x,p.z,CANDY_R.gummount+6,8,'candy_shroom');ctx.herd('bunny',p.x+12,p.z+10,5);}}
+    if(p){candyRingOf(ctx,p.x,p.z,CANDY_R.gummount+3,10,'candy_gumtree');candyRingOf(ctx,p.x,p.z,CANDY_R.gummount+6,8,'candy_shroom');ctx.herd(CANDY_BEAR,p.x+12,p.z+10,5);}}
   else if(candyIsSlot(ctx,'candy_forest','first',2))candySceneDrop(ctx,'candy_treehouse_lot',0);
   else if(Math.random()<.45)candySceneDrop(ctx,'candy_hut_camp',0);
   for(let k=0;k<2;k++)if(Math.random()<.6){const x=rand(ctx.x0+8,ctx.x1-8),z=pz+(k?7:-7);
@@ -137,7 +147,7 @@ function candyForestLayout(ctx){
     const r=Math.random();candyPut(ctx,r<.25?'candy_bigtree':r<.6?'candy_gumtree':r<.82?'candy_cottontree':'candy_gumbush',x,z,0);}
   candySprinkle(ctx,6,['candy_jelly','candy_licorice','candy_shroom','candy_gumbush']);
   if(Math.random()<.4)candyPut(ctx,'candy_gumhut',rand(ctx.x0+10,ctx.x1-10),rand(ctx.z0+10,ctx.z1-10),Math.random()*4|0);
-  ctx.herd('bunny',rand(ctx.x0+12,ctx.x1-12),rand(ctx.z0+12,ctx.z1-12),4);
+  ctx.herd(Math.random()<.7?CANDY_BEAR:'bunny',rand(ctx.x0+12,ctx.x1-12),rand(ctx.z0+12,ctx.z1-12),4);
 }
 
 registerZone({
@@ -161,7 +171,7 @@ registerZone({
     mega:['candy_treehouse','candy_bigtree']   // Gumdrop Mountain only stands once per map
   },
   spots:{glade:CANDY_GLADE,blanket:CANDY_GLADE,sugar_path:{micro:['candy_crystal','candy_wrap'],mini:['candy_gumdrop']}},
-  spotLook:{glade:'#a8e6b5',sugar_path:'#fff4d6',blanket:'#ff8fab'},
-  herds:[['bunny',5]],
+  spotLook:{glade:'#a8e6b5',sugar_path:'#fff4d6',blanket:'#ff8fab',donut_lot:'#f6bd60'},
+  herds:[[CANDY_BEAR,5],['bunny',2]],    // A5b: gummy bear cubs
   layout:candyForestLayout
 });

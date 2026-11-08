@@ -211,3 +211,80 @@ canvas{display:block}
   transform:scale(1.14);animation:wpSel 1.1s ease-in-out infinite;
 }
 #modePick.focus,#worldPick.focus,#savePick.focus{outline:4px dashed #ffffffaa;outline-offset:10px;border-radius:34px}
+
+/* D26: smaller garage stat cards (L49 spreads the pads out; cards must not overlap). Overrides the D9 sizes above. */
+.garageCard{padding:5px 8px 7px;min-width:0;gap:2px;border-width:4px;border-radius:14px;font-size:14px;box-shadow:0 4px 0 color-mix(in srgb,var(--pc,#fff) 55%,#000),0 0 10px #0005}
+.garageCard b{font-size:26px}
+.garageCard span{font-size:11px;padding:1px 6px;letter-spacing:0;border-width:1px}
+.garageCard .perk{font-size:15px;width:21px;height:21px;border-width:2px;margin-left:3px;box-shadow:0 2px 0 #c47d00}
+.garageCard.taken{opacity:.35;filter:grayscale(.6);transform:translate(-50%,-100%) scale(.85)}
+
+/* D24: talk scene (L45). Pictures first: the giver's face, the goal as a huge icon, the pulsing green A. */
+@keyframes talkIn{0%{transform:scale(.6) translateY(20px);opacity:0}60%{transform:scale(1.06);opacity:1}100%{transform:none}}
+@keyframes talkABob{0%,100%{transform:translate(-50%,-100%)}50%{transform:translate(-50%,-100%) translateY(-12px) scale(1.06)}}
+@keyframes btnAPulse{50%{transform:scale(1.14);box-shadow:0 4px 0 #036b50,0 0 22px #06d6a0}}
+@keyframes talkGoalIcon{0%,100%{transform:scale(1) rotate(-4deg)}50%{transform:scale(1.1) rotate(4deg)}}
+#talkScene .talkBar{height:13vh;background:linear-gradient(#000,#111)}
+#talkScene .talkBar.top{box-shadow:0 6px 0 #ffffff22}
+#talkScene .talkBar.bot{box-shadow:0 -6px 0 #ffffff22}
+#talkScene .talkCard{
+  bottom:5vh;min-width:min(780px,60vw);max-width:84vw;gap:8px;padding:16px 36px 20px;border-radius:34px;
+  background:linear-gradient(180deg,#5aa0ff,#3a86ff 60%,#2f6fd6);border:7px solid #fff;
+  box-shadow:0 10px 0 #1b3f86,0 0 40px #0008;font:46px/1.15 'Lilita One',sans-serif;text-shadow:0 3px 0 #0004;
+}
+#talkScene .talkCard.main{background:linear-gradient(180deg,#ffe066,#ffbe0b 60%,#f4a300);color:#3a2500;text-shadow:0 2px 0 #fff6;box-shadow:0 10px 0 #a35f00,0 0 40px #0008}
+#talkScene .talkCard::before{ /* speech tail pointing up at the giver */
+  content:'';position:absolute;left:50%;top:-34px;margin-left:-22px;border:22px solid transparent;border-bottom:26px solid #fff;border-top:0;
+}
+#talkScene .talkCard>*{animation:talkIn .35s ease-out both}
+#talkScene .talkName{position:absolute;left:-26px;top:-48px;gap:10px;font-size:28px;padding:4px 20px 4px 4px;border-radius:999px;
+  background:#222;color:#fff;border:5px solid #fff;box-shadow:0 5px 0 #0005;text-shadow:none;opacity:1;animation:none}
+#talkScene .talkName i{font-size:56px;width:82px;height:82px;line-height:82px;border:5px solid #fff;margin:-22px 0 -22px -14px;
+  background:radial-gradient(circle at 40% 35%,#fff,#e8f1ff);box-shadow:0 5px 0 #0004}
+#talkScene .talkCard.main .talkName i{background:radial-gradient(circle at 40% 35%,#fff,#fff1c2)}
+#talkScene .talkText{padding:20px 6px 0;max-width:72vw}
+#talkScene .talkGoal{gap:26px;padding:26px 0 4px}
+#talkScene .talkGoal b{display:inline-flex;align-items:center;justify-content:center;width:170px;height:170px;font-size:120px;border-radius:50%;
+  background:radial-gradient(circle at 40% 35%,#fff,#eef3ff);border:7px solid #fff;box-shadow:0 8px 0 #0004,0 0 0 6px #ffffff55;animation:talkGoalIcon 1s ease-in-out infinite}
+#talkScene .talkGoal span{font-size:96px;color:#fff;-webkit-text-stroke:3px #222;text-shadow:0 6px 0 #0005}
+#talkScene .talkGoal em{font-size:90px;width:120px;height:120px;line-height:120px;border-radius:50%;background:#06d6a0;color:#fff;border:6px solid #fff;
+  box-shadow:0 6px 0 #036b50;text-shadow:0 3px 0 #0004}
+#talkScene .talkNext{position:absolute;right:-22px;bottom:-26px;font-size:40px;gap:10px;color:#fff;text-shadow:0 3px 0 #0006;-webkit-text-stroke:1px #222}
+#talkScene .talkCard.goal .talkNext{padding:6px 22px 6px 6px;border-radius:999px;background:#06d6a0;border:5px solid #fff;box-shadow:0 6px 0 #036b50;-webkit-text-stroke:0}
+.btnA{display:inline-block;width:62px;height:62px;border-radius:50%;font:38px/54px 'Lilita One',sans-serif;text-align:center;color:#fff;
+  background:radial-gradient(circle at 40% 35%,#5cf0c4,#06d6a0 65%,#04a77c);border:4px solid #fff;box-shadow:0 4px 0 #036b50;
+  text-shadow:0 2px 0 #0004;-webkit-text-stroke:0;animation:btnAPulse .7s ease-in-out infinite}
+/* the A bubble over a giver you can talk to */
+.talkA{position:absolute;transform:translate(-50%,-100%);display:flex;align-items:center;gap:8px;padding:6px 18px 6px 6px;border-radius:999px;
+  background:#fff;border:5px solid #222;box-shadow:0 6px 0 #0005,0 0 20px #06d6a088;pointer-events:none;animation:talkABob .9s ease-in-out infinite}
+.talkA::after{content:'';position:absolute;left:50%;bottom:-22px;margin-left:-12px;border:12px solid transparent;border-top:16px solid #222}
+.talkA i{font-style:normal;font-size:44px;line-height:1}
+
+/* D25: mini-map (L47): round, thick white border like the HUD, top-right under the ⏸ buttons (clear of the size HUD,
+   #questHud and the smash meter); the quest edge arrow's blue side-quest look */
+#miniMap{right:14px;top:70px;width:clamp(150px,13vw,220px);height:clamp(150px,13vw,220px);border:6px solid #fff;
+  box-shadow:0 6px 0 #0003,inset 0 0 0 3px #0003,0 0 0 3px #0002;background:#24452a}
+#questArrow.side{background:radial-gradient(circle at 40% 35%,#cfe1ff,#3a86ff 70%);box-shadow:0 0 0 4px #3a86ff66,0 0 28px #3a86ff}
+
+/* QA13: LEVEL UP sits low in the middle (above #newWorld / the boss stars), not over the play area */
+#levelUp{position:fixed;left:50%;top:auto;bottom:clamp(96px,11vh,130px);font-size:clamp(24px,3vw,40px);padding:10px 30px 12px;z-index:20}
+#talkScene.on~#miniMap{visibility:hidden} /* the talk scene's letterbox covers that corner anyway */
+
+/* D22: portal swirl (L33, #portalFx; --pc / --pc2 = the land's colors) and the start-screen land buttons (#worldPick .wp.land) */
+@keyframes portalSpin{from{transform:rotate(0) scale(1)}to{transform:rotate(360deg) scale(1.15)}}
+@keyframes portalSuck{0%{transform:scale(1.6) rotate(0)}100%{transform:scale(.9) rotate(-200deg)}}
+#portalFx{position:fixed;inset:-60%;pointer-events:none;opacity:0;z-index:40;transition:opacity .6s ease;
+  background:
+    radial-gradient(circle,#ffffff 0 3%,#ffffffcc 6%,transparent 16%),
+    repeating-conic-gradient(from 0deg,var(--pc,#c77dff) 0 12deg,var(--pc2,#ffffff) 12deg 18deg,color-mix(in srgb,var(--pc,#c77dff) 70%,#000) 18deg 30deg);
+  animation:portalSpin 1.1s linear infinite}
+#portalFx::after{content:'';position:absolute;inset:0;border-radius:50%;
+  background:repeating-radial-gradient(circle,transparent 0 5%,#ffffff33 5% 6.5%),radial-gradient(circle,transparent 30%,#0007 70%);
+  animation:portalSuck 1.1s ease-in infinite}
+#portalFx.on{opacity:1}
+#worldPick .wp.land{position:relative;background:linear-gradient(160deg,#ffd6ff 0%,#c77dff 55%,#7b2cbf 100%)}
+#worldPick .wp.land[data-w="dino"]{background:linear-gradient(160deg,#d8f3a0 0%,#57cc99 50%,#ff9f1c 100%)}
+#worldPick .wp.land[data-w="candy"]{background:linear-gradient(160deg,#ffe5f1 0%,#ff70a6 50%,#c77dff 100%)}
+#worldPick .wp.land::after{ /* a little swirl badge: "you got here through a portal" */
+  content:'🌀';position:absolute;right:-10px;top:-10px;width:44px;height:44px;border-radius:50%;font-size:30px;line-height:40px;
+  background:#fff;border:3px solid #fff;box-shadow:0 4px 0 #0003;animation:portalSpin 3s linear infinite}

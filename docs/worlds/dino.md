@@ -164,3 +164,6 @@ Scenery the layouts should build (no quest `stage` scenes, like Q1b): Gertie's n
 - **Cars-ui (D22):** `buildCarPart` for `stomp` (if it shows: dusty feet?), `dinotail`, `eggshell`.
 - **Animals (A5):** `babyrex` (Mo). `trike` and `bronto` exist.
 - **Audio (AU14):** cast 10 givers (Gertie, Rocky, Mo, Theo, Petra, Rolly, Digby, Mossy, Rosa, Cinder) after Q2 writes the lines; `stomp` sound; `roar` engine clip.
+
+## Built (Z5b, zone-dino)
+The places are in `src/world/zones/dino_land.js`: `DINO_LAND_PLAN` (the map), `DINO_QUEST_AT` (every quest's giver, stage and point lists, read with `worldQuestAt`), and the scenery each quest needs. Differences from the proposal above: **Nest Hills is part of the jungle** (`dino`, grassy `dino_hill` patches just north of Pebble Village), not a `dino_nest` zone, and Digby's tar pit is a tar seep inside the dig (the swamp is on the other side of the map). `goal` lists are `[x,z,r]`.

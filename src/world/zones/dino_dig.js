@@ -150,8 +150,9 @@ registerZone({
     dino_spoil:{micro:['dino_tooth'],mini:['dino_pick'],tiny:['dino_crate'],small:['dino_barrow']}
   },
   spotLook:{dino_pit:'#c08a4e',dino_camp:'#e7cf9b',dino_spoil:'#b58a5a'},
-  herds:[['trike',3],['stego',2]],
+  herds:[['trike',3],['stego',2],['babyrex',3]],
   layout(ctx){
+    if(typeof dinoLand==='function'&&dinoLand(ctx))return; // Adventure Dino Land: quest areas are built from dino_land.js
     const kind=dinoMarks('dino_dig','museum',['office','find','camp','wall','find','camp','office']).get(ctx.ci+','+ctx.cj);
     if(kind==='museum'){const p=dinoDrop(ctx,'dino_museum',0);
       if(p){dinoRing(ctx,p.x,p.z,DINO_R.dino_museum+3,8,'dino_crate');dinoRing(ctx,p.x,p.z,DINO_R.dino_museum+7,6,'dino_fossilrock',.5);}

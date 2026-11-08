@@ -108,7 +108,7 @@ function smash(o,vx,vz,power){
   if(!hasAbility('hammer')){wakeObj(o);o.wob=1;return;} // L36 Adventure: nothing breaks before the Bonk Hammer
   if(o.bld){collapse(o,0,vx,vz,power,true);return;}
   o.alive=false;wakeObj(o);if(isBreakout(o))breakOut(o);
-  if(o.rec){o.rec.dead=true;o.rec.back=T+rand(REGROW[0],REGROW[1]);}
+  if(o.rec){o.rec.dead=true;recSmashed(o.rec);}
   const dl=Math.hypot(vx,vz)||1,nx=vx/dl,nz=vz/dl;
   for(const part of o.parts)breakPart(o,part,nx,nz,power);
   scene.remove(o.g);
@@ -162,7 +162,7 @@ function initBld(o){
 function killBld(o){ // the building is done for: score what's left, remember it, regrow later
   comboHit(3);
   o.alive=false;wakeObj(o);if(isBreakout(o))breakOut(o);
-  if(o.rec){o.rec.dead=true;o.rec.gone=[];o.rec.back=T+rand(REGROW[0],REGROW[1]);}
+  if(o.rec){o.rec.dead=true;o.rec.gone=[];recSmashed(o.rec);}
   const rest=Math.max(0,1-o.paid);smashCount++;addScore(o.points*rest);grow((GROW_VAL[o.sz]||0)*rest);
 }
 function damageBuilding(o,x,z,rad,max,y0,y1,nx,nz,power){
@@ -387,7 +387,7 @@ const dispScale=()=>S*(1+0.3*popT*Math.sin(popT*22));
 function showBig(txt){const el=$('big');el.textContent=txt;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}
 function sizeUp(){
   camKick=0.4;sfx.turbo(); // the camera whooshes back a little past the new size, then settles
-  lodPrune();showBig('LEVEL UP!');greenT=4;scatterRain(Math.round(scatN()*0.4));sfxClip('levelup',1)||sfx.fanfare();say('LEVEL UP!');shake=Math.min(2,shake+1.2);popT=1.2;
+  lodPrune();showBig('LEVEL UP!');greenT=4;sfxClip('levelup',1)||sfx.fanfare();say('LEVEL UP!');shake=Math.min(2,shake+1.2);popT=1.2;
   for(const p of players){puff(p.x,S,p.z,12,1.2*Math.max(S,.3),'#ffd60a');flash(p.x,S,p.z,'#ffd60a',3*Math.max(S,.3),0.5);}}
 // the big glowing LEVEL UP button (also Y on a controller, Q or / on the keyboard)
 const LVBTN_HTML='⬆️ LEVEL UP!<small>press X or Y</small>',lvBtn=document.createElement('button');lvBtn.id='levelUp';lvBtn.innerHTML=LVBTN_HTML;
@@ -410,7 +410,7 @@ function rollWorld(keepSize,kind,opt={}){ // kind: 'bedroom' | 'outside' | 'home
   if(boss)bossUnmerge(boss.o);boss=null;updateBossHud();bossArrows.forEach(s=>s.visible=false);
   for(const c of chunks.values())if(c.loaded)unloadChunk(c);
   for(const c of chunks.values())for(const r of c.rampList)r.mesh.geometry.dispose();
-  chunks.clear();for(const o of objects){poolRelease(o);scene.remove(o.g);}objects=[];queue.length=0;
+  chunks.clear();fillReset();for(const o of objects){poolRelease(o);scene.remove(o.g);}objects=[];queue.length=0;
   for(const o of collapsing)scene.remove(o.g);collapsing.length=0;
   for(const a of animals)animalHide(a);animals.length=0;animalAway.length=0;
   for(const d of debris)if(!d.confetti){scene.remove(d.m);d.life=0;}
@@ -503,8 +503,9 @@ function objectsCompact(){let j=0;
    keeps what you smashed. Only chunks near the players are built. Built objects "sleep" in the shared instanced
    pools (one draw call per shape for the whole world) and wake into real meshes only when something happens to
    them (smashed, hit, wobbling, rolling), then fall asleep again once the cars are far away.
-   Smashed records regrow after REGROW seconds (dropping from the sky if the chunk is loaded). */
-const REGROW=[90,160];
+   L51: smashed stays smashed until the world restocks (garage exit, NEW WORLD, portals): no regrowing. Records
+   pushed aside for a while (quest stages, cleared find spots) still come back when their `back` time comes. */
+function recSmashed(rec){rec.dead=true;rec.back=Infinity;rec.smashed=true;}
 const wakeR=()=>3+7*S; // woken things (hit, wobbling) go back to sleep once the cars are this far away (minus their radius)
 const chunks=new Map();
 const chunkKey=(ci,cj)=>ci+','+cj;
@@ -790,7 +791,7 @@ function loadChunk(c){
      thousand extra triangles, which is far cheaper than the draw calls. */
   for(const rec of c.recs){
     if(rec.dead){if(T<rec.back)continue;rec.dead=false;}
-    if(lodSkip(rec))continue;
+    if(rec.fill||lodSkip(rec))continue; // L51: filler is built by updateScatter, only near the cars
     const o=buildRec(rec);scene.remove(o.g);if(lodSkip(rec)){o.alive=false;if(objects[objects.length-1]===o)objects.pop();continue;} // L43: first build told us it's too small: not kept
     if(rec.gold&&!o.bld)goldify(o,60);
     if(!o.spin&&!o.gold)poolAdopt(o);
@@ -827,6 +828,7 @@ function updateStreaming(dt,all){
   if((regrowT-=dt)>0)return;regrowT=1;let n=0;
   for(const c of chunks.values()){if(!c.loaded)continue;
     for(const rec of c.recs){if(!rec.dead||T<rec.back||lodSkip(rec))continue;
+      if(rec.fill){rec.dead=false;continue;} // L51: updateScatter builds filler
       if(players.some(p=>Math.hypot(p.x-rec.x,p.z-rec.z)<14))continue;
       if(objects.some(o=>o.alive&&Math.hypot(o.x-rec.x,o.z-rec.z)<o.r+rec.r))continue;
       rec.dead=false;const o=buildRec(rec);dropIn(o,rand(28,50));
@@ -849,7 +851,6 @@ function spreadOf(pts){let m=0;for(const a of pts)for(const b of pts)m=Math.max(
 function mega(){
   const txt=pick(['MEGA SMASH!','SUPER SMASH!','KABOOM!','AWESOME!','SMASHTASTIC!']);
   showBig(txt);sfx.fanfare();say(txt);confetti(170);
-  scatterRain(22);
 }
 function confetti(n){
   const cols=['#ff006e','#ffbe0b','#3a86ff','#06d6a0','#8338ec','#fb5607','#ffffff'],w=Math.max(0.06,camDist/40); // sized to the view, not the world
@@ -918,7 +919,7 @@ class Player{
     else if(inp.boost)target=st.speed*sm*1.65;
     if(sugarRush(this,dt,inp))target*=SUGAR_K; // L42: held turbo turns into a sugar rush
     const boosting=inp.boost&&this.speed>5;
-    if(inp.boost&&!this.wasBoost){sfx.turbo();if(kazooOn())kazooToot(this,0.75);}this.wasBoost=inp.boost;
+    if(inp.boost&&!this.wasBoost){sfx.turbo();const en=cosEngine();if(en==='kazoo')kazooToot(this,0.75);else if(en)engineToot(en);}this.wasBoost=inp.boost;
     if(kazooOn()&&Math.abs(this.speed)>8*this.sm&&(this.kazooT-=dt)<=0)kazooToot(this,0.45); // 🎺 a toot now and then while driving
     if(!this.air){const a=(target>this.speed?30:18)*sm*(0.85+0.05*this.handling);this.speed+=clamp(target-this.speed,-a*dt,a*dt);}
     const fx=Math.sin(this.heading),fz=Math.cos(this.heading);
@@ -967,7 +968,7 @@ class Player{
         const n=performance.now();if(n-lastStuckSay>10000){lastStuckSay=n;say('Stuck? Press jump to go BOOM!');}}}
     else if(Math.hypot(this.x-this.stuck[0],this.z-this.stuck[1])>this.r*4+0.5||T-this.lastBump>2.5)this.stuck=false;
     this.ensureEngine();
-    if(this.eng){const t=AC.currentTime,kz=questOn&&questCos.has('kazoo');if(this.eng.o.type!==(kz?'square':'sawtooth'))this.eng.o.type=kz?'square':'sawtooth'; // 🎺 kazoo engine
+    if(this.eng){const t=AC.currentTime,kz=kazooOn();if(this.eng.o.type!==(kz?'square':'sawtooth'))this.eng.o.type=kz?'square':'sawtooth'; // 🎺 kazoo engine
       this.eng.o.frequency.setTargetAtTime((kz?2.4+0.2*Math.sin(T*28):1)*(42+Math.abs(this.speed)/sm*3.2+(boosting?25:0))/Math.sqrt(Math.max(S,0.3)),t,0.06);this.eng.g.gain.setTargetAtTime(0.025+Math.min(1,Math.abs(this.speed)/30)*0.03,t,0.1);}
   }
 }
@@ -1004,7 +1005,7 @@ function boomOut(p){const R=p.r*3+2*S;
   if(!hasAbility('hammer')){puff(p.x,S,p.z,10,R*0.4,'#ffffff');for(const o of objects)if(o.alive&&Math.hypot(o.x-p.x,o.z-p.z)<R+o.r){wakeObj(o);o.wob=1;}return;} // before the hammer: just a big hop
   flash(p.x,S,p.z,'#ffd166',R,0.4);flash(p.x,S,p.z,'#ff5400',R*0.7,0.5);puff(p.x,S,p.z,10,R*0.5,'#888888');
   for(const o of objects){if(!o.alive||o.boss)continue;const dx=o.x-p.x,dz=o.z-p.z;if(Math.hypot(dx,dz)>R+o.r)continue;
-    o.alive=false;wakeObj(o);if(o.rec){o.rec.dead=true;o.rec.gone=[];o.rec.back=T+rand(REGROW[0],REGROW[1]);}
+    o.alive=false;wakeObj(o);if(o.rec){o.rec.dead=true;o.rec.gone=[];recSmashed(o.rec);}
     for(const part of o.parts)breakPart(o,part,dx,dz,20);scene.remove(o.g);}
   for(const a of animals){const dx=a.x-p.x,dz=a.z-p.z;if(Math.hypot(dx,dz)<R+a.r)launchAnimal(a,dx||1,dz,15);}}
 function addPlayer(src){
@@ -1111,7 +1112,10 @@ $('play').onclick=e=>{e.stopPropagation();startGame();};
      (about 3 car lengths across, up to ~1.6× after a high jump or a hover), by the usual size rules.
    - sugarrush (L42, 🍭 Candy Land): hold turbo ~1 s: rainbow glow, ~1.5× turbo speed, a trail of bouncing sweets,
      farther ramp jumps. Let go and it fizzles out. Land abilities stay off in Adventure until a quest hands them out.
-   Cosmetics (Adventure rewards only): hat, crown (parts on the roof), bubbles / sprinkles / confetti (trails), kazoo (engine).
+   Cosmetics (Adventure rewards only): hats on the roof (hat, crown; L44 lands: eggshell, cherry, bandhat), the dino tail
+   (dinotail, wags on the back), trails (bubbles, sprinkles, confetti; L44: footprints, gumballs, rainbow) and engines
+   (kazoo; L44: roar, siren, burp: a clip on each turbo start). One hat, one engine and up to two trails show at a time:
+   the newest earned wins (questCos keeps the order they were earned in).
    Each new ability: a ceremony (the car spins up, the part pops on) and a pulsing button glyph with a picture until first use.
    Design hook (D19): `function buildCarPart(id){…}` in cars.js returns a THREE.Group at car scale 1 for 'hammer', 'shoot',
    'hover', 'glide', 'dozer', 'hat', 'crown', and (L42, D22) 'stomp' (optional, e.g. dusty feet; origin at the car's ground
@@ -1120,9 +1124,17 @@ $('play').onclick=e=>{e.stopPropagation();startGame();};
    at z=0; logic moves it to the car's nose) have their origin at the car's ground center. Placeholders until then. */
 const ABIL_ICON={hammer:'🔨',shoot:'🥚',hover:'🛸',glide:'🪁',dozer:'🚜',stomp:'👣',sugarrush:'🍭'};
 const ABIL_BTN={shoot:'X',hover:'B',glide:'B',stomp:'B',sugarrush:'A'}; // the button you press (shown as a colored pad button, not a word)
-const COS_ICON={hat:'🎉',crown:'👑',bubbles:'🫧',sprinkles:'🍭',confetti:'🎊',kazoo:'🎺'};
-const COS_TRAIL={bubbles:['#cdf7ff','#9bf6ff'],sprinkles:['#ff006e','#ffbe0b','#3a86ff','#06d6a0','#ffffff'],confetti:['#ff595e','#ffca3a','#8ac926','#1982c4','#6a4c93']};
-const ROOF_PARTS=['hammer','shoot','hat','crown'];
+const COS_ICON={hat:'🎉',crown:'👑',bubbles:'🫧',sprinkles:'🍭',confetti:'🎊',kazoo:'🎺',
+  dinotail:'🦕',footprints:'🐾',eggshell:'🥚',roar:'🦖',cherry:'🍒',gumballs:'🔵',bandhat:'💂',siren:'🚨',burp:'🫧',rainbow:'🌈'};
+const COS_TRAIL={bubbles:['#cdf7ff','#9bf6ff'],sprinkles:['#ff006e','#ffbe0b','#3a86ff','#06d6a0','#ffffff'],confetti:['#ff595e','#ffca3a','#8ac926','#1982c4','#6a4c93'],
+  footprints:['#6b4f2a'],gumballs:['#ff006e','#3a86ff','#ffbe0b','#06d6a0','#ffffff','#9b5de5'],rainbow:['#ff595e','#ff924c','#ffca3a','#8ac926','#1982c4','#6a4c93']};
+const COS_HAT=['hat','crown','eggshell','cherry','bandhat'];
+// engine cosmetics (L44): the clip played on each turbo start; kazoo also toots now and then and hums a square-wave engine
+const COS_ENGINE={kazoo:'kazoo_honk',roar:'dino_roar',siren:'siren_woo',burp:'burp_horn'};
+const ROOF_PARTS=['hammer','shoot',...COS_HAT];
+// the newest earned of a kind (Sets keep insertion order)
+function cosNewest(list,n=1){if(!questOn)return [];return [...questCos].filter(id=>list.includes(id)).slice(-n);}
+const cosHat=()=>cosNewest(COS_HAT)[0],cosEngine=()=>cosNewest(Object.keys(COS_ENGINE))[0],cosTrails=()=>cosNewest(Object.keys(COS_TRAIL),2);
 let gameMode='adventure';try{gameMode=localStorage.getItem('sp_mode')||'adventure';}catch(e){}
 if(/[?&]arcade\b/.test(location.search))gameMode='arcade';if(questOn)gameMode='adventure';
 const abilUsed=new Set();let eggShots=0;
@@ -1150,6 +1162,12 @@ function carPartLook(id){
   if(id==='hammer'){const h=new THREE.Group();h.add(mk('box',0.22,1.3,0.22,'#8d5524',0,0.65,0),mk('box',0.9,0.5,0.5,'#adb5bd',0,1.35,0));h.rotation.x=-0.5;h.position.set(0.55,0,-0.6);h.userData.swing=true;g.add(h);}
   else if(id==='shoot'){const n=mk('cyl',0.5,0.9,0.5,'#ffffff',0,0.35,0.6);n.rotation.x=Math.PI/2.4;g.add(n,mk('sph',0.42,0.55,0.42,'#fff3e0',-0.6,0.28,-0.4));}
   else if(id==='hat'){g.add(mk('cone',0.9,1.2,0.9,'#ff006e',0,0.6,0),mk('sph',0.3,0.3,0.3,'#ffd60a',0,1.25,0));}
+  else if(id==='eggshell'){g.add(mk('sph',1.0,0.55,1.0,'#fff8e7',0,0.2,0));for(let i=0;i<6;i++){const a=i/6*Math.PI*2;g.add(mk('cone',0.28,0.4,0.28,'#fff8e7',Math.sin(a)*0.38,0.6,Math.cos(a)*0.38));}}
+  else if(id==='cherry'){g.add(mk('sph',0.8,0.8,0.8,'#d00000',0,0.4,0),mk('cyl',0.08,0.7,0.08,'#2d6a4f',0.1,1.05,0),mk('box',0.35,0.08,0.18,'#52b788',0.3,1.3,0));}
+  else if(id==='bandhat'){g.add(mk('cyl',0.8,1.3,0.8,'#d00000',0,0.65,0),mk('cyl',0.85,0.12,0.85,'#ffd60a',0,0.08,0),mk('sph',0.3,0.45,0.3,'#ffffff',0,1.45,0));}
+  else if(id==='dinotail'){const t=new THREE.Group();t.userData.wag=true;
+    const a=mk('cone',0.7,1.6,0.7,'#52b788',0,0,-0.8),b=mk('cone',0.35,0.9,0.35,'#40916c',0,0,-1.9);a.rotation.x=b.rotation.x=-Math.PI/2;t.add(a,b);
+    for(let i=0;i<3;i++)t.add(mk('cone',0.25,0.35,0.25,'#ffbe0b',0,0.3-i*0.06,-0.5-i*0.5));t.position.y=0.8;g.add(t);}
   else if(id==='crown'){g.add(mk('cyl',1.1,0.45,1.1,'#ffd60a',0,0.22,0));for(let i=0;i<5;i++){const a=i/5*Math.PI*2;g.add(mk('cone',0.25,0.45,0.25,'#ffd60a',Math.sin(a)*0.45,0.6,Math.cos(a)*0.45));}}
   else if(id==='hover'){const r=new THREE.Mesh(new THREE.TorusGeometry(1.8,0.2,6,28),new THREE.MeshBasicMaterial({color:'#9bf6ff',transparent:true,opacity:0.8}));r.rotation.x=Math.PI/2;r.position.y=0.2;g.add(r);}
   else if(id==='glide'){for(const s of [-1,1]){const w=mk('box',2.6,0.12,1.2,'#ffffff',s*2.4,1.3,-0.2);w.rotation.z=s*0.15;g.add(w);}}
@@ -1159,10 +1177,11 @@ function carPartLook(id){
   return g;}
 function carParts(p){
   if(p.parts){p.root.remove(p.parts);}p.parts=new THREE.Group();p.partMap={};p.root.add(p.parts);if(!questOn)return; // Arcade cars look as they always did
-  const ids=[...questAbil,...questCos].filter(id=>!COS_TRAIL[id]&&id!=='kazoo');
+  const hat=cosHat(),ids=[...questAbil,...questCos].filter(id=>!COS_TRAIL[id]&&!COS_ENGINE[id]&&(!COS_HAT.includes(id)||id===hat));
   for(const id of ids){const g=carPartLook(id);
-    if(ROOF_PARTS.includes(id))g.position.set(id==='crown'?-0.3:0,p.model.h,id==='hat'||id==='crown'?-0.2:0);
+    if(ROOF_PARTS.includes(id))g.position.set(0,p.model.h,COS_HAT.includes(id)?-0.2:0);
     if(id==='dozer')g.position.z=p.stats.r*1.05;
+    if(id==='dinotail')g.position.z=-p.stats.r*0.95; // origin at the car's ground center → its back bumper
     if(id==='hover'||id==='glide'||id==='sugarrush')g.visible=false; // only while hovering / gliding / rushing
     p.parts.add(g);p.partMap[id]=g;}}
 // held-B in the air: hover first (fuel), then glide
@@ -1219,9 +1238,17 @@ function sugarRush(p,dt,inp){
 function updateCarExtras(dt){
   for(const p of players){
     if(p.bonkT>0){p.bonkT-=dt;const h=p.partMap&&p.partMap.hammer;if(h)h.traverse(m=>{if(m.userData.swing)m.rotation.x=-0.5+Math.sin((1-p.bonkT/0.3)*Math.PI)*1.6;});}
+    const tl=p.partMap&&p.partMap.dinotail;if(tl){const sp=Math.min(1,Math.abs(p.speed)/(p.stats.speed*p.sm));tl.traverse(m=>{if(m.userData.wag)m.rotation.y=Math.sin(T*(4+8*sp))*(0.25+0.35*sp);});}
     if(!questOn||Math.abs(p.speed)<p.stats.speed*p.sm*0.3||(p.trailK=(p.trailK||0)-dt)>0)continue;p.trailK=0.05;
-    for(const id of questCos){const cols=COS_TRAIL[id];if(!cols)continue;const k=Math.max(S,0.12),bx=p.x-Math.sin(p.heading)*p.r,bz=p.z-Math.cos(p.heading)*p.r;
+    for(const id of cosTrails()){const cols=COS_TRAIL[id];const k=Math.max(S,0.12),bx=p.x-Math.sin(p.heading)*p.r,bz=p.z-Math.cos(p.heading)*p.r;
       if(id==='bubbles'){const m=mk('sph',0.5*k,0.5*k,0.5*k,null,bx,p.y+0.6*k,bz,BUBBLE_MAT);m.castShadow=false;addPart(m,1.2,rand(-1,1)*k,2*k,rand(-1,1)*k);}
+      else if(id==='footprints'){if(p.air||(p.stepT=(p.stepT||0)+1)%3)continue; // a 3-toed print, left / right in turn, flat on the ground
+        const side=(p.stepN=(p.stepN||0)+1)%2?1:-1,c=Math.cos(p.heading),s=Math.sin(p.heading),fx=bx+c*side*0.5*p.r,fz=bz-s*side*0.5*p.r,g=groundH(fx,fz)+0.03*k;
+        for(const [ox,oz,w] of [[0,0,1],[-0.42,0.63,0.35],[0,0.77,0.35],[0.42,0.63,0.35]]){const m=mk('box',w*k,0.04*k,(w===1?0.85:0.5)*k,null,fx+(ox*c+oz*s)*k,g,fz+(oz*c-ox*s)*k,E(cols[0]));
+          m.rotation.y=p.heading;m.castShadow=false;addPart(m,2.5);}}
+      else if(id==='gumballs'){const m=mk('sph',0.45*k,0.45*k,0.45*k,null,bx+rand(-0.4,0.4)*k,p.y+0.4*k,bz,E(pick(cols)));m.castShadow=false;addPart(m,1,rand(-2.5,2.5)*k,rand(3,5)*k,rand(-2.5,2.5)*k);}
+      else if(id==='rainbow'){const c=Math.cos(p.heading),s=Math.sin(p.heading); // a stripe of every color across the back, fading out
+        cols.forEach((col,i)=>{const o=(i-2.5)*0.28*k,m=mk('box',0.28*k,0.06*k,0.5*k,null,bx+c*o,p.y+0.15*k,bz-s*o,E(col));m.rotation.y=p.heading;m.castShadow=false;addPart(m,0.8,0,0.4*k,0);});}
       else{const m=mk('box',0.25*k,0.08*k,0.25*k,null,bx+rand(-0.4,0.4)*k,p.y+0.5*k,bz,E(pick(cols)));m.castShadow=false;addPart(m,0.9,rand(-2,2)*k,rand(2,4)*k,rand(-2,2)*k);}}}}
 // pulsing glyphs for abilities you haven't tried yet: the button (a colored pad button) and a picture of what it does
 const abilHud=document.createElement('div');abilHud.id='abilGlyphs';$('hud').appendChild(abilHud);
@@ -1398,7 +1425,14 @@ function collisions(){
 let hammerBonkT=0;
 function hammerBonk(p){if(!(p.partMap&&p.partMap.hammer))return;const n=performance.now();if(n-hammerBonkT<140)return;hammerBonkT=n;
   sfxClip('hammer_bonk',0.6,rand(0.92,1.1));}
-const kazooOn=()=>questOn&&questCos.has('kazoo');
+const kazooOn=()=>questOn&&cosEngine()==='kazoo';
+// L44 engine cosmetics: 🦖 roar, 🚨 siren, 🫧 burp play their clip on turbo start (synth stand-ins until AU14 makes them)
+let engineTootT=0;
+function engineToot(id){const n=performance.now();if(n-engineTootT<400)return;engineTootT=n;
+  if(sfxClip(COS_ENGINE[id],0.8,rand(0.92,1.08)))return;
+  if(id==='roar'){tone('sawtooth',160,70,0.6,0.12);noise(0.5,900,1,0.1,'lowpass');}
+  else if(id==='siren'){tone('square',700,1100,0.25,0.06);tone('square',1100,700,0.25,0.06,0.26);}
+  else if(id==='burp'){tone('sawtooth',110,60,0.45,0.14);noise(0.35,600,1,0.08,'lowpass');}}
 function kazooToot(p,vol){p.kazooT=rand(7,12);sfxClip('kazoo_honk',vol,rand(0.9,1.12));}
 // too big to smash (yet): wobble it and boing the car back. Never a fail, just "grow more!"
 function bump(p,o,dx,dz,rr,spd){
@@ -1411,7 +1445,7 @@ function bump(p,o,dx,dz,rr,spd){
 // way smaller than you (3+ sizes): squish it flat as you roll over. No growth, no slowdown, just a tiny pop.
 const squished=[];let lastSquish=0;
 function squish(o){
-  o.alive=false;o.wob=0;wakeObj(o);if(o.rec){o.rec.dead=true;o.rec.back=T+rand(REGROW[0],REGROW[1]);}
+  o.alive=false;o.wob=0;wakeObj(o);if(o.rec){o.rec.dead=true;recSmashed(o.rec);}
   squished.push({o,t:0.25});const n=performance.now();if(n-lastSquish>70){lastSquish=n;tone('sine',rand(700,1000),250,0.08,0.06);}}
 function updateSquish(dt){for(let i=squished.length-1;i>=0;i--){const q=squished[i];q.t-=dt;const f=q.o.s0||1;
   q.o.g.scale.set(f*1.3,f*Math.max(0.04,q.t/0.25),f*1.3);if(q.t<=-0.6){scene.remove(q.o.g);squished.splice(i,1);}}}
@@ -1449,21 +1483,19 @@ function setupSpin(o){
 function updateSpin(dt){for(const o of objects){if(!o.spin||!o.alive)continue;for(const m of o.spin){const s=m.userData.spin;if(m.parent)m.rotation[s.axis||'z']+=(s.speed||1)*dt;}}}
 
 /* ---------- size-matched scatter ---------- */
-/* Keeps the area around the cars stocked with props near your size: mostly your size, some a size or two
-   bigger (red-ringed goals), a few smaller, and nothing 3+ sizes below. Spawns just off screen as you drive,
-   rains in after a size-up, and quietly drops props left far behind. Landmarks from zone layouts stay put.
+/* Stocks the area around the cars with props near your size: mostly your size, some a size or two
+   bigger (red-ringed goals), a few smaller, and nothing 3+ sizes below. Dealt once per spot and size (L51, below). Landmarks from zone layouts stay put.
    Design fills `const ZONE_PROPS={town:{mini:['flower',…],tiny:[…],…},farm:{…},park:{…}}` in objects.js;
    until then today's props are shrunk or grown to the size needed. */
 const SCAT_N=IS_PHONE?50:90,SCAT_CALM=[.4,.4,.4,.4,.6,.6,.6,.6,.6]; // L31: scenes replace most of the random filler
 const SCAT_PLANNED=0.15; // in planned chunks (layout placed scenes/lots or set ctx.planned) random filler is just a top-up
-let plannedShare=0;      // share of the chunks around the cars that are planned (updated by updateScatter)
-const scatN=()=>Math.round(SCAT_N*((1-plannedShare)*SCAT_CALM[giant?8:tier]+plannedShare*SCAT_PLANNED)),SCAT_MIX=[[0,.6],[-1,.2],[1,.12],[-2,.05],[2,.03]]; // mostly your size; bigger things are rarer
+const SCAT_MIX=[[0,.6],[-1,.2],[1,.12],[-2,.05],[2,.03]]; // mostly your size; bigger things are rarer
 const DEFAULT_PROPS={town:['crates','cone','barrel','house','tower','pin'],farm:['melon','fence','crates','tree','barrel','snowman'],
   park:['tree','snowman','pin','cone','tower','melon'],bedroom:['crates','pin','tower','melon','barrel','snowman'],home:['crates','cone','barrel','tower','pin','melon','snowman','tree']};
-const scatR=()=>Math.max(3,Math.min(camBase(S)*1.5,47.5*Math.pow(S,0.75))); // about the visible radius at this size (the base camera, not the two-player zoom); same as before from size ~0.5 up
-function scatterSize(){
-  for(let t=0;t<10;t++){let r=Math.random();for(const [d,w] of SCAT_MIX){if((r-=w)<0){const k=tier+d;if(k>=0&&k<SIZES.length&&k>tier-3)return k;break;}}}
-  return tier;}
+const scatRAt=s=>Math.max(3,Math.min(camBase(s)*1.5,47.5*Math.pow(s,0.75))),scatR=()=>scatRAt(S); // about the visible radius at this size (the base camera, not the two-player zoom); same as before from size ~0.5 up
+function scatterSize(lv=tier){
+  for(let t=0;t<10;t++){let r=Math.random();for(const [d,w] of SCAT_MIX){if((r-=w)<0){const k=lv+d;if(k>=0&&k<SIZES.length&&k>lv-3)return k;break;}}}
+  return Math.min(lv,SIZES.length-1);}
 function scatterProp(zone,k){ // → [type, scale]
   const zp=(ZONES[zone]&&ZONES[zone].sizes&&ZONES[zone].sizes[SIZES[k]])||(typeof ZONE_PROPS!=='undefined'&&ZONE_PROPS[zone]&&ZONE_PROPS[zone][SIZES[k]]);
   if(zp&&zp.length)return [pick(zp),1];
@@ -1539,19 +1571,87 @@ function spawnScatter(p,fill){
     if(fill)dropIn(o,rand(6,16)*Math.max(S,0.4));else poolAdopt(o);
     return o;}
   return null;}
-let scatT=0;
+/* L51: fill once. The ground is cut into fill cells about one view wide (scatRAt of the size), a grid per size class.
+   The first time a car comes near a cell at the current size, the cell is dealt its filler once: maybe a filler scene,
+   then single props. They become chunk records (rec.fill, cell.recs), so smashed stays smashed and there's no filler
+   rain while you play. Only the ones near the cars are built (the rest wait as records), so `objects` stays flat.
+   Growing a size starts a new grid: a cell gets its one fill for that size (minus what's still standing there from
+   the sizes before), so there's always something your size to smash. The garage exit (worldRestock), NEW WORLD and
+   portals deal everything again. Gold props (spawnGold) are still one-off spawns (spawnScatter). */
+const FILL_SCENE=[0.5,0.18]; // chance per cell of a filler scene: unplanned, planned chunks
+const FILL_DENS=1/6.3;       // share of SCAT_N per cell: about N/2 props in view, like the old filler
+const fillDbg={want:0,have:0,busy:0,ok:0};let scatT=0,fillIdx=new Map(),fillBuilt=new Set();
+const fillLv=()=>giant?GROW_S.length-1:tier,fillG=lv=>scatRAt(GROW_S[lv]);
+function fillReset(){for(const r of fillBuilt)r.o=null;fillIdx=new Map();fillBuilt=new Set();}
+const fillNear=(x,z)=>{let d=1e9;for(const p of players)d=Math.min(d,Math.hypot(p.x-x,p.z-z));return d;};
+function fillBuild(rec,drop){const o=buildRec(rec);rec.o=o;fillBuilt.add(rec);
+  if(drop)dropIn(o,rand(6,16)*Math.max(S,0.4)); // in view: it falls in
+  else{scene.remove(o.g);poolAdopt(o);if(!o.pooled){o.inst=null;o.sleep=false;scene.add(o.g);}}}
+function fillOff(rec){const o=rec.o;rec.o=null;fillBuilt.delete(rec);if(o&&o.alive&&o.rec===rec){o.alive=false;poolRelease(o);scene.remove(o.g);}}
+// can a filler prop of radius r stand here? (live objects near the cars, this cell's own records, roads, ramps)
+function fillFree(x,z,r,k,cell){
+  if(Math.abs(x)>WB-r-2||Math.abs(z)>WB-r-2)return false;
+  if(groundH(x,z)>0||groundH(x+r,z)>0||groundH(x-r,z)>0||groundH(x,z+r)>0||groundH(x,z-r)>0)return false;
+  if(k>tier&&(onRoad(x,z,r)||(arenaOn()&&typeof startLane==='function'&&startLane(x,z))))return false; // L26
+  if(garageOn(x,z,r))return false; // L32
+  for(const e of cell.recs)if(Math.abs(e.x-x)<e.r+r+0.3&&Math.hypot(e.x-x,e.z-z)<e.r+r+0.3)return false;
+  for(const o of objects)if(o.alive&&Math.abs(o.x-x)<o.r+r+0.3&&Math.abs(o.z-z)<o.r+r+0.3&&Math.hypot(o.x-x,o.z-z)<o.r+r+0.3)return false;
+  if(players.some(q=>Math.hypot(q.x-x,q.z-z)<q.r+r+1))return false;
+  return true;}
+function fillCell(lv,i,j){
+  const key=lv+':'+i+':'+j;if(fillIdx.has(key))return false;
+  const G=fillG(lv),x0=i*G,z0=j*G,cx=x0+G/2,cz=z0+G/2;
+  if(Math.abs(cx)>WB+G/2||Math.abs(cz)>WB+G/2){fillIdx.set(key,null);return false;}
+  const home=chunks.get(chunkKey(chunkIdx(cx),chunkIdx(cz)));if(!home||!home.loaded)return false; // wait for its chunk
+  const cell={lv,recs:[]};fillIdx.set(key,cell);
+  const Rs=scatR(),inView=(x,z)=>fillNear(x,z)<Rs*0.95;
+  if(Math.random()<FILL_SCENE[home.planned?1:0])spawnScene(players[0],false,null,{x0,z0,G});
+  // what still stands here from the size before (at most one size smaller) counts toward it
+  let have=0;const lo=lv-2;
+  for(let l2=Math.max(0,lo);l2<lv;l2++){const g=fillG(l2);
+    for(let i2=Math.floor(x0/g);i2<=Math.floor((x0+G)/g);i2++)for(let j2=Math.floor(z0/g);j2<=Math.floor((z0+G)/g);j2++){const c2=fillIdx.get(l2+':'+i2+':'+j2);
+      if(c2)for(const e of c2.recs)if(!e.dead&&e.sz>=lv-1&&e.x>=x0&&e.x<x0+G&&e.z>=z0&&e.z<z0+G)have++;}}
+  const share=home.planned?SCAT_PLANNED:SCAT_CALM[Math.min(lv,SCAT_CALM.length-1)],want=SCAT_N*share*FILL_DENS;
+  let n=Math.floor(want)+(Math.random()<want%1?1:0)-have;fillDbg.want+=n;fillDbg.have+=have;
+  for(let t=0;n>0&&t<n*4+6;t++){
+    const k=scatterSize(lv),r=GROW_S[k]*2.5+0.1;let x=x0+rand(0,G),z=z0+rand(0,G),sp=null;
+    if(Math.random()>SPOT_LEFTOVER)for(let u=0;u<6&&!sp;u++){const tx=x0+rand(0,G),tz=z0+rand(0,G),q=spotAt(tx,tz);if(q){sp=q;x=tx;z=tz;}} // L19: mostly in spots
+    if(!fillFree(x,z,r,k,cell)){fillDbg.busy++;continue;}
+    const c=chunkOf(x,z);if(!c.loaded)continue;
+    const zn=zoneAt(chunkIdx(x),chunkIdx(z)),[type,f]=(sp&&spotProp(zn,sp.kind,k))||scatterProp(zn,k);if(!OBJ[type])continue;
+    const rec={type,x,z,arg:type==='fence'?rand(0,Math.PI):undefined,r,seed:(Math.random()*1e9)|0,dead:false,back:0,f,fill:key};
+    c.recs.push(rec);cell.recs.push(rec);n--;fillDbg.ok++;
+    fillBuild(rec,inView(x,z));if(rec.o)rec.r=Math.max(rec.r,rec.o.r);}
+  return true;}
 function updateScatter(dt){
   if(state!=='play'||!players.length||(scatT-=dt)>0)return;scatT=0.2;
-  const Rs=scatR();let n=0,pl=0,all=0;
-  for(const p of players)for(let ci=chunkIdx(p.x-Rs);ci<=chunkIdx(p.x+Rs);ci++)for(let cj=chunkIdx(p.z-Rs);cj<=chunkIdx(p.z+Rs);cj++){const c=chunks.get(chunkKey(ci,cj));if(c&&c.gen){all++;pl+=c.planned;}}
-  plannedShare=all?pl/all:0;
-  for(const o of objects){if(!o.scat||!o.alive)continue;let d=1e9;for(const p of players)d=Math.min(d,Math.hypot(o.x-p.x,o.z-p.z));
-    if(o.gold)continue;
-    if(d>Rs*1.8||(o.sz<=tier-3&&d>Rs)){o.alive=false;poolRelease(o);scene.remove(o.g);continue;}n++;}
-  const N=scatN(),fill=n<N*0.4; // nearly empty (game start, new world): rain props into view
-  for(let i=0;i<6&&n<N;i++,n++)spawnScatter(pick(players),fill);
+  const Rs=scatR(),L=fillLv(),G=fillG(L),far=Rs*1.9;
+  // 1. deal the cells near the cars that haven't had their fill at this size (a few per tick, nearest first)
+  const todo=[];
+  for(const p of players)for(let i=Math.floor((p.x-1.4*Rs)/G);i<=Math.floor((p.x+1.4*Rs)/G);i++)for(let j=Math.floor((p.z-1.4*Rs)/G);j<=Math.floor((p.z+1.4*Rs)/G);j++)
+    if(!fillIdx.has(L+':'+i+':'+j))todo.push([fillNear((i+0.5)*G,(j+0.5)*G),i,j]);
+  todo.sort((a,b)=>a[0]-b[0]);let dealt=0;
+  for(const [,i,j] of todo){if(fillCell(L,i,j)&&++dealt>=4)break;}
+  // 2. build the standing filler near the cars (this size and the two before), take far ones down (they stay records)
+  for(let lv=Math.max(0,L-2);lv<=L;lv++){const g=fillG(lv);
+    for(const p of players)for(let i=Math.floor((p.x-far)/g);i<=Math.floor((p.x+far)/g);i++)for(let j=Math.floor((p.z-far)/g);j<=Math.floor((p.z+far)/g);j++){
+      const cell=fillIdx.get(lv+':'+i+':'+j);if(!cell)continue;
+      for(const e of cell.recs){if(e.dead||e.o||lodSkip(e)||fillNear(e.x,e.z)>far*0.95)continue;const c=chunkOf(e.x,e.z);if(c.loaded)fillBuild(e,false);}}}
+  for(const e of fillBuilt){const o=e.o;
+    if(!o||!o.alive||o.rec!==e||!chunks.get(o.chunk)||!chunks.get(o.chunk).loaded){e.o=null;fillBuilt.delete(e);continue;}
+    if(fillNear(o.x,o.z)>far+o.r&&!o.falling&&!o.wob&&!o.rolling&&!o.col&&(o.sleep||!o.inst)&&!(o.parts&&o.parts.some(q=>q.gone)))fillOff(e);}
+  // gold that wandered far off (one-off spawns, not records)
+  for(const o of objects)if(o.scat&&o.alive&&!o.gold&&fillNear(o.x,o.z)>Rs*1.8){o.alive=false;poolRelease(o);scene.remove(o.g);}
 }
-function scatterRain(n){for(let i=0;i<n;i++)queue.push({t:0.3+i*0.05,fn:()=>{if(players.length)spawnScatter(pick(players),true);}});}
+// L51: the garage exit in Adventure: the same world, dealt again. Smashed records come back, buildings are whole, the
+// filler is forgotten and dealt fresh at today's size. (Things a quest stage pushed aside stay aside.)
+function worldRestock(){
+  for(const e of [...fillBuilt])fillOff(e);
+  for(const c of chunks.values()){c.recs=c.recs.filter(r=>!r.fill);
+    for(const r of c.recs){if(r.smashed){r.dead=false;r.smashed=false;r.back=0;}if(r.gone&&!r.dead)r.gone=null;}}
+  fillReset();
+  for(const c of chunks.values())if(c.loaded)unloadChunk(c);
+  updateStreaming(0,true);}
 
 /* ---------- L31: scenes ---------- */
 /* A scene is a little hand-made set-up that tells a story (a lemonade stand with a line of customers, a toy-car race
@@ -1563,7 +1663,7 @@ function scatterRain(n){for(let i=0;i<n;i++)queue.push({t:0.3+i*0.05,fn:()=>{if(
      build(s) with s.place(type,x,z,arg,th), s.herd(kind,x,z,n), s.spot(kind,x,z,w,d,th), s.ramp(x,z,th,L,W,H);
               coordinates are local to the scene and +Z is its front. s.f is the scale it's being built at.
    Scenes scale to any size class (positions, props, spots and ramps ×1.65 per step). Layouts place landmark scenes
-   with ctx.scene(id,x,z,th,size); the filler keeps SCENE_N scenes at the players' size around the cars, dropped
+   with ctx.scene(id,x,z,th,size); the filler deals scenes at the players' size with its fill cells (L51), dropped
    into open ground (empty space kept between them) and turned to face the nearest road, or the camera. Their props
    are chunk records, so smashed stays smashed and regrows; filler scenes 3+ sizes below you are cleared away.
    Logic's placeholder scenes (DEFAULT_SCENES, today's props) fill in for any zone that has none. */
@@ -1642,24 +1742,25 @@ let lastScene=null;const sceneMiss={}; // why filler scenes didn't fit (shown by
 const miss=w=>{sceneMiss[w]=(sceneMiss[w]||0)+1;};
 // drop a filler scene at the players' size near p: just off screen ahead while driving, or onto open ground in view
 // (props falling in) when there's none around (start, new world, size-up); id forces one (testing)
-function spawnScene(p,fill,id){
+function spawnScene(p,fill,id,cell){ // cell (L51): {x0,z0,G} a fill cell to drop it into
   const Rs=scatR(),moving=Math.abs(p.speed)>2*p.sm,k=Math.min(tier,SIZES.length-1);
   for(let t=0;t<(id?30:6);t++){
     const a=id||fill||!moving?(id&&t<4?p.heading+rand(-0.3,0.3):rand(0,Math.PI*2)):p.heading+rand(-1.2,1.2);
-    let x=p.x+Math.sin(a)*Rs,z=p.z+Math.cos(a)*Rs;
+    let x=cell?cell.x0+rand(0.2,0.8)*cell.G:p.x+Math.sin(a)*Rs,z=cell?cell.z0+rand(0.2,0.8)*cell.G:p.z+Math.cos(a)*Rs;
     const zone=zoneXZ(x,z),list=sceneDefs(zone).filter(([i,d])=>id?i===id:d.filler!==false&&(!d.sizes||d.sizes.includes(SIZES[k]))&&!(lastScene===i&&Math.random()<0.8));
     if(!list.length)return null;const [sid,def]=pickScene(list),f=sceneF(def,k),R=(def.r||8)*f;
-    const d=id?R+p.r+rand(1,6)*Math.max(S,0.3):fill?rand(0.3,0.95)*Rs+R*0.3:rand(1.0,1.3)*Rs+R*0.6;
-    x=p.x+Math.sin(a)*d;z=p.z+Math.cos(a)*d;
+    if(cell)fill=fillNear(x,z)<Rs*0.95+R; // in view: it falls in
+    else{const d=id?R+p.r+rand(1,6)*Math.max(S,0.3):fill?rand(0.3,0.95)*Rs+R*0.3:rand(1.0,1.3)*Rs+R*0.6;
+      x=p.x+Math.sin(a)*d;z=p.z+Math.cos(a)*d;}
     if(def.spot!=='road')[x,z]=sceneOffRoad(x,z,R);
-    if(def.spot){const q=sceneSpotPoint(p.x,p.z,fill?R:Rs,1.5*Rs+R,def.spot);if(!q){miss('spot');continue;}[x,z]=q;}
+    if(def.spot){const q=cell?sceneSpotPoint(cell.x0+cell.G/2,cell.z0+cell.G/2,0,cell.G*0.7,def.spot):sceneSpotPoint(p.x,p.z,fill?R:Rs,1.5*Rs+R,def.spot);if(!q){miss('spot');continue;}[x,z]=q;}
     if(Math.abs(x)>WB-R*0.5||Math.abs(z)>WB-R*0.5){miss('edge');continue;}
     if(players.some(q=>Math.hypot(q.x-x,q.z-z)<R+q.r+2*S)){miss('car');continue;}
     const near=scenesNear(x,z,R*3+Rs).filter(q=>Math.hypot(q.x-x,q.z-z)<(R+q.r)*(1+SCENE_GAP));
     if(near.some(q=>q.fixed||(q.k>=k-1&&!id))){miss('gap');continue;} // a forced one (testing) clears filler scenes away
     if(def.spot!=='road'&&onRoad(x,z,R*0.25)){miss('road');continue;}
     if(typeof garageOn==='function'&&garageOn(x,z,R)){miss('garage');continue;} // L32: not on the garage (reviewer, merging L31+L32)
-    const th=sceneFace(x,z,R),it=sceneItems(def,x,z,th,f,(Math.random()*1e9)|0,zone,k),road=def.spot==='road',ok=[],skip=new Set(near.map(q=>q.tag));
+    const th=sceneFace(x,z,R),it=sceneItems(def,x,z,th,f,(Math.random()*1e9)|0,zone,k),road=def.spot==='road',ok=[],tags=new Set(near.map(q=>q.tag)),skip=e=>tags.has(e.scene)||!!e.fill; // filler makes room (L51)
     for(const q of it.place){const r=recR(q.type)*f*q.sc;if(scenePropFree(q.x,q.z,r,road,skip))ok.push([q,r]);}
     if(!ok.length||ok.length<Math.min(2,it.place.length)||ok.length<it.place.length*0.6){miss('crowded');continue;}
     lastScene=sid;scenePlant(sid,x,z,R,k,f,it,ok,near,fill);
@@ -1676,6 +1777,8 @@ function scenePlant(sid,x,z,R,k,f,it,ok,near,fill,extra){
   for(const q of near){const c=chunks.get(q.home);if(c&&c.scenes.includes(q))dropScene(c,q);} // much smaller scenes underneath make way
   for(const [q,r] of ok){
     for(const o of objects)if(o.alive&&o.scat&&!o.gold&&Math.hypot(o.x-q.x,o.z-q.z)<o.r+r){o.alive=false;poolRelease(o);scene.remove(o.g);} // filler makes room
+    for(let ci=chunkIdx(q.x-r-4);ci<=chunkIdx(q.x+r+4);ci++)for(let cj=chunkIdx(q.z-r-4);cj<=chunkIdx(q.z+r+4);cj++){const c=chunks.get(chunkKey(ci,cj)); // L51: filler records too
+      if(c)for(const e of c.recs)if(e.fill&&!e.dead&&!e.gold&&Math.hypot(e.x-q.x,e.z-q.z)<e.r+r){e.dead=true;e.back=Infinity;if(e.o)fillOff(e);}}
     const c=chunkOf(q.x,q.z),rec={type:q.type,x:q.x,z:q.z,arg:q.arg,r,seed:(Math.random()*1e9)|0,dead:false,back:0,f:f*q.sc,th:q.th,scene:tag};c.recs.push(rec);keys.add(c.k);
     if(!c.loaded)continue;const o=buildRec(rec);
     if(fill)dropIn(o,rand(6,16)*Math.max(S,0.4)+rand(0,4)*S);
@@ -1728,12 +1831,8 @@ function dropScene(home,q){home.scenes.splice(home.scenes.indexOf(q),1);
 let sceneT=0;
 function updateScenes(dt){
   if(state!=='play'||!players.length||(sceneT-=dt)>0)return;sceneT=0.35;
-  const Rs=scatR();let n=0;
-  for(const c of chunks.values()){if(!c.loaded||!c.scenes.length)continue;
-    for(let i=c.scenes.length-1;i>=0;i--){const q=c.scenes[i];
-      if((!q.fixed||q.stage)&&q.k<=tier-3){dropScene(c,q);continue;}
-      if(q.k>=tier&&players.some(p=>Math.hypot(q.x-p.x,q.z-p.z)<Rs*1.35+q.r))n++;}}
-  if(n<(plannedShare>0.6?1:SCENE_N))spawnScene(pick(players),n===0);}
+  for(const c of chunks.values()){if(!c.loaded||!c.scenes.length)continue; // L51: new filler scenes come with the fill cells (fillCell)
+    for(let i=c.scenes.length-1;i>=0;i--){const q=c.scenes[i];if((!q.fixed||q.stage)&&q.k<=tier-3)dropScene(c,q);}}}
 function sceneStats(){const Rs=scatR(),p=players[0];let near=0,size=0;
   for(const c of chunks.values())if(c.loaded)for(const q of c.scenes){if(Math.hypot(q.x-p.x,q.z-p.z)<Rs+q.r){near++;if(q.k>=tier)size++;}}
   return {near,size,miss:sceneMiss};}
@@ -2337,7 +2436,7 @@ function garageClear(loud){
   const G=garage,O=garageO();let budget=loud?150:0;
   for(const o of objects){if(!o.alive||o.boss||isBreakout(o))continue;const dx=o.x-G.x,dz=o.z-G.z;
     if(Math.abs(dx)>O+o.r*0.6||Math.abs(dz)>O+o.r*0.6)continue;
-    o.alive=false;wakeObj(o);if(o.rec){o.rec.dead=true;o.rec.gone=[];o.rec.back=T+rand(REGROW[0],REGROW[1]);}
+    o.alive=false;wakeObj(o);if(o.rec){o.rec.dead=true;o.rec.gone=[];recSmashed(o.rec);}
     const d=Math.hypot(dx,dz)||1,k=sizeK(o);
     if(budget>0&&o.sz>=tier-2)for(const part of o.parts)if(budget-->0)breakPart(o,part,dx/d,dz/d,16*Math.sqrt(Math.max(1,S)),1.4);
     scene.remove(o.g);puff(o.x,0.5*k,o.z,loud?2:1,1.2*k);}
@@ -2454,7 +2553,7 @@ function garageGo(){
     let ax=0,az=0;players.forEach(p=>{ax+=p.x;az+=p.z;});ax/=players.length;az/=players.length;const lim=Math.max(0,WB-O-2);
     G.x=clamp(ax,-lim,lim);G.z=clamp(az+O+rm*1.6,-lim,lim);G.g.position.set(G.x,GARAGE_LIFT,G.z);
     camT.set(G.x,0,G.z-O-rm*3);garageClear(false);garageHideRamps();music('drive');}
-  else scatterRain(Math.round(SCAT_N*0.5)); // Adventure: the same world, restocked around the exit
+  else worldRestock(); // Adventure: the same world, restocked (L51)
   players.forEach((p,i)=>{if(garageFresh()||p.inG||Math.abs(p.x-G.x)<O+p.r&&Math.abs(p.z-G.z)<O+p.r){ // out the back door
     p.x=G.x+(i-(players.length-1)/2)*rm*2.6;p.z=G.z-O-rm*3;p.y=groundH(p.x,p.z);p.vy=0;p.air=false;p.kx=p.kz=0;p.heading=Math.PI;p.trail.length=0;}});
   for(const p of players){p.inG=false;p.speed=p.stats.speed*p.sm*0.6;} // rolling out
@@ -2681,4 +2780,7 @@ window.__sp={voiceMissing,voiceInfo:()=>({cur:voiceCur&&{id:voiceCur.id,prio:voi
   garageInfo(){const G=garage;return G&&{phase:G.phase,x:+G.x.toFixed(1),z:+G.z.toFixed(1),s:G.sG,in:players.map(p=>!!p.inG),picked:G.picked,ready:G.ready,front:+G.frontK.toFixed(2),back:+G.backK.toFixed(2),pads:G.pads.length,p:players.map(p=>[+p.x.toFixed(1),+p.z.toFixed(1)])};},
   tp(x,z,i=0){const p=players[i];if(p){p.x=x;p.z=z;p.y=groundH(x,z);p.markT=3;camT.set(x,0,z);}},
   carStats,perk(name,i=0){const p=players[i];if(!p)return;p.perk=name||null;p.perkT=0.5;return carStats(p.stats);}, // __sp.perk('magnet')
+  fill(){let cells=0,recs=0,dead=0;for(const c of fillIdx.values())if(c){cells++;recs+=c.recs.length;dead+=c.recs.filter(e=>e.dead).length;}
+    let smashed=0;chunks.forEach(c=>c.recs.forEach(r=>smashed+=!!r.smashed));return {...fillDbg,lv:fillLv(),cells,recs,dead,built:fillBuilt.size,smashed};}, // L51
+  restock:()=>worldRestock(), // L51: what the Adventure garage exit does
   stats(){let l=0;chunks.forEach(c=>l+=c.loaded);const i=renderer.info.render;return {chunks:l,objects:objects.length,awake:objects.filter(o=>!o.sleep).length,debris:debris.length,calls:i.calls,tris:i.triangles};}};
