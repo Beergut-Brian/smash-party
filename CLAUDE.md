@@ -44,6 +44,8 @@ If a design change needs new logic (or the other way around), make the part in y
 
 Check `TASKS.md` before starting. Take the top unchecked task in your section, check it off in the same commit as the work, and add follow-up tasks for the other tool when needed.
 
+**Hand-off rule (placeholders):** whenever you add something another lane must finish, add a task for that lane in `TASKS.md` in the same commit, tagged `NEEDS DESIGN` or `NEEDS LOGIC`, saying what exists, where, and what's needed. Examples: logic adds a new animal kind, boss, prop type or UI element with a placeholder look, so it adds a `NEEDS DESIGN` task for the right lane (world-props, world-animals, world-bosses, or cars & UI). A design lane adds something that needs code (a new animal kind needs a sound and herd spot; a model needs batching), so it adds a `NEEDS LOGIC` task. A task with no owner lane is a bug in the hand-off.
+
 ## Git workflow
 - **Version:** bump `version.json` with every push to `main` (patch `0.12.1` for fixes, minor `0.13.0` for features). The start screen and pause menu show it, and the loader in `index.html` loads the game files with `?v=<version>` so the TV picks up new code. If two pushes collide on it, keep the higher number and bump once more.
 - **Pull before you start. Commit small. Push when done.** Never force-push `main`.

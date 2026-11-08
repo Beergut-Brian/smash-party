@@ -97,6 +97,9 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Big bouncy launch pads (rainbow / trampoline style) placed near clusters of smashables, scaled to the players' size so they matter at every size. Driving over one launches the car high with a boing and a slow-motion-ish arc; landing on things smashes them (slam). Design can provide the pad look; logic handles placement, launch and landing.
   - Done: up to 3 rainbow pads near clusters of smashable stuff, placed between the car and the cluster, sized ~2× a car at every size; rebuilt after LEVEL UP. Driving over one: boing (new `pad` sfx), floaty 1.8s arc up to ~⅓ of the view height, voice ("Super bounce!"), and a big landing slam that smashes everything around the car (20 things at huge size in tests). Design can replace the look with `buildLaunchPad()` (see CLAUDE.md). Also: the normal hard-landing slam radius now scales with car size (was a fixed 3 units).
 
+- [ ] **L10: Rooster hookup** `NEEDS LOGIC` (from world-animals, PR #3)
+  - `ANIMAL.rooster` exists in `src/world/animals.js`, but it's not a known kind yet. Add a `rooster` sound to `tools/sfx-lines.json` (generate it), and add roosters to the farm herds (`ZONE_HERDS` / the coop) so they appear.
+
 - [ ] **L5: Tune and test pass**
   - Round 1 (Kaden's first play-test) ✅: slower when small; car tiers (cooler cars unlock every 2 sizes, Y switches within the tier); big cars shoot (X: cannon / rocket, also hits boss weak spots); LEVEL UP button instead of auto-growing; new `micro` bottom size, scatter mostly at your size with bigger things rarer; stuck detection → jump becomes 💥 BOOM.
   - Play-test the whole v2 loop: small, then medium, then giant. Make sure growth pacing feels good in a ~20 minute session with a 5-year-old.
