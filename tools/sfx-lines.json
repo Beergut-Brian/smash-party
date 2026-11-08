@@ -698,6 +698,18 @@
     "portal_giggle": {
       "prompt": "A sugary swirling candy portal: sparkly whoosh with high cute giggles and popping sprinkles, sweet and silly",
       "dur": 2.0
+    },
+    "stomp_land": {
+      "prompt": "A toy car lands a jump with a huge cartoon dinosaur STOMP: a deep boomy thump, dusty rumble, then a short goofy friendly dino roar, silly not scary",
+      "dur": 1.6
+    },
+    "sugarrush": {
+      "prompt": "Cartoon sugar rush: a fast rising slide whistle into a bubbly fizzy soda sparkle, hyper and giggly",
+      "dur": 1.2
+    },
+    "sugarrush_end": {
+      "prompt": "A sugary fizz winding down like a deflating balloon, ending in a tiny cute giggle",
+      "dur": 1.0
     }
   }
 }
