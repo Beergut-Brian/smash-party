@@ -790,7 +790,9 @@ let streetDecor=null;
    NEW WORLD, like the home arena) and merged into one vertex-colored mesh, so it costs one draw call. */
 function startStreetDecor(){
   if(streetDecor)return;const g=new THREE.Group(),Z0=START_STREET[0][1],add=(...a)=>{const m=mk(...a);g.add(m);return m;};
+  const W={when:()=>streetDecor&&streetDecor.visible}; // D28: the curb and sidewalk are ground steps while the decor shows
   for(const sx of [1,-1]){
+    groundStep(sx*5.12,Z0-6,.24,64,.17,0,W);groundStep(sx*6.95,Z0-6,3.4,64,.1,0,W);
     add('box',.24,.17,64,'#e2e2e2',sx*5.12,.085,Z0-6);                                   // curb
     add('box',3.4,.1,64,'#cfd2d6',sx*6.95,.05,Z0-6);                                     // sidewalk
     for(let z=Z0-37;z<Z0+26;z+=1.7)add('box',3.4,.104,.05,'#a9adb3',sx*6.95,.05,z);      // slab seams
@@ -815,9 +817,9 @@ function startStreet(){
    ['acorn',6.9,Z0+3.5],['toyblock',5.9,Z0+4.3],['toyduck',7.6,Z0+2.9],['snail',8,Z0-5.4],['mushroom',8.2,Z0-7.4],
    ['can',3.3,Z0-4.2],['pebble',2.1,Z0-7.6],['toyblock',1.4,Z0-11],['acorn',4.3,Z0-12.5],['can',2.6,Z0-15]].forEach(([t,x,z])=>place(t,x,z,Math.random()*4|0));
 }
-function spotOK(x,z,r){
+function spotOK(x,z,r){ // rampH, not groundH: sidewalks and curbs (steps) are fine to stand on
   if(Math.abs(x)>ARENA-r-1||Math.abs(z)>ARENA-r-1)return false;
-  for(const [a,b] of [[0,0],[r+1,0],[-r-1,0],[0,r+1],[0,-r-1]])if(groundH(x+a,z+b)>0)return false;
+  for(const [a,b] of [[0,0],[r+1,0],[-r-1,0],[0,r+1],[0,-r-1]])if(rampH(x+a,z+b)>0)return false;
   return true;
 }
 function place(type,x,z,arg){
@@ -1684,7 +1686,7 @@ function homeRec(type,x,z,arg,th,f,tag){
   if(Math.abs(x)>HOME+3||Math.abs(z)>HOME+3||onRoad(x,z,r)||!homeClear(x,z,r))return false;
   for(const [a,b] of START_STREET)if(Math.hypot(x-a,z-b)<r+.9)return false;
   if(!MICRO_T.has(type)&&(startLane(x,z)||(z>8&&Math.abs(x)<ROAD_W/2+r)))return false;
-  for(const [a,b] of [[0,0],[r+1,0],[-r-1,0],[0,r+1],[0,-r-1]])if(groundH(x+a,z+b)>0)return false;
+  for(const [a,b] of [[0,0],[r+1,0],[-r-1,0],[0,r+1],[0,-r-1]])if(rampH(x+a,z+b)>0)return false;
   for(const o of objects)if(Math.hypot(o.x-x,o.z-z)<(o.r+r)*.8)return false;
   for(const q of homeRecs)if(q.scene!==tag&&Math.hypot(q.x-x,q.z-z)<q.r+r+.4)return false;
   const rec={type,x,z,arg,r,seed:(Math.random()*1e9)|0,dead:false,back:0,f,scene:tag};if(th)rec.th=th;
