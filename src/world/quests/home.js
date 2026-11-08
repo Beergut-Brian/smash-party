@@ -189,9 +189,8 @@ function questGarryGnome(){const g=new THREE.Group();
    fern    Farmer Fern: loud, happy country farmer; laughs at everything ("Ha-HA!").
    bubbles Bubbles the Fire Truck: eager, squeaky rookie; voice cracks when excited.
    pip     Pip the Ice-Cream Truck: sing-songy and sweet, half-sings her lines like a jingle.
-   zorp    Zorp: high, squeaky alien; starts sentences. blip  Blip: low, bubbly alien; finishes them ("…beep!").
-           (Zorp & Blip are one giver. The engine speaks a quest in the giver's one voice, so every line is `zorp`
-           for now; once per-line voices land (L39) the beeps stay Zorp's and the boops become Blip's.)
+   zorp    Zorp: high, squeaky alien; starts sentences, beeps. blip  Blip: low, bubbly, slow alien; finishes them, boops.
+           (Zorp & Blip are one giver: lines are Zorp's, `questBlip('…')` lines are Blip's (L40 per-line voices).)
    dot     Dozer Dot: excited, shouty little kid energy; "LET'S SMASH!"
    wheelie Mayor Wheelie: booming, pompous, very proud of himself; rolls his R's.
    kite    Captain Kite: laid-back surfer dude, "duuude", slow and sunny.
@@ -302,28 +301,32 @@ registerQuest({
 
 // ===== Chapter 3: the farm, the duck pond and downtown (medium–large) =====
 // Zorp & Blip stand by their crashed saucer in the crop circle. The crystal broke in three: one in a haystack at the
-// edge of the circle (smash the new bales by the big haystack), one at the foot of the farm's water tower, one in the
-// duck pond. Then back to the saucer.
+// edge of the circle (smash the new bales by the big haystack and it pops out of the last one: bring it to the
+// saucer), one at the foot of the farm's water tower, one on the treasure chest on the duck pond's island (bump the
+// chest to grab it). Then back to the saucer. Zorp (high, beeps) starts the sentences, Blip (low, boops) finishes them.
+const questBlip=t=>({text:t,voice:'blip'});
 const questZorpPieces=(()=>{const P=questHomeAt('zorp_crystal','pieces')||{},c=questHomeAt('zorp_crystal','stage'),h=P.hay||[c[0]-18,c[1]+16];
   // three bales between the big haystack and the circle's middle (inside the flattened ring, off the corn)
   const dx=c[0]-h[0],dz=c[1]-h[1],l=Math.hypot(dx,dz)||1,ux=dx/l,uz=dz/l;
   const hay=[[9,0],[13,-5],[13,5]].map(([a,b])=>[h[0]+ux*a-uz*b,h[1]+uz*a+ux*b]);
   const tw=P.tower||[-140,-236];
-  return {hay,far:[questHomeBy(tw,0,1,11),P.pond||[-70,-246]]};})(); // the tower piece lies on its ramp side (+Z)
+  // D18's duck_pond scene stands at (-80,-240) with its island chest at (+1.6,+0.6); `lift` sits the piece on top
+  return {hay,far:[questHomeBy(tw,0,1,11),[-78.4,-239.4]]};})(); // the tower piece lies on its ramp side (+Z)
 registerQuest({
   id:'zorp_crystal',world:'home',chapter:3,main:true,
   giver:{id:'zorp',name:'Zorp and Blip',emoji:'👽',voice:'zorp',at:questHomeAt('zorp_crystal','giver'),h:4.6,r:2.8,build:questZorpBuild},
   stageAt:questHomeAt('zorp_crystal','stage'),stageR:9,
-  remind:['Beep! The crystal pieces! Boop!'],
+  remind:['Beep! The crystal pieces!',questBlip('Pieces, please. Boop.')],
   steps:[
-    {do:'talk',say:['Beep boop! Earth friends!','Our saucer went CRASH!','Our Wobble Crystal broke! Boop!']},
-    {do:'smash',n:3,type:'hay',icon:'🌾',at:questZorpPieces.hay,
-      say:{start:'One piece is in a haystack!',each:['Not this one! Beep!','Hay everywhere! Boop!'],hint:'Smash the haystacks! Beep!',got:'A crystal piece! Beep beep!'}},
-    {do:'find',n:2,item:'crystal',icon:'💎',at:questZorpPieces.far,
-      say:{start:'Water tower! Duck pond! Two pieces! Beep!',each:['Piece number two! Boop!'],hint:['The water tower! Beep!','The duck pond! Quack! Beep!'],got:'All the pieces! Beep boop!'}},
-    {do:'bring',icon:'💎',say:{start:'Bring the pieces to the saucer!',hint:'Back to the saucer! Beep!'}}],
-  reward:{ability:'hover',stars:3,say:['The crystal works! Beep boop!','Hold jump in the air!','Now you can float! Wooo!']},
-  after:['Wooo! Floaty! Beep!','Earth is so smashy! Boop!']});
+    {do:'talk',say:['Beep boop! Earth friends!',questBlip('Hellooo. Boop.'),'Our saucer went CRASH!',questBlip('Our crystal broke. Boop.')]},
+    {do:'smash',n:3,type:'hay',icon:'🌾',at:questZorpPieces.hay,reveal:'crystal',revealIcon:'💎',
+      say:{start:'One piece is in a haystack!',each:['Not this one! Beep!',questBlip('Hay everywhere. Boop.')],hint:['Smash the haystacks! Beep!',questBlip('Smash the hay. Boop.')],got:'A crystal piece! Beep beep!'}},
+    {do:'bring',icon:'💎',say:{start:questBlip('To the saucer. Boop.'),hint:'Back to the saucer! Beep!'}},
+    {do:'find',n:2,item:'crystal',icon:'💎',at:questZorpPieces.far,lift:true,
+      say:{start:'Water tower! Duck pond! Two pieces! Beep!',each:[questBlip('Piece number two. Boop.')],hint:['The water tower! Beep!','The duck pond! Quack! Beep!',questBlip('On the treasure chest. Boop.')],got:'All the pieces! Beep boop!'}},
+    {do:'bring',icon:'💎',say:{start:'Bring the pieces to the saucer!',hint:['Back to the saucer! Beep!',questBlip('Saucer. This way. Boop.')]}}],
+  reward:{ability:'hover',stars:3,say:['The crystal works! Beep boop!',questBlip('Hold jump in the air.'),'Now you can float! Wooo!']},
+  after:['Wooo! Floaty! Beep!',questBlip('Earth is so smashy. Boop.')]});
 
 // Dot waits outside the gate of her fenced crate yard (D18's crate_site); the 40 crates and barrels spawn inside its
 // fence on a jittered 8×5 grid (a random spot in the stage circle would spill out of the yard and onto Dot), round
@@ -371,11 +374,10 @@ registerQuest({
   reward:{stars:4,say:['You saved Smashville!','You are the best heroes ever!']},
   after:['Hooray for the heroes!','My town is saved! Marvelous!']});
 
-// Captain Kite waits on the kite meadow; the wind blew his kites onto the big buildings (school, skyscraper, city
-// hall, Fern's barn, the ferris wheel). Items sit on the ground, so each kite lands just off its building's side.
-const QUEST_KITE_OFF=14;
-const questKiteAt=(()=>{const R=questHomeAt('kite_kites','roofs');
-  return R.map(p=>{const dx=-p[0],dz=-p[1];return questHomeBy(p,Math.abs(dx)>Math.abs(dz)?Math.sign(dx):0,Math.abs(dx)>Math.abs(dz)?0:Math.sign(dz),QUEST_KITE_OFF);});})();
+// Captain Kite waits on the kite meadow; the wind blew his kites onto the roofs of the big buildings (school,
+// skyscraper, city hall, Fern's barn, the ferris wheel). `lift` sits each kite on top of its building: bump the
+// building (or knock it down) to grab it.
+const questKiteAt=questHomeAt('kite_kites','roofs');
 registerQuest({
   id:'kite_kites',world:'home',chapter:4,main:false,
   giver:{id:'kite',name:'Captain Kite',emoji:'🪁',voice:'kite',at:questHomeAt('kite_kites','giver'),h:5.2,build:questKiteBuild},
@@ -383,8 +385,8 @@ registerQuest({
   remind:['My kites, dude! All over town!'],
   steps:[
     {do:'talk',say:['Duuude. Hey.','A big wind blew my kites away.','Bummer. Can you find them?']},
-    {do:'find',n:5,item:'kite',icon:'🪁',at:questKiteAt,
-      say:{start:'Five kites! Follow the arrow, dude!',each:['Righteous!','Gnarly find, dude!','So rad!'],hint:'Follow the arrow, dude!',got:'All my kites! Duuude!'}},
+    {do:'find',n:5,item:'kite',icon:'🪁',at:questKiteAt,lift:true,
+      say:{start:'Five kites! Follow the arrow, dude!',each:['Righteous!','Gnarly find, dude!','So rad!'],hint:['Follow the arrow, dude!','Up on the roof! Bump it, dude!'],got:'All my kites! Duuude!'}},
     {do:'bring',icon:'🪁',say:{start:'Bring them back, dude!',hint:'Over here, little dude!'}}],
   reward:{ability:'glide',stars:2,say:['Totally awesome, dude!','Take some wings! Hold jump!','Glide like a kite!']},
   after:['Catch the wind, dude!','So chill. So breezy.']});
