@@ -132,7 +132,7 @@ for(let i=0;i<26;i++){const a=i/26*Math.PI*2,r=(ARENA+rand(90,150))/Math.max(Mat
 
 /* ---------- GLB props (assets/props/) ---------- */
 /* Design lists models in assets/props/props.json: {"oak_tree":{"file":"oak_tree.glb","scale":1,"y":0,"rotateY":0}}.
-   prop(name, fallback) returns a fresh copy of that model (geometry and materials shared, so it's cheap) or, if the
+   loadProp(name, fallback) returns a fresh copy of that model (geometry and materials shared, so it's cheap) or, if the
    model isn't there, whatever fallback() builds (the old block version). The world waits for propsReady (all listed
    models loaded or failed, max 8s) before it builds, so props appear as models from the first frame. */
 const propModels={};
@@ -143,7 +143,7 @@ const propsReady=Promise.race([new Promise(r=>setTimeout(r,8000)),
       const root=new THREE.Group(),m=g.scene;m.scale.setScalar(d.scale||1);m.position.y=d.y||0;m.rotation.y=d.rotateY||0;
       m.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});root.add(m);propModels[name]=root;}).catch(e=>console.warn('prop',name,e))));
   }).catch(()=>{})]);
-function prop(name,fallback){const m=propModels[name];return m?m.clone(true):fallback?fallback():new THREE.Group();}
+function loadProp(name,fallback){const m=propModels[name];return m?m.clone(true):fallback?fallback():new THREE.Group();}
 
 /* ramps: `ramps` holds only the ramps in loaded chunks (keeps groundH cheap). makeRamp builds one without
    adding it; addRamp builds + adds (used by buildWorld). game.js streams them in and out with their chunk. */

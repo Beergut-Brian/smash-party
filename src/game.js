@@ -393,7 +393,7 @@ function getChunk(ci,cj){const k=chunkKey(ci,cj);let c=chunks.get(k);
   return c;}
 const chunkOf=(x,z)=>getChunk(chunkIdx(x),chunkIdx(z));
 // tag every object with its type/arg/chunk so it can be rebuilt and streamed
-for(const t in OBJ){const f=OBJ[t];OBJ[t]=(x,z,arg,sc)=>{const o=f(x,z,arg);o.type=t;o.arg=arg;o.chunk=chunkOf(x,z).k;o.sz=sizeClass(o);initBld(o);scaleObj(o,sc);o.fr=footprint(o);return o;};}
+for(const t in OBJ){const f=OBJ[t];OBJ[t]=(x,z,arg,sc)=>{const o=f(x,z,arg);o.type=t;o.arg=arg;o.chunk=chunkOf(x,z).k;o.sz=sizeClass(o);initBld(o);scaleObj(o,sc);o.fr=footprint(o);setupSpin(o);return o;};}
 // deterministic randomness, so a chunk (and each house in it) looks the same every time it's rebuilt
 function mulberry(a){return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 function withSeed(seed,fn){const r=Math.random;Math.random=mulberry(seed);try{return fn();}finally{Math.random=r;}}
@@ -414,7 +414,7 @@ function spotFree(c,x,z,r){
   for(const q of c.recs)if(Math.hypot(q.x-x,q.z-z)<q.r+r+0.6)return false;
   return true;}
 function chunkPlace(c,type,x,z,arg,r){
-  if(!OBJ[type])return false;r=r||REC_R[type]||1.5;
+  if(!OBJ[type])return false;r=r||REC_R[type]||(typeof RAD!=='undefined'&&RAD[type])||1.5;
   if(!spotFree(c,x,z,r))return false;
   c.recs.push({type,x,z,arg,r,seed:(Math.random()*1e9)|0,dead:false,back:0});return true;}
 function chunkRamp(c,x,z,th,L=11,W=7,H=3.6){
@@ -481,7 +481,7 @@ function poolFor(m){const k=batchKey(m);let p=pools.get(k);
   return p;}
 const _pm=new THREE.Matrix4(),_pc=new THREE.Color();
 function poolAdopt(o){ // move an awake object into the pools and let it sleep (it wakes again when a car gets close)
-  if(o.inst||!o.alive)return;const ent=[];let ok=true;o.g.updateMatrixWorld(true);
+  if(o.inst||!o.alive||o.spin||o.rolling)return;const ent=[];let ok=true;o.g.updateMatrixWorld(true);
   o.g.traverse(m=>{if(!ok||!m.isMesh)return;if(Array.isArray(m.material)){ok=false;return;}const p=poolFor(m);if(p.im.count>=p.cap){ok=false;return;}
     const i=p.im.count++;const e=[p.im,i,m.matrixWorld.clone(),m,p];p.owner[i]=e;p.im.setMatrixAt(i,HIDE);
     if(p.plain){p.im.setColorAt(i,m.material.color);p.im.instanceColor.needsUpdate=true;}ent.push(e);});
@@ -503,7 +503,7 @@ function loadChunk(c){
   for(const rec of c.recs){
     if(rec.dead){if(T<rec.back)continue;rec.dead=false;}
     const o=buildRec(rec);scene.remove(o.g);o.g.updateMatrixWorld(true);o.inst=[];o.sleep=true;sleepers.push(o);
-    let multi=false;o.g.traverse(m=>{if(m.isMesh&&Array.isArray(m.material))multi=true;});if(multi){scene.add(o.g);o.inst=null;o.sleep=false;continue;}
+    let multi=!!o.spin;o.g.traverse(m=>{if(m.isMesh&&Array.isArray(m.material))multi=true;});if(multi){scene.add(o.g);o.inst=null;o.sleep=false;continue;}
     o.g.traverse(m=>{if(!m.isMesh)return;const k=batchKey(m);let b=batches.get(k);
       if(!b)batches.set(k,b={geo:m.geometry,mat:m.material,plain:!!m.material.userData.plain,list:[],cols:[]});
       o.inst.push([b,b.list.length,m]);b.list.push(m.matrixWorld.clone());b.cols.push(m.material.color);});}
@@ -534,7 +534,7 @@ function updateStreaming(dt,all){
   // wake objects near a car, put far ones back to sleep
   for(const o of objects){if(!o.inst||!o.alive)continue;let d=1e9;
     for(const p of players)d=Math.min(d,Math.hypot(o.x-p.x,o.z-p.z)-o.r);
-    if(o.sleep){if(d<wr)wakeObj(o);}else if(d>wr+2+4*S&&!o.falling&&!o.wob)sleepObj(o);}
+    if(o.sleep){if(d<wr)wakeObj(o);}else if(d>wr+2+4*S&&!o.falling&&!o.wob&&!o.rolling)sleepObj(o);}
   // regrow smashed things in loaded chunks: they drop back in from the sky
   if((regrowT-=dt)>0)return;regrowT=1;let n=0;
   for(const c of chunks.values()){if(!c.loaded)continue;
@@ -767,6 +767,8 @@ function collisions(){
   for(const p of players){const vx=Math.sin(p.heading)*p.speed+p.kx,vz=Math.cos(p.heading)*p.speed+p.kz,spd=Math.hypot(vx,vz);
     for(const o of objects){if(!o.alive||o.boss||(o.falling&&o.fy>p.y+3*S))continue;const dx=o.x-p.x,dz=o.z-p.z,rr=p.r+o.r;
       if(dx*dx+dz*dz<rr*rr&&p.y<o.h+o.fy){
+        if(o.rolling)continue;
+        if(o.roll&&o.sz<=tier&&(spd>4*p.sm||p.air)){startRoll(o,vx||dx,vz||dz,Math.max(spd,10*p.sm));continue;}
         if(o.sz<=tier-3){squish(o);continue;}
         if(o.bld){hitBuilding(p,o,dx,dz,rr,spd,vx,vz);continue;}
         if(o.sz>tier){bump(p,o,dx,dz,rr,spd);continue;}
@@ -790,6 +792,38 @@ function squish(o){
   squished.push({o,t:0.25});const n=performance.now();if(n-lastSquish>70){lastSquish=n;tone('sine',rand(700,1000),250,0.08,0.06);}}
 function updateSquish(dt){for(let i=squished.length-1;i>=0;i--){const q=squished[i];q.t-=dt;const f=q.o.s0||1;
   q.o.g.scale.set(f*1.3,f*Math.max(0.04,q.t/0.25),f*1.3);if(q.t<=-0.6){scene.remove(q.o.g);squished.splice(i,1);}}}
+
+/* ---------- rolling hay & spinning windmills (design flags: {roll:true} / mesh.userData.spin) ---------- */
+// A roll:true object (hay bale) doesn't shatter when a car hits it: it tumbles off in that direction, plowing through
+// smaller stuff, launching animals and bouncing off bigger things, then bursts when it slows down (that's the smash).
+const rollers=[];
+function startRoll(o,vx,vz,spd){
+  wakeObj(o);poolRelease(o);o.rolling=true;o.wob=0;const d=Math.hypot(vx,vz)||1;o.vx=vx/d*spd*1.3;o.vz=vz/d*spd*1.3;o.rollT=0;
+  // spin around the middle of the bale: move its pieces into a pivot at half height
+  const cy=o.h*0.5/(o.s0||1),piv=new THREE.Group();piv.position.y=cy;for(const c of [...o.g.children]){c.position.y-=cy;piv.add(c);}o.g.add(piv);o.piv=piv;
+  o.g.rotation.order='YXZ';rollers.push(o);sfx.boing();puff(o.x,o.h*0.3,o.z,4,o.r,'#e9c46a');}
+function updateRollers(dt){
+  for(let i=rollers.length-1;i>=0;i--){const o=rollers[i];
+    if(!o.alive){rollers.splice(i,1);continue;}
+    o.rollT+=dt;const f=Math.pow(0.7,dt);o.vx*=f;o.vz*=f;const sp=Math.hypot(o.vx,o.vz);
+    o.x+=o.vx*dt;o.z+=o.vz*dt;
+    if(Math.abs(o.x)>ARENA-o.r){o.x=Math.sign(o.x)*(ARENA-o.r);o.vx*=-0.6;}if(Math.abs(o.z)>ARENA-o.r){o.z=Math.sign(o.z)*(ARENA-o.r);o.vz*=-0.6;}
+    o.g.position.set(o.x,groundH(o.x,o.z)+Math.abs(Math.sin(o.rollT*9))*o.r*0.12,o.z);o.g.rotation.y=Math.atan2(o.vx,o.vz);o.piv.rotation.x+=sp*dt/Math.max(0.2,o.h*0.5);
+    for(const q of objects){if(q===o||!q.alive||q.boss||q.rolling)continue;const dx=q.x-o.x,dz=q.z-o.z,rr=o.r+q.r;if(dx*dx+dz*dz>rr*rr)continue;
+      if(q.sz<=o.sz&&!q.bld)smash(q,o.vx,o.vz,sp);
+      else{const d=Math.hypot(dx,dz)||1,nx=dx/d,nz=dz/d,dot=o.vx*nx+o.vz*nz;if(dot>0){o.vx-=2*dot*nx*0.8;o.vz-=2*dot*nz*0.8;}o.x-=nx*(rr-d);o.z-=nz*(rr-d);
+        wakeObj(q);q.wob=1;sfx.boing();if(q.bld)damageBuilding(q,o.x,o.z,o.r*2,1,0,o.h*1.5,nx,nz,sp);}}
+    for(const a of animals){if(a.state==='fly')continue;if(Math.hypot(a.x-o.x,a.z-o.z)<a.r+o.r)launchAnimal(a,o.vx||1,o.vz,Math.max(sp,8));}
+    if(sp<1.5*Math.max(S,0.3)||o.rollT>6){o.rolling=false;rollers.splice(i,1);smash(o,o.vx,o.vz,Math.max(sp,8));}}}
+// Spinning parts: design can set mesh.userData.spin = {axis:'z', speed:1.2} (radians/s) on parts to spin around the
+// part's own position; windmills get their blades spun automatically (the four boards in front of the hub).
+function setupSpin(o){
+  let list=o.parts.filter(p=>p.mesh.userData.spin);
+  if(!list.length&&o.type==='windmill'){const blades=o.parts.filter(p=>p.mesh.geometry===GEO.box&&p.mesh.scale.y>3&&p.mesh.position.z>1.5);
+    if(blades.length){const hub=new THREE.Group(),b0=blades[0].mesh;hub.position.set(b0.position.x,b0.position.y,b0.position.z);hub.userData.spin={axis:'z',speed:1.1};
+      o.g.add(hub);for(const b of blades){b.mesh.position.sub(hub.position);hub.add(b.mesh);}o.spin=[hub];return;}}
+  if(list.length)o.spin=list.map(p=>p.mesh);}
+function updateSpin(dt){for(const o of objects){if(!o.spin||!o.alive)continue;for(const m of o.spin){const s=m.userData.spin;if(m.parent)m.rotation[s.axis||'z']+=(s.speed||1)*dt;}}}
 
 /* ---------- size-matched scatter ---------- */
 /* Keeps the area around the cars stocked with props near your size: mostly your size, some a size or two
@@ -1176,7 +1210,7 @@ function loop(now){
   updateGrowth(dt);updateStreaming(dt);
   if(state==='play'){collisions();updateBoss(dt);}
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
-  updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateScatter(dt);updateAnimals(dt);updateShots(dt);updateDebris(dt);updateParts(dt);
+  updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateRollers(dt);updateSpin(dt);updateScatter(dt);updateAnimals(dt);updateShots(dt);updateDebris(dt);updateParts(dt);
   updateMusic();updateCamera(dt,T);updateSignals(dt);cullChunks();updateHUD();
   renderer.render(scene,camera);
   pressed.clear();touch.jumpP=false;touch.swapP=false;
