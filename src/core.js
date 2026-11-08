@@ -15,7 +15,7 @@ const IS_PHONE=!!(window.matchMedia&&matchMedia('(pointer:coarse)').matches);
 // Pick with ?q=high / ?q=phone, or the pause menu (remembered on this device).
 const QUALITY=(()=>{try{const q=new URLSearchParams(location.search).get('q')||localStorage.getItem('sp_quality');if(q==='high'||q==='phone')return q;}catch(e){}return IS_PHONE?'phone':'high';})();
 const HIGH=QUALITY==='high';
-function setQuality(q){try{localStorage.setItem('sp_quality',q);}catch(e){}location.reload();}
+function setQuality(q){try{localStorage.setItem('sp_quality',q);}catch(e){}if(typeof beforeReload==='function')beforeReload();location.reload();} // QA4: game.js stashes the game, it carries on after the reload
 
 /* ---------- renderer / scene ---------- */
 const renderer=new THREE.WebGLRenderer({antialias:HIGH,powerPreference:'high-performance'});

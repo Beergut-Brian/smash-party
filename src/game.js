@@ -376,7 +376,7 @@ function levelUp(){
   if(questBlocksLevel()){questNudge();return;} // L35 Adventure: the chapter's main quest comes before the next garagelevelReady=false; // finish the garage first
   if(tier>=SIZES.length-1){giant=true;goGiant();return;}
   const ct=carTierNow();tier++;sizeUp();clearPads();
-  if(carTierNow()!==ct)queue.push({t:1.6,fn:openGarage});} // new car tier: the garage rises to pick one in
+  if(carTierNow()!==ct)queue.push({t:1.6,fn:openGarage});saveGame();} // L37 // new car tier: the garage rises to pick one in
 function updateGrowth(dt){S+=((giant?GROW_S[GROW_S.length-1]:GROW_S[tier])-S)*Math.min(1,dt*3);popT=Math.max(0,popT-dt);
   lvBtn.style.display=levelReady&&state==='play'&&!garage?'block':'none';
   {const qb=levelReady&&questBlocksLevel(),h=qb?`${qb}❗`:LVBTN_HTML;if(lvBtn.dataset.k!==h){lvBtn.dataset.k=h;lvBtn.innerHTML=h;}} // L35: the giver to help first, no words
@@ -954,7 +954,10 @@ function boomOut(p){const R=p.r*3+2*S;
   for(const a of animals){const dx=a.x-p.x,dz=a.z-p.z;if(Math.hypot(dx,dz)<R+a.r)launchAnimal(a,dx||1,dz,15);}}
 function addPlayer(src){
   const idx=players.length===0?0:(players[0].idx===0?1:0);
-  const p=new Player(idx,src);const o=players[0];players.push(p);sfx.join();updatePanels();
+  const p=new Player(idx,src);const o=players[0];players.push(p);sfx.join();
+  {const nm=snapCars&&snapCars[idx],ci=nm?CARS.findIndex(c=>c.name===nm):-1;if(ci>=0)p.setCar(ci);} // L37: the car you had
+  if(snapGarage){snapGarage=false;queue.push({t:1.6,fn:openGarage});} // saved with a garage waiting: it comes back up
+  updatePanels();
   if(o&&Math.hypot(o.x-p.x,o.z-p.z)>o.r*6+1)besideCar(p,o); // join next to your buddy, not back at the start
   introCar(p);
   if(garage&&garage.phase==='wait'){garage.ready=false;garage.goT=0;goBtn.style.display='none';garageRows();} // joined at the garage: gets a row of cars too
@@ -1027,8 +1030,13 @@ function setPick(w){if(w!==startPick){startPick=w;sfx.pop();}try{localStorage.se
 for(const b of worldPick.children)b.onclick=e=>{e.stopPropagation();initAudio();setPick(b.dataset.w);startGame();};
 markPick();let pickX=0;
 function startGame(){
-  if(state!=='start')return;state='play';initAudio();questOn=gameMode==='adventure';abilGlyphs(); // L36
-  if(!questOn&&startPick==='bedroom'&&ZONES.bedroom)rollWorld(true,'bedroom');music('drive');
+  if(state!=='start')return;
+  if(!resumeSnap&&gameMode==='adventure'&&advSave&&saveSel==='new'&&!newHeld){newHold=newHold||0.001;return;} // L37: 🆕 needs a 2-second hold
+  state='play';initAudio();questOn=gameMode==='adventure';abilGlyphs(); // L36
+  const snap=resumeSnap||(questOn&&advSave&&saveSel==='go'?advSave:null);resumeSnap=null; // L37
+  if(questOn&&!snap&&advSave)wipeSave();
+  if(snap)applySnap(snap);
+  else if(!questOn&&startPick==='bedroom'&&ZONES.bedroom)rollWorld(true,'bedroom');music('drive');
   $('start').style.display='none';$('hud').style.display='block';updatePanels();
   if(touchUsed){$('touch').style.display='block';addPlayer('touch');}
 }
@@ -1132,14 +1140,78 @@ const modePick=document.createElement('div');modePick.id='modePick';
 modePick.innerHTML='<button class="mp" data-m="adventure" title="Adventure">🗺️</button><button class="mp" data-m="arcade" title="Arcade">🕹️</button>';
 let pickRow=0;
 function markMode(){for(const b of modePick.children)b.classList.toggle('sel',b.dataset.m===gameMode);
-  worldPick.style.display=gameMode==='arcade'?'':'none';if(gameMode!=='arcade')pickRow=0;
+  const row2=gameMode==='arcade'||(typeof advSave!=='undefined'&&!!advSave); // Arcade: 🛏️/🌳; Adventure with a save: ▶️/🆕 (L37)
+  worldPick.style.display=gameMode==='arcade'?'':'none';if(!row2)pickRow=0;if(typeof markSave==='function')markSave();
   modePick.classList.toggle('focus',pickRow===0&&gameMode==='arcade');worldPick.classList.toggle('focus',pickRow===1);}
 function setMode(m){if(m!==gameMode){gameMode=m;sfx.pop();}try{localStorage.setItem('sp_mode',m);}catch(e){}markMode();}
-function pickMove(dx,dy){if(dy)pickRow=gameMode==='arcade'?clamp(pickRow+dy,0,1):0;
-  if(dx){if(pickRow===0)setMode(dx<0?'adventure':'arcade');else setPick(dx<0?'bedroom':'outside');}markMode();}
-modePick.onclick=e=>e.stopPropagation();for(const b of modePick.children)b.onclick=e=>{e.stopPropagation();initAudio();setMode(b.dataset.m);if(gameMode==='adventure')startGame();};
-worldPick.before(modePick);markMode();
+function pickMove(dx,dy){if(dy)pickRow=gameMode==='arcade'||advSave?clamp(pickRow+dy,0,1):0;
+  if(dx){if(pickRow===0)setMode(dx<0?'adventure':'arcade');else if(gameMode==='arcade')setPick(dx<0?'bedroom':'outside');else setSave(dx<0?'go':'new');}markMode();}
+modePick.onclick=e=>e.stopPropagation();for(const b of modePick.children)b.onclick=e=>{e.stopPropagation();initAudio();setMode(b.dataset.m);if(gameMode==='adventure'&&!advSave)startGame();else if(advSave){pickRow=1;markMode();}};
+worldPick.before(modePick);
 
+
+/* ---------- L37: save + continue ---------- */
+/* Adventure auto-saves to localStorage ('sp_adv') after every quest step (questSave in quests.js), garage exit, level
+   up, every 20 s and when the page goes away: quests, abilities, cosmetics, cars per player, size, the smash meter and a
+   garage still waiting. Start screen in Adventure with a save: ▶️ Continue (picked) and 🆕 New Adventure, which needs a
+   2-second hold (a ring fills) so a 5-year-old can't wipe it by accident. Arcade only remembers unlocked worlds
+   ('sp_worlds': unlockWorld(id) / worldsUnlocked(), for L33). Switching LOOKS (QA4) needs a reload (a new GL context), so
+   it stashes the same snapshot in sessionStorage and the game picks up right where it was (Arcade: a fresh world at
+   the same size, like a garage exit). */
+const SAVE_KEY='sp_adv',SAVE_V=1,NEW_HOLD=2;
+const lsGet=k=>{try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+let advSave=(s=>s&&s.v===SAVE_V?s:null)(lsGet(SAVE_KEY)),saveSel='go',newHold=0,newHeld=false,snapCars=null,snapGarage=false,saveT=20;
+let resumeSnap=(()=>{try{const s=JSON.parse(sessionStorage.getItem('sp_resume')||'null');sessionStorage.removeItem('sp_resume');return s&&s.v===SAVE_V?s:null;}catch(e){return null;}})();
+function snapshot(){
+  const cars={};for(let i=0;i<2;i++){const p=players.find(q=>q.idx===i);const nm=p?p.stats.name:snapCars&&snapCars[i];if(nm)cars[i]=nm;}
+  return {v:SAVE_V,t:Date.now(),mode:questOn?'adventure':'arcade',kind:questOn?'home':roomZ?'bedroom':'outside',
+    growth,tier,giant,levelReady,score,levelScore,level,goal,smashCount,cars,
+    garage:!!(garage&&!garage.exiting)||queue.some(q=>q.fn===openGarage),
+    quests:questOn?questState():null,used:[...abilUsed],eggs:eggShots,nw:nwBtn.style.display==='block'};}
+function saveGame(){if(!questOn||(state!=='play'&&state!=='pause'))return;advSave=snapshot();lsSet(SAVE_KEY,advSave);}
+function wipeSave(){advSave=null;try{localStorage.removeItem(SAVE_KEY);}catch(e){}markSave();}
+function applySnap(s){
+  growth=s.growth||0;tier=clamp(s.tier|0,0,SIZES.length-1);giant=!!s.giant;levelReady=!!s.levelReady;S=giant?GROW_S[GROW_S.length-1]:GROW_S[tier];
+  score=s.score||0;levelScore=s.levelScore||0;level=s.level||1;goal=s.goal||100;smashCount=s.smashCount||0;
+  (s.used||[]).forEach(i=>abilUsed.add(i));eggShots=s.eggs||0;snapCars=s.cars||null;snapGarage=!!s.garage;
+  if(s.quests)questLoad({...s.quests,active:null}); // abilities + cosmetics first, so the world and cars come out right
+  rollWorld(true,s.kind==='bedroom'&&ZONES.bedroom?'bedroom':s.kind==='home'?'home':'outside');
+  if(s.quests&&s.quests.active&&QUESTS[s.quests.active])questStart(QUESTS[s.quests.active],true);
+  if(s.nw)nwBtn.style.display='block'; // the boss was already beaten
+  else if(giant&&!(questOn&&QUEST_LIST.some(q=>q.world===questWorld()&&!questDone.has(q.id)&&q.steps.some(t=>t.do==='boss'))))queue.push({t:4,fn:()=>summonBoss()});
+  abilGlyphs();showBig(s.mode==='adventure'?'▶️':'✨');}
+function updateSave(dt){if(state==='play'&&questOn&&(saveT-=dt)<=0){saveT=20;saveGame();}}
+addEventListener('pagehide',saveGame);addEventListener('visibilitychange',()=>{if(document.hidden)saveGame();});
+function beforeReload(){if(state!=='play'&&state!=='pause')return;saveGame();try{sessionStorage.setItem('sp_resume',JSON.stringify(snapshot()));}catch(e){}} // core.js setQuality (QA4)
+const worldsUnlocked=()=>lsGet('sp_worlds')||['home'];
+function unlockWorld(id){const l=worldsUnlocked();if(!l.includes(id)){l.push(id);lsSet('sp_worlds',l);}}
+// start screen: ▶️ Continue / 🆕 New Adventure (Adventure with a save only)
+const savePick=document.createElement('div');savePick.id='savePick';
+savePick.innerHTML='<button class="sv" data-s="go" title="Continue">▶️</button><button class="sv" data-s="new" title="New Adventure">🆕<i class="hold"></i></button>';
+{const st=document.createElement('style');st.textContent=`
+:where(#savePick){display:flex;gap:24px;justify-content:center;margin:10px 0 14px}
+:where(#savePick .sv){position:relative;font-size:64px;line-height:1;padding:14px 26px;border-radius:24px;border:5px solid transparent;background:rgba(255,255,255,.18);cursor:pointer;transition:transform .15s;overflow:hidden}
+:where(#savePick .sv.sel){border-color:#ffd60a;background:rgba(255,214,10,.3);transform:scale(1.12)}
+:where(#savePick .hold){position:absolute;left:0;bottom:0;height:10px;width:0;background:#ff595e;border-radius:0 6px 6px 0}
+:where(#savePick.focus){outline:4px dashed #ffffff88;outline-offset:8px;border-radius:30px}`;document.head.prepend(st);}
+function markSave(){const on=gameMode==='adventure'&&!!advSave;savePick.style.display=on?'':'none';
+  for(const b of savePick.children)b.classList.toggle('sel',b.dataset.s===saveSel);savePick.classList.toggle('focus',on&&pickRow===1);}
+function setSave(v){if(v!==saveSel){saveSel=v;sfx.pop();}newHold=0;markSave();}
+for(const b of savePick.children){
+  b.onclick=e=>{e.stopPropagation();initAudio();setSave(b.dataset.s);if(saveSel==='go')startGame();};
+  b.onpointerdown=e=>{if(b.dataset.s==='new'){e.stopPropagation();initAudio();setSave('new');newHold=0.001;}};}
+addEventListener('pointerup',()=>{if(state==='start'&&!newHeld)newHold=0;});
+// the 🆕 hold: Space / Enter / A / B / START or the mouse held down; the bar fills, then a fresh adventure starts
+let holdMouse=false;savePick.addEventListener('pointerdown',()=>holdMouse=true);addEventListener('pointerup',()=>holdMouse=false);
+function updateSaveHold(dt,gpIn){
+  if(state!=='start'||!newHold)return;
+  const held=holdMouse||keys.has('Space')||keys.has('Enter')||Object.values(gpIn).some(g=>g.boost||g.jump);
+  if(!held||saveSel!=='new'){newHold=0;savePick.querySelector('.hold').style.width='0';return;}
+  newHold+=dt;savePick.querySelector('.hold').style.width=Math.min(100,newHold/NEW_HOLD*100)+'%';
+  if(((newHold*4)|0)!==(((newHold-dt)*4)|0))tone('sine',300+newHold*200,330+newHold*200,0.08,0.06);
+  if(newHold>=NEW_HOLD){newHeld=true;newHold=0;sfx.fanfare();startGame();}}
+worldPick.after(savePick);if(gameMode==='adventure'&&advSave)pickRow=1;markMode();
 
 /* ---------- pause menu (Esc / START / ⏸) + version ---------- */
 const VERSION=window.GAME_VERSION||'dev';
@@ -1158,7 +1230,7 @@ function pause(){if(state!=='play')return;state='pause';pmBuild();pauseMenu.styl
   $('pmVer').textContent='v'+VERSION;
   fetch('version.json',{cache:'no-store'}).then(r=>r.json()).then(j=>{if(j.version&&j.version!==VERSION)$('pmVer').textContent=`v${VERSION} · 🆕 v${j.version} is ready: pick MAIN MENU to load it`;}).catch(()=>{});}
 function resume(){if(state!=='pause')return;state='play';pauseMenu.style.display='none';}
-function mainMenu(){location.reload();} // a fresh start (and it picks up any new version)
+function mainMenu(){saveGame();location.reload();} // a fresh start (and it picks up any new version)
 function pauseInput(gpIn){
   for(const g of Object.values(gpIn)){if(g.upP)pmSel=(pmSel+pmItems.length-1)%pmItems.length;if(g.downP)pmSel=(pmSel+1)%pmItems.length;
     if(g.okP){pmItems[pmSel][1]();return;}if(g.backP||g.startP){resume();return;}}
@@ -2182,7 +2254,7 @@ function garageGo(){
   G.anyIn=false;for(const m of G.cut)m.visible=false; // roof stays off so it never hides the cars rolling out
   camDist*=1.6;camKick=0.5; // the camera pulls back as you roll out
   G.phase='sink';G.t=-0.5;G.dustT=0;
-  showBig('GO!');sfx.fanfare();confetti(120);players.forEach(p=>introCar(p,1.6));}
+  showBig('GO!');sfx.fanfare();confetti(120);players.forEach(p=>introCar(p,1.6));queue.push({t:0.5,fn:saveGame});} // L37: saved once out the door
 const goBtn=document.createElement('button');goBtn.id='garageGo';goBtn.innerHTML='🏁 GO!<small>A / START</small>';
 goBtn.onclick=e=>{e.stopPropagation();garageGo();};document.body.appendChild(goBtn);
 const garageArrowEl=document.createElement('div');garageArrowEl.id='garageArrow';garageArrowEl.textContent='🏁';$('hud').appendChild(garageArrowEl);
@@ -2256,7 +2328,7 @@ function loop(now){
   if(touchUsed)src.touch={x:touch.x,z:touch.z,boost:touch.boost,jumpP:touch.jumpP,jump:touch.jump,swapP:touch.swapP,fire:touch.fire,joinP:touch.boost||touch.jumpP};
   if(state==='start'){const gx=Object.values(gpIn).reduce((a,g)=>Math.abs(g.x||0)>Math.abs(a)?g.x:a,0),sx=gx<-0.6?-1:gx>0.6?1:0;
     if(sx&&sx!==pickX)pickMove(sx,0);pickX=sx;for(const k in gpIn){if(gpIn[k].upP)pickMove(0,-1);if(gpIn[k].downP)pickMove(0,1);}
-    for(const k in gpIn)if(gpIn[k].joinP){startGame();break;}}
+    for(const k in gpIn)if(gpIn[k].joinP){startGame();break;}updateSaveHold(dt,gpIn);}
   if(state==='pause'){pauseInput(gpIn);updateMusic();renderer.render(scene,camera);pressed.clear();touch.jumpP=false;touch.swapP=false;return;}
   if(state==='play'&&Object.values(gpIn).some(g=>g.startP)){if(garage&&garage.ready)garageGo();else pause();pressed.clear();return;}
   T+=dt; // game time stands still while paused
@@ -2265,7 +2337,7 @@ function loop(now){
     for(const p of players){const s=src[p.src]||{x:0,z:0};if(levelReady&&!garage&&(s.levelP||s.swapP))levelUp();else if(s.fire&&!p.inG&&hasAbility('shoot')){shoot(p);abilUse('shoot');}p.update(dt,s);}
     if(garage)updateGarage(dt,src);
   }
-  updateGrowth(dt);updateStreaming(dt);updateQuests(dt);
+  updateGrowth(dt);updateStreaming(dt);updateQuests(dt);updateSave(dt);
   if(state==='play'&&!garageAll()){collisions();updateBoss(dt);}
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
   updateRoom(dt);updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateCombo(dt);if(!garage){updateGold(dt);updatePads(dt);}if(!garageAll()){updateScatter(dt);updateScenes(dt);updateAnimals(dt);}updateRollers(dt);updateSpin(dt);updateShots(dt);updatePerks(dt);updateCarExtras(dt);updateDebris(dt);updateParts(dt);updatePuffs(dt);
@@ -2275,7 +2347,8 @@ function loop(now){
 }
 questDefaults(); // L35: the placeholder quest when no quest pack registered any
 const HOME_SEED=20261108;function homeWorld(){withSeed(HOME_SEED,()=>{buildWorld();captureHome();});} // the hand-made Home World, the same every time
-propsReady.then(()=>{homeWorld();updateStreaming(0,true);last=performance.now();requestAnimationFrame(loop);});
+propsReady.then(()=>{homeWorld();updateStreaming(0,true);last=performance.now();requestAnimationFrame(loop);
+  if(resumeSnap){gameMode=resumeSnap.mode==='arcade'?'arcade':'adventure';startGame();}}); // QA4: back from a LOOKS switch, carry on
 /* __sp.spots(): draws the spots of the built chunks as see-through tiles (colored by kind) so layouts can be checked; again to hide. */
 let spotView=null;
 function showSpots(on){if(spotView){scene.remove(spotView);spotView.traverse(m=>{if(m.geometry)m.geometry.dispose();});spotView=null;}
