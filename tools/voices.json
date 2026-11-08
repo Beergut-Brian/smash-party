@@ -1,99 +1,99 @@
 {
  "_notes": "Character voices (L34). Each key is a voice name used as \"voice\":\"<name>\" on a line in tools/voice-lines.json and as say(text,{voice:'<name>'}) in code. voice = ElevenLabs voice id (from the voice library or Voice Design); model / settings / prefix default to the announcer's in voice-lines.json. A cast member with an empty voice id is skipped by make-voices.mjs until it's cast (the game uses its robot voice meanwhile). robot = optional {pitch, rate} for that robot voice (default: a pitch picked from the name). desc = the personality notes the audio agent casts from. Keys starting with _ are ignored.",
  "hank": {
-  "voice": "",
+  "voice": "lOIGYbQ5A5xBr3hjy8OP",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[gruff] ",
   "robot": { "pitch": 0.7, "rate": 0.95 },
-  "desc": "Hank: gravelly, friendly old-timer next to the start. Placeholder entry until AU13 casts him."
+  "desc": "Hank: gravelly, friendly old-timer next to the start."
  },
  "garry": {
-  "voice": "",
+  "voice": "a42EaYzVjaKFqh8iqYCy",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
-  "prefix": "[whispers] ",
+  "prefix": "[softly, politely] ",
   "robot": { "pitch": 1.6, "rate": 0.9 },
-  "desc": "Garry the Gnome: a tiny garden gnome on a lawnmower. Whispery, very polite, says please and oh my. Uncast until AU13."
+  "desc": "Garry the Gnome: a tiny garden gnome on a lawnmower. Whispery, very polite, says please and oh my."
  },
  "zippy": {
-  "voice": "",
+  "voice": "yscq0WPW7twnOmjmZaDd",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[fast, excited] ",
   "robot": { "pitch": 1.25, "rate": 1.45 },
-  "desc": "Zippy the Mail Truck: talks super fast, runs words together, always in a hurry. Uncast until AU13."
+  "desc": "Zippy the Mail Truck: talks super fast, runs words together, always in a hurry."
  },
  "fern": {
-  "voice": "",
+  "voice": "TXZGZuiF2RoD86lFHgXm",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[cheerful, laughing] ",
   "robot": { "pitch": 1.05, "rate": 1.0 },
-  "desc": "Farmer Fern: a red tractor in a straw hat. Loud, happy country farmer who laughs at everything (Ha-HA!). Uncast until AU13."
+  "desc": "Farmer Fern: a red tractor in a straw hat. Loud, happy country farmer who laughs at everything (Ha-HA!)."
  },
  "bubbles": {
-  "voice": "",
+  "voice": "ZPIO8fa0OLF6EIvbQqkF",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[eager, excited] ",
   "robot": { "pitch": 1.45, "rate": 1.1 },
-  "desc": "Bubbles the Fire Truck: an eager, squeaky rookie whose voice cracks when excited. Uncast until AU13."
+  "desc": "Bubbles the Fire Truck: an eager, squeaky rookie whose voice cracks when excited."
  },
  "pip": {
-  "voice": "",
+  "voice": "ctQ3v0uvBo3o1Pu0Xv9W",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[sing-song, sweet] ",
   "robot": { "pitch": 1.35, "rate": 0.95 },
-  "desc": "Pip the Ice-Cream Truck: sing-songy and sweet, half-sings lines like an ice-cream jingle. Uncast until AU13."
+  "desc": "Pip the Ice-Cream Truck: sing-songy and sweet, half-sings lines like an ice-cream jingle."
  },
  "zorp": {
-  "voice": "",
+  "voice": "ZFUzopSgKdp8Rw3eNOXq",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[squeaky] ",
   "robot": { "pitch": 1.8, "rate": 1.15 },
-  "desc": "Zorp (with Blip): a tiny high, squeaky alien whose saucer crashed in the cornfield; beeps and boops. Blip is its own voice (`blip`, per-line voices L40). Uncast until AU13."
- },
- "blip": {
-  "voice": "",
-  "model": "eleven_v3",
-  "settings": { "stability": 0.5 },
-  "prefix": "[low, bubbly] ",
-  "robot": { "pitch": 0.75, "rate": 0.95 },
-  "desc": "Blip (with Zorp): a round purple alien with three little eyes. Low, bubbly, slow; finishes Zorp's sentences (\"...boop!\"). Uncast until AU13."
+  "desc": "Zorp (with Blip): a tiny high, squeaky alien whose saucer crashed in the cornfield; beeps and boops. Blip (low, bubbly) is cast separately as blip."
  },
  "dot": {
-  "voice": "",
+  "voice": "MxxwwMA1pAejNbNdcwO9",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[shouting, excited] ",
   "robot": { "pitch": 1.3, "rate": 1.15 },
-  "desc": "Dozer Dot: a tough little orange bulldozer. Excited, shouty kid energy, LETS SMASH! Uncast until AU13."
+  "desc": "Dozer Dot: a tough little orange bulldozer. Excited, shouty kid energy, LETS SMASH!"
  },
  "wheelie": {
-  "voice": "",
+  "voice": "ubCKzmnBgrUCGxM8dKhU",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[booming, pompous] ",
   "robot": { "pitch": 0.75, "rate": 0.85 },
-  "desc": "Mayor Wheelie: a purple limo in a top hat. Booming, pompous, very proud of himself, rolls his Rs. Uncast until AU13."
+  "desc": "Mayor Wheelie: a purple limo in a top hat. Booming, pompous, very proud of himself, rolls his Rs."
  },
  "kite": {
-  "voice": "",
+  "voice": "rhnwLUkOYyOQZ2RJPHm9",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[relaxed, laid-back] ",
   "robot": { "pitch": 0.9, "rate": 0.85 },
-  "desc": "Captain Kite: a hovercraft. Laid-back surfer dude, slow and sunny, says duuude. Uncast until AU13."
+  "desc": "Captain Kite: a hovercraft. Laid-back surfer dude, slow and sunny, says duuude."
  },
  "woolly": {
-  "voice": "",
+  "voice": "IrqMGme3htyvuerYN3iq",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[worried, out of breath] ",
   "robot": { "pitch": 1.1, "rate": 1.2 },
-  "desc": "Woolly the Sheepdog Van: worried and huffy, out of breath, a little bark in it. Uncast until AU13."
+  "desc": "Woolly the Sheepdog Van: worried and huffy, out of breath, a little bark in it."
+ },
+ "blip": {
+  "voice": "q4ADVJGCTaPxWz3jIlrt",
+  "model": "eleven_v3",
+  "settings": { "stability": 0.5 },
+  "prefix": "[calm, bubbly] ",
+  "robot": { "pitch": 0.65, "rate": 0.85 },
+  "desc": "Blip: Zorp's round alien sidekick. Low, slow, bubbly and gurgly, like talking through a fishbowl, says blub and bloop. No lines yet (needs L40 per-line voices)."
  }
 }

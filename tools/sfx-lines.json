@@ -574,41 +574,122 @@
       "prompt": "Big wooden door bursting open with a creak, a loud bang and a whoosh of fresh air",
       "dur": 1.5
     },
-    "wobble_boing": {
-      "prompt": "Rubbery wobble boing, something jiggles but doesn't break, silly springy",
-      "dur": 0.6
-    },
-    "ability": {
-      "prompt": "Magical power-up: sparkly rising swirl, a pop, then a triumphant ta-da",
-      "dur": 1.8
-    },
-    "hover_hum": {
-      "prompt": "Soft floaty UFO hover hum, wobbly woo-ooo",
-      "dur": 0.6
-    },
-    "glide_whoosh": {
-      "prompt": "Gentle wind whoosh, little wings flapping, glide",
-      "dur": 0.8
-    },
-    "egg_plop": {
-      "prompt": "Cartoon egg launched with a plop and a cluck",
-      "dur": 0.5
-    },
     "quest_start": {
-      "prompt": "Short adventure jingle, curious and happy, three rising notes",
-      "dur": 1.0
+      "prompt": "Cheerful little new-adventure jingle: three rising notes and a sparkly flourish, curious and inviting",
+      "dur": 1.6,
+      "style": "8-bit chiptune jingle, NES style, kids video game, bright and happy, clean, short"
     },
-    "quest_step": {
-      "prompt": "Happy ding-ding success chime with sparkle",
-      "dur": 0.8
+    "quest_step_1": {
+      "prompt": "Quick happy got-one ding-ding two-note chime with a tiny sparkle",
+      "dur": 0.6,
+      "style": "8-bit chiptune jingle, NES style, kids video game, bright and happy, clean, short"
+    },
+    "quest_step_2": {
+      "prompt": "Short bright upward three-note blip chime, a tick on a checklist, happy",
+      "dur": 0.6,
+      "style": "8-bit chiptune jingle, NES style, kids video game, bright and happy, clean, short"
+    },
+    "quest_step_3": {
+      "prompt": "Bouncy two-note marimba-like chirp with a twinkle, a little success",
+      "dur": 0.6,
+      "style": "8-bit chiptune jingle, NES style, kids video game, bright and happy, clean, short"
     },
     "quest_done": {
-      "prompt": "Big happy quest complete fanfare, cheering kazoo and chimes",
-      "dur": 2.2
+      "prompt": "Triumphant short quest complete fanfare: a rising run into a big happy chord with sparkles, ta-da!",
+      "dur": 2.4,
+      "style": "8-bit chiptune jingle, NES style, kids video game, bright and happy, clean, short"
     },
-    "pickup": {
-      "prompt": "Bright pick-up blip with a sparkle, got an item",
+    "pickup_1": {
+      "prompt": "Cartoon item pickup: a bright pop and a sparkly upward bling",
       "dur": 0.5
+    },
+    "pickup_2": {
+      "prompt": "Cheerful collect sound: a bubbly blip and a little twinkle",
+      "dur": 0.5
+    },
+    "pickup_3": {
+      "prompt": "Happy grab sound: a quick zip-up swoosh ending in a shiny ding",
+      "dur": 0.5
+    },
+    "ability": {
+      "prompt": "Huge magical new power unlocked: a whooshing sparkly rise, a shimmering aaah and a big bright chime burst, celebratory ta-da",
+      "dur": 2.5
+    },
+    "wobble_boing_1": {
+      "prompt": "Rubbery cartoon wobble boing, something jiggles like jelly but does not break, wub-wub-wub",
+      "dur": 0.7
+    },
+    "wobble_boing_2": {
+      "prompt": "Springy door-stop twang boing with a wobbly jiggle, funny",
+      "dur": 0.7
+    },
+    "wobble_boing_3": {
+      "prompt": "Bouncy rubber ball boing with a jelly wobble afterwards, silly",
+      "dur": 0.7
+    },
+    "hover_hum": {
+      "prompt": "Soft smooth humming hover thruster, a gentle steady floaty whirr with a light shimmer, steady tone, kids video game",
+      "dur": 0.6,
+      "style": ""
+    },
+    "glide_whoosh_1": {
+      "prompt": "Breezy swooping whoosh of a kite gliding through the air, wind in wings, airy and light",
+      "dur": 1.0
+    },
+    "glide_whoosh_2": {
+      "prompt": "Soft gliding wind swoosh with a flutter of fabric wings, gentle and floaty",
+      "dur": 1.0
+    },
+    "egg_plop_1": {
+      "prompt": "Cartoon egg shot: a soft pop launch then a funny plop and a little eggshell crack",
+      "dur": 0.6
+    },
+    "egg_plop_2": {
+      "prompt": "Silly egg plop, a bouncy boink and a tiny cluck-like squeak",
+      "dur": 0.6
+    },
+    "egg_plop_3": {
+      "prompt": "Light popping egg shot with a cartoony plop on landing, playful",
+      "dur": 0.6
+    },
+    "hammer_bonk_1": {
+      "prompt": "Big squeaky toy mallet BONK, a hollow rubbery thump with a squeak",
+      "dur": 0.6
+    },
+    "hammer_bonk_2": {
+      "prompt": "Cartoon wooden mallet whack, a chunky hollow clonk with a little ding",
+      "dur": 0.6
+    },
+    "hammer_bonk_3": {
+      "prompt": "Goofy toy hammer bonk with a springy boing tail",
+      "dur": 0.6
+    },
+    "kazoo_honk_1": {
+      "prompt": "A silly short kazoo toot, bzzt, like a party horn, funny",
+      "dur": 0.5,
+      "style": ""
+    },
+    "kazoo_honk_2": {
+      "prompt": "A goofy two-note kazoo honk, bwee-bwah, playful",
+      "dur": 0.6,
+      "style": ""
+    },
+    "kazoo_honk_3": {
+      "prompt": "A happy rising kazoo buzz, bzzzoo-wee, cartoon",
+      "dur": 0.6,
+      "style": ""
+    },
+    "portal_whoosh": {
+      "prompt": "Magical swirling portal opening: a deep spinning whoosh rising into a bright sparkly shimmer, exciting and wondrous",
+      "dur": 2.5
+    },
+    "portal_roar": {
+      "prompt": "A friendly goofy cartoon dinosaur honk-roar echoing out of a swirling jungle portal, with a whoosh, silly not scary",
+      "dur": 2.0
+    },
+    "portal_giggle": {
+      "prompt": "A sugary swirling candy portal: sparkly whoosh with high cute giggles and popping sprinkles, sweet and silly",
+      "dur": 2.0
     }
   }
 }
