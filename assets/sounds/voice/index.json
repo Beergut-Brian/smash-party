@@ -4102,5 +4102,10 @@
   "speak": "Zzz... baa...",
   "voice": "puff",
   "hash": "e97c3410d630"
+ },
+ "too_hot_you_need_to_fly": {
+  "text": "Too hot! You need to fly!",
+  "speak": "Too hot! You need to fly!",
+  "hash": "5d1930e079e6"
  }
 }

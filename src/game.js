@@ -1526,6 +1526,16 @@ function spotAt(x,z){const c=chunks.get(chunkKey(chunkIdx(x),chunkIdx(z)));if(!c
    A zone adds its own kinds with registerZone({water:{choco_river:1,choco_deep:2}}). */
 const WATER_KINDS={water:1,water_deep:2,river:1,lake:1,deep:2};
 for(const z in ZONES)if(ZONES[z].water)Object.assign(WATER_KINDS,ZONES[z].water);
+/* L50: a zone can give a water kind its own "can't go here" line, puff colors and splash clip:
+   registerZone({waterSay:{dino_lava:'Too hot! You need to fly!'},waterPuff:{dino_lava:['#ff7b00','#ffb703']},waterSfx:{dino_lava:'dino_lava'}}).
+   Kinds named *lava* / *magma* get the hot set by default; anything else is blue water. */
+const WATER_DEF={say:'Too deep! You need to fly!',puff:['#bde0fe','#ffffff','#a2d2ff'],sfx:'splash'};
+const WATER_HOT={say:'Too hot! You need to fly!',puff:['#ff7b00','#ffb703','#ffd166'],sfx:'dino_lava'};
+const WATER_LOOK={};
+function waterLook(kind){if(WATER_LOOK[kind])return WATER_LOOK[kind];const d=/lava|magma/.test(kind)?WATER_HOT:WATER_DEF,w={};
+  for(const z in ZONES){const Z=ZONES[z];if(Z.waterSay&&Z.waterSay[kind])w.say=Z.waterSay[kind];if(Z.waterPuff&&Z.waterPuff[kind])w.puff=[].concat(Z.waterPuff[kind]);if(Z.waterSfx&&Z.waterSfx[kind])w.sfx=Z.waterSfx[kind];}
+  return WATER_LOOK[kind]={say:w.say||d.say,puff:w.puff||d.puff,sfx:w.sfx||d.sfx};}
+const waterSplash=(L,vol,rate)=>(L.sfx!=='splash'&&sfxClip(L.sfx,vol,rate))||sfxClip('splash',vol,rate);
 function spotLookOf(c,kind){const zl=ZONES[c.zone]&&ZONES[c.zone].spotLook;return (zl&&zl[kind])||(typeof SPOT_LOOK!=='undefined'&&SPOT_LOOK[kind]);}
 function waterAt(x,z){let best=null;const ci=chunkIdx(x),cj=chunkIdx(z);
   for(let a=ci-1;a<=ci+1;a++)for(let b=cj-1;b<=cj+1;b++){const c=chunks.get(chunkKey(a,b));if(!c||!c.spots.length)continue;
@@ -1536,10 +1546,10 @@ let lastDeepSay=-99;
 function waterTick(p,dt){
   const q=p.air?null:waterAt(p.x,p.z),lv=q?WATER_KINDS[q.kind]:0,g=p.model.g;
   if(!lv){if(p.wet){g.rotation.z=0;p.wet=0;}if(!p.air)p.dryAt=[p.x,p.z];return;}
-  const fresh=!p.wet,sk=hasAbility('hover'),big=p.r*2>Math.max(q.hx,q.hz),S1=Math.max(S,0.15),spd=Math.abs(p.speed);p.wet=lv;
-  if(fresh&&spd>2){sfxClip('splash',0.6)||noise(0.4,1400,0.8,0.14,'lowpass',300);puff(p.x,0.3*S1,p.z,8,1.4*S1,'#bde0fe');}
+  const fresh=!p.wet,sk=hasAbility('hover'),big=p.r*2>Math.max(q.hx,q.hz),S1=Math.max(S,0.15),spd=Math.abs(p.speed),L=waterLook(q.kind);p.wet=lv;
+  if(fresh&&spd>2){waterSplash(L,0.6)||noise(0.4,1400,0.8,0.14,'lowpass',300);puff(p.x,0.3*S1,p.z,8,1.4*S1,L.puff[0]);}
   if((p.splashT=(p.splashT||0)-dt)<=0&&spd>1){p.splashT=sk?0.06:0.18;
-    const bx=p.x-Math.sin(p.heading)*p.r,bz=p.z-Math.cos(p.heading)*p.r;puff(bx,0.2*S1,bz,sk?2:1,(sk?0.7:0.5)*S1,pick(['#bde0fe','#ffffff','#a2d2ff']));}
+    const bx=p.x-Math.sin(p.heading)*p.r,bz=p.z-Math.cos(p.heading)*p.r;puff(bx,0.2*S1,bz,sk?2:1,(sk?0.7:0.5)*S1,pick(L.puff));}
   if(sk){if(p.partMap&&p.partMap.hover)p.partMap.hover.visible=true;g.position.y+=0.15;g.rotation.z=0.04*Math.sin(T*5+p.idx);
     if((p.humT=(p.humT||0)-dt)<=0){p.humT=0.5;sfxClip('hover_hum',0.25)||tone('sine',240+rand(-20,20),280,0.3,0.03);}p.dryAt=[p.x,p.z];return;}
   // wheels in the water: slow, low, bobbing
@@ -1551,8 +1561,8 @@ function waterTick(p,dt){
   const dx=p.x-d0[0],dz=p.z-d0[1],d=Math.hypot(dx,dz),mx=p.r*1.2+0.3*S1;
   if(d>mx*8){p.dryAt=[p.x,p.z];return;} // teleported in (spawn, garage): just wade
   if(d>mx){const ux=dx/d,uz=dz/d,back=Math.min(d-mx,(16*p.sm+(d-mx)*3)*dt);p.x-=ux*back;p.z-=uz*back;p.speed*=0.5;p.kx=-ux*5*p.sm;p.kz=-uz*5*p.sm;
-    if((p.deepT=(p.deepT||0)-dt)<=0){p.deepT=0.5;puff(p.x+ux*p.r,0.3*S1,p.z+uz*p.r,5,1.1*S1,'#a2d2ff');sfxClip('splash',0.4,1.3)||noise(0.25,1800,0.8,0.1,'lowpass',400);}
-    if(T-lastDeepSay>14){lastDeepSay=T;say('Too deep! You need to fly!');}}}
+    if((p.deepT=(p.deepT||0)-dt)<=0){p.deepT=0.5;puff(p.x+ux*p.r,0.3*S1,p.z+uz*p.r,5,1.1*S1,L.puff[L.puff.length-1]);waterSplash(L,0.4,1.3)||noise(0.25,1800,0.8,0.1,'lowpass',400);}
+    if(T-lastDeepSay>14){lastDeepSay=T;say(L.say);}}}
 // a point inside a spot that lies in the ring [d0,d1] around (px,pz), or null when no spot is in reach
 function spotPoint(px,pz,d0,d1){const near=[];let tot=0;
   for(let ci=chunkIdx(px-d1);ci<=chunkIdx(px+d1);ci++)for(let cj=chunkIdx(pz-d1);cj<=chunkIdx(pz+d1);cj++){const c=chunks.get(chunkKey(ci,cj));if(!c)continue;
