@@ -156,7 +156,7 @@ registerZone({
   sky:{top:'#8fd9b6',horizon:'#e9fff1'},
   weight:0,                                  // only part of Candy Land (L33), never mixed into the Home World
   // the candy tracks until AU15 makes the forest's own; a quiet forest ambience of its own
-  music:{drive:'candy_drive',boss:'candy_boss'},
+  music:{drive:'candy_forest_drive',boss:'candy_boss'},
   sfx:{crash:'candy_crunch',boom:'candy_pop',land:'candy_squish',ambient:'candy_forest_ambient'},
   props:CANDY_FOREST_PROPS,
   scenes:CANDY_FOREST_SCENES,
