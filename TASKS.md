@@ -174,6 +174,8 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 - [ ] **AU8: Gumbo-Tron + Lava Larry voice lines** `NEEDS AUDIO` (audio; from B pair 2). Add to `tools/voice-lines.json` and generate: `Here comes Gumbo-Tron 3000!`, `Here comes Lava Larry!`, plus each boss's `taunts` and `defeat` line (exact text in `BOSSES` in `src/world/bosses.js`). Gumbo-Tron is a cheerful beepy robot; Lava Larry is a big, warm, rumbly goofball (his defeat line starts with a giant burp).
 - [x] **L27: Per-boss taunts and defeat line** `NEEDS LOGIC` (logic; from B1/B2). Bosses can now carry `taunts:[…]` and `defeat:'…'` (Gummo and Rexy do). In `hitWeak`, use `boss.def.taunts` (when present) instead of the generic `'Ouch!','Bonk!','Again! Again!'`, and say `boss.def.defeat` before `'You beat the boss!'`. Fall back to today's lines when a boss has none.
   - Done (logic-gameplay/L23): hit lines come from `def.taunts`; on the win the boss says `def.defeat`, then "You beat the boss!" ~3.4 s later and "Hooray!" after that. The `TODO(logic)` note in the bosses.js header can go (world-bosses).
+- [ ] **AU9: Bedroom breakout lines** `NEEDS AUDIO` (audio; from L20). New lines in `tools/voice-lines.json`: "Break out!", "We're outside!", "Smash the door!". Run `make-voices.mjs --dry`, then generate.
+- [ ] **D16: Start-screen world picker look** `NEEDS DESIGN` (cars-ui; from L20). `#worldPick` holds two `.wp` buttons (🛏️ bedroom, 🌳 outside; `.sel` = picked) above PLAY. Logic injects a plain default style before style.css, so any rule in style.css wins. Pictures only, no words.
 - [ ] **B3: Bedroom boss** `NEEDS DESIGN` (world-bosses; needs L23 + L20) — a giant toy (wind-up robot, jack-in-the-box, or a living teddy bear) guarding the door out.
 
 - [ ] **AU2: Zone music + sound effects** `NEEDS AUDIO` (audio; needs L22). ElevenLabs credits are plentiful, so go all in:
@@ -221,6 +223,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 ### Play-test round 2 (Kaden + son, Nov 7): "it was fun!"
 
 - [ ] **Z3: Inside the House (kid's bedroom) zone** `NEEDS DESIGN` (zone-bedroom agent, see `agents/zone.md`; needs L20)
+  - L20 ✅ is live: write `src/world/zones/bedroom.js` with `registerZone({id:'bedroom', indoor:{half:80,wallH:44}, room(half){…}, breakout:['bedroom_door'], start, props, sizes, layout, sky, herds:[]})` (contract in CLAUDE.md, "Indoor zone"). The placeholder (`BEDROOM_DEFAULT` in game.js) shows the scale: room ±80, walls 44 tall, door 16×30 on the north wall. Pick the door's size class with pacing in mind: `large` breaks out at size 6 of 8 and leaves the last sizes for outside; `mega` keeps the whole game indoors. Test with `__sp.room()`.
   - Micro: crumbs, cereal, gummy bears, crayons, building bricks, marbles, toy cars. Small/medium: plush toys, toy trucks, block towers, a train set, books. Large/huge: bed, dresser, toy chest, bookshelf, desk and chair, lamp. Mega: the door/window you break out through.
   - Cozy, colorful kid's-room look. CC0 furniture/toy models where possible. Original designs only (no branded toys).
 
@@ -301,11 +304,12 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Hand-off: `NEEDS DESIGN` world-props to lay out real neighborhoods with spots (D11).
   - Done (logic-systems/L19): `ctx.spot(kind,x,z,w,d,th)` (rotated rectangles, clipped to the chunk). `spawnScatter` puts ~85% (`SPOT_LEFTOVER`=0.15) of the filler inside a spot in reach (same ring around the car as before; no spot in reach = old behavior) and picks props from `registerZone({spots})` → `SPOT_PROPS[kind][size]` (objects.js) → the zone's size list. Until design defines `SPOT_PROPS`, logic's `DEFAULT_SPOT_PROPS` uses today's types shrunk/grown. `__sp.spots()` debug overlay. Tested with test spots in every chunk: small 28/86 and mega 68/116 scatter inside spots, micro unchanged (no spot in reach); no errors; draw calls unchanged apart from the overlay.
 
-- [ ] **L20: "Inside the House" opening world**
+- [x] **L20: "Inside the House" opening world**
   - A new world type: the game can **start inside a giant kid's bedroom**. You're micro-sized among snacks and small toys, grow into bigger toys, then furniture, then **break out** (smash the door or window). That transition launches you into the outdoor world at a matching size.
   - Indoors needs: walls/floor/ceiling instead of sky and roads, no streaming grid (one big room, maybe a hallway), indoor lighting, and a breakout event (a big crash, then the camera flies out to town).
   - Built on the zone plug-in system as a special zone (`bedroom`) with a `breakout` hook. Start-screen choice: **Bedroom** or **Outside** (pictures, not words).
   - Hand-off: `NEEDS DESIGN` zone-bedroom (Z3).
+  - Done (logic-systems/L20): indoor zones (`indoor:{half,…}` on `registerZone`, contract in CLAUDE.md). The room is the whole world (zone map all bedroom, world bound `WB` = the room, roads/zone ground/edge walls/start-street dressing hidden, no home arena, no herds, no boss: at GIANT indoors the NEW WORLD button shows instead). Logic placeholder: wood floor + rug, pink walls with a window, a baseboard toward the camera, an orange `room_door` (size `large`) on the north wall, today's toys scaled as filler. When the players reach the door's size an arrow bobs over it ("Smash the door!"); smashing it = BREAK OUT! (crash, confetti, camera pulls way back) → fresh outdoor world at the same size, camera swoops in ("We're outside!"). The garage's GO keeps you in the room. Start screen: 🛏️ / 🌳 picture buttons (stick, arrows or A/D to switch, remembered). Draw calls in the room: 255 micro, 653 small, ~300 large. New voice lines → AU8.
 
 - [ ] **L5: Tune and test pass**
   - Round 1 (Kaden's first play-test) ✅: slower when small; car tiers (cooler cars unlock every 2 sizes, Y switches within the tier); big cars shoot (X: cannon / rocket, also hits boss weak spots); LEVEL UP button instead of auto-growing; new `micro` bottom size, scatter mostly at your size with bigger things rarer; stuck detection → jump becomes 💥 BOOM.

@@ -30,8 +30,8 @@ function updateDebris(dt){
     if(d.confetti){d.vy=Math.max(d.vy-d.g*dt,-5);d.vx*=0.985;d.vz*=0.985;}else d.vy-=d.g*dt;
     p.x+=d.vx*dt;p.y+=d.vy*dt;p.z+=d.vz*dt;
     d.m.rotation.x+=d.ax*dt;d.m.rotation.y+=d.ay*dt;d.m.rotation.z+=d.az*dt;
-    if(Math.abs(p.x)>ARENA){p.x=Math.sign(p.x)*ARENA;d.vx*=-0.4;}
-    if(Math.abs(p.z)>ARENA){p.z=Math.sign(p.z)*ARENA;d.vz*=-0.4;}
+    if(Math.abs(p.x)>WB){p.x=Math.sign(p.x)*WB;d.vx*=-0.4;}
+    if(Math.abs(p.z)>WB){p.z=Math.sign(p.z)*WB;d.vz*=-0.4;}
     const gh=groundH(p.x,p.z)+d.half*0.8;
     if(p.y<gh){p.y=gh;
       if(d.confetti){d.settled=true;continue;}
@@ -77,6 +77,7 @@ function flash(x,y,z,color,size,life){addPuff(x,y,z,size,color,life,0,2,0,6);}
 /* ---------- smashing ---------- */
 let score=0,levelScore=0,level=1,goal=100,smashCount=0,shake=0;
 const queue=[];
+let WB=ARENA; // world bound: the arena outside, the room indoors (L20)
 const _wp=new THREE.Vector3(),_q=new THREE.Quaternion(),_ws=new THREE.Vector3();
 function partMat(m){if(m.material&&!Array.isArray(m.material))return m.material;let f=null;m.traverse(x=>{if(!f&&x.isMesh)f=Array.isArray(x.material)?x.material[0]:x.material;});return f||M('#cccccc');}
 // send one part flying: whole parts fly off intact, others shatter into `n` boxes. vyK scales the upward kick.
@@ -103,7 +104,7 @@ function breakPart(o,part,nx,nz,power,vyK=1){
 function smash(o,vx,vz,power){
   if(!o.alive)return;
   if(o.bld){collapse(o,0,vx,vz,power,true);return;}
-  o.alive=false;wakeObj(o);
+  o.alive=false;wakeObj(o);if(isBreakout(o))breakOut(o);
   if(o.rec){o.rec.dead=true;o.rec.back=T+rand(REGROW[0],REGROW[1]);}
   const dl=Math.hypot(vx,vz)||1,nx=vx/dl,nz=vz/dl;
   for(const part of o.parts)breakPart(o,part,nx,nz,power);
@@ -157,7 +158,7 @@ function initBld(o){
 }
 function killBld(o){ // the building is done for: score what's left, remember it, regrow later
   comboHit(3);
-  o.alive=false;wakeObj(o);
+  o.alive=false;wakeObj(o);if(isBreakout(o))breakOut(o);
   if(o.rec){o.rec.dead=true;o.rec.gone=[];o.rec.back=T+rand(REGROW[0],REGROW[1]);}
   const rest=Math.max(0,1-o.paid);smashCount++;addScore(o.points*rest);grow((GROW_VAL[o.sz]||0)*rest);
 }
@@ -293,7 +294,7 @@ function updateShots(dt){
     const gh=groundH(s.x,s.z)+s.r;if(s.y<gh){if(s.rk||s.bounced){shotEnd(s,i);continue;}s.y=gh;s.vy=Math.abs(s.vy)*0.5+3*Math.sqrt(S);s.bounced=true;sfx.thud();}
     if(s.rk&&Math.random()<0.6)addPart(mk('box',s.r,s.r,s.r,null,s.x,s.y,s.z,E(pick(['#ff7b00','#ffd60a']))),0.3);
     s.m.position.set(s.x,s.y,s.z);if(!s.rk)s.m.rotation.x+=dt*10;
-    if(s.life<=0||Math.abs(s.x)>ARENA||Math.abs(s.z)>ARENA){shotEnd(s,i);continue;}
+    if(s.life<=0||Math.abs(s.x)>WB||Math.abs(s.z)>WB){shotEnd(s,i);continue;}
     let done=false;
     if(boss&&!s.bub&&boss.state!=='dead'&&boss.state!=='drop'){const o=boss.o;
       for(const q of o.parts){if(q.kind!=='weak'||q.gone||q.phase!==boss.phase)continue;q.mesh.getWorldPosition(_wpB);
@@ -385,15 +386,15 @@ const lvBtn=document.createElement('button');lvBtn.id='levelUp';lvBtn.innerHTML=
 lvBtn.onclick=e=>{e.stopPropagation();levelUp();};lvBtn.addEventListener('touchstart',e=>{e.stopPropagation();},{passive:true});document.body.appendChild(lvBtn);
 function goGiant(){
   showBig('GIANT!');sfx.fanfare();queue.push({t:1.3,fn:()=>sfx.fanfare()});say("You're GIANT! Smash everything!");shake=2;popT=1;confetti(220);
-  queue.push({t:4,fn:summonBoss});} // the NEW WORLD button comes after the boss is beaten
+  queue.push({t:4,fn:()=>{if(roomZ)nwBtn.style.display='block';else summonBoss();}});} // the NEW WORLD button comes after the boss is beaten
 // NEW WORLD: shrink back to tiny and roll a fresh, procedurally zoned world. Only ever by choice.
 function newWorld(){
   if(!giant||nwBtn.style.display!=='block')return;
-  rollWorld(false);
+  rollWorld(false,'outside');
   music('drive');showBig('NEW WORLD!');sfx.fanfare();say('New world! Smash it!');confetti(150);players.forEach(p=>introCar(p,2.4));
 }
 // a fresh procedurally zoned world; keepSize (after the garage) keeps the players' size and cars
-function rollWorld(keepSize){
+function rollWorld(keepSize,kind){ // kind: 'bedroom' | 'outside' | undefined = the same kind as now
   boss=null;updateBossHud();bossArrows.forEach(s=>s.visible=false);
   for(const c of chunks.values())if(c.loaded)unloadChunk(c);
   for(const c of chunks.values())for(const r of c.rampList)r.mesh.geometry.dispose();
@@ -401,8 +402,9 @@ function rollWorld(keepSize){
   for(const o of collapsing)scene.remove(o.g);collapsing.length=0;
   for(const a of animals)animalHide(a);animals.length=0;
   for(const d of debris)if(!d.confetti){scene.remove(d.m);d.life=0;}
-  worldSeed=(Math.random()*1e9)|0;setZoneMap(randomZoneMap(mulberry(worldSeed),'TFP',pickThemedZones()));
-  buildWorld();captureHome();
+  worldSeed=(Math.random()*1e9)|0;setRoom(kind==='bedroom'?ZONES.bedroom:kind==='outside'?null:roomZ);
+  if(roomZ){const n=CHUNKS_HALF*2+1;setZoneMap(Array.from({length:n},()=>roomZ.letter.repeat(n)));}
+  else{setZoneMap(randomZoneMap(mulberry(worldSeed),'TFP',pickThemedZones()));buildWorld();captureHome();}
   if(!keepSize){growth=0;tier=0;giant=false;levelReady=false;popT=1;goldCount=0;goldHud.style.display='none';}
   clearPads();nwBtn.style.display='none';
   players.forEach(p=>{const st=spawnSpot(p.idx);p.x=st[0];p.z=st[1];p.y=groundH(st[0],st[1]);p.vy=0;p.speed=0;p.kx=p.kz=0;p.air=false;p.heading=Math.PI;});
@@ -448,7 +450,7 @@ function pickType(){let tot=0;SPAWN_W.forEach(w=>tot+=w[1]);let r=Math.random()*
 function spawnFalling(cx,cz,spread,type){
   type=type||pickType();
   for(let tries=0;tries<12;tries++){
-    const x=cx!=null?cx+rand(-spread,spread):rand(-ARENA+4,ARENA-4),z=cz!=null?cz+rand(-spread,spread):rand(-ARENA+4,ARENA-4);
+    const x=cx!=null?cx+rand(-spread,spread):rand(-WB+4,WB-4),z=cz!=null?cz+rand(-spread,spread):rand(-WB+4,WB-4);
     if(!spotOK(x,z,3.6))continue;
     if(players.some(p=>Math.hypot(p.x-x,p.z-z)<(cx!=null?8:16)))continue;
     if(objects.some(o=>o.alive&&Math.hypot(o.x-x,o.z-z)<o.r+3.8))continue;
@@ -482,6 +484,54 @@ function getChunk(ci,cj){const k=chunkKey(ci,cj);let c=chunks.get(k);
 const chunkOf=(x,z)=>getChunk(chunkIdx(x),chunkIdx(z));
 const zoneXZ=(x,z)=>zoneAt(chunkIdx(x),chunkIdx(z)); // L22: which zone a sound happens in
 // tag every object with its type/arg/chunk so it can be rebuilt and streamed
+/* ---------- L20: Inside the House (indoor zone) ---------- */
+/* An indoor zone is a themed zone with `indoor:{half:80,wallH:44,floor,wall}`: the whole world becomes one room
+   (2·half square, centered on the origin) with no roads, home arena or edge walls. Optional: room(half) → THREE.Group
+   shell (floor top at y≈0, walls just outside ±half, open/low toward +Z where the camera is), start:[[x,z],[x,z]],
+   breakout:['type',…] (or makeObj opts {breakout:true}): smashing one breaks out into a fresh outdoor world at the
+   same size. Logic's placeholder below stands in until a design zone file registers 'bedroom' (Z3). */
+const ROOM_DEFAULT={half:80,wallH:44,floor:'#d9a66b',wall:'#ffd6e0',trim:'#ffffff'};
+function roomShell(z){const I=Object.assign({},ROOM_DEFAULT,z.indoor),h=I.half,H=I.wallH,W=h*2+8,g=new THREE.Group();
+  const flat=m=>{m.castShadow=false;g.add(m);return m;};
+  flat(mk('box',W,1,W,I.floor,0,-0.49,0));flat(mk('cyl',h*0.9,0.06,h*0.7,'#8ecae6',0,0.03,h*0.15));
+  g.add(mk('box',W,H,4,I.wall,0,H/2,-h-2),mk('box',4,H,W,I.wall,-h-2,H/2,0),mk('box',4,H,W,I.wall,h+2,H/2,0),
+    mk('box',W,3,4,I.trim,0,1.5,h+2)); // the wall toward the camera is only a baseboard (dollhouse view)
+  flat(mk('box',W-8,2,0.6,I.trim,0,1,-h+0.3));flat(mk('box',0.6,2,W-8,I.trim,-h+0.3,1,0));flat(mk('box',0.6,2,W-8,I.trim,h-0.3,1,0));
+  g.add(mk('box',30,20,1,'#bde0fe',h*0.45,H*0.55,-h+0.2),mk('box',31,1.2,1.4,I.trim,h*0.45,H*0.55,-h+0.3),mk('box',1.2,21,1.4,I.trim,h*0.45,H*0.55,-h+0.3)); // a window
+  return g;}
+const BEDROOM_DEFAULT={id:'bedroom',ground:'#d9a66b',weight:0,sky:{top:'#fff1e6',horizon:'#ffd6e0'},herds:[],
+  indoor:{half:80},breakout:['room_door'],
+  props:{room_door:(x,z)=>makeObj(x,z,5,30,50,P=>{ // TODO(design): Z3 replaces the placeholder door
+    P(mk('box',16,30,1.2,'#f4a261',0,15,-5.4),4);P(mk('box',18,1.4,1.8,'#ffffff',0,30.5,-5.4),2,true);
+    P(mk('box',1.2,30,1.8,'#ffffff',-8.6,15,-5.4),2,true);P(mk('box',1.2,30,1.8,'#ffffff',8.6,15,-5.4),2,true);
+    P(mk('sph',1.4,1.4,1.4,'#ffd60a',5.6,14,-4.4),1,true);P(mk('box',10,8,0.4,'#e76f51',0,22,-4.7),2);P(mk('box',10,8,0.4,'#e76f51',0,8,-4.7),2);},
+    {size:'large',breakout:true})},
+  layout(ctx){const h=WB;ctx.place('room_door',0,-(h-7.5),0,5);
+    for(let i=0;i<8;i++)ctx.place(pick(['crates','tower','pin','melon','barrel','snowman']),rand(ctx.x0+4,ctx.x1-4),rand(ctx.z0+4,ctx.z1-4));}};
+if(!ZONES.bedroom)registerZone(BEDROOM_DEFAULT);
+let roomZ=null,roomG=null,breakT=0,breakFly=0,doorT=0,doorSaid=false,doorArrow=null;
+const isBreakout=o=>!!(roomZ&&(o.breakout||(roomZ.breakout||[]).includes(o.type)));
+function setRoom(z){
+  if(roomG){scene.remove(roomG);roomG=null;}
+  roomZ=z||null;WB=roomZ?((roomZ.indoor&&roomZ.indoor.half)||ROOM_DEFAULT.half):ARENA;doorSaid=false;
+  setOutdoor(!roomZ);if(typeof streetDecor!=='undefined'&&streetDecor)streetDecor.visible=!roomZ;
+  if(roomZ){roomG=(typeof roomZ.room==='function'&&roomZ.room(WB))||roomShell(roomZ);scene.add(roomG);}}
+// smashing the door (or window): a big crash, the camera pulls way back, then a fresh outdoor world at the same size
+function breakOut(o){if(breakT>0)return;breakT=2;
+  showBig('BREAK OUT!');sfx.rumble();sfx.crash(true);sfx.boom();shake=2;popT=1;confetti(220);say('Break out!');
+  flash(o.x,o.h*0.5,o.z,'#ffffff',o.r*4,0.5);puff(o.x,o.h*0.3,o.z,16,o.r*1.5,'#ffffff');}
+function updateRoom(dt){
+  if(breakT>0){breakT-=dt;breakFly=Math.min(1,breakFly+dt*0.6);if(doorArrow)doorArrow.visible=false;
+    if(breakT<=0){breakFly=0;rollWorld(true,'outside');camDist*=4; // the camera swoops back down over town
+      music('drive');showBig("WE'RE OUTSIDE!");sfx.fanfare();say("We're outside!");confetti(150);players.forEach(p=>introCar(p,1.6));}
+    return;}
+  if(!roomZ){if(doorArrow)doorArrow.visible=false;return;}
+  if((doorT-=dt)<=0){doorT=0.5;const d=objects.find(o=>o.alive&&!o.falling&&isBreakout(o)),ok=d&&d.sz<=tier;
+    if(!doorArrow){doorArrow=new THREE.Mesh(MARK_ARROW_GEO,new THREE.MeshBasicMaterial({color:'#ffd60a',transparent:true,opacity:0.95,depthTest:false}));doorArrow.renderOrder=10;scene.add(doorArrow);}
+    doorArrow.visible=!!ok;doorArrow.userData.o=ok?d:null;
+    if(ok&&!doorSaid&&state==='play'){doorSaid=true;showBig('BREAK OUT!');say('Smash the door!');}}
+  const d=doorArrow&&doorArrow.userData.o;
+  if(d){const k=Math.max(d.h*0.25,4*S);doorArrow.scale.set(k,k*1.5,k);doorArrow.position.set(d.x,d.h*(d.s0||1)+k*(0.6+0.3*Math.sin(T*5)),d.z+2);}}
 for(const t in OBJ){const f=OBJ[t];OBJ[t]=(x,z,arg,sc)=>{const o=f(x,z,arg);o.type=t;o.arg=arg;o.chunk=chunkOf(x,z).k;o.sz=sizeClass(o);initBld(o);scaleObj(o,sc);o.fr=footprint(o);setupSpin(o);return o;};}
 // deterministic randomness, so a chunk (and each house in it) looks the same every time it's rebuilt
 function mulberry(a){return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
@@ -497,8 +547,8 @@ function withSeed(seed,fn){const r=Math.random;Math.random=mulberry(seed);try{re
 const REC_R={house:3.6,crates:1.5,tower:1.4,pin:1.1,snowman:1.3,fence:1.8,barrel:1.0,cone:0.7,melon:1.1,tree:1.1};
 function spotFree(c,x,z,r){
   if(x-r<c.x0||x+r>c.x0+CHUNK||z-r<c.z0||z+r>c.z0+CHUNK)return false;
-  if(Math.abs(x)>ARENA-r-2||Math.abs(z)>ARENA-r-2)return false;
-  if(Math.abs(x)<HOME+r&&Math.abs(z)<HOME+r)return false; // hand-built home arena
+  if(Math.abs(x)>WB-r-2||Math.abs(z)>WB-r-2)return false;
+  if(!roomZ&&Math.abs(x)<HOME+r&&Math.abs(z)<HOME+r)return false; // hand-built home arena
   if(onRoad(x,z,r))return false;
   for(const [a,b] of [[0,0],[r+1,0],[-r-1,0],[0,r+1],[0,-r-1]])if(rampsH(c.rampList,x+a,z+b)>0)return false;
   for(const q of c.recs)if(Math.hypot(q.x-x,q.z-z)<q.r+r+0.6)return false;
@@ -519,7 +569,7 @@ function chunkSpot(c,kind,x,z,w,d,th=0){
 function chunkRamp(c,x,z,th,L=11,W=7,H=3.6){
   const m=W+2,sx=Math.sin(th),sz=Math.cos(th);
   for(let k=0;k<=2;k++){const px=x+sx*L*k/2,pz=z+sz*L*k/2;
-    if(px<c.x0+m||px>c.x0+CHUNK-m||pz<c.z0+m||pz>c.z0+CHUNK-m||onRoad(px,pz,W/2)||(Math.abs(px)<HOME+m&&Math.abs(pz)<HOME+m))return false;}
+    if(px<c.x0+m||px>c.x0+CHUNK-m||pz<c.z0+m||pz>c.z0+CHUNK-m||onRoad(px,pz,W/2)||(!roomZ&&Math.abs(px)<HOME+m&&Math.abs(pz)<HOME+m))return false;}
   const r=makeRamp(x,z,th,L,W,H);
   for(const q of [...c.recs,...c.rampList.map(o=>({x:o.x,z:o.z,r:o.L}))])
     for(const [a,b] of [[0,0],[q.r+1,0],[-q.r-1,0],[0,q.r+1],[0,-q.r-1]])if(rampsH([r],q.x+a,q.z+b)>0)return false;
@@ -534,7 +584,7 @@ function genChunk(c){
     lay(ctx);
     if(Math.random()<0.3&&c.recs.length){const r=pick(c.recs);r.gold=true;}
     if(!c.herds.length)defaultHerds(c);
-    if(c.ci===0&&c.cj===0){chunkHerd(c,'chicken',16,36,5);chunkHerd(c,'duck',-16,34,4);} // say hi at the start line
+    if(!roomZ&&c.ci===0&&c.cj===0){chunkHerd(c,'chicken',16,36,5);chunkHerd(c,'duck',-16,34,4);} // say hi at the start line
   });
 }
 // placeholder zone fillers using today's OBJ types, so the big world isn't empty before D1
@@ -753,7 +803,7 @@ class Player{
     const fx=Math.sin(this.heading),fz=Math.cos(this.heading);
     this.x+=(fx*this.speed+this.kx)*dt;this.z+=(fz*this.speed+this.kz)*dt;
     const kd=Math.pow(0.05,dt);this.kx*=kd;this.kz*=kd;
-    const lim=garage?1e9:ARENA-2.5*S;this.wallT-=dt; // the garage sits outside the arena and has its own wall
+    const lim=garage?1e9:WB-2.5*S;this.wallT-=dt; // the garage sits outside the arena and has its own wall
     if(Math.abs(this.x)>lim||Math.abs(this.z)>lim){
       if(Math.abs(this.x)>lim){this.x=Math.sign(this.x)*lim;this.kx=-Math.sign(this.x)*6;}
       if(Math.abs(this.z)>lim){this.z=Math.sign(this.z)*lim;this.kz=-Math.sign(this.z)*6;}
@@ -812,7 +862,7 @@ const MARK_BEAM_GEO=new THREE.CylinderGeometry(0.3,1,1,24,1,true).translate(0,0.
 /* Start on a street (L21): both cars in the right lane of the north–south road by the home arena, facing up the screen.
    Design can move it: define `const START_STREET=[[x,z],[x,z]]` in objects.js (and dress the spot: curb, mailbox, clutter). */
 const SPAWN_DEFAULT=[[2.6,48],[3.8,48.6]];
-const spawnSpot=i=>(typeof START_STREET!=='undefined'&&START_STREET[i])||SPAWN_DEFAULT[i];
+const spawnSpot=i=>roomZ?((roomZ.start&&roomZ.start[i])||[[-1.2,WB*0.55],[1.2,WB*0.55]][i]):(typeof START_STREET!=='undefined'&&START_STREET[i])||SPAWN_DEFAULT[i];
 // spotlight + "beep beep!" so each player sees which car is theirs
 let lastBeepT=-9;
 function introCar(p,delay=1.4){p.markT=4;queue.push({t:delay,fn:()=>{if(T-lastBeepT<1)return;lastBeepT=T;sfx.beep();say('Beep beep!');}});}
@@ -852,6 +902,7 @@ addEventListener('keydown',e=>{
   if(!keys.has(e.code))pressed.add(e.code);keys.add(e.code);
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Slash','Enter'].includes(e.code))e.preventDefault();
   if(state==='start'&&(e.code==='Space'||e.code==='Enter'))startGame();
+  if(state==='start'&&/^(ArrowLeft|KeyA)$/.test(e.code))setPick('bedroom');if(state==='start'&&/^(ArrowRight|KeyD)$/.test(e.code))setPick('outside');
   if(e.code==='Escape'){if(state==='play')pause();else if(state==='pause')resume();}
   if(e.code==='KeyN'&&state==='play')newWorld();
   if(e.code==='Backquote'&&state==='play'&&!garage)for(const p of players){const l=carsInTier(carTierNow());p.setCar(l[(l.indexOf(p.carIdx)+1)%l.length],true);} // debug: cycle cars (play uses the garage)if(e.code==='KeyM')toggleMute();if(e.code==='KeyF')toggleFS();
@@ -891,8 +942,20 @@ const bFire=document.createElement('div');bFire.className='tbtn';bFire.id='bFire
 btn('bFire',()=>touch.fire=true,()=>touch.fire=false);
 btn('bGo',()=>touch.boost=true,()=>touch.boost=false);btn('bJump',()=>touch.jumpP=true);btn('bSwap',()=>touch.swapP=true);
 
+/* Start screen: pick where to play with pictures (L20): 🛏️ the bedroom or 🌳 outside. Stick / arrows / A D to switch. */
+let startPick='outside';try{startPick=localStorage.getItem('sp_world')||'outside';}catch(e){}
+const worldPick=document.createElement('div');worldPick.id='worldPick';
+worldPick.innerHTML='<button class="wp" data-w="bedroom" title="Bedroom">🛏️</button><button class="wp" data-w="outside" title="Outside">🌳</button>';
+$('play').before(worldPick);
+{const st=document.createElement('style'); // default look; style.css (loaded after) can restyle #worldPick .wp / .wp.sel
+  st.textContent='#worldPick{display:flex;gap:24px;justify-content:center;margin:10px 0 14px}#worldPick .wp{font-size:64px;line-height:1;padding:14px 26px;border-radius:24px;border:5px solid transparent;background:rgba(255,255,255,.18);cursor:pointer;transition:transform .15s}#worldPick .wp.sel{border-color:#ffd60a;background:rgba(255,214,10,.3);transform:scale(1.12)}';
+  document.head.prepend(st);}
+function markPick(){for(const b of worldPick.children)b.classList.toggle('sel',b.dataset.w===startPick);}
+function setPick(w){if(w!==startPick){startPick=w;sfx.pop();}try{localStorage.setItem('sp_world',w);}catch(e){}markPick();}
+for(const b of worldPick.children)b.onclick=e=>{e.stopPropagation();initAudio();setPick(b.dataset.w);startGame();};
+markPick();let pickX=0;
 function startGame(){
-  if(state!=='start')return;state='play';initAudio();music('drive');
+  if(state!=='start')return;state='play';initAudio();if(startPick==='bedroom'&&ZONES.bedroom)rollWorld(true,'bedroom');music('drive');
   $('start').style.display='none';$('hud').style.display='block';updatePanels();
   if(touchUsed){$('touch').style.display='block';addPlayer('touch');}
 }
@@ -939,7 +1002,7 @@ function pauseInput(gpIn){
 /* ---------- themed zones (L15) ---------- */
 const _skyT=new THREE.Color(),_skyB=new THREE.Color();
 // a NEW WORLD mixes in up to two registered themed zones (weight = how likely each is to show up)
-function pickThemedZones(){let s='';for(const z of Object.values(ZONES).sort(()=>Math.random()-0.5)){if(s.length>=2)break;if(Math.random()<Math.min(1,0.6*z.weight))s+=z.letter;}return s;}
+function pickThemedZones(){let s='';for(const z of Object.values(ZONES).filter(z=>!z.indoor).sort(()=>Math.random()-0.5)){if(s.length>=2)break;if(Math.random()<Math.min(1,0.6*z.weight))s+=z.letter;}return s;}
 // test helper: paint a 3×3 block of chunks next to the car as that zone, rebuild them and drive the car in
 function testZone(id){const z=ZONES[id];if(!z)return 'unknown zone: '+id+' (registered: '+Object.keys(ZONES).join(', ')+')';
   const p=players[0]||{x:camT.x,z:camT.z};let ci=clamp(chunkIdx(p.x)+3,-CHUNKS_HALF+1,CHUNKS_HALF-1),cj=clamp(chunkIdx(p.z),-CHUNKS_HALF+1,CHUNKS_HALF-1);
@@ -999,7 +1062,7 @@ function updateRollers(dt){
     if(!o.alive){rollers.splice(i,1);continue;}
     o.rollT+=dt;const f=Math.pow(0.7,dt);o.vx*=f;o.vz*=f;const sp=Math.hypot(o.vx,o.vz);
     o.x+=o.vx*dt;o.z+=o.vz*dt;
-    if(Math.abs(o.x)>ARENA-o.r){o.x=Math.sign(o.x)*(ARENA-o.r);o.vx*=-0.6;}if(Math.abs(o.z)>ARENA-o.r){o.z=Math.sign(o.z)*(ARENA-o.r);o.vz*=-0.6;}
+    if(Math.abs(o.x)>WB-o.r){o.x=Math.sign(o.x)*(WB-o.r);o.vx*=-0.6;}if(Math.abs(o.z)>WB-o.r){o.z=Math.sign(o.z)*(WB-o.r);o.vz*=-0.6;}
     o.g.position.set(o.x,groundH(o.x,o.z)+Math.abs(Math.sin(o.rollT*9))*o.r*0.12,o.z);o.g.rotation.y=Math.atan2(o.vx,o.vz);o.piv.rotation.x+=sp*dt/Math.max(0.2,o.h*0.5);
     for(const q of objects){if(q===o||!q.alive||q.boss||q.rolling)continue;const dx=q.x-o.x,dz=q.z-o.z,rr=o.r+q.r;if(dx*dx+dz*dz>rr*rr)continue;
       if(q.sz<=o.sz&&!q.bld)smash(q,o.vx,o.vz,sp);
@@ -1025,7 +1088,7 @@ function updateSpin(dt){for(const o of objects){if(!o.spin||!o.alive)continue;fo
    until then today's props are shrunk or grown to the size needed. */
 const SCAT_N=IS_PHONE?50:90,SCAT_MIX=[[0,.6],[-1,.2],[1,.12],[-2,.05],[2,.03]]; // mostly your size; bigger things are rarer
 const DEFAULT_PROPS={town:['crates','cone','barrel','house','tower','pin'],farm:['melon','fence','crates','tree','barrel','snowman'],
-  park:['tree','snowman','pin','cone','tower','melon'],home:['crates','cone','barrel','tower','pin','melon','snowman','tree']};
+  park:['tree','snowman','pin','cone','tower','melon'],bedroom:['crates','pin','tower','melon','barrel','snowman'],home:['crates','cone','barrel','tower','pin','melon','snowman','tree']};
 const scatR=()=>Math.max(3,Math.min(camBase(S)*1.5,47.5*Math.pow(S,0.75))); // about the visible radius at this size (the base camera, not the two-player zoom); same as before from size ~0.5 up
 function scatterSize(){
   for(let t=0;t<10;t++){let r=Math.random();for(const [d,w] of SCAT_MIX){if((r-=w)<0){const k=tier+d;if(k>=0&&k<SIZES.length&&k>tier-3)return k;break;}}}
@@ -1060,8 +1123,8 @@ function spawnScatter(p,fill){
     let x=p.x+Math.sin(a)*d,z=p.z+Math.cos(a)*d,sp=null;const k=scatterSize(),r=GROW_S[k]*2.5+0.1;
     if(Math.random()>SPOT_LEFTOVER){sp=spotAt(x,z);  // L19: land in a spot when there's one nearby
       if(!sp){const q=spotPoint(p.x,p.z,fill?0.2*Rs:Rs,1.4*Rs);if(q)[x,z,sp]=q;}}
-    if(Math.abs(x)>ARENA-r-2||Math.abs(z)>ARENA-r-2||groundH(x,z)>0||groundH(x+r,z)>0||groundH(x-r,z)>0||groundH(x,z+r)>0||groundH(x,z-r)>0)continue;
-    if(k>tier&&(onRoad(x,z,r)||(typeof startLane==='function'&&startLane(x,z))))continue; // L26: nothing too big to smash lands on the road or in the start lane
+    if(Math.abs(x)>WB-r-2||Math.abs(z)>WB-r-2||groundH(x,z)>0||groundH(x+r,z)>0||groundH(x-r,z)>0||groundH(x,z+r)>0||groundH(x,z-r)>0)continue;
+    if(k>tier&&(onRoad(x,z,r)||(!roomZ&&typeof startLane==='function'&&startLane(x,z))))continue; // L26: nothing too big to smash lands on the road or in the start lane
     if(objects.some(o=>o.alive&&Math.abs(o.x-x)<o.r+r+0.3&&Math.abs(o.z-z)<o.r+r+0.3&&Math.hypot(o.x-x,o.z-z)<o.r+r+0.3))continue;
     if(players.some(q=>Math.hypot(q.x-x,q.z-z)<q.r+r+1))continue;
     const zn=zoneAt(chunkIdx(x),chunkIdx(z)),[t,f]=(sp&&spotProp(zn,sp.kind,k))||scatterProp(zn,k);
@@ -1196,7 +1259,7 @@ function updateAnimals(dt){
   for(const a of animals){const g=a.g;
     if(a.state==='fly'){a.vy-=32*dt;a.x+=a.vx*dt;a.z+=a.vz*dt;a.y+=a.vy*dt;
       g.rotation.x+=a.spin[0]*dt;g.rotation.y+=a.spin[1]*dt;g.rotation.z+=a.spin[2]*dt;
-      if(Math.abs(a.x)>ARENA-1){a.x=Math.sign(a.x)*(ARENA-1);a.vx*=-0.5;}if(Math.abs(a.z)>ARENA-1){a.z=Math.sign(a.z)*(ARENA-1);a.vz*=-0.5;}
+      if(Math.abs(a.x)>WB-1){a.x=Math.sign(a.x)*(WB-1);a.vx*=-0.5;}if(Math.abs(a.z)>WB-1){a.z=Math.sign(a.z)*(WB-1);a.vz*=-0.5;}
       const gh=groundH(a.x,a.z);
       if(a.y<=gh&&a.vy<0){a.y=gh;
         if(!a.bounced){a.bounced=true;a.vy*=-0.35;a.vx*=0.5;a.vz*=0.5;sfxClip('poof',0.45,rand(.9,1.1));puff(a.x,gh+0.2,a.z,4,Math.max(0.3,a.r),'#f4ecdf');}
@@ -1216,7 +1279,7 @@ function updateAnimals(dt){
       a.heading=Math.atan2(a.herd.x+rand(-hr,hr)-a.x,a.herd.z+rand(-hr,hr)-a.z);}}
     else{const sp=a.speed*(a.state==='flee'?2.4:1);a.x+=Math.sin(a.heading)*sp*dt;a.z+=Math.cos(a.heading)*sp*dt;moving=true;
       if(a.t<=0){a.state='idle';a.t=rand(0.8,2.5);}}
-    if(Math.abs(a.x)>ARENA-2)a.x=Math.sign(a.x)*(ARENA-2);if(Math.abs(a.z)>ARENA-2)a.z=Math.sign(a.z)*(ARENA-2);
+    if(Math.abs(a.x)>WB-2)a.x=Math.sign(a.x)*(WB-2);if(Math.abs(a.z)>WB-2)a.z=Math.sign(a.z)*(WB-2);
     a.y=groundH(a.x,a.z);
     g.position.set(a.x,a.y+(moving?Math.abs(Math.sin(T*14+a.ph))*0.12*a.r:0),a.z);
     if(a.state!=='dizzy')g.rotation.set(0,a.heading,moving?Math.sin(T*14+a.ph)*0.12:0);}
@@ -1453,7 +1516,7 @@ function placePad(){
     const c=pick(near);if(objects.filter(o=>o.alive&&o.sz<=tier&&Math.hypot(o.x-c.x,o.z-c.z)<10*Math.max(S,0.15)).length<3)continue;
     // the pad sits between the car and the cluster, so driving toward the stuff hits the pad first
     const r=padR(),dx=c.x-p.x,dz=c.z-p.z,d=Math.hypot(dx,dz)||1,off=Math.min(d*0.5,r*3+c.r);const x=c.x-dx/d*off,z=c.z-dz/d*off;
-    if(Math.abs(x)>ARENA-r-2||Math.abs(z)>ARENA-r-2||groundH(x,z)>0)continue;
+    if(Math.abs(x)>WB-r-2||Math.abs(z)>WB-r-2||groundH(x,z)>0)continue;
     if(objects.some(o=>o.alive&&o.sz>=tier-1&&Math.hypot(o.x-x,o.z-z)<o.r+r*0.9)||pads.some(q=>Math.hypot(q.x-x,q.z-z)<q.r*4)||players.some(q=>Math.hypot(q.x-x,q.z-z)<q.r+r*2))continue;
     const g=(typeof buildLaunchPad!=='undefined'?buildLaunchPad():defaultPad());g.scale.setScalar(r/2.15);g.position.set(x,0,z);scene.add(g);
     pads.push({g,x,z,r,sq:0});return;}}
@@ -1648,7 +1711,7 @@ function updateCamera(dt,t){
   if(state!=='play'||!players.length){const a=t*0.08;camera.position.set(Math.sin(a)*95,62,Math.cos(a)*95);camera.lookAt(0,0,0);
     sun.position.set(30,80,30);sun.target.position.set(0,0,0);setShadow(80);return;}
   camKick*=Math.pow(0.3,dt);
-  const base=camBase(S)*(1+camKick),bossOn=boss&&boss.state!=='drop'&&boss.state!=='dead';
+  const base=camBase(S)*(1+camKick+3*breakFly*breakFly),bossOn=boss&&boss.state!=='drop'&&boss.state!=='dead';
   const pts=players.map(p=>[p.x,p.z]);if(!bossOn&&!garage)tetherPlayers(dt,spreadOf(pts),base);
   if(bossOn)pts.push([boss.o.x,boss.o.z],[boss.o.x,boss.o.z+boss.o.r*0.5]); // keep the boss in view, weighted so it isn't under the HUD
   let cx=0,cz=0;pts.forEach(q=>{cx+=q[0];cz+=q[1];});cx/=pts.length;cz/=pts.length;
@@ -1696,7 +1759,9 @@ function loop(now){
   const gpIn=readGP();
   const src=Object.assign({kb1:readKB(KB.kb1),kb2:readKB(KB.kb2)},gpIn);
   if(touchUsed)src.touch={x:touch.x,z:touch.z,boost:touch.boost,jumpP:touch.jumpP,swapP:touch.swapP,fire:touch.fire,joinP:touch.boost||touch.jumpP};
-  if(state==='start'){for(const k in gpIn)if(gpIn[k].joinP){startGame();break;}}
+  if(state==='start'){const gx=Object.values(gpIn).reduce((a,g)=>Math.abs(g.x||0)>Math.abs(a)?g.x:a,0),sx=gx<-0.6?-1:gx>0.6?1:0;
+    if(sx&&sx!==pickX)setPick(sx<0?'bedroom':'outside');pickX=sx;
+    for(const k in gpIn)if(gpIn[k].joinP){startGame();break;}}
   if(state==='pause'){pauseInput(gpIn);updateMusic();renderer.render(scene,camera);pressed.clear();touch.jumpP=false;touch.swapP=false;return;}
   if(state==='play'&&Object.values(gpIn).some(g=>g.startP)){if(garage&&garage.ready)garageGo();else pause();pressed.clear();return;}
   T+=dt; // game time stands still while paused
@@ -1708,7 +1773,7 @@ function loop(now){
   updateGrowth(dt);updateStreaming(dt);
   if(state==='play'&&!garage){collisions();updateBoss(dt);}
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
-  updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateCombo(dt);if(!garage)updateGold(dt);if(!garage){updatePads(dt);updateScatter(dt);updateAnimals(dt);}updateRollers(dt);updateSpin(dt);updateShots(dt);updatePerks(dt);updateDebris(dt);updateParts(dt);updatePuffs(dt);
+  updateRoom(dt);updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateCombo(dt);if(!garage)updateGold(dt);if(!garage){updatePads(dt);updateScatter(dt);updateAnimals(dt);}updateRollers(dt);updateSpin(dt);updateShots(dt);updatePerks(dt);updateDebris(dt);updateParts(dt);updatePuffs(dt);
   updateMusic();updateCamera(dt,T);updateSignals(dt);cullChunks();updateHUD();
   renderer.render(scene,camera);
   pressed.clear();touch.jumpP=false;touch.swapP=false;
@@ -1722,7 +1787,7 @@ function showSpots(on){if(spotView){scene.remove(spotView);spotView.traverse(m=>
     const col=cols[q.kind]||(cols[q.kind]=new THREE.MeshBasicMaterial({color:new THREE.Color().setHSL(Object.keys(cols).length*0.17%1,0.9,0.55),transparent:true,opacity:0.35,depthWrite:false}));
     const m=new THREE.Mesh(new THREE.PlaneGeometry(q.hx*2,q.hz*2),col);m.rotation.set(-Math.PI/2,0,Math.atan2(q.sn,q.cs));m.position.set(q.x,groundH(q.x,q.z)+0.06,q.z);g.add(m);}
   scene.add(g);spotView=g;return count;}
-window.__sp={spots:(on)=>spotView&&on!==true?showSpots(false):showSpots(on),mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,zone:testZone,zones:ZONES,gold:spawnGold,pad:placePad,pads,
+window.__sp={room:(on=true)=>{rollWorld(true,on?"bedroom":"outside");return on?"bedroom":"outside";},spots:(on)=>spotView&&on!==true?showSpots(false):showSpots(on),mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,zone:testZone,zones:ZONES,gold:spawnGold,pad:placePad,pads,
   boss(id){if(!giant){tier=SIZES.length-1;growth=MAX_GROW;levelReady=true;levelUp();newCars(true);}if(!boss)summonBoss(id);return boss&&boss.def.name;}, // __sp.boss('shelldozer')
   level(n=1,skipGarage){garageSkip=!!skipGarage;for(let i=0;i<n&&!giant;i++){growth=GROW_AT[tier+1];levelReady=true;levelUp();}return giant?'GIANT':SIZES[tier];}, // jump ahead n sizes (skipGarage: just hand out new cars)
   garage(){openGarage();return garage&&garage.tier;},garageGo:()=>garageGo(),
