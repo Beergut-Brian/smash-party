@@ -1,17 +1,21 @@
 /* Smash Party — Home World quest pack (Q1). Owner: quests lane (agents/quests.md).
    Twelve quests in four chapters (spec docs/ADVENTURE.md §4, contract in CLAUDE.md "Quest"). Chapter = car tier + 1:
-     1 the street (micro–mini)    🔨 Hank (MAIN: hammer) · 🍄 Garry (side: party hat) · ✉️ Zippy (side: kazoo engine)
-     2 the melon patch + park     🐔 Fern (MAIN: egg blaster) · 🚒 Bubbles (side: bubble trail) · 🍦 Pip (side: sprinkle trail)
+     1 Hank's Street (micro–mini) 🔨 Hank (MAIN: hammer) · 🍄 Garry (side: party hat) · ✉️ Zippy (side: kazoo engine)
+     2 the ring round the start   🐔 Fern (MAIN: egg blaster) · 🚒 Bubbles (side: bubble trail) · 🍦 Pip (side: sprinkle trail)
        (tiny–small)
-     3 cornfield + town           👽 Zorp & Blip (MAIN: hover) · 🚧 Dozer Dot (side: dozer) · 🎩 Mayor Wheelie (side: confetti)
+     3 farm, pond and downtown    👽 Zorp & Blip (MAIN: hover) · 🚧 Dozer Dot (side: dozer) · 🎩 Mayor Wheelie (side: confetti)
        (medium–large)
      4 the whole town (huge–GIANT) 🤖 The Big Stomp (MAIN: boss, Mayor Wheelie) · 🪁 Captain Kite (side: glide) · 🐑 Woolly (side: crown)
    No reading anywhere: every step is the giver's voice + the picture bubble (icon + dots) + the gold arrow.
-   Places are world spots in the hand-made Home World (homeWorld(), the same every time): the start street (x 0…9,
-   z 30…60), the melon patch in the home arena's +x/+z corner, the park north of home (z 120…200), the farm belt and
-   duck pond out west (x −320…−240), town east of home. Distances are picked so each chapter's drive is short at its sizes.
-   Stages are scene ids for the world-props lane (TASKS.md D20, NEEDS DESIGN); until they land (and until L38 spawns
-   stages at all) the steps still work on their own: items, flocks, rings and drop spots are built by the engine.
+   Places come from the planned Home World map (D18, objects.js): HOME_QUEST_AT has every quest's giver spot, stage
+   rectangle and point lists (mailboxes, picnic blankets, parade arches, crystal pieces, kite roofs), and the layouts
+   mark each stage as a `quest_<id>` spot, which the engine uses as the stage center and size. Hank's Street (ch1) is
+   the start; Fern's pasture (west), the bubble fountain (north) and Pip's picnic meadow (south) ring it (ch2); the crop
+   circle, water tower and duck pond are out north-west, Dot's crate yard and downtown north-east (ch3); the kite
+   meadow and the fair are south, Woolly's pen south-east (ch4). The pack reads HOME_QUEST_AT and keeps a copy of
+   D18's numbers as the fallback. No quest has a `stage`: every stage is already standing in the Home World (D18's
+   hank_yard, garry_garden, crop_circle, crate_site, sheep_pen, duck_pond, plus the pasture, fountain plaza and picnic
+   meadow built by homeMargin), so spawning one again would build it twice.
    Every top-level name here starts with `quest` (plus the shared QUEST_ITEMS table: later packs add to it with
    Object.assign(QUEST_ITEMS,{…}), never redefine it). */
 
@@ -192,50 +196,74 @@ function questGarryGnome(){const g=new THREE.Group();
    wheelie Mayor Wheelie: booming, pompous, very proud of himself; rolls his R's.
    kite    Captain Kite: laid-back surfer dude, "duuude", slow and sunny.
    woolly  Woolly the Sheepdog Van: worried and huffy, out of breath, a little bark in it. */
-const QUEST_HOME_WHEELIE={id:'wheelie',name:'Mayor Wheelie',emoji:'🎩',voice:'wheelie',at:[12.5,-26],h:4.4,build:questWheelieBuild};
+/* Where things are (Q1b): D18's HOME_QUEST_AT, else the copy here (same numbers, so the pack still works if the map
+   table is renamed or a quest is missing from it). */
+const QUEST_HOME_AT={
+  hank_lunchbox:{giver:[8,45],stage:[12,45]}, garry_gnomes:{giver:[-8,31],stage:[-13.4,33]},
+  zippy_mail:{giver:[-7,44],drops:[[7.2,58],[-7.2,36],[7.2,26],[-7.2,16]]},
+  fern_chickens:{giver:[-88,10.5],stage:[-97,38]}, bubbles_soap:{giver:[-9.8,-84],stage:[-22,-96]},
+  pip_icecream:{giver:[9.8,84],stage:[0,96],drops:[[-24,84],[-14,106],[18,84],[16,104],[-32,100]]},
+  zorp_crystal:{giver:[-230,-232],stage:[-240,-240],pieces:{hay:[-258,-224],tower:[-140,-236],pond:[-70,-246]}},
+  dot_demolition:{giver:[228,-64],stage:[240,-84]},
+  wheelie_parade:{giver:[372,-206],stage:[240,-200],
+    rings:[[300,-160],[260,-160],[220,-160],[180,-160],[160,-200],[160,-240],[160,-280],[200,-320],[250,-320],[300,-320]]},
+  kite_kites:{giver:[-80,176],stage:[-80,160],roofs:[[80,-240],[240,-240],[400,-240],[-96,-62],[-80,240]]},
+  woolly_sheep:{giver:[232,262],stage:[240,236]}, big_stomp:{giver:[24,212],stage:[0,240]}};
+function questHomeAt(id,k){const m=typeof HOME_QUEST_AT!=='undefined'&&HOME_QUEST_AT[id],v=m&&m[k]!=null?m[k]:(QUEST_HOME_AT[id]||{})[k];
+  return k==='stage'&&v&&v.length>2?[v[0],v[1]]:v;} // D18's stage is [x,z,w,d]: the pack wants its center
+// a point near a building (kites, the water-tower crystal): `d` out from its middle toward (dx,dz), so it's reachable
+const questHomeBy=(p,dx,dz,d)=>{const l=Math.hypot(dx,dz)||1;return [p[0]+dx/l*d,p[1]+dz/l*d];};
+const QUEST_HOME_WHEELIE={id:'wheelie',name:'Mayor Wheelie',emoji:'🎩',voice:'wheelie',at:questHomeAt('wheelie_parade','giver'),h:4.4,build:questWheelieBuild};
 
-// ===== Chapter 1: the street (micro–mini) =====
+// ===== Chapter 1: Hank's Street (micro–mini) =====
+// Hank waits on the sidewalk in front of his yard (right of the start); the lunchbox is in his dig in the front yard.
 registerQuest({
   id:'hank_lunchbox',world:'home',chapter:1,main:true,
-  giver:{id:'hank',name:'Hammerhead Hank',emoji:'🔨',voice:'hank',at:[4.3,45.6],h:3.8,build:questHankBuild},
-  stage:'hank_yard',stageAt:[9.6,40.2],stageR:3,
-  remind:['My lunchbox! By the lamp post!','Still hungry over here!'],
+  giver:{id:'hank',name:'Hammerhead Hank',emoji:'🔨',voice:'hank',at:questHomeAt('hank_lunchbox','giver'),h:3.8,build:questHankBuild},
+  stageAt:questHomeAt('hank_lunchbox','stage'),stageR:3,
+  remind:['My lunchbox! In my dirt pile!','Still hungry over here!'],
   steps:[
     {do:'talk',say:['Hey there, little buddy!','I lost my lunchbox!','My SANDWICH is in there!']},
-    {do:'find',item:'lunchbox',icon:'🍱',at:'stage',say:{start:'It is by the big lamp post!',hint:'By the lamp post! Go go go!',got:'My lunchbox! You found it!'}},
+    {do:'find',item:'lunchbox',icon:'🍱',at:'stage',say:{start:'It is in the dirt by my house!',hint:'In the dirt! Go go go!',got:'My lunchbox! You found it!'}},
     {do:'bring',icon:'🍱',say:{start:'Bring it back to old Hank!',hint:'Bring it here, buddy!'}}],
   reward:{ability:'hammer',stars:2,say:['Mmm! Thank you, buddy!','Here, take my Bonk Hammer!','Now go SMASH stuff!']},
   after:['Smashing is the best, right?','Mmm. Sandwich.','Bonk bonk! Ha!']});
 
+// Garry waits across the street; the goal is the round flowerbed in his front yard. His gnomes rolled onto the
+// sidewalk and the lawn around it (the engine keeps pushables within ~1.8× the bed's size, so they start close).
+const questGarryAt=(()=>{const c=questHomeAt('garry_gnomes','stage');
+  return [[3.8,1.6],[3.4,-2.6],[0.8,4],[-3,-2.6],[2.2,-3.4]].map(([dx,dz])=>[c[0]+dx,c[1]+dz]);})();
 registerQuest({
   id:'garry_gnomes',world:'home',chapter:1,main:false,needs:['hank_lunchbox'],
-  giver:{id:'garry',name:'Garry the Gnome',emoji:'🍄',voice:'garry',at:[-7.4,50.5],h:4.4,build:questGarryBuild},
-  stage:'garry_garden',stageAt:[-9.8,46.5],stageR:10,
+  giver:{id:'garry',name:'Garry the Gnome',emoji:'🍄',voice:'garry',at:questHomeAt('garry_gnomes','giver'),h:4.4,build:questGarryBuild},
+  stageAt:questHomeAt('garry_gnomes','stage'),stageR:4,
   remind:['Push my friends home, please!'],
   steps:[
     {do:'talk',say:['Oh my! Hello there.','My gnome friends rolled away!','Could you push them home, please?']},
-    {do:'push',n:5,icon:'🍄',r:8,build:questGarryGnome,at:[[-6.6,43.2],[-7.4,41.4],[-12.4,42.6],[-13.4,47.8],[-11.8,50.4]],
+    {do:'push',n:5,icon:'🍄',r:14,build:questGarryGnome,at:questGarryAt,
       say:{start:'Push them into my garden!',each:['Oh, thank you!','One more friend home!','Lovely pushing!'],hint:'Into the green circle, please!',got:'Everyone is home! Oh my!'}}],
   reward:{cosmetic:'hat',stars:1,say:['You are so kind.','Please, have a party hat!']},
   after:['Tea time with my friends.','Oh my, what a nice hat.']});
 
+// Zippy waits on the left sidewalk; the four glowing mailboxes go up and down the street.
 registerQuest({
   id:'zippy_mail',world:'home',chapter:1,main:false,needs:['hank_lunchbox'],
-  giver:{id:'zippy',name:'Zippy the Mail Truck',emoji:'✉️',voice:'zippy',at:[-3.0,38.5],h:3.8,build:questZippyBuild},
+  giver:{id:'zippy',name:'Zippy the Mail Truck',emoji:'✉️',voice:'zippy',at:questHomeAt('zippy_mail','giver'),h:3.8,build:questZippyBuild},
   remind:['Mail mail mail! Hurry hurry!'],
   steps:[
     {do:'talk',say:['Hi hi hi! No time!','Mail day! Help me, quick quick!']},
-    {do:'deliver',n:4,icon:'✉️',at:[[7.0,35.5],[-7.0,30.5],[-7.0,56.5],[7.0,58.5]],
+    {do:'deliver',n:4,icon:'✉️',at:questHomeAt('zippy_mail','drops'),
       say:{start:'Drive through the glowing mailboxes!',each:['Zip! Delivered!','Zoom zoom, next one!','Woo, so fast!'],hint:'The glowing ones! Go go go!',got:'All the mail is done!'}}],
   reward:{cosmetic:'kazoo',stars:1,say:['You zip like me!','Here, a kazoo engine! Bzzz!']},
   after:['Gotta go fast!','Bzzzz! Love that kazoo!']});
 
-// ===== Chapter 2: the melon patch and the park (tiny–small) =====
+// ===== Chapter 2: the ring round Hank's Street (tiny–small) =====
+// Fern stands at the gate of her fenced chicken pasture, west of the start; the flock and the eggs are inside it.
 registerQuest({
   id:'fern_chickens',world:'home',chapter:2,main:true,
-  giver:{id:'fern',name:'Farmer Fern',emoji:'🐔',voice:'fern',at:[30,24],h:4.0,build:questFernBuild},
-  stage:'fern_pasture',stageAt:[44,40],stageR:9,
-  remind:['Catch my chickens! Ha-HA!','My chickens are loose over there!'],
+  giver:{id:'fern',name:'Farmer Fern',emoji:'🐔',voice:'fern',at:questHomeAt('fern_chickens','giver'),h:4.0,build:questFernBuild},
+  stageAt:questHomeAt('fern_chickens','stage'),stageR:20,
+  remind:['Catch my chickens! Ha-HA!','My chickens are loose in the pasture!'],
   steps:[
     {do:'talk',say:['Howdy, little racers! Ha-HA!','My chickens busted out of the coop!','Bump them back to me!']},
     {do:'catch',kind:'chicken',n:20,icon:'🐔',
@@ -245,74 +273,96 @@ registerQuest({
   reward:{ability:'shoot',stars:3,say:['Ha-HA! You did it!','Take my Egg Blaster!','Push the shoot button! Pow!']},
   after:['Best chicken catchers ever! Ha!','Bawk bawk! Ha-HA!']});
 
+// Bubbles waits by the road north of the start; the soap bottles sit round the bubble fountain, between its benches.
+const questBubblesAt=(()=>{const c=questHomeAt('bubbles_soap','stage');return [0.8,2.9,5].map(a=>[c[0]+Math.sin(a)*8,c[1]+Math.cos(a)*8]);})();
 registerQuest({
   id:'bubbles_soap',world:'home',chapter:2,main:false,
-  giver:{id:'bubbles',name:'Bubbles the Fire Truck',emoji:'🚒',voice:'bubbles',at:[-18,127],h:4.4,build:questBubblesBuild},
-  stage:'bubbles_fountain',stageAt:[-30,142],stageR:8,
+  giver:{id:'bubbles',name:'Bubbles the Fire Truck',emoji:'🚒',voice:'bubbles',at:questHomeAt('bubbles_soap','giver'),h:4.4,build:questBubblesBuild},
+  stageAt:questHomeAt('bubbles_soap','stage'),stageR:8,
   remind:['Soap! Find the soap bottles!'],
   steps:[
     {do:'talk',say:['Oh! Hi! I am Bubbles!','The bubble fountain is all clogged!','I need soap! Lots of soap!']},
-    {do:'find',n:3,item:'soap',icon:'🧴',at:'stage',say:{start:'Find three soap bottles!',each:['Soap! Yes yes yes!','One more! You got this!'],hint:'Look by the fountain!',got:'All the soap!'}},
+    {do:'find',n:3,item:'soap',icon:'🧴',at:questBubblesAt,say:{start:'Find three soap bottles!',each:['Soap! Yes yes yes!','One more! You got this!'],hint:'Look by the fountain!',got:'All the soap!'}},
     {do:'bring',icon:'🧴',say:{start:'Bring it to me! Hurry!',hint:'Over here! It is me!'}}],
   reward:{cosmetic:'bubbles',stars:1,say:['Bubbles everywhere! Wheee!','Now YOU make bubbles too!']},
   after:['Pop pop pop! Hee!','I love bubbles so much!']});
 
+// Pip waits by the road south of the start; the drop spots are the picnic blankets on the meadow.
 registerQuest({
   id:'pip_icecream',world:'home',chapter:2,main:false,
-  giver:{id:'pip',name:'Pip the Ice-Cream Truck',emoji:'🍦',voice:'pip',at:[22,127],h:6.2,build:questPipBuild},
-  stage:'pip_picnic',stageAt:[34,144],stageR:9,
+  giver:{id:'pip',name:'Pip the Ice-Cream Truck',emoji:'🍦',voice:'pip',at:questHomeAt('pip_icecream','giver'),h:6.2,build:questPipBuild},
+  stageAt:questHomeAt('pip_icecream','stage'),stageR:9,
   remind:['Ice cream for the picnics! La la!'],
   steps:[
     {do:'talk',say:['La la la! Hello, sweeties!','Everyone at the picnic wants ice cream!']},
-    {do:'deliver',n:5,icon:'🍦',
+    {do:'deliver',n:5,icon:'🍦',at:questHomeAt('pip_icecream','drops'),
       say:{start:'Drive to the picnic blankets!',each:['Yum yum! La la!','Sprinkles for you!','Ice cream time!'],hint:'The glowing blankets, sweetie!',got:'Everyone has ice cream!'}}],
   reward:{cosmetic:'sprinkles',stars:1,say:['You are so sweet!','Have a sprinkle trail! La la!']},
   after:['Ding ding! Ice cream!','Sprinkles make it better!']});
 
-// ===== Chapter 3: the cornfield and the town (medium–large) =====
+// ===== Chapter 3: the farm, the duck pond and downtown (medium–large) =====
+// Zorp & Blip stand by their crashed saucer in the crop circle. The crystal broke in three: one in a haystack at the
+// edge of the circle (smash the new bales by the big haystack), one at the foot of the farm's water tower, one in the
+// duck pond. Then back to the saucer.
+const questZorpPieces=(()=>{const P=questHomeAt('zorp_crystal','pieces')||{},c=questHomeAt('zorp_crystal','stage'),h=P.hay||[c[0]-18,c[1]+16];
+  // three bales between the big haystack and the circle's middle (inside the flattened ring, off the corn)
+  const dx=c[0]-h[0],dz=c[1]-h[1],l=Math.hypot(dx,dz)||1,ux=dx/l,uz=dz/l;
+  const hay=[[9,0],[13,-5],[13,5]].map(([a,b])=>[h[0]+ux*a-uz*b,h[1]+uz*a+ux*b]);
+  const tw=P.tower||[-140,-236];
+  return {hay,far:[questHomeBy(tw,0,1,11),P.pond||[-70,-246]]};})(); // the tower piece lies on its ramp side (+Z)
 registerQuest({
   id:'zorp_crystal',world:'home',chapter:3,main:true,
-  giver:{id:'zorp',name:'Zorp and Blip',emoji:'👽',voice:'zorp',at:[-230,-62],h:4.6,r:2.8,build:questZorpBuild},
-  stage:'zorp_crop_circle',stageAt:[-244,-86],stageR:9,
+  giver:{id:'zorp',name:'Zorp and Blip',emoji:'👽',voice:'zorp',at:questHomeAt('zorp_crystal','giver'),h:4.6,r:2.8,build:questZorpBuild},
+  stageAt:questHomeAt('zorp_crystal','stage'),stageR:9,
   remind:['Beep! The crystal pieces! Boop!'],
   steps:[
     {do:'talk',say:['Beep boop! Earth friends!','Our saucer went CRASH!','Our Wobble Crystal broke! Boop!']},
-    {do:'smash',n:3,type:'hay',icon:'🌾',at:'stage',
+    {do:'smash',n:3,type:'hay',icon:'🌾',at:questZorpPieces.hay,
       say:{start:'One piece is in a haystack!',each:['Not this one! Beep!','Hay everywhere! Boop!'],hint:'Smash the haystacks! Beep!',got:'A crystal piece! Beep beep!'}},
-    {do:'find',item:'crystal',icon:'💎',at:[[-318,4]],say:{start:'One piece fell in the duck pond!',hint:'The duck pond! Quack! Beep!',got:'Piece number two! Boop!'}},
-    {do:'catch',kind:'goat',n:1,icon:'🐐',
-      say:{start:'Uh oh. A goat ate one!',hint:'Bump the goat! Beep!',got:'The goat burped it out! Boop!'}},
+    {do:'find',n:2,item:'crystal',icon:'💎',at:questZorpPieces.far,
+      say:{start:'Water tower! Duck pond! Two pieces! Beep!',each:['Piece number two! Boop!'],hint:['The water tower! Beep!','The duck pond! Quack! Beep!'],got:'All the pieces! Beep boop!'}},
     {do:'bring',icon:'💎',say:{start:'Bring the pieces to the saucer!',hint:'Back to the saucer! Beep!'}}],
   reward:{ability:'hover',stars:3,say:['The crystal works! Beep boop!','Hold jump in the air!','Now you can float! Wooo!']},
   after:['Wooo! Floaty! Beep!','Earth is so smashy! Boop!']});
 
+// Dot waits outside the gate of her fenced crate yard (D18's crate_site); the 40 crates and barrels spawn inside its
+// fence on a jittered 8×5 grid (a random spot in the stage circle would spill out of the yard and onto Dot), round
+// the two scaffold towers.
+const questDotAt=(()=>{const c=questHomeAt('dot_demolition','stage'),out=[];let k=0;
+  for(let j=0;j<5;j++)for(let i=0;i<8;i++){k++;let x=-17.5+i*5+Math.sin(k*12.9898)*1.2,z=-12+j*5.6+Math.cos(k*78.233)*1.2;
+    for(const [tx,tz] of [[-6,-1],[6,-2]]){const d=Math.hypot(x-tx,z-tz);if(d<3.6){x=tx+(x-tx)/(d||1)*3.6;z=tz+(z-tz)/(d||1)*3.6;}}
+    out.push([c[0]+x,c[1]+z]);}
+  return out;})();
 registerQuest({
   id:'dot_demolition',world:'home',chapter:3,main:false,
-  giver:{id:'dot',name:'Dozer Dot',emoji:'🚧',voice:'dot',at:[98,-76],h:4.0,build:questDotBuild},
-  stage:'dot_crate_yard',stageAt:[122,-100],stageR:8,
+  giver:{id:'dot',name:'Dozer Dot',emoji:'🚧',voice:'dot',at:questHomeAt('dot_demolition','giver'),h:4.0,build:questDotBuild},
+  stageAt:questHomeAt('dot_demolition','stage'),stageR:8,
   remind:['The crates! SMASH THEM ALL!'],
   steps:[
     {do:'talk',say:['HI! I am Dozer Dot!','It is DEMOLITION DAY!','LET\'S SMASH!']},
-    {do:'smash',n:40,type:['crates','crates','barrel'],icon:'📦',at:'stage',
+    {do:'smash',n:40,type:['crates','crates','barrel'],icon:'📦',at:questDotAt,
       say:{start:'Smash every crate! GO!',each:['YEAH! SMASH!','KABOOM! More!','So many crates! WOO!','Barrel BOOM!'],hint:'More crates! SMASH!',got:'ALL SMASHED! YEAH!'}}],
   reward:{ability:'dozer',stars:3,say:['You are SO strong!','Take my dozer blade! PUSH!']},
   after:['SMASH! Ha ha!','Every day is demolition day!']});
 
+// Mayor Wheelie waits by city hall; the balloon arches loop round downtown's main streets.
 registerQuest({
   id:'wheelie_parade',world:'home',chapter:3,main:false,
   giver:QUEST_HOME_WHEELIE,
   remind:['Through the balloon arches, my friends!'],
   steps:[
     {do:'talk',say:['I am Mayor Wheelie! Marvelous!','Today is my parade!','You shall lead it!']},
-    {do:'rings',n:10,icon:'🎈',at:[[0,10],[0,-44],[0,-110],[44,-160],[110,-160],[160,-112],[160,-46],[112,0],[50,0],[8,8]],
+    {do:'rings',n:10,icon:'🎈',at:questHomeAt('wheelie_parade','rings'),
       say:{start:'Drive through the balloon arches!',each:['Splendid!','Wave to the crowd!','Magnificent driving!','Onward!'],hint:'The golden arch! That way!',got:'What a parade! Bravo!'}}],
   reward:{cosmetic:'confetti',stars:2,say:['A parade fit for a mayor!','Confetti for you! Hooray for me!']},
   after:['Have you seen my hat? Splendid!','I am a marvelous mayor.']});
 
 // ===== Chapter 4: the whole town (huge–GIANT) =====
+// For the finale the mayor waits at the fair (same giver, its own spot), where the robot comes stomping in.
 registerQuest({
   id:'big_stomp',world:'home',chapter:4,main:true,
-  giver:QUEST_HOME_WHEELIE,
+  giver:Object.assign({},QUEST_HOME_WHEELIE,{at:questHomeAt('big_stomp','giver')}),
+  stageAt:questHomeAt('big_stomp','stage'),
   remind:['The robot! Stop the giant robot!'],
   steps:[
     {do:'talk',say:['Help! Help! Oh dear!','A GIANT ROBOT is coming!','Save my town, my friends!']},
@@ -321,26 +371,36 @@ registerQuest({
   reward:{stars:4,say:['You saved Smashville!','You are the best heroes ever!']},
   after:['Hooray for the heroes!','My town is saved! Marvelous!']});
 
+// Captain Kite waits on the kite meadow; the wind blew his kites onto the big buildings (school, skyscraper, city
+// hall, Fern's barn, the ferris wheel). Items sit on the ground, so each kite lands just off its building's side.
+const QUEST_KITE_OFF=14;
+const questKiteAt=(()=>{const R=questHomeAt('kite_kites','roofs');
+  return R.map(p=>{const dx=-p[0],dz=-p[1];return questHomeBy(p,Math.abs(dx)>Math.abs(dz)?Math.sign(dx):0,Math.abs(dx)>Math.abs(dz)?0:Math.sign(dz),QUEST_KITE_OFF);});})();
 registerQuest({
   id:'kite_kites',world:'home',chapter:4,main:false,
-  giver:{id:'kite',name:'Captain Kite',emoji:'🪁',voice:'kite',at:[-26,196],h:5.2,build:questKiteBuild},
-  remind:['My kites, dude! All over the park!'],
+  giver:{id:'kite',name:'Captain Kite',emoji:'🪁',voice:'kite',at:questHomeAt('kite_kites','giver'),h:5.2,build:questKiteBuild},
+  stageAt:questHomeAt('kite_kites','stage'),
+  remind:['My kites, dude! All over town!'],
   steps:[
     {do:'talk',say:['Duuude. Hey.','A big wind blew my kites away.','Bummer. Can you find them?']},
-    {do:'find',n:5,item:'kite',icon:'🪁',at:[[-70,180],[50,212],[-20,262],[86,248],[-96,236]],
+    {do:'find',n:5,item:'kite',icon:'🪁',at:questKiteAt,
       say:{start:'Five kites! Follow the arrow, dude!',each:['Righteous!','Gnarly find, dude!','So rad!'],hint:'Follow the arrow, dude!',got:'All my kites! Duuude!'}},
     {do:'bring',icon:'🪁',say:{start:'Bring them back, dude!',hint:'Over here, little dude!'}}],
   reward:{ability:'glide',stars:2,say:['Totally awesome, dude!','Take some wings! Hold jump!','Glide like a kite!']},
   after:['Catch the wind, dude!','So chill. So breezy.']});
 
+// Woolly waits by the pen's open gate (D18's sheep_pen, gate facing +Z); the goal circle is the pen, and the eight
+// sheep start out on the meadow round it (in front of the gate and along the sides).
+const questWoollyAt=(()=>{const c=questHomeAt('woolly_sheep','stage');
+  return [[0,22],[-19,14],[19,14],[10,22],[-20,4],[20,5],[-21,-6],[21,-6]].map(([dx,dz])=>[c[0]+dx,c[1]+dz]);})();
 registerQuest({
   id:'woolly_sheep',world:'home',chapter:4,main:false,
-  giver:{id:'woolly',name:'Woolly the Sheepdog Van',emoji:'🐑',voice:'woolly',at:[222,214],h:4.0,build:questWoollyBuild},
-  stage:'woolly_pen',stageAt:[246,240],stageR:6,
+  giver:{id:'woolly',name:'Woolly the Sheepdog Van',emoji:'🐑',voice:'woolly',at:questHomeAt('woolly_sheep','giver'),h:4.0,build:questWoollyBuild},
+  stageAt:questHomeAt('woolly_sheep','stage'),stageR:6,
   remind:['The sheep! Push them in the pen! Huff!'],
   steps:[
     {do:'talk',say:['Huff, huff! Oh no, oh no!','My sheep got out!','Push them into the pen! Woof!']},
-    {do:'push',n:8,kind:'sheep',icon:'🐑',r:6,
+    {do:'push',n:8,kind:'sheep',icon:'🐑',r:5,at:questWoollyAt,
       say:{start:'Push the sheep in the circle!',each:['Phew! One is safe!','Good push! Woof!','Baa! In you go!'],hint:'Into the green circle! Huff!',got:'All my sheep! Phew!'}}],
   reward:{cosmetic:'crown',stars:2,say:['You saved my sheep!','Here, a crown! Woof woof!']},
   after:['Phew. All safe. Woof.','Baa baa! Huff!']});
