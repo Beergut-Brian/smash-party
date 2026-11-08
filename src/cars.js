@@ -123,7 +123,7 @@ const PARTS={
     const face=mk('cyl',.28,.1,.28,'#fff',0,.42,.05);face.rotation.x=Math.PI/2;g.add(face);
     return g;},
   glass(p){const g=new THREE.Group();
-    const m=new THREE.Mesh(GEO.box,new THREE.MeshLambertMaterial({color:p.color||'#bde0fe',transparent:true,opacity:.78}));
+    const m=new THREE.Mesh(GEO.box,litMat({color:p.color||'#bde0fe',transparent:true,opacity:.78}));
     m.scale.set(p.w||1.35,p.h||.48,p.d||.08);m.castShadow=false;g.add(m);
     return g;}
 };
