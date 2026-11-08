@@ -151,6 +151,16 @@ const CANDY_PROPS={
     g.rotation.y=rand(0,6.28);},{building:true})
 };
 
+/* Per-prop smash sounds (L22: an object's sfx overrides its zone's crash sound; missing clips fall back to the zone's,
+   then the default). Clip prompts are in TASKS.md (AU3) for the audio agent. */
+const CANDY_SFX={
+  candy_marsh:'candy_boing',candy_gumdrop:'candy_boing',candy_donut:'candy_boing',
+  candy_gumball:'candy_gumballs',
+  candy_choco:'candy_snap',candy_cookie:'candy_snap',candy_cane:'candy_snap',candy_gingerman:'candy_snap',candy_gingerhouse:'candy_snap',
+  candy_cake:'candy_splat',candy_cupcakehouse:'candy_splat',candy_cupcake:'candy_splat',candy_icecream:'candy_splat',candy_sundae:'candy_splat'
+};
+for(const k in CANDY_SFX){const f=CANDY_PROPS[k];CANDY_PROPS[k]=(x,z,arg)=>{const o=f(x,z,arg);o.sfx=CANDY_SFX[k];return o;};}
+
 /* ---------- layout ---------- */
 // one cake, one gumball machine and one sundae per map: picked from the candy chunks of the live zone map
 let candyLMRows=null,candyLM=null;
@@ -208,6 +218,9 @@ registerZone({
   ground:'#f9c6dd',
   sky:{top:'#ff9ecf',horizon:'#ffe3f1'},
   weight:1,
+  // L22 sound + music ids (clips listed in TASKS.md AU3; anything missing falls back to the default sounds)
+  music:{drive:'candy_drive',boss:'candy_boss'},
+  sfx:{crash:'candy_crunch',boom:'candy_pop',land:'candy_squish',ambient:'candy_ambient'},
   props:CANDY_PROPS,
   sizes:{
     micro:['candy_wrap','candy_beans','candy_mint'],
