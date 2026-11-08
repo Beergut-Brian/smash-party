@@ -37,7 +37,8 @@ const RAD={
   cottage:2.7,villa:4.6,shop:3.8,school:6.6,firestation:5.6,watertower:4.2,mailbox:.55,lamp:.6,hydrant:.5,
   parked:2.2,boss:6.8,barn:7.2,silo:2.5,farmhouse:4,hay:1.25,crops:2.6,pond:4.8,windmill:3.6,coop:2.4,
   scarecrow:.9,tractor:2.7,swing:1.9,slide:1.9,gym:3.2,fountain:2.9,bench:1.3,picnic:1.7,gazebo:3.8,
-  bounce:5.8,skyscraper:6.6,stadium:13,ferris:6.2,ship:7,bush:.9,flowers:.32,pebble:.26,mushroom:.3,acorn:.22,toyblock:.28,can:.2,toyduck:.3,gnome:.26,snail:.28
+  bounce:5.8,skyscraper:6.6,stadium:13,ferris:6.2,ship:7,bush:.9,flowers:.32,pebble:.26,mushroom:.3,acorn:.22,toyblock:.28,can:.2,toyduck:.3,gnome:.26,snail:.28,
+  trashcan:.45,birdbath:.5,doghouse:1.1,beachball:.36,pumpkin:.42
 };
 /* ---------- CC0 pack models (D8b: Kenney kits, see assets/CREDITS.md) ---------- */
 /* Pack models are baked by assets/props/bake.mjs into one mesh with vertex colors. Here each model is cut into
@@ -462,6 +463,24 @@ const OBJ={
     P(mk('sph',.34,.28,.34,pick(['#bc6c25','#e9c46a','#f4a261']),0,.16,0),1,true,.12);
     P(mk('sph',.16,.12,.2,'#fff3bf',0,.1,.2),1,true,.08);
     P(mk('sph',.045,.045,.045,'#111',.04,.14,.28),1);face(g,arg);}),
+  /* ---- D11 neighborhood bits: yard, sidewalk and field filler for the thin mini/tiny/small sizes ---- */
+  trashcan:(x,z,arg)=>sized(x,z,RAD.trashcan,1.15,1,'tiny',(P,g)=>{const c=pick(['#2a9d8f','#457b9d','#6c757d']);
+    P(mk('cyl',.78,.95,.78,c,0,.48,0),2);const lid=new THREE.Group();lid.add(mk('cyl',.88,.14,.88,c,0,1.02,0));lid.add(mk('box',.32,.08,.12,'#343a40',0,1.13,0));
+    P(lid,1,true,.3);face(g,arg);}),
+  birdbath:(x,z)=>sized(x,z,RAD.birdbath,1,1,'tiny',P=>{
+    P(mk('cyl',.22,.7,.22,'#ced4da',0,.35,0),1);P(mk('cyl',.9,.16,.9,'#dee2e6',0,.76,0),2);
+    P(mk('cyl',.72,.04,.72,'#90e0ef',0,.85,0),1,true,.2);P(mk('sph',.16,.14,.2,pick(['#3a86ff','#e63946','#ffbe0b']),.32,.94,0),1,true,.1);}),
+  doghouse:(x,z,arg)=>sized(x,z,RAD.doghouse,1.8,2,'small',(P,g)=>{const c=pick(['#e9c46a','#a2d2ff','#ffafcc','#bde0a8']);
+    P(mk('box',1.4,1,1.6,c,0,.5,0),3);P(mk('pyr',1.95,.8,2.2,pick(['#e63946','#3a86ff','#6d4c41']),0,1.4,0),2,true,.5);
+    P(mk('box',.5,.62,.06,'#3d2b1f',0,.36,.81),1);P(mk('box',.5,.14,.06,'#fff',0,.8,.82),1,true,.12);
+    P(mk('cyl',.5,.12,.5,'#e63946',.55,.06,1.2),1,true,.14);face(g,arg);}),
+  beachball:(x,z)=>sized(x,z,RAD.beachball,.72,1,'mini',P=>{
+    const b=new THREE.Group(),c=pick([['#e63946','#ffbe0b'],['#3a86ff','#fff'],['#06d6a0','#ff70a6']]);
+    b.add(mk('sph',.7,.7,.7,c[0],0,.35,0));b.add(mk('cyl',.72,.22,.72,c[1],0,.35,0));b.add(mk('sph',.12,.12,.12,'#fff',0,.7,0));
+    P(b,1,true,.35);},{roll:true}),
+  pumpkin:(x,z)=>sized(x,z,RAD.pumpkin,.62,1,'mini',P=>{const c=pick(['#fb8500','#f4a261','#ffb703']);
+    P(mk('sph',.82,.56,.82,c,0,.28,0),1,true,.25);P(mk('sph',.5,.6,.5,c,0,.3,.06),1,true,.15);
+    P(mk('cyl',.08,.2,.08,'#2d6a4f',0,.62,0),1);P(mk('sph',.26,.06,.16,'#52b788',.12,.58,0),1);}),
   /* ---- D7 mega set pieces (block versions; the Kenney looks below replace skyscraper, stadium and ship) ---- */
   skyscraper:(x,z,arg)=>sized(x,z,RAD.skyscraper,26,50,'mega',(P,g)=>{
     const c=pick(['#bde0fe','#ffc8dd','#d8f3dc','#fff3bf']);
@@ -749,45 +768,138 @@ function crumbs(ctx,n,types){for(let i=0;i<n;i++)put(ctx,pick(types),rand(ctx.x0
 function propsRamp(ctx){if(Math.random()<0.42)ctx.ramp(rand(ctx.x0+14,ctx.x1-14),rand(ctx.z0+14,ctx.z1-14),(Math.random()*4|0)*Math.PI/2);}
 function lotKind(){const r=Math.random();return r<.5?'cottage':r<.78?'house':r<.9?'shop':'villa';}
 
+/* ---------- D11 neighborhoods ----------
+   Roads run every ROAD_EVERY (160) on 80-wide chunks, so a chunk has a road down its middle (x=cx) when ci is even
+   and across it (z=cz) when cj is even: one road = a street, two = a crossing, none = the middle of a block.
+   hoodSide() gives a street side in road coordinates: u runs along the road, s is the distance from its middle
+   (the road is 10 wide, so its edge is s=5). Spots (L19) mark sidewalks, yards, driveways, fields… so the
+   size-matched filler lands where it belongs (SPOT_PROPS below). */
+function hoodRoads(ctx){const on=r=>Math.abs(r-Math.round(r/ROAD_EVERY)*ROAD_EVERY)<1;return {v:on(ctx.cx),h:on(ctx.cz)};}
+function hoodSide(ctx,axis,side){const V=axis==='v';
+  const p=(u,s)=>V?[ctx.cx+side*s,ctx.cz+u]:[ctx.cx+u,ctx.cz+side*s];
+  const S={p,V,side,face:V?(side<0?1:3):(side<0?0:2),
+    put(type,u,s,arg,r){const [x,z]=p(u,s);return r?ctx.place(type,x,z,arg,r):put(ctx,type,x,z,arg);},
+    spot(kind,u0,u1,s0,s1){const [x,z]=p((u0+u1)/2,(s0+s1)/2);return V?ctx.spot(kind,x,z,s1-s0,u1-u0,0):ctx.spot(kind,x,z,u1-u0,s1-s0,0);},
+    // fence pieces are ~4 long; r=1 lets a line of them sit end to end
+    fenceU(u0,u1,s){for(let u=u0;u<=u1+.01;u+=4.2)S.put('fence',u,s,V?Math.PI/2:0,1);},
+    fenceS(u,s0,s1){for(let s=s0;s<=s1+.01;s+=4.2)S.put('fence',u,s,V?0:Math.PI/2,1);}};
+  return S;}
+// sidewalk strip + a lamp or two along one side, skipping the cross street's band
+function hoodWalk(S,u0,u1,w){S.spot('sidewalk',u0,u1,5.4,5.4+w);for(let u=u0+6;u<u1-3;u+=24)S.put('lamp',u+(S.side>0?12:0),5.4+w-.6,0);}
+// one house lot centered at uc: front yard, path, mailbox, driveway, back yard behind a fence
+function hoodLot(S,uc){
+  const kind=lotKind(),r=RAD[kind],sh=15+r,back=sh+r+.6;
+  if(!S.put(kind,uc,sh,S.face))return;
+  S.spot('yard',uc-7.6,uc+r+.2,8.8,sh-r);S.spot('path',uc-.8,uc+.8,8.8,sh-r);
+  S.spot('backyard',uc-7.6,uc+7.6,back,37);
+  const dw=uc+r+.6;S.spot('parking',dw,dw+3.2,8.8,sh+1.5);
+  if(Math.random()<.45)S.put('parked',dw+1.6,11.4,S.face);
+  S.put('mailbox',uc-1.7,9.3,S.face);
+  if(Math.random()<.6)S.put('fence',uc-5.6,9.9,S.V?Math.PI/2:0,1);
+  if(Math.random()<.7){S.put('flowers',uc-r+.4,sh-r-.9,0);S.put('flowers',uc+r-.4,sh-r-.9,0);}
+  if(Math.random()<.5)S.fenceU(uc-6.3,uc+6.3,37.6);
+  if(Math.random()<.35)S.fenceS(uc+7.9,back+1,34);
+  if(Math.random()<.6)S.put('tree',uc+rand(-6,6),rand(back+3,35),0);
+  if(Math.random()<.4)S.put('doghouse',uc+rand(-5,5),rand(back+2,34),S.face);
+  if(Math.random()<.2)S.put('swing',uc+rand(-4,4),rand(back+3,33),S.V?1:0);}
+// a houses street side; us = lot centers along the road
+function hoodHouses(S,us){hoodWalk(S,-40,40,3.2);for(const u of us)hoodLot(S,u);S.put('hydrant',pick(us)+8,8.2,0);}
+// a main street side: shops on a wide sidewalk, benches and bins, a parking lot behind
+function hoodShops(S,us,u0,u1){
+  hoodWalk(S,u0,u1,4.4);for(const u of us){if(!S.put('shop',u,13.6,S.face))continue;
+    if(Math.random()<.5)S.put(pick(['bench','trashcan']),u+4.9,8.6,S.face);}
+  S.spot('parking',u0+2,u1-2,19,37);
+  for(let u=u0+5;u<u1-3;u+=6.2){if(Math.random()<.55)S.put('parked',u,23,S.V?0:1);if(Math.random()<.45)S.put('parked',u,31.5,S.V?0:1);}
+  S.put('hydrant',(u0+u1)/2,8.8,0);}
+// the four corners of a chunk left over by its roads: {x0,x1,z0,z1,cx,cz,qx,qz}
+function hoodQuads(ctx,R,pad=3){const out=[];
+  for(const qx of [-1,1])for(const qz of [-1,1]){const ax=ctx.cx+qx*(R.v?7.5:pad),bx=ctx.cx+qx*38.5,az=ctx.cz+qz*(R.h?7.5:pad),bz=ctx.cz+qz*38.5;
+    const x0=Math.min(ax,bx),x1=Math.max(ax,bx),z0=Math.min(az,bz),z1=Math.max(az,bz);out.push({x0,x1,z0,z1,cx:(x0+x1)/2,cz:(z0+z1)/2,qx,qz});}
+  return out;}
+const hoodSpot=(ctx,kind,q,m=0)=>ctx.spot(kind,q.cx,q.cz,q.x1-q.x0-m*2,q.z1-q.z0-m*2,0);
+// sidewalks along whatever roads cross the chunk (landmark chunks too)
+function hoodSidewalks(ctx,R,w=3.2){for(const [ax,on] of [['v',R.v],['h',R.h]])if(on)for(const sd of [-1,1])hoodSide(ctx,ax,sd).spot('sidewalk',-40,40,5.4,5.4+w);}
+// park corners: one activity each
+const HOOD_PARK={
+  play(ctx,q){hoodSpot(ctx,'sand',q,5);put(ctx,'swing',q.cx-5,q.cz,1);put(ctx,'slide',q.cx+5,q.cz+1,0);
+    if(Math.random()<.5)put(ctx,'gym',q.cx,q.cz-q.qz*8,0);put(ctx,'bench',q.cx-q.qx*11,q.cz+q.qz*9,q.qx>0?1:3);put(ctx,'trashcan',q.cx-q.qx*11,q.cz+q.qz*12,0);
+    put(ctx,'beachball',q.cx+2,q.cz+5,0);},
+  pond(ctx,q){const p=put(ctx,'pond',q.cx,q.cz,0);hoodSpot(ctx,'lawn',q,2);if(p){ctx.herd(pick(['duck','duck','goose']),q.cx+7,q.cz+2,5);
+    ring(ctx,q.cx,q.cz,RAD.pond+2.3,7,'flowers');put(ctx,'bench',q.cx,q.cz+RAD.pond+4.6,2);put(ctx,'bench',q.cx-RAD.pond-4.6,q.cz,1);}},
+  picnic(ctx,q){hoodSpot(ctx,'lawn',q,2);for(let i=0;i<3;i++){const a=i*2.1+.4;put(ctx,'picnic',q.cx+Math.cos(a)*7,q.cz+Math.sin(a)*7,i);}
+    put(ctx,'tree',q.cx,q.cz,0);put(ctx,'trashcan',q.cx+11,q.cz-10,0);put(ctx,'birdbath',q.cx-10,q.cz+10,0);},
+  woods(ctx,q){hoodSpot(ctx,'lawn',q,1);for(let i=0;i<9;i++)put(ctx,'tree',rand(q.x0+3,q.x1-3),rand(q.z0+3,q.z1-3),0);
+    for(let i=0;i<4;i++)put(ctx,'bush',rand(q.x0+3,q.x1-3),rand(q.z0+3,q.z1-3),0);},
+  fountain(ctx,q){hoodSpot(ctx,'plaza',q,6);put(ctx,'fountain',q.cx,q.cz,0);ring(ctx,q.cx,q.cz,RAD.fountain+2.4,4,'bench');ring(ctx,q.cx,q.cz,RAD.fountain+5.2,8,'flowers');}
+};
+// is this chunk one of the zone landmarks? (they keep their own layouts and just get sidewalks)
+function hoodLandmark(ctx){const LM=landmarks();for(const k in LM)if(at(LM[k],ctx))return true;return false;}
+function hoodShuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
+// a park block: paths along the middle (where no road runs), sidewalks along roads, one activity per corner, trees round the edge
+function hoodPark(ctx,R,acts){
+  hoodSidewalks(ctx,R);if(!R.v)ctx.spot('path',ctx.cx,ctx.cz,4,80,0);if(!R.h)ctx.spot('path',ctx.cx,ctx.cz,80,4,0);
+  if(!R.v&&!R.h){put(ctx,'fountain',ctx.cx,ctx.cz,0);ring(ctx,ctx.cx,ctx.cz,RAD.fountain+4.2,6,'flowers');}
+  const qs=hoodQuads(ctx,R,3.5),list=hoodShuffle(acts);qs.forEach((q,i)=>HOOD_PARK[list[i%list.length]](ctx,q));
+  for(let i=0;i<10;i++){const e=Math.random()*4|0,t=rand(-36,36),x=ctx.cx+(e<2?(e?37:-37):t),z=ctx.cz+(e<2?t:(e>2?37:-37));put(ctx,'tree',x,z,0);}}
+// farm corners
+const HOOD_FARM={
+  field(ctx,q){hoodSpot(ctx,'field',q,1);const n=Math.floor((q.x1-q.x0-6)/6),m=Math.floor((q.z1-q.z0-6)/6.2),k=Math.random()*2|0;
+    for(let i=0;i<n;i++)for(let j=0;j<m;j++)put(ctx,'crops',q.x0+6+i*6,q.z0+6+j*6.2,k);
+    if(Math.random()<.6)put(ctx,'scarecrow',q.cx+.5,q.cz+3.1,0);},
+  patch(ctx,q){hoodSpot(ctx,'patch',q,2);for(let x=q.x0+4;x<q.x1-3;x+=3.2)for(let z=q.z0+4;z<q.z1-3;z+=4.4)if(Math.random()<.55)put(ctx,Math.random()<.75?'pumpkin':'melon',x+rand(-.5,.5),z,0);
+    put(ctx,'scarecrow',q.cx,q.cz,0);},
+  pen(ctx,q){const w=Math.min(q.x1-q.x0,q.z1-q.z0)-8,h=w/2,x=q.cx,z=q.cz,gate=Math.random()*4|0;ctx.spot('pen',x,z,w,w,0);
+    for(let t=-h+2;t<=h-1.9;t+=4.2){[[x+t,z-h,0,0],[x+t,z+h,0,1],[x-h,z+t,Math.PI/2,2],[x+h,z+t,Math.PI/2,3]].forEach(([fx,fz,ry,sd])=>{
+      if(sd===gate&&Math.abs(t)<2.5)return;ctx.place('fence',fx,fz,ry,1);});}
+    const kind=pick(['pig','sheep','cow','goat','horse','pig','sheep']);ctx.herd(kind,x,z,kind==='horse'||kind==='cow'?3:4);
+    put(ctx,'hay',x+h*.45,z-h*.45,0);put(ctx,'trashcan',x-h*.5,z-h*.55,0);},
+  hayyard(ctx,q){hoodSpot(ctx,'field',q,2);for(let i=0;i<5;i++)put(ctx,'hay',rand(q.x0+4,q.x1-4),rand(q.z0+4,q.z1-4),0);
+    if(Math.random()<.6)put(ctx,'tractor',q.cx,q.cz,Math.random()*4|0);else put(ctx,'farmhouse',q.cx,q.cz,q.qz<0?0:2);
+    if(Math.random()<.6)ctx.herd('chicken',q.cx+6,q.cz+6,4);}
+};
+function hoodFarm(ctx,R){
+  for(const [ax,on] of [['v',R.v],['h',R.h]])if(on)for(const sd of [-1,1]){const S=hoodSide(ctx,ax,sd);S.spot('sidewalk',-40,40,5.4,7.6);
+    if(Math.random()<.75){const g=rand(-28,28);for(let u=-37;u<=37;u+=4.2)if(Math.abs(u-g)>4&&(!R.v||!R.h||Math.abs(u)>8))S.put('fence',u,8.2,S.V?Math.PI/2:0,1);S.put('mailbox',g,8.6,S.face);}}
+  const qs=hoodQuads(ctx,R,1.5),list=hoodShuffle(['field','field','patch','pen','hayyard']);qs.forEach((q,i)=>HOOD_FARM[list[i]](ctx,q));}
+/* Ground tint per spot kind, for logic to paint spots as flat tiles (NEEDS LOGIC, see TASKS L30). */
+const SPOT_LOOK={sidewalk:'#d9d9d9',path:'#e9d8a6',parking:'#9aa0a6',plaza:'#e5e0d8',yard:'#7ccf5a',backyard:'#6fc04e',lawn:'#86d16a',
+  sand:'#f4e3b0',field:'#a47148',patch:'#8d6748',pen:'#c9a46c'};
+
 const ZONE_LAYOUT={
   town(ctx){
-    const LM=landmarks();
+    const LM=landmarks(),R=hoodRoads(ctx);if(hoodLandmark(ctx))hoodSidewalks(ctx,R);
     if(at(LM.boss,ctx)){const p=drop(ctx,'boss',0);if(p){ring(ctx,p.x,p.z,RAD.boss+2.6,6,'lamp');ring(ctx,p.x,p.z,RAD.boss+5.4,4,'hydrant');}crumbs(ctx,4,['parked','mailbox','bush']);return;}
     if(at(LM.school,ctx)){const p=drop(ctx,'school',0);if(p){put(ctx,'bench',p.x-4,p.z+RAD.school+2.6,0);put(ctx,'bench',p.x+4,p.z+RAD.school+2.6,0);put(ctx,'flowers',p.x,p.z+RAD.school+2.2,0);}crumbs(ctx,5,['tree','bush','lamp']);return;}
     if(at(LM.fire,ctx)){const p=drop(ctx,'firestation',0);if(p){ring(ctx,p.x,p.z,RAD.firestation+2.2,4,'hydrant');put(ctx,'parked',p.x+RAD.firestation+4,p.z,1);}crumbs(ctx,3,['cone','lamp']);return;}
     if(at(LM.sky,ctx)){const p=drop(ctx,'skyscraper',0);if(p){ring(ctx,p.x,p.z,RAD.skyscraper+2.6,6,'lamp');put(ctx,'parked',p.x+RAD.skyscraper+5,p.z+4,1);put(ctx,'parked',p.x-RAD.skyscraper-5,p.z-4,3);}crumbs(ctx,4,['hydrant','mailbox','bush','cone']);return;}
     if(at(LM.tower,ctx)){const p=drop(ctx,'watertower',0);if(p)ring(ctx,p.x,p.z,RAD.watertower+4.2,5,'cottage');crumbs(ctx,4,['tree','mailbox']);return;}
-    for(const z of [ctx.z0+18,ctx.z1-18]){
-      for(let k=0;k<4;k++){
-        const x=ctx.x0+14+k*16,kind=lotKind();
-        if(put(ctx,kind,x,z,z<ctx.cz?0:2)){put(ctx,'mailbox',x+3.4,z+(z<ctx.cz?3.2:-3.2),0);if(Math.random()<.45)put(ctx,'flowers',x-2.6,z+(z<ctx.cz?2.8:-2.8),0);}
-      }
-    }
-    for(let k=0;k<3;k++){
-      const x=ctx.x0+22+k*18;
-      put(ctx,'lamp',x,ctx.cz-12,0);put(ctx,'parked',x,ctx.cz+12,k%2);if(Math.random()<.5)put(ctx,'hydrant',x+5,ctx.cz-12,0);
-    }
-    put(ctx,'tree',ctx.x0+10,ctx.z0+10,0);put(ctx,'tree',ctx.x1-10,ctx.z1-10,0);put(ctx,'bush',ctx.x0+10,ctx.z1-12,0);
+    if(!R.v&&!R.h){hoodPark(ctx,R,['play','picnic','woods','fountain']);return;} // the middle of a block: a pocket park
+    if(R.v&&R.h){ // a crossing: main street on all four arms, a little plaza at each corner
+      for(const [ax,us] of [['h',[[16,25.5,35],[-16,-25.5,-35]]],['v',[[25.5,35],[-25.5,-35]]]])for(const sd of [-1,1]){const S=hoodSide(ctx,ax,sd);
+        hoodShops(S,us[0],12,40);hoodShops(S,us[1],-40,-12);}
+      for(const qx of [-1,1])for(const qz of [-1,1]){ctx.spot('plaza',ctx.cx+qx*8.5,ctx.cz+qz*8.5,6,6,0);put(ctx,pick(['bench','trashcan','hydrant']),ctx.cx+qx*9,ctx.cz+qz*9,0);}
+      return;}
+    const ax=R.v?'v':'h';
+    if(Math.random()<.28){for(const sd of [-1,1])hoodShops(hoodSide(ctx,ax,sd),[-30,-20,-10,0,10,20,30],-40,40);return;}
+    for(const sd of [-1,1])hoodHouses(hoodSide(ctx,ax,sd),[-32,-16,0,16,32]);
     propsRamp(ctx);
   },
   farm(ctx){
-    const LM=landmarks();
-    if(at(LM.barn,ctx)){const p=drop(ctx,'barn',0);if(p){ring(ctx,p.x,p.z,RAD.barn+3,6,'hay');put(ctx,'tractor',p.x+RAD.barn+4.2,p.z+4,0);}for(let x=ctx.x0+8;x<ctx.x1-8;x+=8)put(ctx,'fence',x,ctx.z0+8,0);crumbs(ctx,4,['crops','scarecrow']);return;}
+    const LM=landmarks(),R=hoodRoads(ctx);if(hoodLandmark(ctx))hoodSidewalks(ctx,R,2.2);
+    // the barn yard: hay round the barn, a fenced paddock with animals in the corner farthest from it
+    if(at(LM.barn,ctx)){const p=drop(ctx,'barn',0);if(p){ring(ctx,p.x,p.z,RAD.barn+3,6,'hay');put(ctx,'tractor',p.x+RAD.barn+4.2,p.z+4,0);
+      ctx.spot('field',p.x,p.z,RAD.barn*2+12,RAD.barn*2+12,0);
+      const q=hoodQuads(ctx,R,1.5).sort((a,b)=>Math.hypot(b.cx-p.x,b.cz-p.z)-Math.hypot(a.cx-p.x,a.cz-p.z))[0];HOOD_FARM.pen(ctx,q);}
+      crumbs(ctx,4,['crops','scarecrow','pumpkin']);return;}
     if(at(LM.mill,ctx)){const p=drop(ctx,'windmill',0);if(p){ring(ctx,p.x,p.z,RAD.windmill+4.2,5,'crops');ctx.herd('chicken',p.x+8,p.z+6,4);}crumbs(ctx,4,['hay','flowers','bush']);return;}
     if(at(LM.silo,ctx)){const a=drop(ctx,'silo',0);if(a){put(ctx,'silo',a.x+7,a.z-6,0);put(ctx,'farmhouse',a.x-12,a.z+8,1);ring(ctx,a.x,a.z,8,4,'hay');}return;}
     if(at(LM.farmpond,ctx)){const p=drop(ctx,'pond',0);if(p){ring(ctx,p.x,p.z,RAD.pond+2.2,5,'flowers');put(ctx,'tractor',p.x+RAD.pond+4.2,p.z,1);put(ctx,'hay',p.x,p.z+RAD.pond+3,0);}crumbs(ctx,3,['tree','bush']);return;}
     if(at(LM.coop,ctx)){const p=drop(ctx,'coop',0);if(p){ctx.herd('chicken',p.x,p.z+RAD.coop+3.2,6);put(ctx,'scarecrow',p.x+6,p.z+5,0);}for(let z=ctx.z0+10;z<ctx.z1-10;z+=8)put(ctx,'fence',ctx.x0+8,z,Math.PI/2);crumbs(ctx,3,['hay','crops']);return;}
-    for(let i=0;i<3;i++)for(let j=0;j<2;j++)put(ctx,'crops',ctx.x0+18+i*18,ctx.z0+16+j*24,(i+j)%2);
-    for(let x=ctx.x0+8;x<ctx.x1-8;x+=8)if(Math.random()<.8)put(ctx,'fence',x,ctx.z1-8,0);
-    for(let i=0;i<4;i++)put(ctx,'hay',rand(ctx.x0+12,ctx.x1-12),rand(ctx.cz-6,ctx.z1-14),0);
-    if(Math.random()<.7)put(ctx,'scarecrow',ctx.cx+rand(-8,8),ctx.cz+rand(-6,6),0);
-    if(Math.random()<.45)put(ctx,'tractor',ctx.x0+16,ctx.z1-18,0);
-    if(Math.random()<.55)ctx.herd('chicken',ctx.cx-4,ctx.cz+8,4);
-    put(ctx,'tree',ctx.x1-12,ctx.z0+12,0);put(ctx,'bush',ctx.x0+12,ctx.z0+14,0);
+    hoodFarm(ctx,hoodRoads(ctx));
     propsRamp(ctx);
   },
   park(ctx){
-    const LM=landmarks();
+    const LM=landmarks();if(hoodLandmark(ctx))hoodSidewalks(ctx,hoodRoads(ctx));
     if(at(LM.fountain,ctx)){const p=drop(ctx,'fountain',0);if(p){ring(ctx,p.x,p.z,RAD.fountain+2.2,4,'bench');ring(ctx,p.x,p.z,RAD.fountain+4.4,6,'flowers');}crumbs(ctx,5,['tree','bush']);return;}
     if(at(LM.play,ctx)){const p=drop(ctx,'gym',0);if(p){put(ctx,'swing',p.x+7,p.z+1,1);put(ctx,'slide',p.x-7,p.z+1,0);put(ctx,'bench',p.x+6,p.z-5,0);put(ctx,'bench',p.x-5,p.z-5,2);put(ctx,'flowers',p.x,p.z+6,0);ring(ctx,p.x,p.z,14,6,'tree');}return;}
     if(at(LM.gazebo,ctx)){const p=drop(ctx,'gazebo',0);if(p){ring(ctx,p.x,p.z,RAD.gazebo+2.4,4,'picnic');ring(ctx,p.x,p.z,RAD.gazebo+4.2,6,'flowers');}crumbs(ctx,4,['tree','bench']);return;}
@@ -796,10 +908,7 @@ const ZONE_LAYOUT={
     if(at(LM.ferris,ctx)){const p=drop(ctx,'ferris',0);if(p){ring(ctx,p.x,p.z,RAD.ferris+3,6,'flowers');put(ctx,'picnic',p.x+RAD.ferris+5,p.z+3,1);put(ctx,'bench',p.x-RAD.ferris-4,p.z+3,3);}crumbs(ctx,4,['tree','bush','cone']);return;}
     if(at(LM.ship,ctx)){const p=drop(ctx,'ship',0);if(p){ring(ctx,p.x,p.z,RAD.ship+3,6,'barrel');ring(ctx,p.x,p.z,RAD.ship+6,5,'crates');}crumbs(ctx,3,['tree','pebble']);return;}
     if(at(LM.ducks,ctx)){const p=drop(ctx,'pond',0);if(p){ctx.herd('duck',p.x+RAD.pond+3,p.z,6);put(ctx,'bench',p.x+RAD.pond+2.6,p.z+2,1);put(ctx,'bench',p.x-RAD.pond-2.6,p.z-2,3);}crumbs(ctx,4,['tree','flowers','bush']);return;}
-    for(let i=0;i<7;i++)put(ctx,'tree',rand(ctx.x0+8,ctx.x1-8),rand(ctx.z0+8,ctx.z1-8),0);
-    for(let i=0;i<3;i++)put(ctx,'bench',rand(ctx.x0+10,ctx.x1-10),rand(ctx.z0+10,ctx.z1-10),Math.random()*4|0);
-    for(let i=0;i<2;i++)put(ctx,'picnic',rand(ctx.x0+12,ctx.x1-12),rand(ctx.z0+12,ctx.z1-12),Math.random()*4|0);
-    crumbs(ctx,5,['bush','flowers','cone']);
+    hoodPark(ctx,hoodRoads(ctx),['play','pond','picnic','woods']);
     if(Math.random()<.3){const px=rand(ctx.x0+16,ctx.x1-16),pz=rand(ctx.z0+18,ctx.z1-16);
       for(let row=0;row<4;row++)for(let k=0;k<=row;k++)put(ctx,'pin',px+(k-row/2)*3.2,pz-row*3,0);}
     propsRamp(ctx);
@@ -815,8 +924,22 @@ const ZONE_LAYOUT={
 /* Scatter lists for L2c. One entry per size the zone should rain in. Landmarks stay in the layouts. */
 const MICRO=['flowers','pebble','mushroom','acorn','toyblock','can','toyduck','snail'];
 const ZONE_PROPS={
-  town:{micro:MICRO,mini:['bush','gnome'],tiny:['hydrant','mailbox','bench'],small:['cone','lamp','pin'],medium:['barrel','crates','parked','snowman'],large:['tree','tower','shop','cottage'],huge:['house','villa'],mega:['bounce','skyscraper']},
-  farm:{micro:['flowers','pebble','mushroom','acorn'],mini:['bush','gnome'],tiny:['mailbox'],small:['fence','crops','hay','scarecrow','cone'],medium:['melon','crates','barrel','coop'],large:['tree','tractor'],huge:['farmhouse','silo','windmill'],mega:['barn']},
-  park:{micro:['flowers','pebble','mushroom','toyduck','acorn'],mini:['bush','gnome'],tiny:['bench'],small:['cone','pin','swing','slide'],medium:['picnic','snowman'],large:['tree','fountain','gym'],huge:['gazebo'],mega:['bounce','ship']},
-  home:{micro:MICRO,mini:['bush','gnome'],tiny:['hydrant','mailbox','bench'],small:['cone','pin','melon','fence'],medium:['barrel','crates','snowman'],large:['tree','tower'],huge:['house'],mega:['bounce']}
+  town:{micro:MICRO,mini:['bush','gnome','beachball'],tiny:['hydrant','mailbox','bench','trashcan','birdbath'],small:['cone','lamp','pin','doghouse'],medium:['barrel','crates','parked','snowman'],large:['tree','tower','shop','cottage'],huge:['house','villa'],mega:['bounce','skyscraper']},
+  farm:{micro:['flowers','pebble','mushroom','acorn'],mini:['bush','gnome','pumpkin'],tiny:['mailbox','trashcan'],small:['fence','crops','hay','scarecrow','cone','doghouse'],medium:['melon','crates','barrel','coop'],large:['tree','tractor'],huge:['farmhouse','silo','windmill'],mega:['barn']},
+  park:{micro:['flowers','pebble','mushroom','toyduck','acorn'],mini:['bush','gnome','beachball'],tiny:['bench','trashcan','birdbath'],small:['cone','pin','swing','slide'],medium:['picnic','snowman'],large:['tree','fountain','gym'],huge:['gazebo'],mega:['bounce','ship']},
+  home:{micro:MICRO,mini:['bush','gnome','beachball'],tiny:['hydrant','mailbox','bench','trashcan'],small:['cone','pin','melon','fence'],medium:['barrel','crates','snowman'],large:['tree','tower'],huge:['house'],mega:['bounce']}
+};
+/* D11: what the size-matched filler puts in each kind of spot (L19). A size a kind doesn't list uses the zone's list above. */
+const SPOT_PROPS={
+  sidewalk:{micro:['can','pebble','acorn','toyblock'],mini:['beachball','gnome'],tiny:['hydrant','trashcan','mailbox','bench'],small:['cone','lamp','pin'],medium:['barrel','crates']},
+  plaza:{micro:['can','flowers','pebble'],mini:['bush','beachball'],tiny:['bench','trashcan','hydrant'],small:['lamp','cone'],medium:['crates','barrel']},
+  parking:{micro:['can','pebble','toyblock'],mini:['beachball'],tiny:['trashcan'],small:['cone'],medium:['parked','barrel','crates']},
+  yard:{micro:['flowers','mushroom','snail','toyduck','acorn'],mini:['gnome','bush','beachball'],tiny:['birdbath','mailbox'],small:['doghouse','pin'],medium:['snowman'],large:['tree']},
+  backyard:{micro:['toyblock','toyduck','flowers','snail'],mini:['beachball','bush','gnome'],tiny:['trashcan','birdbath','bench'],small:['doghouse','swing','slide','picnic'],medium:['snowman','crates'],large:['tree','gym']},
+  path:{micro:['pebble','acorn','can','snail'],mini:['beachball','gnome'],tiny:['bench','trashcan'],small:['cone','lamp']},
+  lawn:{micro:['flowers','mushroom','acorn','snail'],mini:['beachball','bush','gnome'],tiny:['bench','birdbath'],small:['picnic','pin'],medium:['snowman'],large:['tree']},
+  sand:{micro:['toyblock','toyduck','pebble'],mini:['beachball'],tiny:['bench'],small:['slide','swing','pin'],medium:['snowman']},
+  field:{micro:['flowers','pebble','mushroom'],mini:['pumpkin','bush'],tiny:['mailbox'],small:['crops','hay','scarecrow','melon'],medium:['coop'],large:['tractor']},
+  patch:{micro:['pebble','mushroom','acorn'],mini:['pumpkin'],small:['melon','scarecrow','hay']},
+  pen:{micro:['pebble','flowers','acorn'],mini:['bush','pumpkin'],tiny:['trashcan'],small:['hay','fence'],medium:['crates','barrel']}
 };
