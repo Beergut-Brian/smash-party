@@ -576,10 +576,11 @@ Draw calls (`renderer.info.render.calls`, median of 4 s, 2 players): micro start
   - Repro: `__sp.quest('fern_chickens')` at tiny next to the pasture; `__sp.quest('garry_gnomes')` at micro.
 - [ ] **QA9: The "giant robot" finale sends a random boss** `NEEDS DESIGN` (quests, `src/world/quests/home.js` `big_stomp`)
   - The lines say "A GIANT ROBOT is coming!" / "The robot battery fixed their crystal!" and the icon is 🤖, but the `boss` step has no `boss` id, so I got Shelldozer (the crab). Add `boss:'clankzilla'` to the step.
-- [ ] **QA10: A pushed sheep (or gnome) can end up inside the giver and can never be reached** `NEEDS LOGIC` (logic-gameplay, `src/quests.js` push step)
+- [x] **QA10: A pushed sheep (or gnome) can end up inside the giver and can never be reached** `NEEDS LOGIC` (logic-gameplay, `src/quests.js` push step)
   - Pushables don't collide with givers, but cars do. Woolly stands right by the sheep's start spots; one sheep got shoved to (230.9, 261.2), 1.4 from Woolly's center (r 3.45 at huge). The car stops 7.25 from Woolly's center but has to get within 5.1 of the sheep, so it's unreachable from every side. Only way out: drive to another giver and back (restarting the step puts the sheep back).
   - Fix: push pushables out of givers (and maybe out of big props) like cars, or respawn one that hasn't moved for ~20 s while a car is trying.
   - Repro: `__sp.quest('woolly_sheep')` at huge, push the sheep at (240,258) west into Woolly at (232,262).
+  - Done (`logic-gameplay/QA10`): `questPushSolid` in quests.js keeps pushables out of every shown giver and out of props too big for the cars (`o.sz>tier`, the ones that stop cars too); they slide along and bounce a little. Backstop: a car within ~3 car widths for 12 s without touching it → it poofs back to a fresh spot in the stage.
 - [ ] **QA11: After the Home World boss, NEW WORLD shows but does nothing (until GIANT), then restarts the finished Home World at micro** `NEEDS LOGIC` (logic-systems; fold into L33)
   - Big Stomp is fought at huge. When it's beaten, `#newWorld` appears ("START / N / tap"), but `newWorld()` returns unless `giant`, so START, N and clicking do nothing. After `__sp.level(2,true)` (GIANT), N works: Adventure shrinks to micro in the same Home World at (−42, 37) (not the start street), with every quest already done and nothing left to do.
   - Expected (L33): the portals rise here instead. Until then hide NEW WORLD in Adventure until GIANT, or make it work at any size after the quest boss.
