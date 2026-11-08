@@ -208,5 +208,25 @@
   "text": "Level up ready! Press X or Y!",
   "speak": "Level up ready! Press X or Y!",
   "hash": "dbad27cc1ade"
+ },
+ "ten_combo": {
+  "text": "Ten combo!",
+  "speak": "Ten combo!",
+  "hash": "4304b57d03de"
+ },
+ "twenty_five_unstoppable": {
+  "text": "Twenty five! Unstoppable!",
+  "speak": "Twenty five! Unstoppable!",
+  "hash": "f70cca8f395b"
+ },
+ "fifty_smashtacular": {
+  "text": "Fifty! Smashtacular!",
+  "speak": "Fifty! Smashtacular!",
+  "hash": "ed51c5d239aa"
+ },
+ "one_hundred_combo_king": {
+  "text": "One hundred! Combo king!",
+  "speak": "One hundred! Combo king!",
+  "hash": "38d61d813756"
  }
 }

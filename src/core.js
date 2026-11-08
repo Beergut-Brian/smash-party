@@ -210,7 +210,8 @@ const SFX_VOL={crash:0.5,crash_big:0.75,rumble:0.8,boom:0.85,boing:0.55,jump:0.4
 const SFX_GAP={crash:45,thud:80,boom:60};const sfxLast={};
 const sfx={};
 for(const k in synth)sfx[k]=(...a)=>{const n=performance.now();if(n-(sfxLast[k]||0)<(SFX_GAP[k]||30))return;sfxLast[k]=n;
-  const id=k==='crash'&&a[0]?'crash_big':k;if(!sfxClip(id,SFX_VOL[id]||0.6,rand(0.93,1.07)))synth[k](...a);};
+  const id=k==='crash'&&a[0]?'crash_big':k;if(!sfxClip(id,SFX_VOL[id]||0.6,rand(0.93,1.07)*(k==='crash'?sfxPitch:1)))synth[k](...a);};
+let sfxPitch=1; // game.js raises this during smash combos so each crash sounds a little higher
 
 /* Background music (tools/make-music.mjs → assets/sounds/music/). music(id) crossfades to that track; looping
    tracks restart with a crossfade before they end; music(id,{loop:false,then:'drive'}) plays once and moves on.

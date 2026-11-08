@@ -85,8 +85,9 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - `{roll:true}` objects (hay) tumble off when hit: they plow through smaller stuff, launch animals, bounce off bigger things, then burst. Windmill blades spin and windmills stay awake so they spin from afar. Any part can spin with `mesh.userData.spin = {axis:'z', speed:1.2}`. `RAD` is now a fallback for `ctx.place` radius.
   - Cursor: the two `TODO(logic)` notes above `OBJ` in objects.js (and the REC_R one) can be deleted.
 
-- [ ] **L10: Smash combos** (planned with Kaden)
+- [x] **L10: Smash combos** (planned with Kaden, v0.15.0)
   - Smashes in quick succession build a combo: a big "×5 COMBO!" pop near the car, each crash a little higher in pitch, a small meter bonus that grows with the combo, and a voice line at milestones (×10, ×25). Shared between both players. Never punishes ending a combo.
+  - Done: smashes, building collapses (count 3) and animal launches within 1.6s keep it going; label from ×3 over the cars, color/size grow with the combo; crash pitch rises up to +75%; meter bonus 0.15×combo per smash; recorded cheers at ×10/25/50/100. Tunables at the top of the combo section in game.js. Cursor (UI lane): `#combo` can be styled in style.css.
 
 - [ ] **L11: Golden surprises** (planned with Kaden)
   - Rare sparkly gold versions of props/animals (golden chicken, treasure chest, gold crate) hidden around the world, with a twinkle sound when near. Smashing or launching one bursts confetti + coins, plays a fanfare and gives a big meter bonus. Something for a 5-year-old to hunt for. Design can provide gold models later; logic can start with a gold tint + sparkle particles.

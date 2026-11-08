@@ -58,6 +58,19 @@
       "text": "BOOM!",
       "prefix": "[shouting] "
     },
-    "Level up ready! Press X or Y!"
+    "Level up ready! Press X or Y!",
+    "Ten combo!",
+    {
+      "text": "Twenty five! Unstoppable!",
+      "prefix": "[shouting] "
+    },
+    {
+      "text": "Fifty! Smashtacular!",
+      "prefix": "[shouting] "
+    },
+    {
+      "text": "One hundred! Combo king!",
+      "prefix": "[shouting] "
+    }
   ]
 }

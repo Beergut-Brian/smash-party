@@ -91,7 +91,7 @@ function smash(o,vx,vz,power){
   scene.remove(o.g);
   const k=sizeK(o);puff(o.x,0.5*k,o.z,o.big?7:3,(o.big?2.2:1.2)*k);
   sfx.crash(o.big);shake=Math.min(1.5,shake+(o.big?0.6:0.2));
-  smashCount++;addScore(o.points);grow(GROW_VAL[o.sz]);
+  smashCount++;addScore(o.points);grow(GROW_VAL[o.sz]);comboHit();
   if(o.explosive)queue.push({t:0.07,fn:()=>explode(o.x,o.z,GROW_S[o.sz]/GROW_S[TYPE_SIZE.barrel])});
 }
 function explode(x,z,e=1){ // e = blast size (1 = a normal barrel); shrunken barrels make little pops
@@ -134,6 +134,7 @@ function initBld(o){
   o.bld={fl};o.paid=0;
 }
 function killBld(o){ // the building is done for: score what's left, remember it, regrow later
+  comboHit(3);
   o.alive=false;wakeObj(o);
   if(o.rec){o.rec.dead=true;o.rec.gone=[];o.rec.back=T+rand(REGROW[0],REGROW[1]);}
   const rest=Math.max(0,1-o.paid);smashCount++;addScore(o.points*rest);grow((GROW_VAL[o.sz]||0)*rest);
@@ -256,6 +257,33 @@ function updateShots(dt){
     if(!done)for(const a of animals){if(a.state==='fly')continue;if(Math.hypot(a.x-s.x,a.z-s.z)<a.r+s.r*1.5){if(a.sz<=tier)launchAnimal(a,s.vx,s.vz,s.bub?8:20);if(s.bub){done=true;break;}}}
     if(done)shotEnd(s,i);}
 }
+
+/* ---------- smash combos (shared) ---------- */
+// Smashes (and animal launches) in quick succession build one shared combo: a growing "×N COMBO!" over the cars,
+// each crash a little higher in pitch, a small meter bonus that grows with the combo, and a voice cheer at
+// milestones. When the smashing stops the combo just fades out with a little cheer: never a penalty.
+const COMBO_WINDOW=1.6,COMBO_SHOW=3,COMBO_CHEERS={10:'Ten combo!',25:'Twenty five! Unstoppable!',50:'Fifty! Smashtacular!',100:'One hundred! Combo king!'};
+let combo=0,comboT=0,comboBest=0;
+const comboEl=document.createElement('div');comboEl.id='combo';$('hud').appendChild(comboEl);
+{const st=document.createElement('style');st.textContent=`
+:where(#combo){position:absolute;transform:translate(-50%,calc(-100% - 46px));font:34px 'Lilita One',sans-serif;color:#fff;white-space:nowrap;pointer-events:none;opacity:0;
+  text-shadow:0 4px 0 rgba(0,0,0,.3),0 0 18px rgba(255,214,10,.8);transition:opacity .25s}
+:where(#combo.on){opacity:1}
+:where(#combo.pop){animation:comboPop .25s ease-out}
+@keyframes comboPop{0%{scale:1.45}100%{scale:1}}`;document.head.appendChild(st);}
+function comboHit(n=1){
+  combo+=n;comboT=COMBO_WINDOW;comboBest=Math.max(comboBest,combo);sfxPitch=1+Math.min(combo,25)*0.03;
+  if(combo>=COMBO_SHOW)addScore(Math.min(combo,30)*0.15); // a little extra meter, more the longer it runs
+  for(const m in COMBO_CHEERS)if(combo-n<+m&&combo>=+m){say(COMBO_CHEERS[m]);sfx.pop();shake=Math.min(1.5,shake+0.4);}
+  if(combo>=COMBO_SHOW){comboEl.classList.remove('pop');void comboEl.offsetWidth;comboEl.classList.add('pop');}}
+function updateCombo(dt){if(combo&&(comboT-=dt)<=0){if(combo>=10)sfx.pop();combo=0;sfxPitch=1;}}
+function updateComboHUD(){
+  if(combo<COMBO_SHOW||!players.length){comboEl.classList.remove('on');return;}
+  let x=0,y=0,z=0;for(const p of players){x+=p.x;y+=p.y;z+=p.z;}const n=players.length;
+  v3.set(x/n,y/n+players[0].model.h*S*1.2,z/n).project(camera); // just above the car(s); CSS lifts it a fixed bit more
+  comboEl.style.left=((v3.x+1)/2*innerWidth)+'px';comboEl.style.top=((1-v3.y)/2*innerHeight)+'px';
+  const hue=(combo*14)%360;comboEl.style.color=`hsl(${hue},95%,62%)`;comboEl.style.fontSize=Math.min(34+combo*1.2,80)+'px';
+  comboEl.textContent=`×${combo} COMBO!`;comboEl.classList.add('on');}
 
 /* ---------- growth (shared by both players) ---------- */
 // Smashing grows both cars together. Your size tier decides what you can smash (object size class <= tier);
@@ -934,7 +962,7 @@ function launchAnimal(a,vx,vz,power){
   a.state='fly';a.bounced=false;a.vy=Math.sqrt(64*H);a.vx=vx/d*power*0.5+rand(-2,2)*S;a.vz=vz/d*power*0.5+rand(-2,2)*S;
   a.spin=[rand(-12,12),rand(-12,12),rand(-12,12)];a.falling=true;
   if(!sfxClip(a.kind,0.9,rand(0.92,1.12)))tone('square',rand(500,900),rand(1200,1800),0.25,0.12);sfxClip('whee',0.35,rand(.9,1.2));
-  puff(a.x,a.y+a.h*.5,a.z,6,Math.max(0.3,a.r*0.9),a.def.fluff||'#ffffff');addScore(2);
+  puff(a.x,a.y+a.h*.5,a.z,6,Math.max(0.3,a.r*0.9),a.def.fluff||'#ffffff');addScore(2);comboHit();
   const n=performance.now();if(n-lastAnimalSay>9000&&Math.random()<0.35){lastAnimalSay=n;
     say(a.kind==='chicken'||a.kind==='chick'?pick(['Fly, chicken, fly!','Wheee!']):a.kind==='cow'?'Moo-ve over!':a.kind==='duck'||a.kind==='goose'?'Bye bye, birdie!':pick(['Wheee!','Up, up and away!']));}
 }
@@ -1183,7 +1211,7 @@ function updateHUD(){
   if(state!=='play')return;
   $('meterFill').style.width=Math.min(100,levelScore/goal*100)+'%';
   $('levelTxt').textContent='SMASH LEVEL '+level;$('count').textContent=smashCount+(smashCount===1?' smash!':' smashes!');
-  updateSizeHUD();soundHint.style.display=AC&&AC.state!=='running'&&!muted?'block':'none';
+  updateSizeHUD();updateComboHUD();soundHint.style.display=AC&&AC.state!=='running'&&!muted?'block':'none';
   for(const p of players){v3.set(p.x,p.y+p.model.h*dispScale()+1.2*Math.max(S,.3),p.z).project(camera);
     p.tag.style.left=((v3.x+1)/2*innerWidth)+'px';p.tag.style.top=((1-v3.y)/2*innerHeight)+'px';
     p.tag.textContent=p.stuck?'💥 JUMP = BOOM!':p.nameT>0?`${p.stats.emoji} ${p.stats.name}`:`P${p.idx+1}`;p.tag.style.background=p.stuck?SIGNAL_COL.no:p.color;}
@@ -1210,7 +1238,7 @@ function loop(now){
   updateGrowth(dt);updateStreaming(dt);
   if(state==='play'){collisions();updateBoss(dt);}
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
-  updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateRollers(dt);updateSpin(dt);updateScatter(dt);updateAnimals(dt);updateShots(dt);updateDebris(dt);updateParts(dt);
+  updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateCombo(dt);updateRollers(dt);updateSpin(dt);updateScatter(dt);updateAnimals(dt);updateShots(dt);updateDebris(dt);updateParts(dt);
   updateMusic();updateCamera(dt,T);updateSignals(dt);cullChunks();updateHUD();
   renderer.render(scene,camera);
   pressed.clear();touch.jumpP=false;touch.swapP=false;
