@@ -90,10 +90,11 @@ function updateGivers(dt){
     gv.wob=Math.max(0,gv.wob-dt*1.5);gv.talkT=Math.max(0,gv.talkT-dt);
     const bob=Math.abs(Math.sin(T*(gv.talkT>0?9:2.4)))*(gv.talkT>0?0.35:0.12)*s;
     gv.g.position.set(gv.x,groundH(gv.x,gv.z)+bob,gv.z);gv.g.rotation.set(0,gv.face+Math.sin(T*20)*0.08*gv.wob,Math.sin(T*17)*0.05*gv.wob);gv.g.scale.setScalar(s);
-    // cars bump into givers (solid) and that's how you talk to them
+    // cars bump into givers (solid) and that's how you talk to them; QA14: one with nothing left to ask lets cars drive through
+    // (it still chats when you do), so a finished giver on the road or by a gate can't wedge a car
     let touch=null;
     for(const p of players){const dx=p.x-gv.x,dz=p.z-gv.z,d=Math.hypot(dx,dz)||0.01,rr=p.r+r;
-      if(d<rr){p.x=gv.x+dx/d*rr;p.z=gv.z+dz/d*rr;p.speed*=0.5;touch=p;}}
+      if(d<rr){if(!done){p.x=gv.x+dx/d*rr;p.z=gv.z+dz/d*rr;p.speed*=0.5;}touch=p;}}
     if(touch){if(!gv.cool){gv.cool=1;questTouch(gv,touch);}}else if(!np||nd>r*2.5+np.r*2)gv.cool=0; // drive away and back to talk again
     // the "!" balloon (gold = main, blue = side) on open quests; the picture bubble while they talk
     const top=(q.giver.h||3.4)*s;
@@ -274,7 +275,7 @@ function questPushable(s,pos){let m=null;
 const questBaseSize={};
 function questSmashThing(s,pos){const types=[].concat(s.type||['crates','barrel','cone']),t=pick(types);if(!OBJ[t])return null;
   if(questBaseSize[t]==null){const pr=OBJ[t](pos[0],pos[1]);questBaseSize[t]=pr.sz;pr.alive=false;scene.remove(pr.g);objects.splice(objects.indexOf(pr),1);}
-  const o=OBJ[t](pos[0],pos[1],undefined,Math.pow(SIZE_STEP,tier-questBaseSize[t]));o.quest=true;
+  const o=OBJ[t](pos[0],pos[1],undefined,Math.pow(SIZE_STEP,tier-questBaseSize[t]));o.quest=true;o.roll=false; // QA14: a quest hay bale breaks on the hit instead of rolling off and counting 50 units away
   return {kind:'smash',o,x:o.x,z:o.z};}
 // catch: a flock running around the stage (one InstancedMesh per material, so twenty chickens are a few draw calls)
 function questFlock(kind,n,st){

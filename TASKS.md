@@ -590,10 +590,11 @@ Draw calls (`renderer.info.render.calls`, median of 4 s, 2 players): micro start
   - `#levelUp` sits in the upper middle of the screen (≈ y 240–350 at 1080p), right over the play area: it covered Woolly's goal ring and the middle of Shelldozer. Move it down by `#newWorld` or to a side.
   - The quest edge arrow (`#questArrow`) lands on top of the quest HUD / size HUD in the top-left corner when the target is up-left (Bubbles' soap).
   - At micro a giver straight ahead of the cars (Hank from the start) sits under the smash meter at the top of the screen.
-- [ ] **QA14: Small quest snags** `NEEDS LOGIC` (logic-gameplay) — low priority
+- [x] **QA14: Small quest snags** `NEEDS LOGIC` (logic-gameplay) — low priority
   - Zorp's `smash` hay bales are rollers (`roll:true`): they tumble off when hit instead of breaking, one rolled ~58 units away before it counted. Count a roller as smashed on the first real hit in a `smash` step (or spawn them without `roll`).
   - Finished givers stay solid and keep growing with the players: at huge Pip (ice-cream truck) stands in the road by the start and Woolly by the pen gate; my car got wedged on Pip and on Woolly several times. Givers with nothing left to say could shrink back, step off the road, or stop being solid.
   - In Adventure the player cards say "R = shoot" from the start, before the Egg Blaster is earned (reading only; the X glyph appears when it's earned).
+  - Done (`logic-gameplay/QA14`): `smash` step props spawn with `roll` off, so a quest hay bale breaks and counts on the hit. A giver whose quest is done (nothing open) lets cars drive through and still chats when touched. The player cards only show the shoot key once `hasAbility('shoot')` (refreshed when an ability is granted).
 
 ---
 
