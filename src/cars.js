@@ -508,7 +508,10 @@ function buildGarage(){
 /* D19: ability + cosmetic parts on the car (L36 hook `buildCarPart(id)`, game.js `carPartLook`). Car scale 1.
    Roof parts (hammer, shoot, hat, crown): origin where they sit on the roof. hover / glide / dozer: origin at the car's
    ground center (logic moves the dozer blade to the nose). A child with userData.swing swings on each smash
-   (logic sets its rotation.x = -0.5 + swing, so it rests at -0.5 with the pivot at its origin). */
+   (logic sets its rotation.x = -0.5 + swing, so it rests at -0.5 with the pivot at its origin).
+   D22: land parts. stomp (dino-claw mud flaps, ground center, always on), sugarrush (rainbow glow, ground center, own
+   materials so logic can cycle the userData.rainbow ones), roof cosmetics eggshell / cherry / bandhat (like hat),
+   dinotail (origin at the back bumper at ground level, tail toward −Z; its child with userData.wag can swing on y). */
 function buildCarPart(id){
   const g=new THREE.Group();
   if(id==='hammer'){ // a big squeaky toy mallet on a little roof stand
@@ -550,6 +553,49 @@ function buildCarPart(id){
     g.add(mk('box',3.3,.22,.38,'#495057',0,.08,.28),mk('box',3.3,.14,.36,'#e08a00',0,1.18,.26));
     for(const sx of [-1,1])g.add(mk('box',.5,.6,.05,'#212529',sx*.7,.62,.5));
     for(const sx of [-1,1]){g.add(mk('box',.22,.7,.32,'#212529',sx*1.0,.65,.48),mk('box',.24,.24,1,'#555555',sx*.9,.6,-.3));}}
+  // D22: land abilities (L42) and land cosmetics (Q2a/Q3a, L44)
+  else if(id==='stomp'){ // 🦖 dino-claw mud flaps behind the rear wheels (origin at the car's ground center; always on)
+    for(const sx of [-1,1]){const f=new THREE.Group();f.position.set(sx*.95,.12,-2.3);
+      f.add(mk('box',.72,.7,.1,'#57cc99',0,.4,0),mk('box',.76,.12,.14,'#2d6a4f',0,.76,0)); // flap + its bar
+      for(const sp of [-.24,0,.24]){const t=mk('cone',.16,.3,.16,'#fff8ec',sp,.02,-.04);t.rotation.x=Math.PI;f.add(t);} // claws
+      f.add(mk('sph',.2,.06,.24,'#2d6a4f',0,.42,-.06)); // footprint dot on the flap
+      for(const sp of [-.16,0,.16])f.add(mk('sph',.08,.05,.08,'#2d6a4f',sp,.6,-.06));
+      g.add(f);}}
+  else if(id==='sugarrush'){ // 🍭 rainbow glow round the car while rushing (origin at ground center; logic cycles userData.rainbow colors)
+    const add=(c,o)=>new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:o,blending:THREE.AdditiveBlending,depthWrite:false});
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(2.2,.3,6,36),add('#ff006e',.8));ring.rotation.x=Math.PI/2;ring.position.y=.35;ring.userData.rainbow=true;g.add(ring);
+    const ring2=new THREE.Mesh(new THREE.TorusGeometry(1.7,.16,6,32),add('#ffffff',.6));ring2.rotation.x=Math.PI/2;ring2.position.y=.9;g.add(ring2);
+    const halo=new THREE.Mesh(new THREE.CylinderGeometry(2.35,2.1,1.6,28,1,true),add('#ff70a6',.22));halo.position.y=.8;halo.userData.rainbow=true;g.add(halo);
+    const sweets=['#ffd60a','#06d6a0','#3a86ff','#ff9f1c','#c77dff','#ffffff'];
+    for(let i=0;i<6;i++){const a=i/6*Math.PI*2+.3,x=Math.sin(a)*2.25,z=Math.cos(a)*2.25; // little candy stars riding the ring
+      const c=new THREE.Mesh(new THREE.OctahedronGeometry(.28),add(sweets[i],.9));c.position.set(x,.35+(i%2)*.5,z);c.rotation.set(a,a,0);g.add(c);}}
+  else if(id==='dinotail'){ // 🦕 a chunky green tail with orange back plates (origin at the back bumper, ground level; points −Z)
+    const t=new THREE.Group();t.position.y=.95;t.rotation.x=.18;t.scale.setScalar(1.4);t.userData.wag=true;
+    const seg=[[.9,.75,0],[.72,.6,-.75],[.54,.46,-1.4],[.36,.32,-1.95],[.22,.2,-2.35]];
+    seg.forEach(([w,h,z],i)=>{const m=mk('sph',w,h,.95-i*.1,i%2?'#52b788':'#57cc99',0,-i*.08,z);t.add(m);
+      if(i<4)t.add(mk('pyr',.12,.42-i*.06,.36-i*.04,'#ff9f1c',0,h*.5-i*.08+.12,z));}); // back plates
+    t.add(mk('cone',.16,.3,.16,'#fff8ec',.12,-.3,-2.4),mk('cone',.16,.3,.16,'#fff8ec',-.12,-.3,-2.4)); // tail spikes
+    for(const [x,z] of [[.3,-.2],[-.28,-.9],[.2,-1.5]])t.add(mk('sph',.18,.12,.2,'#ffd166',x,.3-z*.02,z)); // spots
+    g.add(t);}
+  else if(id==='eggshell'){ // 🥚 a cracked eggshell on the roof with a chick peeking out
+    g.add(mk('sph',1.24,1,1.24,'#fff3d6',0,.42,0));
+    for(let i=0;i<9;i++){const a=i/9*Math.PI*2,x=Math.sin(a)*.6,z=Math.cos(a)*.6; // zigzag cracked rim
+      const tooth=mk('pyr',.32,.3,.12,'#fff3d6',x,.86,z);tooth.rotation.y=a;g.add(tooth);}
+    for(const [x,y,z] of [[.4,.4,.3],[-.35,.3,-.35],[.1,.25,-.55]])g.add(mk('sph',.18,.14,.08,'#b5e48c',x,y,z)); // speckles
+    g.add(mk('sph',.62,.6,.6,'#ffd60a',0,1.0,0),mk('pyr',.2,.18,.22,'#ff9f1c',0,1.0,.33)); // chick + beak
+    for(const sx of [-1,1])g.add(mk('sph',.1,.12,.06,'#222222',sx*.15,1.12,.27));
+    g.add(mk('sph',.18,.24,.12,'#ffd60a',0,1.38,-.05));} // tuft
+  else if(id==='cherry'){ // 🍒 a big cherry on a whipped-cream dollop
+    g.add(mk('cyl',1.2,.22,1.2,'#fff8ec',0,.11,0),mk('sph',1.05,.5,1.05,'#fff8ec',0,.3,0),mk('cone',.5,.4,.5,'#fff8ec',0,.62,0));
+    g.add(mk('sph',1,.92,1,'#d00000',0,1.05,0),mk('sph',.26,.2,.18,'#ff8fa3',.2,1.3,.34)); // cherry + shine
+    const st=mk('cyl',.07,.75,.07,'#386641',.1,1.75,-.05);st.rotation.z=-.35;g.add(st);
+    const lf=mk('sph',.4,.08,.2,'#57cc99',.36,1.95,-.05);lf.rotation.z=.4;g.add(lf);}
+  else if(id==='bandhat'){ // 💂 a marching-band hat: tall red shako, gold band, black visor, big white plume
+    g.add(mk('cyl',1.0,.95,1.0,'#e63946',0,.6,0),mk('cyl',1.06,.16,1.06,'#ffd60a',0,.2,0),mk('cyl',1.06,.12,1.06,'#ffd60a',0,1.04,0));
+    g.add(mk('cyl',1.0,.08,1.0,'#212529',0,1.1,0),mk('box',.8,.08,.42,'#212529',0,.16,.55)); // top + visor
+    g.add(mk('sph',.26,.3,.1,'#ffd60a',0,.62,.5)); // badge
+    g.add(mk('cyl',.08,.22,.08,'#ffd60a',0,1.22,0));
+    for(const [x,y,z,r] of [[0,1.45,0,.5],[.12,1.75,-.05,.42],[-.1,1.98,.02,.34],[.05,2.18,0,.24]])g.add(mk('sph',r,r*1.1,r,'#ffffff',x,y,z));} // fluffy plume
   else return null;
   return g;
 }
