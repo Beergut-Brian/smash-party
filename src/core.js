@@ -207,7 +207,11 @@ const synth={
 const banks=[];
 function clipBank(dir,lazy){const b={dir,index:{},bufs:{},lazy};banks.push(b);
   fetch(dir+'index.json').then(r=>r.ok?r.json():{}).then(j=>{b.index=j||{};loadBank(b);}).catch(()=>{});return b;}
-function loadBank(b){if(!AC||b.lazy)return;for(const id in b.index)loadClip(b,id).catch(()=>{});}
+// L46: the whole bank downloads a few clips at a time, so a clip asked for right now (loadClip, voicePreload) gets a
+// free connection instead of waiting behind 300 others
+function loadBank(b){if(!AC||b.lazy||b.q)return;b.q=Object.keys(b.index);b.run=0;for(let i=0;i<3;i++)bankPump(b);}
+function bankPump(b){while(b.q.length){const id=b.q.shift();if(b.bufs[id])continue;b.run++;
+    loadClip(b,id).catch(()=>{}).then(()=>{b.run--;bankPump(b);});return;}}
 function loadClip(b,id){const have=b.bufs[id];if(have&&have!=='loading')return Promise.resolve(have);if(!AC||!b.index[id])return Promise.reject();
   b.wait=b.wait||{};if(!b.wait[id]){b.bufs[id]='loading';
     b.wait[id]=fetch(b.dir+id+'.mp3').then(r=>r.arrayBuffer()).then(x=>AC.decodeAudioData(x)).then(buf=>b.bufs[id]=buf).catch(e=>{delete b.bufs[id];delete b.wait[id];throw e;});}
@@ -285,20 +289,63 @@ function duckMusic(sec){if(!musicGain)return;const t=AC.currentTime,g=musicGain.
    voice pitched for that character ({pitch, rate} in the options, else picked from the name). */
 const voiceSlug=t=>t.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,''); // must match make-voices.mjs
 let voiceSrc=null;
-function stopVoice(){try{speechSynthesis.cancel();}catch(e){}if(voiceSrc){try{voiceSrc.stop();}catch(e){}voiceSrc=null;}}
-let sayWant=null;
-function playVoice(id,buf){stopVoice();voiceSrc=playClip(voiceBank,id,1.5);duckMusic(buf.duration);}
-function robotSay(text,pitch=1.45,rate=1.05){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=rate;u.pitch=pitch;speechSynthesis.speak(u);}catch(e){}}
+/* L46 priority voice: a line with a voice (a quest giver, the talk scene) or {prio:true} is never cut off by a
+   callout: callouts are skipped while one plays or waits, and priority lines queue behind each other. say() returns a
+   promise that resolves when the line has finished (or was skipped / cut off), for the talk scene to wait on.
+   A recording still downloading gets a moment (1.5 s for priority lines, 0.8 s for callouts), then the robot voice
+   speaks it instead of silence. voicePreload(voice) fetches a character's clips ahead (givers coming into range). */
+let voiceCur=null;const voiceQ=[],voiceMiss=new Map();
+const voiceBusy=()=>!!(voiceCur&&voiceCur.prio)||voiceQ.length>0;
+function voiceHalt(){try{speechSynthesis.cancel();}catch(e){}if(voiceSrc){const s=voiceSrc;voiceSrc=null;try{s.stop();}catch(e){}}}
+function voiceEnd(c){if(!c||c.over)return;c.over=true;clearTimeout(c.timer);c.res();
+  if(voiceCur===c){voiceCur=null;if(voiceQ.length)voiceStart(voiceQ.shift());}}
+function stopVoice(){for(const c of voiceQ.splice(0)){c.over=true;c.res();}const c=voiceCur;voiceCur=null;voiceHalt();if(c){c.over=true;clearTimeout(c.timer);c.res();}}
+function playVoice(c,buf){voiceHalt();const s=playClip(voiceBank,c.id,1.5);if(!s){voiceEnd(c);return;}voiceSrc=s;duckMusic(buf.duration);
+  s.onended=()=>{if(voiceSrc===s)voiceSrc=null;voiceEnd(c);};c.timer=setTimeout(()=>voiceEnd(c),(buf.duration+0.8)*1000);} // safety if onended never fires
+function robotSay(text,pitch=1.45,rate=1.05,done){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=rate;u.pitch=pitch;
+  if(done)u.onend=u.onerror=done;speechSynthesis.speak(u);}catch(e){if(done)done();}}
+function voiceRobot(c,why){if(c.over)return;c.robot=true;if(!voiceMiss.has(c.id))voiceMiss.set(c.id,{text:c.text,voice:c.voice||null,why});
+  voiceHalt();clearTimeout(c.timer);robotSay(c.text,c.pitch,c.rate,()=>voiceEnd(c));
+  c.timer=setTimeout(()=>voiceEnd(c),(1.5+c.text.split(/\s+/).length*0.5/c.rate)*1000);} // onend is unreliable in some browsers
+function voiceStart(c){voiceCur=c;const buf=voiceBank.bufs[c.id];
+  if(buf&&buf!=='loading'&&AC){playVoice(c,buf);return;}
+  if(!AC||!voiceBank.index[c.id]){voiceRobot(c,'no clip');return;}
+  c.timer=setTimeout(()=>voiceRobot(c,'slow download'),c.prio?1500:800);
+  loadClip(voiceBank,c.id).then(b=>{if(!c.over&&voiceCur===c&&!voiceSrc&&!c.robot){clearTimeout(c.timer);playVoice(c,b);}})
+    .catch(()=>{if(!c.over&&voiceCur===c)voiceRobot(c,'load failed');});}
 let voiceCast={};fetch('tools/voices.json').then(r=>r.json()).then(j=>{voiceCast=j||{};}).catch(()=>{}); // robot {pitch, rate} per character
-function voiceRobot(v){const c=voiceCast[v]&&voiceCast[v].robot;let h=0;for(const c of v)h=(h*31+c.charCodeAt(0))>>>0;return [(c&&c.pitch)||0.6+(h%100)/100*1.3,(c&&c.rate)||0.9+((h>>>8)%100)/100*0.3];} // pitch 0.6–1.9, rate 0.9–1.2
-function say(text,opt){if(muted)return;const v=opt&&opt.voice,id=(v?v+'__':'')+voiceSlug(text),buf=voiceBank.bufs[id];sayWant=id;
-  let pitch=1.45,rate=1.05;if(v){[pitch,rate]=voiceRobot(v);if(opt.pitch)pitch=opt.pitch;if(opt.rate)rate=opt.rate;}
-  const robot=()=>robotSay(text,pitch,rate);
-  if(buf&&buf!=='loading'&&AC){playVoice(id,buf);return;}
-  // the recording exists but is still downloading (the first seconds after start): wait for it rather than use the robot voice
-  if(AC&&voiceBank.index[id]){const t0=performance.now();
-    loadClip(voiceBank,id).then(b=>{if(sayWant===id&&performance.now()-t0<3000)playVoice(id,b);}).catch(robot);return;}
-  robot();}
+function voiceRobotPR(v){const c=voiceCast[v]&&voiceCast[v].robot;let h=0;for(const c of v)h=(h*31+c.charCodeAt(0))>>>0;return [(c&&c.pitch)||0.6+(h%100)/100*1.3,(c&&c.rate)||0.9+((h>>>8)%100)/100*0.3];} // pitch 0.6–1.9, rate 0.9–1.2
+function say(text,opt){text=String(text);const v=opt&&opt.voice,prio=!!(opt&&(opt.prio||v)),id=(v?v+'__':'')+voiceSlug(text);
+  if(muted)return new Promise(r=>prio?setTimeout(r,(0.7+text.split(/\s+/).length*0.36)*1000):r()); // the talk scene still paces its cards
+  if(prio){const same=voiceCur&&voiceCur.id===id&&!voiceCur.over?voiceCur:voiceQ.find(c=>c.id===id);if(same)return same.p;} // don't stack the same line
+  else if(voiceBusy())return Promise.resolve();
+  let pitch=1.45,rate=1.05;if(v){[pitch,rate]=voiceRobotPR(v);}if(opt&&opt.pitch)pitch=opt.pitch;if(opt&&opt.rate)rate=opt.rate;
+  const c={id,text,voice:v,prio,pitch,rate};c.p=new Promise(r=>c.res=r);
+  if(prio&&voiceCur&&voiceCur.prio){if(voiceQ.length<8)voiceQ.push(c);else c.res();return c.p;}
+  if(voiceCur){const o=voiceCur;voiceCur=null;o.over=true;clearTimeout(o.timer);o.res();}
+  voiceStart(c);return c.p;}
+// fetch every clip of a character now (a giver coming into range), so their first line isn't still downloading
+const voicePreloaded=new Set();
+function voicePreload(v){if(!v||voicePreloaded.has(v)||!AC||!Object.keys(voiceBank.index).length)return;voicePreloaded.add(v);
+  const pre=v+'__';for(const id in voiceBank.index)if(id.startsWith(pre))loadClip(voiceBank,id).catch(()=>{});}
+// L46: once a second, preload the voices of every giver that's on screen range (shown) and of the running quest
+let voicePreT=0;
+function updateVoicePreload(dt){if((voicePreT-=dt)>0)return;voicePreT=1;
+  if(typeof questGivers!=='undefined')for(const id in questGivers){const gv=questGivers[id];if(gv.shown&&gv.q)for(const v of voiceOfQuest(gv.q))voicePreload(v);}
+  if(typeof questA!=='undefined'&&questA&&questA.q)for(const v of voiceOfQuest(questA.q))voicePreload(v);}
+// every voice a quest speaks in (giver, steps, {text, voice} lines)
+function voiceOfQuest(q,out=new Set()){const walk=o=>{if(!o||typeof o!=='object')return;if(typeof o.voice==='string')out.add(o.voice);
+    for(const k in o)if(k!=='build'&&typeof o[k]==='object')walk(o[k]);};walk(q);return out;}
+// lines that would fall back to the robot voice: every quest line without a clip + whatever fell back this session
+function voiceMissing(){const out=[],seen=new Set(),add=(text,voice,why,quest)=>{const id=(voice?voice+'__':'')+voiceSlug(text);
+    if(seen.has(id))return;seen.add(id);if(!voiceBank.index[id]||why!=='no clip')out.push({id,text,voice:voice||null,why,quest});};
+  const walk=(o,voice,q,said)=>{if(o==null)return;if(typeof o==='string'){if(said)add(o,voice,'no clip',q);return;}if(typeof o!=='object')return;
+    if(Array.isArray(o)){for(const x of o)walk(x,voice,q,said);return;}
+    const v=typeof o.voice==='string'?o.voice:voice;if(said&&typeof o.text==='string'){add(o.text,v,'no clip',q);return;}
+    for(const k in o)if(k!=='build'&&k!=='voice')walk(o[k],v,q,said||k==='say'||k==='remind'||k==='after');};
+  if(typeof QUEST_LIST!=='undefined')for(const q of QUEST_LIST)walk(q,q.giver&&q.giver.voice,q.id,false);
+  for(const [id,m] of voiceMiss)if(!seen.has(id)){seen.add(id);out.push({id,text:m.text,voice:m.voice,why:m.why});}
+  return out;}
 function toggleMute(){muted=!muted;if(master)master.gain.value=muted?0:0.6;if(muted)stopVoice();$('muteBtn').textContent=muted?'🔇':'🔊';}
 function toggleFS(){try{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen().catch(()=>{});}catch(e){}}
 $('muteBtn').onclick=e=>{e.stopPropagation();initAudio();toggleMute();};
