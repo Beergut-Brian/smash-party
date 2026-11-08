@@ -54,7 +54,15 @@
   "settings": { "stability": 0.5 },
   "prefix": "[squeaky] ",
   "robot": { "pitch": 1.8, "rate": 1.15 },
-  "desc": "Zorp (with Blip): a tiny high, squeaky alien whose saucer crashed in the cornfield; beeps and boops. Blip (low, bubbly) is a later per-line voice; the engine speaks a quest in one voice today. Uncast until AU13."
+  "desc": "Zorp (with Blip): a tiny high, squeaky alien whose saucer crashed in the cornfield; beeps and boops. Blip is its own voice (`blip`, per-line voices L40). Uncast until AU13."
+ },
+ "blip": {
+  "voice": "",
+  "model": "eleven_v3",
+  "settings": { "stability": 0.5 },
+  "prefix": "[low, bubbly] ",
+  "robot": { "pitch": 0.75, "rate": 0.95 },
+  "desc": "Blip (with Zorp): a round purple alien with three little eyes. Low, bubbly, slow; finishes Zorp's sentences (\"...boop!\"). Uncast until AU13."
  },
  "dot": {
   "voice": "",

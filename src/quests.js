@@ -6,7 +6,11 @@
      id, world:'home', chapter:1–4, main:true|false,
      giver:{id, name, emoji, voice, at:[x,z] | spot:'kind', r?, build(){…group facing +Z, ~4.5 long at car scale 1}},
      needs:['other_quest' | 'ability'], stage:'scene id', stageAt:[x,z], stageR?,
-     remind:['line',…], steps:[{do, n, icon, item, kind, type, at, say:{start,each,got,hint}}…],
+     remind:['line',…], steps:[{do, n, icon, item, kind, type, at, voice, say:{start,each,got,hint}}…],
+     Any line can be a string or {text, voice} (L40: two characters on one giver, e.g. Zorp & Blip); a step's
+     `voice` overrides the giver's for that step. find: `lift:true` sits the item on top of whatever it lands on
+     (touch that thing to grab it), `clear:true` pops props off its spot, `y` floats it that high (jump/hover to it).
+     smash: `reveal:'item'` pops that item out of the last one smashed (grab it to finish; a `bring` can follow).
      reward:{ability, cosmetic, stars, say:[…]}, after:['idle line',…]
    Step verbs: talk, find, bring, catch, smash, deliver, rings, push, reach, boss (see questStepStart).
    Size-proof: givers, items, critters, rings and drop spots are all built at car scale 1 and scaled by S (the players'
@@ -37,8 +41,9 @@ let questPoint=null; // the quest the arrow points at while nothing is active
 
 /* ---------- talking ---------- */
 const questTalk=[];let questTalkT=0;
-function questSpeak(lines,voice,gv){if(!lines)return;if(typeof lines==='string')lines=[lines];
-  for(const l of lines)questTalk.push({text:l,voice,gv});}
+function questSpeak(lines,voice,gv){if(!lines)return;if(!Array.isArray(lines))lines=[lines];
+  for(const l of lines){if(!l)continue;const o=typeof l==='string'?{text:l}:l;if(!o.text)continue;questTalk.push({text:String(o.text),voice:o.voice||voice,gv});}}
+const questVoice=(q,s)=>(s&&s.voice)||q.giver.voice; // L40: a step can speak in another voice
 function questSayNow(text,voice){try{say(text,voice?{voice}:undefined);}catch(e){say(text);}}
 function updateQuestTalk(dt){
   if((questTalkT-=dt)>0)return;const l=questTalk.shift();if(!l)return;
@@ -110,7 +115,7 @@ function questTouch(gv,p){
   const s=questA.q.steps[questA.si];
   if(s.do==='bring'){questBring(gv);return;}
   if(s.do==='talk')return;
-  questSpeak([pick([].concat(s.say&&(s.say.hint||s.say.start)||q.remind||'You can do it!'))],gd.voice,gv);}
+  questSpeak([pick([].concat(s.say&&(s.say.hint||s.say.start)||q.remind||'You can do it!'))],questVoice(q,s),gv);}
 
 /* ---------- running a quest ---------- */
 function questStart(q,quiet){
@@ -124,16 +129,18 @@ function questStageCenter(q){
   const R=(q.stageR||8)*4.5*qS();if(q.stageAt)return [q.stageAt[0],q.stageAt[1],R];
   const at=questGiverAt(q)||[players[0].x,players[0].z];return [at[0],at[1]-R*1.4,R];}
 function questStepStart(){
-  const A=questA,q=A.q,s=q.steps[A.si],pr=questProg[q.id],gv=questGv(),voice=q.giver.voice;
+  const A=questA,q=A.q,s=q.steps[A.si],pr=questProg[q.id],gv=questGv(),voice=questVoice(q,s);
   const n=s.n||1,c=questStageCenter(q),st=A.st={s,n,got:pr.n||0,things:[],tier,cx:c[0],cz:c[1],R:c[2],t:0};
-  if(A.si===0&&q.stage&&typeof sceneAt==='function'&&!A.scene){try{A.scene=sceneAt(q.stage,c[0],c[1],0,null,{key:'quest_'+q.id})||true;}catch(e){console.warn('sceneAt',e);}} // L38
+  if(A.si===0&&q.stage&&typeof sceneAt==='function'&&!A.scene){A.scene=true; // L38; a stage design hasn't built yet is skipped quietly (L40)
+    if(typeof sceneDef!=='function'||sceneDef(q.stage,zoneXZ(c[0],c[1])))try{A.scene=sceneAt(q.stage,c[0],c[1],0,null,{key:'quest_'+q.id})||true;}catch(e){console.warn('sceneAt',e);}}
   const say0=s.say&&!Array.isArray(s.say)&&s.say.start;
   switch(s.do){
     case 'talk':questSpeak(Array.isArray(s.say)?s.say:[].concat(s.say||[]),voice,gv);st.wait=true;break;
     case 'find':for(let i=st.got;i<n;i++)st.things.push(questItem(s,questPlace(s,st,i)));break;
     case 'bring':break;
     case 'catch':st.flock=questFlock(s.kind||'chicken',n-st.got,st);break;
-    case 'smash':for(let i=st.got;i<n;i++){const o=questSmashThing(s,questPlace(s,st,i));if(o)st.things.push(o);}break;
+    case 'smash':for(let i=st.got;i<n;i++){const o=questSmashThing(s,questPlace(s,st,i));if(o)st.things.push(o);}
+      if(s.reveal&&st.got>=n)questReveal(st,[st.cx,st.cz]);break; // grew (or loaded) after the last one: the item waits in the stage
     case 'deliver':for(let i=0;i<n;i++)st.things.push(questDrop(s,questRingPos(s,st,i,n),i<st.got));break;
     case 'rings':for(let i=0;i<n;i++)st.things.push(questRing(s,questRingPos(s,st,i,n),i<st.got));questRingAim(st);break;
     case 'push':st.goal=questGoal(s,st);for(let i=st.got;i<n;i++)st.things.push(questPushable(s,questPlace(s,st,i,true)));break;
@@ -144,7 +151,8 @@ function questStepStart(){
   questHudSet();}
 function questStepEnd(advance){
   const A=questA;if(!A||!A.st)return;const st=A.st,s=st.s;
-  for(const t of st.things)questThingOff(t,false);if(s.do==='find'&&advance&&!questNextIs('bring'))questRoofClear(true);
+  for(const t of st.things)questThingOff(t,false);if((s.do==='find'||s.reveal)&&advance&&!questNextIs('bring'))questRoofClear(true);
+  if(st.reveal)questThingOff(st.reveal,false);questUnclear(st);
   if(st.flock)questFlockOff(st.flock);if(st.goal)questThingOff(st.goal);
   if(!advance)questRoofClear(false);
   A.st=null;}
@@ -152,11 +160,12 @@ const questNextIs=v=>{const A=questA,nx=A&&A.q.steps[A.si+1];return !!(nx&&nx.do
 function questProgress(k=1){
   const A=questA,st=A.st,s=st.s,pr=questProg[A.q.id];st.got+=k;pr.n=st.got;
   confetti(25);sfxClip('quest_step',0.7)||sfx.pop();
-  if(st.got<st.n){const e=s.say&&s.say.each;if(e)questSpeak([pick([].concat(e))],A.q.giver.voice,questGv());questHudSet();return;}
+  if(st.got<st.n){const e=s.say&&s.say.each;if(e)questSpeak([pick([].concat(e))],questVoice(A.q,s),questGv());questHudSet();return;}
+  if(s.reveal&&!st.revealed){questReveal(st,st.lastAt||[st.cx,st.cz]);questHudSet();return;} // L40: the prize pops out of the last one
   questStepDone();}
 function questStepDone(){
   const A=questA,q=A.q,s=A.st.s,gv=questGv();
-  const got=s.say&&!Array.isArray(s.say)&&s.say.got;if(got)questSpeak([got],q.giver.voice,gv);
+  const got=s.say&&!Array.isArray(s.say)&&s.say.got;if(got)questSpeak([got],questVoice(q,s),gv);
   questStepEnd(true);A.si++;const pr=questProg[q.id];pr.step=A.si;pr.n=0;
   if(A.si>=q.steps.length){questFinish();return;}
   sfxClip('quest_step',0.9)||sfx.join();confetti(60);questStepStart();questSave();}
@@ -205,7 +214,35 @@ function questItem(s,pos){const g=new THREE.Group(),look=typeof QUEST_ITEMS!=='u
   if(!m){m=new THREE.Group();m.add(mk('box',1.2,0.8,0.9,s.color||'#e63946',0,0.4,0),mk('box',0.5,0.2,0.2,'#ffd60a',0,0.9,0));}
   const beam=new THREE.Mesh(GEO.cyl,BEAM_MAT);beam.scale.set(0.9,14,0.9);beam.position.y=7;beam.castShadow=false;
   g.add(m,beam);g.position.set(pos[0],groundH(pos[0],pos[1]),pos[1]);g.scale.setScalar(qS());scene.add(g);
-  return {kind:'item',g,m,beam,x:pos[0],z:pos[1],tag:questDiv('questIcon',s.icon||'🎁'),ph:rand(0,6)};}
+  const t={kind:'item',g,m,beam,x:pos[0],z:pos[1],tag:questDiv('questIcon',s.icon||'🎁'),ph:rand(0,6),y:s.y!=null?s.y*qS():0,lift:!!s.lift,clear:!!s.clear,on:null,chk:0};
+  questItemBase(t,st0(),true);return t;}
+const st0=()=>questA&&questA.st;
+// L40: what an item sits on (lift), what's cleared off its spot (clear); checked now and then, since chunks load later
+function questItemBase(t,st,now){
+  if(!t.lift&&!t.clear)return;if(!now&&(t.chk-=1/60)>0)return;t.chk=0.4;const R=1.2*qS();
+  let on=null;
+  for(const o of objects){if(!o.alive||o.quest)continue;const d=Math.hypot(o.x-t.x,o.z-t.z);if(d>o.r+R)continue;
+    if(t.clear){if(o.building||o.mega)continue;o.alive=false;if(typeof poolRelease==='function')poolRelease(o);scene.remove(o.g);
+      if(o.rec&&st){o.rec.dead=true;o.rec.back=Infinity;(st.cleared||(st.cleared=[])).push(o.rec);}
+      if(!now)puff(o.x,o.h*0.5,o.z,5,Math.max(o.r,0.3),'#ffffff');continue;}
+    if(d<o.r*0.9&&(!on||o.h+o.fy>on.h+on.fy))on=o;}
+  t.on=on;}
+function questUnclear(st){if(st.cleared)for(const e of st.cleared)if(e.back===Infinity)e.back=T+rand(3,12);st.cleared=null;} // cleared props grow back after the step
+// smash reveal: the prize hops out of the last thing smashed
+function questReveal(st,at){const s=st.s;st.revealed=true;
+  st.reveal=questItem({item:s.reveal,icon:s.revealIcon||s.icon,color:s.color},at);st.reveal.hop=1;
+  sfx.pop();puff(at[0],qS(),at[1],10,1.2*Math.max(qS(),.2),'#ffd60a');}
+// one frame of a find item: bob on the ground / on top of what it sits on / up at y; true when a car grabs it
+function questItemTick(t,dt,st){
+  questItemBase(t,st,false);
+  const base=t.on&&t.on.alive?t.on.h+(t.on.fy||0):t.y,gy=groundH(t.x,t.z);
+  if(t.hop!=null){t.hop=Math.max(0,t.hop-dt*1.6);}
+  t.g.position.y=gy+base+(t.hop?Math.sin((1-t.hop)*Math.PI)*4*qS():0);
+  t.m.rotation.y+=dt*2;t.m.position.y=(0.4+0.3*Math.sin(T*3+t.ph));
+  questProj(t.tag,t.x,base+3.2*qS(),t.z,true);
+  const reach=1.2*qS()+(t.on&&t.on.alive?t.on.r:0); // touching what it sits on counts
+  for(const p of players)if(Math.hypot(p.x-t.x,p.z-t.z)<p.r+reach&&(!(t.y>0)||t.on||(p.y||0)-gy>=t.y-1.6*qS()))return p;
+  return null;}
 function questDrop(s,pos,done){const g=new THREE.Group(),mat=new THREE.MeshBasicMaterial({color:done?'#06d6a0':'#ffd60a',transparent:true,opacity:0.75});
   const disc=new THREE.Mesh(GEO.cyl,mat);disc.scale.set(7,0.12,7);disc.position.y=0.08;g.add(disc);
   const beam=new THREE.Mesh(GEO.cyl,BEAM_MAT);beam.scale.set(2.6,16,2.6);beam.position.y=8;beam.visible=!done;g.add(beam);
@@ -279,12 +316,13 @@ function updateQuestStep(dt){
   switch(s.do){
     case 'talk':if(!questTalking()&&st.t>0.5)questStepDone();return;
     case 'bring':if(!players.some(p=>(p.qRoof||[]).length)&&!questFly.length&&st.t>0.5&&!questTalking()){/* nothing to carry (loaded game): just visit */}return;
-    case 'find':for(const t of st.things){if(!t.g.parent)continue;t.m.rotation.y+=dt*2;t.m.position.y=(0.4+0.3*Math.sin(T*3+t.ph));
-      questProj(t.tag,t.x,3.2*qS(),t.z,true);
-      for(const p of players)if(Math.hypot(p.x-t.x,p.z-t.z)<p.r+1.2*qS()){questRoof(p,t);sfxClip('pickup',0.8)||sfx.pop();questProgress();return;}}return;
+    case 'find':for(const t of st.things){if(!t.g.parent)continue;const p=questItemTick(t,dt,st);
+      if(p){questRoof(p,t);sfxClip('pickup',0.8)||sfx.pop();questProgress();return;}}return;
     case 'catch':updateFlock(st.flock,dt);return;
-    case 'smash':for(const t of st.things){const o=t.o;
-      if(!o.alive&&!t.counted){t.counted=true;questProgress();if(questA!==A||A.st!==st)return;continue;}
+    case 'smash':if(st.reveal&&st.reveal.g.parent){const p=questItemTick(st.reveal,dt,st);
+        if(p){questRoof(p,st.reveal);sfxClip('pickup',0.8)||sfx.pop();confetti(25);questStepDone();}return;}
+      for(const t of st.things){const o=t.o;
+      if(!o.alive&&!t.counted){t.counted=true;st.lastAt=[o.x,o.z];questProgress();if(questA!==A||A.st!==st)return;continue;}
       if(o.alive&&!objects.includes(o)){const c=chunks.get(o.chunk);if(c&&c.loaded){objects.push(o);scene.add(o.g);}}} // its chunk came back
       return;
     case 'deliver':for(const t of st.things){if(t.done){questProj(t.tag,t.x,1.5*qS(),t.z,false);continue;}questProj(t.tag,t.x,4*qS(),t.z,true);
@@ -324,8 +362,9 @@ function questTarget(){
       case 'talk':return null;
       case 'bring':return gv&&gv.shown?[gv.x,gv.z,A.q.giver.emoji]:questGiverAt(A.q)&&[...questGiverAt(A.q),A.q.giver.emoji];
       case 'find':{const t=near(st.things.filter(t=>t.g.parent));return t&&[t.x,t.z,s.icon];}
+      case 'smash':if(st.reveal&&st.reveal.g.parent)return [st.reveal.x,st.reveal.z,s.revealIcon||s.icon];
+        {const t=near(st.things.filter(t=>t.o.alive).map(t=>({x:t.o.x,z:t.o.z})));return t&&[t.x,t.z,s.icon];}
       case 'catch':{const t=near(st.flock.list.filter(a=>a.alive));return t&&[t.x,t.z,s.icon];}
-      case 'smash':{const t=near(st.things.filter(t=>t.o.alive).map(t=>({x:t.o.x,z:t.o.z})));return t&&[t.x,t.z,s.icon];}
       case 'deliver':{const t=near(st.things.filter(t=>!t.done));return t&&[t.x,t.z,s.icon];}
       case 'rings':{const t=st.things.find(t=>!t.done);return t&&[t.x,t.z,s.icon||'🎈'];}
       case 'push':{const t=near(st.things.filter(t=>!t.inG));return t&&[t.x,t.z,s.icon];}
@@ -350,7 +389,7 @@ function questArrowSet(tg){
       const m=new THREE.Mesh(GEO.box,SPARK_MAT);m.scale.setScalar(0.5*Math.max(qS(),0.1));m.position.set(x,groundH(x,z)+0.3*qS(),z);m.rotation.set(rand(0,3),rand(0,3),0);addPart(m,0.7,0,1.5*qS(),0);}}}}
 // the quest HUD: who you're helping, what they want, and dots for how many
 const questHud=document.createElement('div');questHud.id='questHud';questHud.style.display='none';$('hud').appendChild(questHud);
-function questBubbleHtml(){const A=questA;if(!A||!A.st)return '';const s=A.st.s,ic=s.icon||(s.do==='bring'?(A.q.steps.slice(0,A.si).reverse().find(x=>x.icon)||{}).icon||'🎁':s.do==='talk'?(A.q.steps.slice(A.si).find(x=>x.icon)||{}).icon||'':s.do==='boss'?'👾':'');
+function questBubbleHtml(){const A=questA;if(!A||!A.st)return '';const s=A.st.s,ic=s.icon||(s.do==='bring'?(A.q.steps.slice(0,A.si).reverse().find(x=>x.revealIcon||x.icon)||{}).revealIcon||(A.q.steps.slice(0,A.si).reverse().find(x=>x.icon)||{}).icon||'🎁':s.do==='talk'?(A.q.steps.slice(A.si).find(x=>x.icon)||{}).icon||'':s.do==='boss'?'👾':'');
   const n=A.st.n,g=A.st.got;return `<b>${ic}</b>`+(n>1&&n<=12?`<span>${'●'.repeat(g)}${'○'.repeat(n-g)}</span>`:n>12?`<span>${g} / ${n}</span>`:'');}
 let questHudKey='';
 function questHudSet(){if(!questOn||!questA){questHud.style.display='none';questHudKey='';return;}
