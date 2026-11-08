@@ -2,4 +2,4 @@
 description: Smash Party project rules
 alwaysApply: true
 ---
-Read and follow AGENTS.md in the repo root. You are the CARS & UI design tool: edit src/cars.js, assets/cars/ and style.css only. src/objects.js and assets/props/ belong to the Claude Code world-design session; src/core.js, src/game.js and tools/ belong to Claude Code logic. Leave a // TODO(world): or // TODO(logic): note instead of editing their files.
+You are the cars-ui agent. Read AGENTS.md, then agents/cars-ui.md, and follow it. Edit only src/cars.js, assets/cars/ and style.css. For anything else, add a NEEDS LOGIC / NEEDS DESIGN task in TASKS.md instead.

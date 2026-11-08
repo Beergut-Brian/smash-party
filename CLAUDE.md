@@ -2,6 +2,9 @@
 
 A co-op driving-and-smashing game for a dad and his 5-year-old, played on a TV with two controllers. Plain HTML + three.js (r186 via an import map; `src/boot.mjs` exposes it as the global `THREE`), no build step, no frameworks. GitHub Pages serves `main` as-is.
 
+## Agent roles
+Every session has a role. Started with "You are the `<role>` agent", read `agents/<role>.md` and follow it: it says what you own, what to work on and how to finish. Index: `agents/README.md` (logic, audio, cars-ui, world-props, world-animals, world-bosses, zone-<name>, qa, reviewer, art-pipeline).
+
 ## Design rules (do not break these)
 - **Co-op only.** No losing, no timers that end the game, no player-vs-player scoring. Everything feeds one shared smash meter.
 - **Kid-simple controls.** Stick = point where you want to go. A/RT = turbo, B = jump (becomes 💥 BOOM when stuck), X or Y = shoot (and LEVEL UP when the gold button shows; either works because 8BitDo/Nintendo pads swap the X/Y labels), LB/RB = switch car. Never require reading.
@@ -18,9 +21,10 @@ Several lanes work on this repo at the same time: **logic** (Claude Code), **car
 | `src/objects.js` | **world-props** session | Smashable objects (`OBJ`), buildings, mega set pieces, zone layouts (`ZONE_LAYOUT`, `ZONE_PROPS`), arena (`buildWorld`), respawn mix (`SPAWN_W`). Its builder helper is `sized(x,z,r,h,points,size,build,extra)` |
 | `src/world/animals.js` | **world-animals** session | `ANIMAL` looks |
 | `src/world/bosses.js` | **world-bosses** session | `BOSSES` models |
+| `src/world/zones/<name>.js` | **zone-<name>** session | One themed zone each (after L11) |
 | `style.css` | **Cursor** (cars & UI) | All UI styles |
 | `assets/**` | **Cursor**: `assets/cars/`, UI art. **world-props**: `assets/props/` (top level), `assets/textures/`. **world-animals**: `assets/props/animals/`. **world-bosses**: `assets/props/bosses/` | `.glb` models, `cars.json`, textures, sounds (except the generated `assets/sounds/voice/`, `sfx/` and `music/`) |
-| `tools/`, `assets/sounds/voice/`, `sfx/`, `music/` | **Claude Code** (logic) | ElevenLabs generators (`make-voices.mjs`, `make-sfx.mjs`, `make-music.mjs`), their lists (`*-lines.json`), and the generated mp3s + `index.json` |
+| `tools/`, `assets/sounds/voice/`, `sfx/`, `music/` | **Claude Code** (logic; the **audio** role runs the generators) | ElevenLabs generators (`make-voices.mjs`, `make-sfx.mjs`, `make-music.mjs`), their lists (`*-lines.json`), and the generated mp3s + `index.json` |
 | `src/core.js` | **Claude Code** (logic) | Helpers (`mk`, `M`, `E`, `rand`…), renderer, scene, ground/roads/walls, ramps + `groundH`, audio |
 | `src/game.js` | **Claude Code** (logic) | Debris, smashing, scoring, respawn, celebration, players/driving, input, collisions, camera, HUD, main loop |
 | `src/boot.mjs` | **Claude Code** (logic) | Imports three.js + addons, sets `window.THREE`, loads the plain scripts in order |
