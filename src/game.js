@@ -93,6 +93,7 @@ function smash(o,vx,vz,power){
   sfx.crash(o.big);shake=Math.min(1.5,shake+(o.big?0.6:0.2));
   smashCount++;addScore(o.points);grow(GROW_VAL[o.sz]);comboHit();
   if(o.explosive)queue.push({t:0.07,fn:()=>explode(o.x,o.z,GROW_S[o.sz]/GROW_S[TYPE_SIZE.barrel])});
+  if(o.gold)goldFound(o);
 }
 function explode(x,z,e=1){ // e = blast size (1 = a normal barrel); shrunken barrels make little pops
   const q=Math.sqrt(e);sfx.boom();shake=Math.min(2,shake+1.2*Math.min(1,e));
@@ -345,7 +346,7 @@ function newWorld(){
   for(const d of debris)if(!d.confetti){scene.remove(d.m);d.life=0;}
   worldSeed=(Math.random()*1e9)|0;setZoneMap(randomZoneMap(mulberry(worldSeed)));
   buildWorld();captureHome();
-  growth=0;tier=0;giant=false;levelReady=false;popT=1;nwBtn.style.display='none';
+  growth=0;tier=0;giant=false;levelReady=false;popT=1;nwBtn.style.display='none';goldCount=0;goldHud.style.display='none';
   players.forEach(p=>{const st=START_SPOTS[p.idx];p.x=st[0];p.z=st[1];p.y=0;p.vy=0;p.speed=0;p.kx=p.kz=0;p.air=false;p.heading=Math.PI;});
   camT.set(0,0,30);updateStreaming(0,true);newCars(true);
   music('drive');showBig('NEW WORLD!');sfx.fanfare();say('New world! Smash it!');confetti(150);
@@ -461,6 +462,7 @@ function genChunk(c){
     // TODO(design): ZONE_LAYOUT.town/farm/park/home in objects.js replaces these placeholder fillers (D1)
     const lay=(typeof ZONE_LAYOUT!=='undefined'&&ZONE_LAYOUT[c.zone])||DEFAULT_LAYOUT[c.zone]||DEFAULT_LAYOUT.park;
     lay(ctx);
+    if(Math.random()<0.3&&c.recs.length){const r=pick(c.recs);r.gold=true;}
     if(!c.herds.length)defaultHerds(c);
     if(c.ci===0&&c.cj===0){chunkHerd(c,'chicken',16,36,5);chunkHerd(c,'duck',-16,34,4);} // say hi at the start line
   });
@@ -509,7 +511,7 @@ function poolFor(m){const k=batchKey(m);let p=pools.get(k);
   return p;}
 const _pm=new THREE.Matrix4(),_pc=new THREE.Color();
 function poolAdopt(o){ // move an awake object into the pools and let it sleep (it wakes again when a car gets close)
-  if(o.inst||!o.alive||o.spin||o.rolling)return;const ent=[];let ok=true;o.g.updateMatrixWorld(true);
+  if(o.inst||!o.alive||o.spin||o.rolling||o.gold)return;const ent=[];let ok=true;o.g.updateMatrixWorld(true);
   o.g.traverse(m=>{if(!ok||!m.isMesh)return;if(Array.isArray(m.material)){ok=false;return;}const p=poolFor(m);if(p.im.count>=p.cap){ok=false;return;}
     const i=p.im.count++;const e=[p.im,i,m.matrixWorld.clone(),m,p];p.owner[i]=e;p.im.setMatrixAt(i,HIDE);
     if(p.plain){p.im.setColorAt(i,m.material.color);p.im.instanceColor.needsUpdate=true;}ent.push(e);});
@@ -531,7 +533,8 @@ function loadChunk(c){
   for(const rec of c.recs){
     if(rec.dead){if(T<rec.back)continue;rec.dead=false;}
     const o=buildRec(rec);scene.remove(o.g);o.g.updateMatrixWorld(true);o.inst=[];o.sleep=true;sleepers.push(o);
-    let multi=!!o.spin;o.g.traverse(m=>{if(m.isMesh&&Array.isArray(m.material))multi=true;});if(multi){scene.add(o.g);o.inst=null;o.sleep=false;continue;}
+    if(rec.gold&&!o.bld)goldify(o,60);
+    let multi=!!o.spin||!!o.gold;o.g.traverse(m=>{if(m.isMesh&&Array.isArray(m.material))multi=true;});if(multi){scene.add(o.g);o.inst=null;o.sleep=false;continue;}
     o.g.traverse(m=>{if(!m.isMesh)return;const k=batchKey(m);let b=batches.get(k);
       if(!b)batches.set(k,b={geo:m.geometry,mat:m.material,plain:!!m.material.userData.plain,list:[],cols:[]});
       o.inst.push([b,b.list.length,m]);b.list.push(m.matrixWorld.clone());b.cols.push(m.material.color);});}
@@ -797,7 +800,7 @@ function collisions(){
       if(dx*dx+dz*dz<rr*rr&&p.y<o.h+o.fy){
         if(o.rolling)continue;
         if(o.roll&&o.sz<=tier&&(spd>4*p.sm||p.air)){startRoll(o,vx||dx,vz||dz,Math.max(spd,10*p.sm));continue;}
-        if(o.sz<=tier-3){squish(o);continue;}
+        if(o.sz<=tier-3&&!o.gold){squish(o);continue;}
         if(o.bld){hitBuilding(p,o,dx,dz,rr,spd,vx,vz);continue;}
         if(o.sz>tier){bump(p,o,dx,dz,rr,spd);continue;}
         if(spd>4*p.sm||p.air){smash(o,vx||dx,vz||dz,Math.max(spd,10)*Math.sqrt(Math.max(1,S)));p.speed*=o.big&&o.sz>=tier?0.8:0.96;}
@@ -888,6 +891,7 @@ function updateScatter(dt){
   if(state!=='play'||!players.length||(scatT-=dt)>0)return;scatT=0.2;
   const Rs=scatR();let n=0;
   for(const o of objects){if(!o.scat||!o.alive)continue;let d=1e9;for(const p of players)d=Math.min(d,Math.hypot(o.x-p.x,o.z-p.z));
+    if(o.gold)continue;
     if(d>Rs*1.8||(o.sz<=tier-3&&d>Rs)){o.alive=false;poolRelease(o);scene.remove(o.g);continue;}n++;}
   const fill=n<SCAT_N*0.4; // nearly empty (game start, new world): rain props into view
   for(let i=0;i<6&&n<SCAT_N;i++,n++)spawnScatter(pick(players),fill);
@@ -955,10 +959,11 @@ function spawnAnimal(h,x,z){
     alive:true,falling:false,ph:rand(0,9),spin:[0,0,0]};
   a.sz=clamp(Math.round(4+Math.log(Math.max(r,hgt/3)/1.1)/Math.log(SIZE_STEP)),0,SIZES.length-1);
   a.speed=clamp(1.2+r*1.6,1,5);g.position.set(x,groundH(x,z),z);g.rotation.y=a.heading;scene.add(g);animals.push(a);h.list.push(a);return a;}
-function herdOn(h){h.on=true;for(let i=0;i<h.n;i++)spawnAnimal(h,h.x+rand(-3,3),h.z+rand(-3,3));}
+function herdOn(h){h.on=true;if(h.goldIdx===undefined)h.goldIdx=Math.random()<0.15?0:-1;
+  for(let i=0;i<h.n;i++){const a=spawnAnimal(h,h.x+rand(-3,3),h.z+rand(-3,3));if(i===h.goldIdx)goldify(a,30);}}
 function herdOff(h){h.on=false;for(const a of h.list){scene.remove(a.g);const i=animals.indexOf(a);if(i>=0)animals.splice(i,1);}h.list.length=0;}
 function launchAnimal(a,vx,vz,power){
-  if(a.state==='fly')return;const d=Math.hypot(vx,vz)||1,H=rand(3,6)*Math.max(S,0.25)+a.r*2;
+  if(a.state==='fly')return;if(a.gold){goldFound(a,true);ungold(a);a.herd.goldIdx=-1;}const d=Math.hypot(vx,vz)||1,H=rand(3,6)*Math.max(S,0.25)+a.r*2;
   a.state='fly';a.bounced=false;a.vy=Math.sqrt(64*H);a.vx=vx/d*power*0.5+rand(-2,2)*S;a.vz=vz/d*power*0.5+rand(-2,2)*S;
   a.spin=[rand(-12,12),rand(-12,12),rand(-12,12)];a.falling=true;
   if(!sfxClip(a.kind,0.9,rand(0.92,1.12)))tone('square',rand(500,900),rand(1200,1800),0.25,0.12);sfxClip('whee',0.35,rand(.9,1.2));
@@ -1145,6 +1150,62 @@ function updateBoss(dt){
       const n=performance.now();if(n-lastBoing>400){lastBoing=n;sfx.boing();}bossSay(['Hit the glowing spots!'],6000);}}
 }
 
+
+/* ---------- golden surprises (L11) ---------- */
+/* Rare shiny gold things to hunt for. A golden prop at your size shows up just off screen every so often, some
+   world chunks hide one (maybe too big at first: something to grow for), and some herds have a golden animal.
+   Gold sparkles, sends up a light beam you can see from afar, twinkles as you get near, and a gold arrow at the
+   screen edge points to the nearest one. Smashing / launching it: coins + confetti, treasure fanfare, voice, a big
+   meter bonus and a ⭐ on the counter. Design can make real gold models later; this tints the normal ones. */
+const GOLD_MAT=HIGH?new THREE.MeshStandardMaterial({color:'#ffc93c',metalness:0.85,roughness:0.28,emissive:'#5a3d00',emissiveIntensity:0.6})
+  :new THREE.MeshLambertMaterial({color:'#ffd24d',emissive:'#7a5200'});
+const BEAM_MAT=new THREE.MeshBasicMaterial({color:'#fff3a0',transparent:true,opacity:0.32,depthWrite:false,blending:THREE.AdditiveBlending});
+const SPARK_MAT=E('#fff6b0');
+let goldCount=0,goldT=rand(25,40);
+const goldHud=document.createElement('div');goldHud.id='goldCount';$('hud').appendChild(goldHud);
+const goldArrow=document.createElement('div');goldArrow.id='goldArrow';goldArrow.textContent='⭐';$('hud').appendChild(goldArrow);
+{const st=document.createElement('style');st.textContent=`
+:where(#goldCount){display:none;position:absolute;left:22px;top:96px;font:28px 'Lilita One',sans-serif;color:#ffd60a;text-shadow:0 3px 0 rgba(0,0,0,.35)}
+:where(#goldArrow){display:none;position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;font-size:44px;line-height:64px;text-align:center;border-radius:50%;
+  background:radial-gradient(#fff3a0,#ffbe0b);box-shadow:0 0 24px #ffd60a;animation:nwPulse .8s ease-in-out infinite}`;document.head.appendChild(st);}
+function goldify(o,beamH){ // swap to gold and add a light beam (o.g is scaled by o.s0, so undo that on the beam)
+  o.gold=true;o.g.traverse(m=>{if(m.isMesh){m.userData.origMat=m.material;m.material=GOLD_MAT;}});
+  const f=o.s0||1,h=beamH||Math.max(12,40*Math.max(S,0.3)),beam=new THREE.Mesh(GEO.cyl,BEAM_MAT);
+  beam.scale.set(Math.max(0.3,o.r*0.5)/f,h/f,Math.max(0.3,o.r*0.5)/f);beam.position.y=h/2/f;beam.castShadow=false;beam.userData.beam=true;o.g.add(beam);o.beam=beam;}
+function ungold(o){o.gold=false;o.g.traverse(m=>{if(m.isMesh&&m.userData.origMat){m.material=m.userData.origMat;delete m.userData.origMat;}});if(o.beam){o.beam.parent&&o.beam.parent.remove(o.beam);o.beam=null;}}
+function spawnGold(){ // a golden prop at the players' size, just off screen
+  for(let t=0;t<8;t++){const o=spawnScatter(pick(players),false);if(!o)continue;
+    if(o.bld||o.sz!==tier){o.alive=false;poolRelease(o);scene.remove(o.g);continue;}
+    wakeObj(o);poolRelease(o);scene.add(o.g);goldify(o);return o;}
+  return null;}
+function goldFound(o,isAnimal){
+  goldCount++;addScore(30);comboHit(5);grow((GROW_VAL[tier]||0)*2);if(o.rec)o.rec.gold=false;
+  const x=o.x,z=o.z,y=(o.y||0)+o.h*0.6,k=Math.max(S,0.25);
+  for(let i=0;i<28;i++){const c=debrisBox(GOLD_MAT.color);c.scale.set(0.6*k,0.12*k,0.6*k);c.position.set(x,y,z);const a=rand(0,Math.PI*2),f=rand(4,10)*Math.sqrt(k);
+    addDebris(c,0.06*k,Math.sin(a)*f,rand(10,18)*Math.sqrt(k),Math.cos(a)*f,{life:rand(3,5)});}
+  flash(x,y,z,'#ffd60a',3*k,0.5);confetti(90);sfxClip('treasure',1)||sfx.fanfare();shake=Math.min(1.5,shake+0.5);
+  showBig('GOLDEN! ⭐');say(isAnimal?`You found a golden ${o.kind}!`:pick(['Golden treasure!','Shiny gold!','You found gold!']));
+  goldHud.textContent='⭐ × '+goldCount;goldHud.style.display='block';}
+let goldSparkT=0,goldTwinkleAt=0;
+function updateGold(dt){
+  if(state!=='play'||!players.length)return;
+  if((goldT-=dt)<=0){goldT=rand(35,60);if(!objects.some(o=>o.gold&&o.alive&&o.scat))spawnGold();}
+  const R=scatR(),view=R*1.3;let near=null,nd=1e9;const spark=(goldSparkT-=dt)<=0;if(spark)goldSparkT=0.12;
+  for(const list of [objects,animals])for(const o of list){if(!o.gold||!o.alive)continue;
+    let d=1e9;for(const p of players)d=Math.min(d,Math.hypot(o.x-p.x,o.z-p.z));
+    if(d<nd){nd=d;near=o;}
+    if(o.scat&&d>R*4){o.alive=false;scene.remove(o.g);continue;} // lost track of it: another one will turn up
+    if(spark&&d<view*2){const k=Math.max(0.15,o.r*0.25),m=new THREE.Mesh(GEO.box,SPARK_MAT);m.scale.setScalar(k);
+      m.position.set(o.x+rand(-o.r,o.r),(o.y||0)+rand(0,o.h),o.z+rand(-o.r,o.r));m.rotation.set(rand(0,3),rand(0,3),0);addPart(m,rand(0.4,0.8),0,rand(1,3)*Math.max(S,0.3),0);}}
+  // twinkle when one comes into view
+  const n=performance.now();if(near&&nd<view&&n-goldTwinkleAt>5000){goldTwinkleAt=n;sfxClip('twinkle',0.6)||sfx.pop();}
+  // arrow at the screen edge toward the nearest gold when it's off screen
+  goldArrow.style.display='none';if(!near||nd>R*4)return;
+  v3.set(near.x,(near.y||0)+near.h*0.5,near.z).project(camera);
+  if(v3.z<1&&Math.abs(v3.x)<0.92&&Math.abs(v3.y)<0.85)return;
+  let ax=v3.x,ay=v3.y;if(v3.z>1){ax=-ax;ay=-ay;}const m=Math.max(Math.abs(ax)/0.88,Math.abs(ay)/0.8,1e-3);ax/=m;ay/=m;
+  goldArrow.style.left=((ax+1)/2*innerWidth)+'px';goldArrow.style.top=((1-ay)/2*innerHeight)+'px';goldArrow.style.display='block';}
+
 /* ---------- "can I smash it?" signals ---------- */
 // Pulsing red ring = too big for you, grow first. Green flash = you just got big enough for these.
 // Close to a too-big thing you also get a floating "grow first" badge; bumping one pops "GROW BIGGER!".
@@ -1238,13 +1299,13 @@ function loop(now){
   updateGrowth(dt);updateStreaming(dt);
   if(state==='play'){collisions();updateBoss(dt);}
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
-  updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateCombo(dt);updateRollers(dt);updateSpin(dt);updateScatter(dt);updateAnimals(dt);updateShots(dt);updateDebris(dt);updateParts(dt);
+  updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateCombo(dt);updateGold(dt);updateRollers(dt);updateSpin(dt);updateScatter(dt);updateAnimals(dt);updateShots(dt);updateDebris(dt);updateParts(dt);
   updateMusic();updateCamera(dt,T);updateSignals(dt);cullChunks();updateHUD();
   renderer.render(scene,camera);
   pressed.clear();touch.jumpP=false;touch.swapP=false;
 }
 propsReady.then(()=>{buildWorld();captureHome();updateStreaming(0,true);last=performance.now();requestAnimationFrame(loop);});
-window.__sp={mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,
+window.__sp={mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,gold:spawnGold,
   boss(id){if(!giant){tier=SIZES.length-1;growth=MAX_GROW;levelReady=true;levelUp();newCars(true);}if(!boss)summonBoss(id);return boss&&boss.def.name;}, // __sp.boss('shelldozer')
   level(n=1){for(let i=0;i<n&&!giant;i++){growth=GROW_AT[tier+1];levelReady=true;levelUp();}return giant?'GIANT':SIZES[tier];}, // jump ahead n sizes
   tp(x,z,i=0){const p=players[i];if(p){p.x=x;p.z=z;p.y=groundH(x,z);camT.set(x,0,z);}},

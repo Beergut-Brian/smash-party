@@ -178,5 +178,15 @@
   "prompt": "Cute bubble blaster shot, bloop with a soft pop",
   "dur": 0.5,
   "hash": "c7f7ed8b7fd3"
+ },
+ "twinkle": {
+  "prompt": "Magical twinkle sparkle, something shiny is nearby",
+  "dur": 1,
+  "hash": "907cb14e8c88"
+ },
+ "treasure": {
+  "prompt": "Treasure found fanfare with coins jingling and a happy sparkle chord",
+  "dur": 2,
+  "hash": "ab6d5276a513"
  }
 }

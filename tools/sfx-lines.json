@@ -163,6 +163,16 @@
       "prompt": "Cute bubble blaster shot, bloop with a soft pop",
       "dur": 0.5,
       "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
+    },
+    "twinkle": {
+      "prompt": "Magical twinkle sparkle, something shiny is nearby",
+      "dur": 1.0,
+      "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
+    },
+    "treasure": {
+      "prompt": "Treasure found fanfare with coins jingling and a happy sparkle chord",
+      "dur": 2.0,
+      "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
     }
   }
 }

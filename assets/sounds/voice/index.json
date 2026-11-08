@@ -228,5 +228,80 @@
   "text": "One hundred! Combo king!",
   "speak": "One hundred! Combo king!",
   "hash": "38d61d813756"
+ },
+ "golden_treasure": {
+  "text": "Golden treasure!",
+  "speak": "Golden treasure!",
+  "hash": "d26314871afc"
+ },
+ "shiny_gold": {
+  "text": "Shiny gold!",
+  "speak": "Shiny gold!",
+  "hash": "f7e98cf8f3e8"
+ },
+ "you_found_gold": {
+  "text": "You found gold!",
+  "speak": "You found gold!",
+  "hash": "bb3d87ab5ac2"
+ },
+ "you_found_a_golden_chick": {
+  "text": "You found a golden chick!",
+  "speak": "You found a golden chick!",
+  "hash": "8a02cf267ab0"
+ },
+ "you_found_a_golden_chicken": {
+  "text": "You found a golden chicken!",
+  "speak": "You found a golden chicken!",
+  "hash": "17c67f413757"
+ },
+ "you_found_a_golden_duck": {
+  "text": "You found a golden duck!",
+  "speak": "You found a golden duck!",
+  "hash": "bc65bbbd4c2b"
+ },
+ "you_found_a_golden_goose": {
+  "text": "You found a golden goose!",
+  "speak": "You found a golden goose!",
+  "hash": "965373157309"
+ },
+ "you_found_a_golden_bunny": {
+  "text": "You found a golden bunny!",
+  "speak": "You found a golden bunny!",
+  "hash": "8484dbfe9905"
+ },
+ "you_found_a_golden_cat": {
+  "text": "You found a golden cat!",
+  "speak": "You found a golden cat!",
+  "hash": "752fa8c7b388"
+ },
+ "you_found_a_golden_dog": {
+  "text": "You found a golden dog!",
+  "speak": "You found a golden dog!",
+  "hash": "5a2efbce90cd"
+ },
+ "you_found_a_golden_pig": {
+  "text": "You found a golden pig!",
+  "speak": "You found a golden pig!",
+  "hash": "2c5dc2803a9a"
+ },
+ "you_found_a_golden_sheep": {
+  "text": "You found a golden sheep!",
+  "speak": "You found a golden sheep!",
+  "hash": "8a4a9dddc6aa"
+ },
+ "you_found_a_golden_goat": {
+  "text": "You found a golden goat!",
+  "speak": "You found a golden goat!",
+  "hash": "5d9ed0ebfb15"
+ },
+ "you_found_a_golden_cow": {
+  "text": "You found a golden cow!",
+  "speak": "You found a golden cow!",
+  "hash": "20248fb4e0e9"
+ },
+ "you_found_a_golden_horse": {
+  "text": "You found a golden horse!",
+  "speak": "You found a golden horse!",
+  "hash": "c57c4cb5cc62"
  }
 }
