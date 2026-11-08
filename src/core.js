@@ -191,6 +191,7 @@ const synth={
   boom(){noise(1.3,700,0.7,1,'lowpass',70);tone('sine',150,32,0.9,0.7);},
   boing(){tone('sine',200,520,0.28,0.35);tone('triangle',260,640,0.2,0.12);},
   jump(){tone('triangle',300,900,0.22,0.22);},
+  beep(){for(const d of [0,0.22]){tone('square',520,505,0.15,0.09,d);tone('square',655,640,0.15,0.07,d);}}, // toy car horn: beep beep!
   thud(){noise(0.25,260,1,0.45);tone('sine',95,40,0.25,0.35);},
   turbo(){noise(0.6,350,2,0.3,'bandpass',2600);},
   pop(){tone('sine',500,1300,0.12,0.25);tone('sine',800,1800,0.12,0.15,0.08);},

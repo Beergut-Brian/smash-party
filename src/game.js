@@ -219,7 +219,7 @@ function carsInTier(t){for(let d=0;d<4;d++){const l=CARS.map((c,i)=>i).filter(i=
 function newCars(quiet){const l=carsInTier(carTierNow());
   for(const p of players)p.setCar(l[p.idx%l.length],false);
   if(quiet)return;showBig('NEW CAR!');sfxClip('levelup',0.7,1.2)||sfx.fanfare();say('New car!');
-  for(const p of players){puff(p.x,S,p.z,10,1.5*Math.max(S,.3),'#ffffff');p.nameT=3;}
+  for(const p of players){puff(p.x,S,p.z,10,1.5*Math.max(S,.3),'#ffffff');p.nameT=3;p.markT=3;}
   if(players[0])queue.push({t:1.2,fn:()=>say(players[0].stats.name+'!')});}
 
 /* ---------- shooting (X or Y / F / . / 🎯) ---------- */
@@ -328,6 +328,7 @@ function updateGrowth(dt){S+=((giant?GROW_S[GROW_S.length-1]:GROW_S[tier])-S)*Ma
 const dispScale=()=>S*(1+0.3*popT*Math.sin(popT*22));
 function showBig(txt){const el=$('big');el.textContent=txt;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}
 function sizeUp(){
+  camKick=0.4;sfx.turbo(); // the camera whooshes back a little past the new size, then settles
   showBig('LEVEL UP!');greenT=4;scatterRain(Math.round(SCAT_N*0.4));sfxClip('levelup',1)||sfx.fanfare();say('LEVEL UP!');shake=Math.min(2,shake+1.2);popT=1.2;
   for(const p of players){puff(p.x,S,p.z,12,1.2*Math.max(S,.3),'#ffd60a');flash(p.x,S,p.z,'#ffd60a',3*Math.max(S,.3),0.5);}}
 // the big glowing LEVEL UP button (also Y on a controller, Q or / on the keyboard)
@@ -349,9 +350,9 @@ function newWorld(){
   worldSeed=(Math.random()*1e9)|0;setZoneMap(randomZoneMap(mulberry(worldSeed),'TFP',pickThemedZones()));
   buildWorld();captureHome();
   growth=0;tier=0;giant=false;levelReady=false;popT=1;clearPads();nwBtn.style.display='none';goldCount=0;goldHud.style.display='none';
-  players.forEach(p=>{const st=START_SPOTS[p.idx];p.x=st[0];p.z=st[1];p.y=0;p.vy=0;p.speed=0;p.kx=p.kz=0;p.air=false;p.heading=Math.PI;});
-  camT.set(0,0,30);updateStreaming(0,true);newCars(true);
-  music('drive');showBig('NEW WORLD!');sfx.fanfare();say('New world! Smash it!');confetti(150);
+  players.forEach(p=>{const st=spawnSpot(p.idx);p.x=st[0];p.z=st[1];p.y=groundH(st[0],st[1]);p.vy=0;p.speed=0;p.kx=p.kz=0;p.air=false;p.heading=Math.PI;});
+  {const a=spawnSpot(0);camT.set(a[0],0,a[1]);}updateStreaming(0,true);newCars(true);
+  music('drive');showBig('NEW WORLD!');sfx.fanfare();say('New world! Smash it!');confetti(150);players.forEach(p=>introCar(p,2.4));
 }
 const nwBtn=document.createElement('button');nwBtn.id='newWorld';nwBtn.innerHTML='🌍 NEW WORLD!<small>START / N / tap</small>';
 nwBtn.onclick=e=>{e.stopPropagation();newWorld();};nwBtn.addEventListener('touchstart',e=>{e.stopPropagation();},{passive:true});
@@ -535,7 +536,7 @@ function poolRelease(o){if(!o.pooled)return;o.pooled=false;
     if(i!==last){im.getMatrixAt(last,_pm);im.setMatrixAt(i,_pm);if(p.plain){im.getColorAt(last,_pc);im.setColorAt(i,_pc);im.instanceColor.needsUpdate=true;}
       const moved=p.owner[last];moved[1]=i;p.owner[i]=moved;}
     p.owner[last]=undefined;im.instanceMatrix.needsUpdate=true;}
-  o.inst=null;}
+  o.inst=null;o.sleep=false;} // not drawn by a pool any more: a later wakeObj must not touch it (or re-add a removed prop)
 function loadChunk(c){
   if(!c.gen)genChunk(c);
   c.loaded=true;c.group=new THREE.Group();scene.add(c.group);
@@ -595,16 +596,22 @@ function cullChunks(){
 }
 
 /* ---------- celebration ---------- */
-let camT=new THREE.Vector3(0,0,30),camDist=40;
+let camT=new THREE.Vector3(0,0,30),camDist=40,camKick=0;
+/* L21: the camera distance follows the car's size so each car stays about the same size on screen at every size;
+   the world (giant flowers, curbs, mailboxes) is what makes you feel small. Two players far apart: zoom out up to
+   CAM_ZOOM × the base, then the trailing car gets pulled along instead of both cars shrinking to specks. */
+const CAM_K=38,CAM_ZOOM=2.1;
+const camBase=s=>CAM_K*(s<=1?s:Math.pow(s,0.8)); // linear while small; a bit less above size 1 so GIANT still feels huge
+function spreadOf(pts){let m=0;for(const a of pts)for(const b of pts)m=Math.max(m,Math.abs(a[0]-b[0])/Math.max(1,camera.aspect)*1.25,Math.abs(a[1]-b[1])*1.35);return m;}
 function mega(){
   const txt=pick(['MEGA SMASH!','SUPER SMASH!','KABOOM!','AWESOME!','SMASHTASTIC!']);
   showBig(txt);sfx.fanfare();say(txt);confetti(170);
   scatterRain(22);
 }
 function confetti(n){
-  const cols=['#ff006e','#ffbe0b','#3a86ff','#06d6a0','#8338ec','#fb5607','#ffffff'],w=Math.max(1,camDist/40);
+  const cols=['#ff006e','#ffbe0b','#3a86ff','#06d6a0','#8338ec','#fb5607','#ffffff'],w=Math.max(0.06,camDist/40); // sized to the view, not the world
   for(let i=0;i<n;i++){const c=debrisBox(M(pick(cols)).color);c.scale.set(.6,.06,.4);
-    c.scale.multiplyScalar(w);c.position.set(camT.x+rand(-35,35)*w,rand(18,40)*w,camT.z+rand(-30,20)*w);addDebris(c,.05,rand(-3,3),rand(-2,2),rand(-3,3),{confetti:true,g:6,life:rand(5,8)});}
+    c.scale.multiplyScalar(w);c.position.set(camT.x+rand(-35,35)*w,rand(18,40)*w,camT.z+rand(-30,20)*w);addDebris(c,.05*w,rand(-3,3)*w,rand(-2,2)*w,rand(-3,3)*w,{confetti:true,g:6*w,life:rand(5,8)});}
 }
 
 /* ---------- players ---------- */
@@ -616,7 +623,14 @@ class Player{
     this.root=new THREE.Group();this.root.rotation.order='YXZ';scene.add(this.root);
     this.ring=new THREE.Mesh(new THREE.RingGeometry(2.5,3.1,40),new THREE.MeshBasicMaterial({color:this.color,transparent:true,opacity:.9,depthWrite:false}));
     this.ring.rotation.x=-Math.PI/2;scene.add(this.ring);
-    const s=START_SPOTS[idx];this.x=s[0];this.z=s[1];this.y=0;this.vy=0;this.heading=Math.PI;this.speed=0;this.kx=0;this.kz=0;
+    // "where's my car?": a bobbing arrow in the player's color (seen through buildings) and a spotlight beam on spawn
+    const am=(c,o)=>new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:o,depthWrite:false,depthTest:false,fog:false});
+    this.arrowO=new THREE.Mesh(MARK_ARROW_GEO,am('#ffffff',1));this.arrowO.renderOrder=20;scene.add(this.arrowO);
+    this.arrow=new THREE.Mesh(MARK_ARROW_GEO,am(this.color,1));this.arrow.renderOrder=21;scene.add(this.arrow);
+    this.beam=new THREE.Mesh(MARK_BEAM_GEO,new THREE.MeshBasicMaterial({color:'#fff3b0',transparent:true,opacity:0,depthWrite:false,
+      blending:THREE.AdditiveBlending,side:THREE.DoubleSide,fog:false}));this.beam.visible=false;scene.add(this.beam);
+    this.markT=4;this.idleT=0;this.markTop=0;
+    const s=spawnSpot(idx);this.x=s[0];this.z=s[1];this.y=groundH(s[0],s[1]);this.vy=0;this.heading=Math.PI;this.speed=0;this.kx=0;this.kz=0;
     this.air=false;this.pitch=0;this.wasBoost=false;this.flameT=0;this.nameT=0;this.wallT=0;
     this.tag=document.createElement('div');this.tag.className='tag';this.tag.style.background=this.color;$('tags').appendChild(this.tag);
     const l=carsInTier(carTierNow());this.setCar(l[idx%l.length],true);this.trail=[];this.trailT=0;this.lastBump=-9;this.stuck=false;
@@ -674,6 +688,7 @@ class Player{
     for(const w of this.model.wheels)w.rotation.x+=this.speed*dt/w.userData.r;
     this.ring.position.set(this.x,groundH(this.x,this.z)+0.08,this.z);this.ring.scale.setScalar(st.r/2.6*ds);
     this.ring.material.opacity=this.air?0.4:0.9;
+    this.updateMarker(dt,ds);
     if(boosting){this.flameT-=dt;if(this.flameT<=0){this.flameT=0.025;
       const p=this.model.g.localToWorld(this.model.ex.clone());
       const fs=.7*S,m=mk('box',fs,fs,fs,null,p.x+rand(-.3,.3),p.y+rand(-.2,.2),p.z+rand(-.3,.3),E(pick(['#ff7b00','#ffd60a','#ff006e'])));m.castShadow=false;
@@ -689,6 +704,30 @@ class Player{
     if(this.eng){const t=AC.currentTime;this.eng.o.frequency.setTargetAtTime((42+Math.abs(this.speed)/sm*3.2+(boosting?25:0))/Math.sqrt(Math.max(S,0.3)),t,0.06);this.eng.g.gain.setTargetAtTime(0.025+Math.min(1,Math.abs(this.speed)/30)*0.03,t,0.1);}
   }
 }
+Player.prototype.updateMarker=function(dt,ds){
+  // strong right after spawn / teleport / new car, a little when parked a while, subtle while driving
+  this.markT=Math.max(0,this.markT-dt);this.idleT=Math.abs(this.speed)<0.5*this.sm?this.idleT+dt:0;
+  const e=Math.max(clamp(this.markT/1.5,0,1),clamp((this.idleT-3)/2,0,0.5)),pulse=0.5+0.5*Math.sin(T*9);
+  this.ring.scale.multiplyScalar(1+0.7*e*pulse);
+  const h=camDist*0.045*(1+0.7*e),roof=this.y+this.model.h*ds,y=roof+h*(0.35+0.25*Math.sin(T*5)),o=0.3+0.7*e;
+  this.arrow.position.set(this.x,y,this.z);this.arrow.scale.set(h*0.6,h,h*0.6);this.arrow.material.opacity=o;this.arrow.rotation.y=T*2;
+  this.arrowO.position.set(this.x,y-h*0.12,this.z);this.arrowO.scale.set(h*0.8,h*1.25,h*0.8);this.arrowO.material.opacity=o*0.9;this.arrowO.rotation.y=T*2;
+  this.markTop=y+h*1.15;
+  const b=clamp((this.markT-1.5)/1,0,1);this.beam.visible=b>0;
+  if(b>0){const r=this.stats.r*ds*1.8;this.beam.position.set(this.x,this.y,this.z);this.beam.scale.set(r,camDist*0.9,r);this.beam.material.opacity=0.3*b*(0.85+0.15*pulse);}};
+const MARK_ARROW_GEO=new THREE.ConeGeometry(0.5,1,12).rotateX(Math.PI).translate(0,0.5,0); // tip down at y=0
+const MARK_BEAM_GEO=new THREE.CylinderGeometry(0.3,1,1,24,1,true).translate(0,0.5,0);
+/* Start on a street (L21): both cars in the right lane of the north–south road by the home arena, facing up the screen.
+   Design can move it: define `const START_STREET=[[x,z],[x,z]]` in objects.js (and dress the spot: curb, mailbox, clutter). */
+const SPAWN_DEFAULT=[[2.6,48],[3.8,48.6]];
+const spawnSpot=i=>(typeof START_STREET!=='undefined'&&START_STREET[i])||SPAWN_DEFAULT[i];
+// spotlight + "beep beep!" so each player sees which car is theirs
+let lastBeepT=-9;
+function introCar(p,delay=1.4){p.markT=4;queue.push({t:delay,fn:()=>{if(T-lastBeepT<1)return;lastBeepT=T;sfx.beep();say('Beep beep!');}});}
+// put a car next to another one (joining mid-game, or pulled back after drifting way off)
+function besideCar(p,ld){const off=ld.r*2.5+0.4*Math.max(S,0.3);
+  p.x=ld.x+Math.cos(ld.heading)*off;p.z=ld.z-Math.sin(ld.heading)*off;p.y=groundH(p.x,p.z);p.heading=ld.heading;
+  p.speed=0;p.kx=p.kz=0;p.vy=0;p.air=false;p.stuck=false;p.trail.length=0;p.markT=3;}
 let lastStuckSay=0;
 const soundHint=document.createElement('div');soundHint.id='soundHint';soundHint.textContent='🔊 Press a key, click or tap for sound';$('hud').appendChild(soundHint);
 {const st=document.createElement('style');st.textContent=`:where(#soundHint){display:none;position:absolute;right:16px;top:74px;font:18px 'Lilita One',sans-serif;color:#fff;background:rgba(0,0,0,.45);padding:6px 14px;border-radius:14px}`;document.head.appendChild(st);}
@@ -702,7 +741,9 @@ function boomOut(p){const R=p.r*3+2*S;
   for(const a of animals){const dx=a.x-p.x,dz=a.z-p.z;if(Math.hypot(dx,dz)<R+a.r)launchAnimal(a,dx||1,dz,15);}}
 function addPlayer(src){
   const idx=players.length===0?0:(players[0].idx===0?1:0);
-  const p=new Player(idx,src);players.push(p);sfx.join();updatePanels();
+  const p=new Player(idx,src);const o=players[0];players.push(p);sfx.join();updatePanels();
+  if(o&&Math.hypot(o.x-p.x,o.z-p.z)>o.r*6+1)besideCar(p,o); // join next to your buddy, not back at the start
+  introCar(p);
 }
 function updatePanels(){
   for(let i=0;i<2;i++){const el=$('p'+i);const p=players.find(q=>q.idx===i);
@@ -891,7 +932,7 @@ function updateSpin(dt){for(const o of objects){if(!o.spin||!o.alive)continue;fo
 const SCAT_N=IS_PHONE?50:90,SCAT_MIX=[[0,.6],[-1,.2],[1,.12],[-2,.05],[2,.03]]; // mostly your size; bigger things are rarer
 const DEFAULT_PROPS={town:['crates','cone','barrel','house','tower','pin'],farm:['melon','fence','crates','tree','barrel','snowman'],
   park:['tree','snowman','pin','cone','tower','melon'],home:['crates','cone','barrel','tower','pin','melon','snowman','tree']};
-const scatR=()=>Math.max(4.5,38*Math.pow(S,0.75))*1.25; // about the visible radius at this size (not the zooming camera)
+const scatR=()=>Math.max(3,Math.min(camBase(S)*1.5,47.5*Math.pow(S,0.75))); // about the visible radius at this size (the base camera, not the two-player zoom); same as before from size ~0.5 up
 function scatterSize(){
   for(let t=0;t<10;t++){let r=Math.random();for(const [d,w] of SCAT_MIX){if((r-=w)<0){const k=tier+d;if(k>=0&&k<SIZES.length&&k>tier-3)return k;break;}}}
   return tier;}
@@ -1329,26 +1370,38 @@ function growHint(o){
 function updateCamera(dt,t){
   if(state!=='play'||!players.length){const a=t*0.08;camera.position.set(Math.sin(a)*95,62,Math.cos(a)*95);camera.lookAt(0,0,0);
     sun.position.set(30,80,30);sun.target.position.set(0,0,0);setShadow(80);return;}
-  const pts=players.map(p=>[p.x,p.z]);if(boss&&boss.state!=='drop'&&boss.state!=='dead')pts.push([boss.o.x,boss.o.z],[boss.o.x,boss.o.z+boss.o.r*0.5]); // keep the boss in view, weighted so it isn't under the HUD
+  camKick*=Math.pow(0.3,dt);
+  const base=camBase(S)*(1+camKick),bossOn=boss&&boss.state!=='drop'&&boss.state!=='dead';
+  const pts=players.map(p=>[p.x,p.z]);if(!bossOn)tetherPlayers(dt,spreadOf(pts),base);
+  if(bossOn)pts.push([boss.o.x,boss.o.z],[boss.o.x,boss.o.z+boss.o.r*0.5]); // keep the boss in view, weighted so it isn't under the HUD
   let cx=0,cz=0;pts.forEach(q=>{cx+=q[0];cz+=q[1];});cx/=pts.length;cz/=pts.length;
-  let spread=0;for(const a of pts)for(const b of pts)spread=Math.max(spread,Math.abs(a[0]-b[0])/Math.max(1,camera.aspect)*1.25,Math.abs(a[1]-b[1])*1.35);
-  const base=Math.max(4.5,38*Math.pow(S,0.75)),want=clamp(base+spread*0.9,base,125*Math.max(1,S*0.6));camDist+=(want-camDist)*Math.min(1,dt*2);
+  const top=bossOn?Math.max(base*CAM_ZOOM,125*Math.max(1,S*0.6)):base*CAM_ZOOM;
+  const want=clamp(base+spreadOf(pts)*0.9,base,top);camDist+=(want-camDist)*Math.min(1,dt*2);
   camT.x+=(cx-camT.x)*Math.min(1,dt*4);camT.z+=(cz-camT.z)*Math.min(1,dt*4);
-  const el=0.95;shake*=Math.pow(0.02,dt);const sx=rand(-1,1)*shake,sy=rand(-1,1)*shake;
-  camera.position.set(camT.x+sx,camDist*Math.sin(el)+sy,camT.z+camDist*Math.cos(el));camera.lookAt(camT.x+sx*0.5,0,camT.z-2);
+  const el=0.95,shK=clamp(camDist/38,0.06,1);shake*=Math.pow(0.02,dt);const sx=rand(-1,1)*shake*shK,sy=rand(-1,1)*shake*shK;
+  camera.position.set(camT.x+sx,camDist*Math.sin(el)+sy,camT.z+camDist*Math.cos(el));camera.lookAt(camT.x+sx*0.5,0,camT.z-camDist*0.05);
+  {const nr=clamp(camDist*0.04,0.04,0.5);if(Math.abs(camera.near-nr)>nr*0.15){camera.near=nr;camera.updateProjectionMatrix();}} // close-up at micro
   {const z=ZONES[zoneAt(chunkIdx(camT.x),chunkIdx(camT.z))],sk=z&&z.sky,k=Math.min(1,dt*1.2);   // themed zones tint the sky
     skyU.top.value.lerp(_skyT.set(sk&&sk.top||SKY_TOP),k);skyU.bot.value.lerp(_skyB.set(sk&&sk.horizon||SKY_HORIZON),k);scene.fog.color.copy(skyU.bot.value);}
-  sun.position.set(camT.x+30,80+camDist,camT.z+30);sun.target.position.set(camT.x,0,camT.z);sc.far=260+camDist*2;setShadow(camDist*0.95+10);
+  sun.position.set(camT.x+30,80+camDist,camT.z+30);sun.target.position.set(camT.x,0,camT.z);sc.far=260+camDist*2;setShadow(camDist*1.1+3);
   scene.fog.near=camDist*1.8+100;scene.fog.far=scene.fog.near+160;
 }
-let lastSh=0;function setShadow(s){if(Math.abs(s-lastSh)<2)return;lastSh=s;sc.left=-s;sc.right=s;sc.top=s;sc.bottom=-s;sc.updateProjectionMatrix();}
+// two players drifting apart: once the zoom is maxed out, the trailing car (the one not driving away) is pulled along
+function tetherPlayers(dt,ps,base){
+  if(players.length<2)return;const lim=base*(CAM_ZOOM-1)/0.9;if(ps<=lim)return;
+  const [a,b]=players,dx=b.x-a.x,dz=b.z-a.z,d=Math.hypot(dx,dz)||1,ux=dx/d,uz=dz/d;
+  const va=-(Math.sin(a.heading)*ux+Math.cos(a.heading)*uz)*a.speed,vb=(Math.sin(b.heading)*ux+Math.cos(b.heading)*uz)*b.speed;
+  const tr=Math.abs(va-vb)>0.5?(va>vb?b:a):(a.markT>b.markT?b:a),ld=tr===a?b:a,sg=tr===a?1:-1; // tie (both parked): the one that just teleported leads
+  if(ps>lim*3){besideCar(tr,ld);puff(tr.x,S,tr.z,8,1.4*Math.max(S,.3),'#ffffff');sfx.pop();return;} // way off (teleport): pop it back next to the leader
+  const pull=Math.min(ps-lim,lim)*4.5*dt;tr.kx+=sg*ux*pull;tr.kz+=sg*uz*pull;}
+let lastSh=0;function setShadow(s){if(Math.abs(s-lastSh)<Math.max(0.3,s*0.04))return;lastSh=s;sc.left=-s;sc.right=s;sc.top=s;sc.bottom=-s;sc.updateProjectionMatrix();}
 const v3=new THREE.Vector3();
 function updateHUD(){
   if(state!=='play')return;
   $('meterFill').style.width=Math.min(100,levelScore/goal*100)+'%';
   $('levelTxt').textContent='SMASH LEVEL '+level;$('count').textContent=smashCount+(smashCount===1?' smash!':' smashes!');
   updateSizeHUD();updateComboHUD();soundHint.style.display=AC&&AC.state!=='running'&&!muted?'block':'none';
-  for(const p of players){v3.set(p.x,p.y+p.model.h*dispScale()+1.2*Math.max(S,.3),p.z).project(camera);
+  for(const p of players){v3.set(p.x,p.markTop||p.y+p.model.h*dispScale()+1.2*Math.max(S,.3),p.z).project(camera); // tag sits on top of the arrow
     p.tag.style.left=((v3.x+1)/2*innerWidth)+'px';p.tag.style.top=((1-v3.y)/2*innerHeight)+'px';
     p.tag.textContent=p.stuck?'💥 JUMP = BOOM!':p.nameT>0?`${p.stats.emoji} ${p.stats.name}`:`P${p.idx+1}`;p.tag.style.background=p.stuck?SIGNAL_COL.no:p.color;}
   const tp=players.find(q=>q.src==='touch');if(tp){$('bJump').textContent=tp.stuck?'💥':'JUMP';$('bSwap').textContent=levelReady?'⬆️':'🔄';bFire.style.display='flex';}
@@ -1383,5 +1436,5 @@ propsReady.then(()=>{buildWorld();captureHome();updateStreaming(0,true);last=per
 window.__sp={mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,zone:testZone,zones:ZONES,gold:spawnGold,pad:placePad,pads,
   boss(id){if(!giant){tier=SIZES.length-1;growth=MAX_GROW;levelReady=true;levelUp();newCars(true);}if(!boss)summonBoss(id);return boss&&boss.def.name;}, // __sp.boss('shelldozer')
   level(n=1){for(let i=0;i<n&&!giant;i++){growth=GROW_AT[tier+1];levelReady=true;levelUp();}return giant?'GIANT':SIZES[tier];}, // jump ahead n sizes
-  tp(x,z,i=0){const p=players[i];if(p){p.x=x;p.z=z;p.y=groundH(x,z);camT.set(x,0,z);}},
+  tp(x,z,i=0){const p=players[i];if(p){p.x=x;p.z=z;p.y=groundH(x,z);p.markT=3;camT.set(x,0,z);}},
   stats(){let l=0;chunks.forEach(c=>l+=c.loaded);const i=renderer.info.render;return {chunks:l,objects:objects.length,awake:objects.filter(o=>!o.sleep).length,debris:debris.length,calls:i.calls,tris:i.triangles};}};
