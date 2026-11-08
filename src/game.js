@@ -678,6 +678,37 @@ function captureHome(){
   objects=[];
   for(const r of ramps.slice()){removeRamp(r);chunkOf(r.x,r.z).rampList.push(r);}
 }
+/* L39: a layout ctx for the hand-built home arena (±HOME), so objects.js can build Hank's Street with the same calls
+   as a zone layout instead of pushing chunk records itself. Call it inside buildWorld (before captureHome):
+     const ctx=homeCtx({ok:(type,x,z,r)=>…});   // ok (optional): design's own extra rule (start lane, giver spots…)
+     ctx.place(type,x,z,arg,r,th,f) · ctx.scene(id,x,z,th,size) · ctx.spot(kind,x,z,w,d,th) · ctx.herd(kind,x,z,n)
+     ctx.ramp(x,z,th,L,W,H) · ctx.free(x,z,r)
+   Everything becomes chunk records (smashed stays smashed and regrows in place), may cross chunk lines, stays inside
+   ±HOME+3, off roads and ramps, and off other props (props of one scene may stand close together). Math.random is
+   whatever buildWorld runs under (seeded in the Home World). */
+function homeCtx(o={}){
+  const ok=o.ok||(()=>true),L=HOME+3;
+  const near=(x,z,r,tag)=>{for(let a=chunkIdx(x-r-6);a<=chunkIdx(x+r+6);a++)for(let b=chunkIdx(z-r-6);b<=chunkIdx(z+r+6);b++){const c=chunks.get(chunkKey(a,b));if(!c)continue;
+      for(const q of c.recs)if((tag==null||q.scene!==tag)&&Math.hypot(q.x-x,q.z-z)<q.r+r+0.4)return true;}return false;};
+  const free=(x,z,r,type,tag)=>{if(Math.abs(x)>L||Math.abs(z)>L||onRoad(x,z,r))return false;
+    for(const [a,b] of [[0,0],[r+1,0],[-r-1,0],[0,r+1],[0,-r-1]])if(groundH(x+a,z+b)>0)return false;
+    for(const q of objects)if(Math.hypot(q.x-x,q.z-z)<(q.r+r)*0.8)return false;
+    if(near(x,z,r,tag))return false;return ok(type,x,z,r);};
+  const place=(type,x,z,arg,r,th,f,tag)=>{if(!OBJ[type])return false;f=f||1;r=r||recR(type)*f;if(!free(x,z,r,type,tag))return false;
+    const rec={type,x,z,arg,r,seed:(Math.random()*1e9)|0,dead:false,back:0};if(f!==1)rec.f=f;if(th)rec.th=th;if(tag)rec.scene=tag;
+    chunkOf(x,z).recs.push(rec);return true;};
+  const ctx={zone:'home',x0:-HOME,z0:-HOME,x1:HOME,z1:HOME,cx:0,cz:0,size:HOME*2,roads:'cross',home:true,
+    place:(type,x,z,arg,r,th,f)=>place(type,x,z,arg,r,th,f),
+    free:(x,z,r)=>free(x,z,r,null),
+    spot:(kind,x,z,w,d,th)=>chunkSpot(chunkOf(x,z),kind,x,z,w,d,th),
+    herd:(kind,x,z,n)=>chunkHerd(chunkOf(x,z),kind,x,z,n),
+    ramp:(x,z,th,L,W,H)=>{addRamp(x,z,th,L,W,H);return true;},
+    scene(id,x,z,th=0,size){const def=sceneDef(id,'home');if(!def){console.warn('unknown scene',id);return false;}
+      const k=sizeIdx(size!=null?size:def.size),f=sceneF(def,k),tag='hc'+(++sceneSeq),it=sceneItems(def,x,z,th,f,(Math.random()*1e9)|0,'home',k);
+      let n=0;for(const q of it.place)n+=place(q.type,q.x,q.z,q.arg,null,q.th,f*q.sc,tag);
+      for(const q of it.spot)ctx.spot(...q);for(const h of it.herd)ctx.herd(...h);for(const q of it.ramp)ctx.ramp(...q);
+      const c=chunkOf(x,z);c.scenes.push({id,tag,x,z,r:(def.r||8)*f,k,fixed:true,home:c.k,keys:[c.k]});return n>0;}};
+  return ctx;}
 /* L31 size LOD: records 3+ sizes below the players aren't built (they'd only get squished without counting) and built
    ones are dropped on a size-up; they come back when the chunk is built again at a smaller size (new world). */
 const lodSkip=rec=>rec.sz!=null&&rec.sz<=tier-3;
@@ -903,6 +934,7 @@ class Player{
     this.root.position.set(this.x,this.y,this.z);this.root.rotation.set(-this.pitch,this.heading,0);this.root.scale.setScalar(ds);
     this.model.g.position.y=Math.abs(Math.sin(performance.now()*0.02))*0.05*Math.min(1,Math.abs(this.speed)/20);
     for(const w of this.model.wheels)w.rotation.x+=this.speed*dt/w.userData.r;
+    waterTick(this,dt); // L39
     this.ring.position.set(this.x,groundH(this.x,this.z)+0.08,this.z);this.ring.scale.setScalar(st.r/2.6*ds);
     this.ring.material.opacity=this.air?0.4:0.9;
     this.updateMarker(dt,ds);
@@ -1365,6 +1397,41 @@ const DEFAULT_SPOT_PROPS={road:['cone','barrel'],sidewalk:['cone','pin','barrel'
   porch:['crates','pin'],field:['melon','fence','tree'],sand:['pin','tower','snowman'],path:['cone','pin']};
 const inSpot=(q,x,z)=>{const dx=x-q.x,dz=z-q.z;return Math.abs(dx*q.cs-dz*q.sn)<=q.hx&&Math.abs(dx*q.sn+dz*q.cs)<=q.hz;};
 function spotAt(x,z){const c=chunks.get(chunkKey(chunkIdx(x),chunkIdx(z)));if(!c)return null;for(const q of c.spots)if(inSpot(q,x,z))return q;return null;}
+/* L39 water: painted spots of a water kind are water. The smallest painted spot under a car decides (the same one you
+   see on top), so an island or a path spot over a pond is dry land. Level 1 (water) = wade: slow, bob, splash.
+   Level 2 (water_deep) = too deep for wheels: a car without 🛸 hover is pushed back to where it came in. Cars with hover
+   skim over any water at full speed (Arcade has every ability, so it only splashes there). A car wider than half the
+   deep spot's long side is too big to care and just wades. A deep spot with an active quest's find item in it counts as wading.
+   A zone adds its own kinds with registerZone({water:{choco_river:1,choco_deep:2}}). */
+const WATER_KINDS={water:1,water_deep:2,river:1,lake:1,deep:2};
+for(const z in ZONES)if(ZONES[z].water)Object.assign(WATER_KINDS,ZONES[z].water);
+function spotLookOf(c,kind){const zl=ZONES[c.zone]&&ZONES[c.zone].spotLook;return (zl&&zl[kind])||(typeof SPOT_LOOK!=='undefined'&&SPOT_LOOK[kind]);}
+function waterAt(x,z){let best=null;const ci=chunkIdx(x),cj=chunkIdx(z);
+  for(let a=ci-1;a<=ci+1;a++)for(let b=cj-1;b<=cj+1;b++){const c=chunks.get(chunkKey(a,b));if(!c||!c.spots.length)continue;
+    for(const q of c.spots)if((!best||q.area<best.area)&&Math.abs(x-q.x)<=q.ex&&Math.abs(z-q.z)<=q.ez&&inSpot(q,x,z)&&spotLookOf(c,q.kind))best=q;}
+  return best&&WATER_KINDS[best.kind]?best:null;}
+const waterQuestIn=q=>typeof questA!=='undefined'&&questA&&questA.st&&questA.st.s&&questA.st.s.do==='find'&&(questA.st.things||[]).some(t=>t.g&&t.g.parent&&inSpot(q,t.x,t.z));
+let lastDeepSay=-99;
+function waterTick(p,dt){
+  const q=p.air?null:waterAt(p.x,p.z),lv=q?WATER_KINDS[q.kind]:0,g=p.model.g;
+  if(!lv){if(p.wet){g.rotation.z=0;p.wet=0;}if(!p.air)p.dryAt=[p.x,p.z];return;}
+  const fresh=!p.wet,sk=hasAbility('hover'),big=p.r*2>Math.max(q.hx,q.hz),S1=Math.max(S,0.15),spd=Math.abs(p.speed);p.wet=lv;
+  if(fresh&&spd>2){sfxClip('splash',0.6)||noise(0.4,1400,0.8,0.14,'lowpass',300);puff(p.x,0.3*S1,p.z,8,1.4*S1,'#bde0fe');}
+  if((p.splashT=(p.splashT||0)-dt)<=0&&spd>1){p.splashT=sk?0.06:0.18;
+    const bx=p.x-Math.sin(p.heading)*p.r,bz=p.z-Math.cos(p.heading)*p.r;puff(bx,0.2*S1,bz,sk?2:1,(sk?0.7:0.5)*S1,pick(['#bde0fe','#ffffff','#a2d2ff']));}
+  if(sk){if(p.partMap&&p.partMap.hover)p.partMap.hover.visible=true;g.position.y+=0.15;g.rotation.z=0.04*Math.sin(T*5+p.idx);
+    if((p.humT=(p.humT||0)-dt)<=0){p.humT=0.5;sfxClip('hover_hum',0.25)||tone('sine',240+rand(-20,20),280,0.3,0.03);}p.dryAt=[p.x,p.z];return;}
+  // wheels in the water: slow, low, bobbing
+  const cap=p.stats.speed*p.sm*(lv>=2?0.3:0.5);if(p.speed>cap)p.speed+=(cap-p.speed)*Math.min(1,dt*4);
+  g.position.y+=-0.3+0.12*Math.sin(T*6+p.idx*2);g.rotation.z=0.09*Math.sin(T*3.5+p.idx);
+  if(lv<2||big||waterQuestIn(q)){p.dryAt=[p.x,p.z];return;}
+  // too deep: keep the car within a little of where it came in, nudged back toward it
+  const d0=p.dryAt;if(!d0){p.dryAt=[p.x,p.z];return;}
+  const dx=p.x-d0[0],dz=p.z-d0[1],d=Math.hypot(dx,dz),mx=p.r*1.2+0.3*S1;
+  if(d>mx*8){p.dryAt=[p.x,p.z];return;} // teleported in (spawn, garage): just wade
+  if(d>mx){const ux=dx/d,uz=dz/d,back=Math.min(d-mx,(16*p.sm+(d-mx)*3)*dt);p.x-=ux*back;p.z-=uz*back;p.speed*=0.5;p.kx=-ux*5*p.sm;p.kz=-uz*5*p.sm;
+    if((p.deepT=(p.deepT||0)-dt)<=0){p.deepT=0.5;puff(p.x+ux*p.r,0.3*S1,p.z+uz*p.r,5,1.1*S1,'#a2d2ff');sfxClip('splash',0.4,1.3)||noise(0.25,1800,0.8,0.1,'lowpass',400);}
+    if(T-lastDeepSay>14){lastDeepSay=T;say('Too deep! You need to fly!');}}}
 // a point inside a spot that lies in the ring [d0,d1] around (px,pz), or null when no spot is in reach
 function spotPoint(px,pz,d0,d1){const near=[];let tot=0;
   for(let ci=chunkIdx(px-d1);ci<=chunkIdx(px+d1);ci++)for(let cj=chunkIdx(pz-d1);cj<=chunkIdx(pz+d1);cj++){const c=chunks.get(chunkKey(ci,cj));if(!c)continue;
