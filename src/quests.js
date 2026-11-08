@@ -42,9 +42,9 @@ let questPoint=null; // the quest the arrow points at while nothing is active
 /* ---------- talking ---------- */
 const questTalk=[];let questTalkT=0;
 function questSpeak(lines,voice,gv){if(!lines)return;if(!Array.isArray(lines))lines=[lines];
-  for(const l of lines){if(!l)continue;const o=typeof l==='string'?{text:l}:l;if(!o.text)continue;questTalk.push({text:String(o.text),voice:o.voice||voice,gv});}}
+  for(const l of lines){if(!l)continue;const o=typeof l==='string'?{text:l}:l;if(!o.text)continue;(talkS?talkS.cards:questTalk).push({text:String(o.text),voice:o.voice||voice,gv});}} // L45: while a talk scene is open, lines become its cards
 const questVoice=(q,s)=>(s&&s.voice)||q.giver.voice; // L40: a step can speak in another voice
-function questSayNow(text,voice){try{say(text,voice?{voice}:undefined);}catch(e){say(text);}}
+function questSayNow(text,voice){try{return say(text,voice?{voice,prio:true}:{prio:true});}catch(e){return say(text);}} // prio: L46's priority voice (ignored until then)
 function updateQuestTalk(dt){
   if((questTalkT-=dt)>0)return;const l=questTalk.shift();if(!l)return;
   questSayNow(l.text,l.voice);questTalkT=0.7+l.text.split(/\s+/).length*0.36;
@@ -82,7 +82,7 @@ function updateGivers(dt){
     if(!gv)gv=questGivers[gid]={id:gid,talkT:0,wob:0,cool:0,face:Math.PI};
     if(!gv.shown||gv.q!==q){if(gv.shown)questGiverHide(gv);gv.q=q;gv.g=questGiverLook(q.giver);if(typeof carMerge==='function')gv.m=carMerge({g:gv.g});
       scene.add(gv.g);gv.shown=true;gv.x=at[0];gv.z=at[1];
-      gv.balloon=questDiv('questBalloon',q.giver.emoji||'❗');gv.bubble=questDiv('questBubble','');}
+      gv.balloon=questDiv('questBalloon',q.giver.emoji||'❗');gv.bubble=questDiv('questBubble','');gv.aBub=questDiv('talkA',`<b class="btnA">A</b><i>${q.giver.emoji||'❗'}</i>`);}
     gv.q=q;const s=S,done=questDone.has(q.id),r=(q.giver.r||2.3)*s;gv.r=r;
     // face the nearest car, bob, wobble while talking
     let np=null,nd=1e9;for(const p of players){const d=Math.hypot(p.x-gv.x,p.z-gv.z);if(d<nd){nd=d;np=p;}}
@@ -100,23 +100,26 @@ function updateGivers(dt){
     const top=(q.giver.h||3.4)*s;
     const showB=!done&&!(questA&&questA.q===q);questProj(gv.balloon,gv.x,top+(1.2+0.3*Math.sin(T*4))*s,gv.z,showB);
     gv.balloon.classList.toggle('main',!!q.main);
+    // L45: the big A bubble when a car is close and the giver has something to say (press A to talk)
+    gv.near=!talkS&&!done&&nd<r+TALK_NEAR*QUEST_CAR_L*s;questProj(gv.aBub,gv.x,top+(showB?2.9:1.4)*s+(0.2*Math.sin(T*6))*s,gv.z,gv.near);
     const showP=gv.talkT>0&&questA&&questA.q===q;if(showP)gv.bubble.innerHTML=questBubbleHtml();
     questProj(gv.bubble,gv.x,top+1.4*s,gv.z,showP);}
 }
-function questGiverHide(gv){scene.remove(gv.g);if(gv.m&&typeof carUnmerge==='function')carUnmerge(gv.m);gv.balloon.remove();gv.bubble.remove();gv.shown=false;gv.g=null;}
+function questGiverHide(gv){scene.remove(gv.g);if(gv.m&&typeof carUnmerge==='function')carUnmerge(gv.m);gv.balloon.remove();gv.bubble.remove();gv.aBub.remove();gv.shown=false;gv.near=false;gv.g=null;}
 const _qv=new THREE.Vector3();
 function questProj(el,x,y,z,show){if(!show){el.style.display='none';return;}_qv.set(x,y,z).project(camera);
   if(_qv.z>1||Math.abs(_qv.x)>1.1||Math.abs(_qv.y)>1.1){el.style.display='none';return;}
   el.style.display='';el.style.left=((_qv.x+1)/2*innerWidth)+'px';el.style.top=((1-_qv.y)/2*innerHeight)+'px';}
 // driving into a giver
+// (and pressing A next to one, L45): a new quest or a reminder opens the talk scene
 function questTouch(gv,p){
-  const q=gv.q,gd=q.giver;
+  if(talkS)return;const q=gv.q,gd=q.giver;
   if(questDone.has(q.id)){questSpeak([pick(q.after||['Thanks again!'])],gd.voice,gv);return;}
-  if(!questA||questA.q!==q){questStart(q);return;}
+  if(!questA||questA.q!==q){talkOpen(gv,'start');return;}
   const s=questA.q.steps[questA.si];
   if(s.do==='bring'){questBring(gv);return;}
   if(s.do==='talk')return;
-  questSpeak([pick([].concat(s.say&&(s.say.hint||s.say.start)||q.remind||'You can do it!'))],questVoice(q,s),gv);}
+  talkOpen(gv,'remind');}
 
 /* ---------- running a quest ---------- */
 function questStart(q,quiet){
@@ -413,7 +416,9 @@ function questArrowSet(tg){
       const m=new THREE.Mesh(GEO.box,SPARK_MAT);m.scale.setScalar(0.5*Math.max(qS(),0.1));m.position.set(x,groundH(x,z)+0.3*qS(),z);m.rotation.set(rand(0,3),rand(0,3),0);addPart(m,0.7,0,1.5*qS(),0);}}}}
 // the quest HUD: who you're helping, what they want, and dots for how many
 const questHud=document.createElement('div');questHud.id='questHud';questHud.style.display='none';$('hud').appendChild(questHud);
-function questBubbleHtml(){const A=questA;if(!A||!A.st)return '';const s=A.st.s,ic=s.icon||(s.do==='bring'?(A.q.steps.slice(0,A.si).reverse().find(x=>x.revealIcon||x.icon)||{}).revealIcon||(A.q.steps.slice(0,A.si).reverse().find(x=>x.icon)||{}).icon||'🎁':s.do==='talk'?(A.q.steps.slice(A.si).find(x=>x.icon)||{}).icon||'':s.do==='boss'?'👾':'');
+function questStepIcon(){const A=questA;if(!A||!A.st)return '';const s=A.st.s;
+  return s.icon||(s.do==='bring'?(A.q.steps.slice(0,A.si).reverse().find(x=>x.revealIcon||x.icon)||{}).revealIcon||(A.q.steps.slice(0,A.si).reverse().find(x=>x.icon)||{}).icon||'🎁':s.do==='talk'?(A.q.steps.slice(A.si).find(x=>x.icon)||{}).icon||'':s.do==='boss'?'👾':'');}
+function questBubbleHtml(){const A=questA;if(!A||!A.st)return '';const ic=questStepIcon();
   const n=A.st.n,g=A.st.got;return `<b>${ic}</b>`+(n>1&&n<=12?`<span>${'●'.repeat(g)}${'○'.repeat(n-g)}</span>`:n>12?`<span>${g} / ${n}</span>`:'');}
 let questHudKey='';
 function questHudSet(){if(!questOn||!questA){questHud.style.display='none';questHudKey='';return;}
@@ -435,6 +440,90 @@ function questHudSet(){if(!questOn||!questA){questHud.style.display='none';quest
 :where(#questHud.main){background:#ffbe0bdd}
 :where(#questHud i){font-style:normal;font-size:34px}
 :where(#questHud b){font-size:34px}`;document.head.appendChild(st);}
+
+/* ---------- the talk scene (L45) ----------
+   Press A next to a giver (or drive into one): the game stops (game.js skips the world while talkS is set), the camera
+   frames the giver and the cars, letterbox bars slide in and each line is a card spoken in the giver's voice. The next
+   card waits for the voice (A skips ahead). The last card is the goal as a picture (icon × n + an arrow toward it),
+   then GO! and the game carries on. A new quest runs its opening `talk` steps inside the scene, so the goal card
+   already shows the first real step; a reminder (mid-quest) shows the `remind` lines (or the step's hint) + the goal.
+   Look: #talkScene (letterbox; .on while open), .talkCard (.main gold / blue; .goal for the picture), .talkName,
+   .talkGoal, .talkNext (the A prompt), .talkA (the A bubble over a giver). Test: __sp.talk('giver id'). */
+const TALK_NEAR=2.2,TALK_GOAL_T=3.2; // A bubble within ~2 car lengths; the goal card stays ~3 s (A = GO now)
+let talkS=null;
+const talkEl=document.createElement('div');talkEl.id='talkScene';
+talkEl.innerHTML='<div class="talkBar top"></div><div class="talkBar bot"></div><div class="talkCard"></div>';$('hud').appendChild(talkEl);
+const talkCardEl=talkEl.querySelector('.talkCard');
+function talkOpen(gv,kind){
+  if(talkS||!gv||!gv.shown)return false;const q=gv.q;
+  talkS={gv,q,kind,cards:[],i:-1,t:0,wait:0,voiceT:0,goal:null,go:false,end:0};
+  if(kind==='start'){questStart(q); // its opening talk steps speak into the cards, then the first real step starts (and says where)
+    for(let k=0;k<20&&questA&&questA.q===q&&questA.st&&questA.st.s.do==='talk';k++)questStepDone();}
+  else{const s=questA&&questA.st&&questA.st.s;
+    const hint=s&&s.say&&!Array.isArray(s.say)&&(s.say.hint||s.say.start);
+    if(q.remind&&q.remind.length)questSpeak([pick(q.remind)],q.giver.voice,gv);if(hint)questSpeak([pick([].concat(hint))],questVoice(q,s),gv);
+    if(!talkS.cards.length)questSpeak(['You can do it!'],q.giver.voice,gv);}
+  // the goal picture: the step that runs now
+  if(questA&&questA.q===q&&questA.st){const st=questA.st;talkS.goal={icon:questStepIcon()||'⭐',n:Math.max(1,st.n-st.got)};}
+  questTalk.length=0;questTalkT=0;
+  if(AC)for(const p of players){if(p.eng)p.eng.g.gain.setTargetAtTime(0,AC.currentTime,0.05);p.speed=0;}
+  talkEl.classList.add('on');talkEl.classList.toggle('main',!!q.main);sfx.pop();talkNext();return true;}
+function talkLineLen(text,voice){const id=(voice?voice+'__':'')+voiceSlug(text),b=voiceBank.bufs[id];
+  return b&&b!=='loading'?b.duration+0.35:0.9+text.split(/\s+/).length*0.38;}
+function talkNext(){const S_=talkS;if(!S_)return;S_.i++;S_.t=0;
+  const gd=S_.q.giver,name=`<div class="talkName"><i>${gd.emoji||'❗'}</i>${gd.name||''}</div>`;
+  if(S_.i<S_.cards.length){const c=S_.cards[S_.i];stopVoice();const r=questSayNow(c.text,c.voice);
+    S_.wait=talkLineLen(c.text,c.voice);S_.said=r&&typeof r.then==='function'?r:null;S_.done=false;if(S_.said)S_.said.then(()=>{if(talkS===S_)S_.done=true;},()=>{});
+    if(c.gv){c.gv.talkT=S_.wait;c.gv.wob=1;}
+    talkCardEl.className='talkCard'+(S_.q.main?' main':'');talkCardEl.innerHTML=name+`<div class="talkText">${talkEsc(c.text)}</div><div class="talkNext"><b class="btnA">A</b></div>`;return;}
+  if(S_.goal&&S_.i===S_.cards.length){S_.wait=TALK_GOAL_T;sfxClip('quest_step',0.6)||sfx.pop();
+    talkCardEl.className='talkCard goal'+(S_.q.main?' main':'');
+    talkCardEl.innerHTML=name+`<div class="talkGoal"><b>${S_.goal.icon}</b>${S_.goal.n>1?`<span>× ${S_.goal.n}</span>`:''}<em class="talkArrow">➜</em></div><div class="talkNext"><b class="btnA">A</b> GO!</div>`;return;}
+  talkClose();}
+const talkEsc=t=>t.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function talkClose(){const S_=talkS;if(!S_)return;talkS=null;talkEl.classList.remove('on');talkCardEl.innerHTML='';
+  if(S_.goal){showBig('GO!');sfx.join();}
+  if(typeof lastReadySay!=='undefined')lastReadySay=performance.now(); // the "level up ready" nag starts counting again after the talk
+  if(S_.gv)S_.gv.cool=1;questHudSet();}
+// one frame while the scene is open (game.js runs only this, the givers, the camera and the HUD)
+function updateTalk(dt,src){const S_=talkS;if(!S_)return;S_.t+=dt;
+  let a=false;for(const p of players){const s=src[p.src];if(s&&s.aP)a=true;}
+  if(musicGain&&AC){const g=musicGain.gain;if(g.value>MUSIC_VOL*0.45){g.cancelScheduledValues(AC.currentTime);g.setTargetAtTime(MUSIC_VOL*0.3,AC.currentTime,0.15);}}
+  if(!S_.gv.shown){talkClose();return;}
+  const onGoal=S_.i>=S_.cards.length;
+  if(onGoal){const el=talkCardEl.querySelector('.talkArrow'),tg=questTarget();
+    if(el){if(tg){_qv.set(S_.gv.x,0,S_.gv.z).project(camera);const ax=_qv.x*innerWidth,ay=_qv.y*innerHeight;_qv.set(tg[0],0,tg[1]).project(camera);
+        el.style.transform=`rotate(${Math.atan2(-(_qv.y*innerHeight-ay),_qv.x*innerWidth-ax)}rad)`;el.style.display='';}else el.style.display='none';}}
+  const spoken=S_.said?S_.done||S_.t>S_.wait*2.5+2:S_.t>S_.wait&&!(typeof speechSynthesis!=='undefined'&&speechSynthesis.speaking&&S_.t<S_.wait*2.5+2);
+  if((a&&S_.t>0.25)||(onGoal?S_.t>S_.wait:spoken&&S_.t>0.6)){if(a&&!onGoal)stopVoice();talkNext();}
+  if(!talkS&&musicGain&&AC){const g=musicGain.gain;g.cancelScheduledValues(AC.currentTime);g.setTargetAtTime(MUSIC_VOL,AC.currentTime,0.4);}}
+// A pressed in play: talk to the giver next to that car (game.js calls this before the cars move)
+function talkTry(src){if(talkS||!questOn||state!=='play'||garageAll())return false;
+  for(const p of players){const s=src[p.src];if(!s||!s.aP)continue;
+    let best=null,bd=1e9;for(const id in questGivers){const gv=questGivers[id];if(!gv.shown||!gv.near)continue;const d=Math.hypot(p.x-gv.x,p.z-gv.z);if(d<bd){bd=d;best=gv;}}
+    if(best){best.cool=1;questTouch(best,p);if(talkS)return true;}}
+  return false;}
+{const st=document.createElement('style');st.textContent=`
+:where(#talkScene){position:fixed;inset:0;pointer-events:none;z-index:30;visibility:hidden}
+:where(#talkScene.on){visibility:visible}
+:where(#talkScene .talkBar){position:absolute;left:0;right:0;height:12vh;background:#000;transition:transform .45s ease}
+:where(#talkScene .talkBar.top){top:0;transform:translateY(-100%)}:where(#talkScene .talkBar.bot){bottom:0;transform:translateY(100%)}
+:where(#talkScene.on .talkBar){transform:none}
+:where(#talkScene .talkCard){position:absolute;left:50%;bottom:4vh;transform:translateX(-50%);min-width:44vw;max-width:80vw;display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:14px 30px 18px;border-radius:28px;background:#3a86ff;border:6px solid #fff;box-shadow:0 8px 0 #0005;color:#fff;font:40px/1.15 'Lilita One',sans-serif;text-align:center}
+:where(#talkScene .talkCard:empty){display:none}
+:where(#talkScene .talkCard.main){background:#ffbe0b;color:#3a2500}
+:where(#talkScene .talkName){display:flex;align-items:center;gap:10px;font-size:26px;opacity:.95}
+:where(#talkScene .talkName i){font-style:normal;font-size:46px;width:66px;height:66px;line-height:66px;border-radius:50%;background:#fff;text-align:center}
+:where(#talkScene .talkGoal){display:flex;align-items:center;gap:22px}
+:where(#talkScene .talkGoal b){font-size:110px;line-height:1}:where(#talkScene .talkGoal span){font-size:70px}
+:where(#talkScene .talkGoal em){font-style:normal;font-size:80px;display:inline-block}
+:where(#talkScene .talkNext){align-self:flex-end;font-size:30px;display:flex;align-items:center;gap:8px}
+:where(.btnA){display:inline-block;width:52px;height:52px;border-radius:50%;font:32px/46px 'Lilita One',sans-serif;text-align:center;color:#fff;border:3px solid #fff;
+  background:#06d6a0;box-shadow:0 4px 0 #0006;animation:nwPulse .7s ease-in-out infinite}
+:where(.talkA){position:absolute;transform:translate(-50%,-100%);display:flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:40px;background:#fff;
+  border:4px solid #222;pointer-events:none;animation:nwPulse .8s ease-in-out infinite}
+:where(.talkA i){font-style:normal;font-size:34px}`;document.head.appendChild(st);}
 
 /* ---------- placeholder quest (used until a quest pack registers one) ---------- */
 /* Hammerhead Hank by the start street: talk → find his lunchbox in the yard → bring it back → 🔨. The real Home World
