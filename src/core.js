@@ -278,19 +278,25 @@ function zoneAudio(zid,dt,quiet){if(zid!==zoneSeen){zoneSeen=zid;zoneSeenT=0;}el
   const zs=!quiet&&ZONES[musicZone]&&ZONES[musicZone].sfx;setAmbient(zs&&zs.ambient&&sfxBank.index[zs.ambient]?zs.ambient:null);}
 function duckMusic(sec){if(!musicGain)return;const t=AC.currentTime,g=musicGain.gain;g.cancelScheduledValues(t);g.setTargetAtTime(MUSIC_VOL*0.4,t,0.05);g.setTargetAtTime(MUSIC_VOL,t+sec,0.3);}
 /* Voice: say(text) plays the clip whose name is the text's slug ("MEGA SMASH!" → mega_smash.mp3),
-   else the browser's robot voice. */
+   else the browser's robot voice. L34: say(text,{voice:'hank'}) speaks as a character: clip hank__<slug>.mp3
+   (cast in tools/voices.json, lines tagged "voice":"hank" in tools/voice-lines.json); without the clip, a robot
+   voice pitched for that character ({pitch, rate} in the options, else picked from the name). */
 const voiceSlug=t=>t.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,''); // must match make-voices.mjs
 let voiceSrc=null;
 function stopVoice(){try{speechSynthesis.cancel();}catch(e){}if(voiceSrc){try{voiceSrc.stop();}catch(e){}voiceSrc=null;}}
 let sayWant=null;
 function playVoice(id,buf){stopVoice();voiceSrc=playClip(voiceBank,id,1.5);duckMusic(buf.duration);}
-function robotSay(text){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=1.05;u.pitch=1.45;speechSynthesis.speak(u);}catch(e){}}
-function say(text){if(muted)return;const id=voiceSlug(text),buf=voiceBank.bufs[id];sayWant=id;
+function robotSay(text,pitch=1.45,rate=1.05){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=rate;u.pitch=pitch;speechSynthesis.speak(u);}catch(e){}}
+let voiceCast={};fetch('tools/voices.json').then(r=>r.json()).then(j=>{voiceCast=j||{};}).catch(()=>{}); // robot {pitch, rate} per character
+function voiceRobot(v){const c=voiceCast[v]&&voiceCast[v].robot;let h=0;for(const c of v)h=(h*31+c.charCodeAt(0))>>>0;return [(c&&c.pitch)||0.6+(h%100)/100*1.3,(c&&c.rate)||0.9+((h>>>8)%100)/100*0.3];} // pitch 0.6–1.9, rate 0.9–1.2
+function say(text,opt){if(muted)return;const v=opt&&opt.voice,id=(v?v+'__':'')+voiceSlug(text),buf=voiceBank.bufs[id];sayWant=id;
+  let pitch=1.45,rate=1.05;if(v){[pitch,rate]=voiceRobot(v);if(opt.pitch)pitch=opt.pitch;if(opt.rate)rate=opt.rate;}
+  const robot=()=>robotSay(text,pitch,rate);
   if(buf&&buf!=='loading'&&AC){playVoice(id,buf);return;}
   // the recording exists but is still downloading (the first seconds after start): wait for it rather than use the robot voice
   if(AC&&voiceBank.index[id]){const t0=performance.now();
-    loadClip(voiceBank,id).then(b=>{if(sayWant===id&&performance.now()-t0<3000)playVoice(id,b);}).catch(()=>robotSay(text));return;}
-  robotSay(text);}
+    loadClip(voiceBank,id).then(b=>{if(sayWant===id&&performance.now()-t0<3000)playVoice(id,b);}).catch(robot);return;}
+  robot();}
 function toggleMute(){muted=!muted;if(master)master.gain.value=muted?0:0.6;if(muted)stopVoice();$('muteBtn').textContent=muted?'🔇':'🔊';}
 function toggleFS(){try{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen().catch(()=>{});}catch(e){}}
 $('muteBtn').onclick=e=>{e.stopPropagation();initAudio();toggleMute();};
