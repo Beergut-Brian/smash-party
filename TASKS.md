@@ -253,11 +253,12 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 
 - [ ] **D17: Start-screen help text is out of date** `NEEDS DESIGN` (cars-ui; found reviewing PR #40). The three control cards on the start screen (index.html, shared) still say "LB / RB: switch car", "Q: switch car" and "/ : switch car". Cars now change only in the level-up garage. Update the cards (and the pause menu, if it repeats them) to match CLAUDE.md's controls, mention the garage ("new cars: drive into the one you want"), and add the 🛏️/🌳 picker hint.
 
-- [ ] **D9: Garage look + car stats and perks** `NEEDS DESIGN` (cars-ui; needs L17 + L18)
+- [x] **D9: Garage look + car stats and perks** `NEEDS DESIGN` (cars-ui; needs L17 + L18)
   - Give every recipe car `speed`, `power`, `handling` and a fitting `perk` (rocket cars get `autoRockets`, dozers get `bulldozer`, and so on). Balance: faster cars are weaker, strong cars are slower.
   - L18 ✅: the stats are live (contract in CLAUDE.md under Block-built car). Today's defaults: `carStats` + `CAR_PERK` in game.js (setting them in cars.js overrides). Card markup: three dot rows (⚡ 💪 🌀) then the weapon icon and `<i class="perk">` (🚀 🧲 🚜 🦘); style `.garageCard .perk`.
   - Style the garage: pads, spotlights, the floating stat cards (icons + bars, no text), the picked-car burst, the GO! prompt.
   - Hooks now live (L17 ✅): `function buildGarage(){…}` in cars.js replaces the placeholder showroom (contract in CLAUDE.md); style `.garageCard` (`.soon` = placeholder car, `--pc` = player color) and `#garageGo` in style.css. The garage look can ship before L18; the stats part needs L18.
+  - ✅ Done (`cars/D9`): every block / recipe / `cars.json` car sets `power`, `handling`, and `perk` (faster = weaker; dozers → bulldozer, rockets → autoRockets, magnets / bouncers themed). `pushCar` copies the new fields. `buildGarage()` = candy pie-floor showroom, striped curb open to +Z, back banner, spotlights, entrance cones. `.garageCard` / `.perk` / `#garageGo` restyled in style.css (gold perk badge, chunky player-color card, pulsing GO!).
 
 - [x] **D11: Real neighborhoods** `NEEDS DESIGN` (world-props; needs L19)
   - Town: houses lined up along streets with yards, fences, driveways and mailboxes; shops on a main street; a park block. Farm: fenced fields with crops in rows, animals in pens, the barn yard. Park: paths, a playground area, the pond.

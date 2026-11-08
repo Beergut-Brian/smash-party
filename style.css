@@ -77,3 +77,45 @@ canvas{display:block}
 }
 #worldPick .wp.sel:hover{transform:scale(1.16);filter:brightness(1.05)}
 @keyframes wpSel{50%{transform:scale(1.18)}}
+
+/* D9: garage stat cards + GO! (logic injects a plain :where() default; these win) */
+.garageCard{
+  position:absolute;transform:translate(-50%,-100%);
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:8px 12px 10px;min-width:86px;
+  border-radius:18px;border:5px solid var(--pc,#fff);
+  background:linear-gradient(180deg,#1d2438f2,#0f1320ee);
+  color:#fff;font:18px 'Lilita One',sans-serif;line-height:1.05;
+  box-shadow:0 6px 0 color-mix(in srgb,var(--pc,#fff) 55%,#000),0 0 18px #0006;
+  pointer-events:none;white-space:nowrap;text-shadow:0 2px 0 #0006;
+}
+.garageCard b{font-size:36px;line-height:1;filter:drop-shadow(0 3px 0 #0005)}
+.garageCard span{
+  display:flex;align-items:center;justify-content:center;gap:2px;
+  color:#ffd60a;letter-spacing:1px;font-size:15px;
+  background:#0005;border-radius:999px;padding:2px 8px;border:2px solid #fff3;
+}
+.garageCard .perk{
+  display:inline-flex;align-items:center;justify-content:center;
+  font-style:normal;font-size:22px;margin-left:4px;
+  width:30px;height:30px;border-radius:50%;
+  background:linear-gradient(160deg,#ffd60a,#ff9f1c);
+  border:3px solid #fff;box-shadow:0 3px 0 #c47d00;
+}
+.garageCard.soon{
+  opacity:.78;border-style:dashed;filter:grayscale(.25);
+  background:linear-gradient(180deg,#2a2f44f0,#161a28ee);
+}
+.garageCard.soon b{opacity:.9}
+#garageGo{
+  display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);
+  z-index:20;font-family:'Lilita One',sans-serif;font-size:clamp(32px,5vw,52px);
+  line-height:1;color:#fff;cursor:pointer;
+  background:linear-gradient(180deg,#3ddc97,#06d6a0 55%,#048a68);
+  border:6px solid #fff;border-radius:999px;padding:14px 52px 16px;
+  box-shadow:0 10px 0 #035e48,0 0 28px #06d6a088;text-shadow:0 3px 0 #0004;
+  animation:garageGoBob .85s ease-in-out infinite;
+}
+#garageGo small{display:block;font-family:'Nunito',sans-serif;font-weight:900;font-size:.38em;letter-spacing:.04em;opacity:.95;margin-top:2px}
+#garageGo:active{transform:translateX(-50%) translateY(5px);box-shadow:0 5px 0 #035e48,0 0 18px #06d6a066;animation:none}
+@keyframes garageGoBob{50%{transform:translateX(-50%) scale(1.07)}}
