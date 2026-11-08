@@ -1574,7 +1574,7 @@ function spawnScatter(p,fill){
     let x=p.x+Math.sin(a)*d,z=p.z+Math.cos(a)*d,sp=null;const k=scatterSize(),r=GROW_S[k]*2.5+0.1;
     if(Math.random()>SPOT_LEFTOVER){sp=spotAt(x,z);  // L19: land in a spot when there's one nearby
       if(!sp){const q=spotPoint(p.x,p.z,fill?0.2*Rs:Rs,1.4*Rs);if(q)[x,z,sp]=q;}}
-    if(Math.abs(x)>WB-r-2||Math.abs(z)>WB-r-2||rampH(x,z)>0||rampH(x+r,z)>0||rampH(x-r,z)>0||rampH(x,z+r)>0||rampH(x,z-r)>0)continue;
+    if(Math.abs(x)>WB-r-2||Math.abs(z)>WB-r-2||rampH(x,z)>0||rampH(x+r,z)>0||rampH(x-r,z)>0||rampH(x,z+r)>0||rampH(x,z-r)>0||!stepEven(x,z,r))continue;
     if(k>tier&&(onRoad(x,z,r)||(arenaOn()&&typeof startLane==='function'&&startLane(x,z))))continue; // L26: nothing too big to smash lands on the road or in the start lane
     if(objects.some(o=>o.alive&&Math.abs(o.x-x)<o.r+r+0.3&&Math.abs(o.z-z)<o.r+r+0.3&&Math.hypot(o.x-x,o.z-z)<o.r+r+0.3))continue;
     if(players.some(q=>Math.hypot(q.x-x,q.z-z)<q.r+r+1))continue;
@@ -1601,10 +1601,13 @@ function fillBuild(rec,drop){const o=buildRec(rec);rec.o=o;fillBuilt.add(rec);
   if(drop)dropIn(o,rand(6,16)*Math.max(S,0.4)); // in view: it falls in
   else{scene.remove(o.g);poolAdopt(o);if(!o.pooled){o.inst=null;o.sleep=false;scene.add(o.g);}}}
 function fillOff(rec){const o=rec.o;rec.o=null;fillBuilt.delete(rec);if(o&&o.alive&&o.rec===rec){o.alive=false;poolRelease(o);scene.remove(o.g);}}
+// L54: a prop may stand on a sidewalk or curb, but not straddle a step's edge (it would hang over)
+function stepEven(x,z,r){if(!steps.length)return true;const h=stepH(x,z);
+  return stepH(x+r,z)===h&&stepH(x-r,z)===h&&stepH(x,z+r)===h&&stepH(x,z-r)===h;}
 // can a filler prop of radius r stand here? (live objects near the cars, this cell's own records, roads, ramps)
 function fillFree(x,z,r,k,cell){
   if(Math.abs(x)>WB-r-2||Math.abs(z)>WB-r-2)return false;
-  if(groundH(x,z)>0||groundH(x+r,z)>0||groundH(x-r,z)>0||groundH(x,z+r)>0||groundH(x,z-r)>0)return false;
+  if(rampH(x,z)>0||rampH(x+r,z)>0||rampH(x-r,z)>0||rampH(x,z+r)>0||rampH(x,z-r)>0||!stepEven(x,z,r))return false; // L54: steps are fine, ramps aren't
   if(k>tier&&(onRoad(x,z,r)||(arenaOn()&&typeof startLane==='function'&&startLane(x,z))))return false; // L26
   if(garageOn(x,z,r))return false; // L32
   for(const e of cell.recs)if(Math.abs(e.x-x)<e.r+r+0.3&&Math.hypot(e.x-x,e.z-z)<e.r+r+0.3)return false;
