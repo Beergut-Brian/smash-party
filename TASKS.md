@@ -161,10 +161,12 @@ Claude Code's *logic* sessions still own `core.js`, `game.js` and `tools/`. A de
   - Done for the box buildings: house, cottage, villa, shop, school, fire station, clock tower, barn, and farmhouse use `BP` walls (about 8–12 per storey), slabs, a roof, and whole extras (doors, windows). They pass `{building:true}`.
   - Still one-piece (fine to smash, they do not pancake): water tower, silo, gazebo, coop, windmill, and the little smash-tower. A later pass can shell those if they should collapse too.
 
-- [ ] **D3: Farm and park animals** (world lane)
+- [x] **D3: Farm and park animals** (world lane)
   - Cute, chunky, low-poly: chicken, rooster, duck, cow, pig, sheep, goat, horse, dog, cat, bunny, goose.
   - Built as single whole pieces (they get launched intact, never broken). Big googly eyes encouraged.
   - Needs: L4 (animal format and how they're registered). ✅ L4 is done. The format is in `CLAUDE.md` under "Animal"; logic has blocky placeholders in `ANIMAL_DEFAULT` (game.js) to replace. Animal sounds are already recorded.
+  - ✅ Done in `src/world/animals.js`: all 12 kinds are block-built toy animals (`M()` colors, low-poly shapes) with big googly eyes, chunky heads and stubby legs. Every kind keeps its old size class (chick and bunny mini … cow and horse medium), so gameplay doesn't change. Each animal uses 4–7 colors (= draw calls after logic's per-color merge) and 2–4.6k triangles (under the 5k prop budget).
+  - Bonus: a `rooster` look is ready too. **Follow-up for logic:** to use it, add a `rooster` sound to `tools/sfx-lines.json` and put it in `ZONE_HERDS.farm` (or world-props can place `ctx.herd('rooster',…)`); until it has a sound, its launch uses the synth beep.
 
 - [ ] **D4: Vehicle wish list (inspiration only)** (Cars: Cursor, via the recipe system)
   Design **original** takes on these, with no real brands, logos or copied designs. Every one should look like a toy: big wheels, bright colors, a silly face or feature.
