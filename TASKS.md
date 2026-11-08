@@ -251,6 +251,8 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Pacing: the door is `huge`, so you break out at size 7 of 8 and mega is left for outside. The mega pieces are there for anyone who stays in.
   - Draw calls (`__sp.stats().calls`, high quality, in the room): micro 85, small 93, large 123, huge 290, GIANT 437.
 
+- [ ] **D17: Start-screen help text is out of date** `NEEDS DESIGN` (cars-ui; found reviewing PR #40). The three control cards on the start screen (index.html, shared) still say "LB / RB: switch car", "Q: switch car" and "/ : switch car". Cars now change only in the level-up garage. Update the cards (and the pause menu, if it repeats them) to match CLAUDE.md's controls, mention the garage ("new cars: drive into the one you want"), and add the 🛏️/🌳 picker hint.
+
 - [ ] **D9: Garage look + car stats and perks** `NEEDS DESIGN` (cars-ui; needs L17 + L18)
   - Give every recipe car `speed`, `power`, `handling` and a fitting `perk` (rocket cars get `autoRockets`, dozers get `bulldozer`, and so on). Balance: faster cars are weaker, strong cars are slower.
   - L18 ✅: the stats are live (contract in CLAUDE.md under Block-built car). Today's defaults: `carStats` + `CAR_PERK` in game.js (setting them in cars.js overrides). Card markup: three dot rows (⚡ 💪 🌀) then the weapon icon and `<i class="perk">` (🚀 🧲 🚜 🦘); style `.garageCard .perk`.
