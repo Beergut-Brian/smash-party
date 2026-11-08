@@ -97,7 +97,7 @@
   "desc": "Blip: Zorp's round alien sidekick. Low, slow, bubbly and gurgly, like talking through a fishbowl, says blub and bloop. No lines yet (needs L40 per-line voices)."
  },
  "gertie": {
-  "voice": "",
+  "voice": "04wy7nQV4YmOVCrui5ZQ",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[warm, slow, grandmotherly] ",
@@ -105,7 +105,7 @@
   "desc": "Grandma Gertie (Dino Land): an old round brontosaurus in big knitting glasses and a flowery shawl. Slow, warm, forgetful granny; loses her thread mid-sentence (\"Now where was I?\"), calls you sweetie."
  },
  "rocky": {
-  "voice": "",
+  "voice": "B6lmF4kCA1POAa6NkZvR",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[deep, dopey, cheerful] ",
@@ -113,7 +113,7 @@
   "desc": "Rocky Roadster (Dino Land): a caveman car with rock wheels and one bushy eyebrow. Deep, dopey and cheerful; talks about himself in the third person (\"Rocky go FAST!\")."
  },
  "mo": {
-  "voice": "",
+  "voice": "Dxe89KeawsjgIpV2a4Ts",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[frazzled, breathless] ",
@@ -121,7 +121,7 @@
   "desc": "Mo the Nest-Sitter (Dino Land): a flustered triceratops babysitter in an apron. High, frazzled, breathless bursts; counts everything."
  },
  "theo": {
-  "voice": "",
+  "voice": "t0gU9va2reJiqGI8ymJ3",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[sporty, energetic kid] ",
@@ -129,7 +129,7 @@
   "desc": "Thunderfoot Theo (Dino Land): a little T-rex in a sweatband. Young sporty kid with coach energy (\"C'mon, team!\"); jokes about his tiny arms."
  },
  "petra": {
-  "voice": "",
+  "voice": "vuy6oZ9mnqT3t2dJ33FE",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[crisp, breezy, radio pilot] ",
@@ -137,7 +137,7 @@
   "desc": "Petra Pteranodon (Dino Land): a pilot in goggles and a red scarf. Breezy aviator, crisp radio talk (\"Roger that!\", \"Over!\")."
  },
  "rolly": {
-  "voice": "",
+  "voice": "2pvOEDq801C4cNSrKv4k",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[goofy, chuckling] ",
@@ -145,7 +145,7 @@
   "desc": "Rolly the Ankylosaurus (Dino Land): a chunky dino in a bowling shirt. Goofy and chuckly, \"hyuk hyuk\", LOVES the word STRIKE."
  },
  "digby": {
-  "voice": "",
+  "voice": "LUQdhCMnAOmkOrhQsaOb",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[excited old professor] ",
@@ -153,7 +153,7 @@
   "desc": "Professor Digby (Dino Land): an explorer jeep in a pith helmet with a white mustache. Excited old professor, big words for little things (\"Extraordinary!\", \"Jolly good!\")."
  },
  "mossy": {
-  "voice": "",
+  "voice": "EbeQO4V83ifyUKuszeX1",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[slow, drawly, relaxed] ",
@@ -161,7 +161,7 @@
   "desc": "Mossy the Swamp Boat (Dino Land): a mossy airboat with sleepy frog eyes. Slow, drawly and relaxed, hums between words (\"Mmm...\")."
  },
  "rosa": {
-  "voice": "",
+  "voice": "CImX7y1MrrKGIwtuJR0Y",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[brisk, bossy but kind] ",
@@ -169,7 +169,7 @@
   "desc": "Ranger Rosa (Dino Land): a park-ranger pickup in a ranger hat. Brisk, bossy-but-kind; blows her whistle a lot (\"Tweet!\")."
  },
  "cinder": {
-  "voice": "",
+  "voice": "BTR1RGF7osaZoCOmJbOM",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[dramatic, hot and bothered] ",
@@ -177,7 +177,7 @@
   "desc": "Cinder the Dimetrodon (Dino Land): sail-backed, in a sun hat and sunglasses. Hot and bothered, dramatic sighs (\"Phew! It's TOASTY!\"), calls you honey."
  },
  "bun": {
-  "voice": "",
+  "voice": "Yfbmf464twJ3URHfl44q",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[jolly, warm, giggly] ",
@@ -185,7 +185,7 @@
   "desc": "Baker Bun (Candy Land): a puffy cream bun on a cake scooter in a baker's hat. Jolly, puffy and warm; every sentence ends in a giggle (\"Hee hee!\")."
  },
  "minty": {
-  "voice": "",
+  "voice": "TXVVS7RR5kLbkYb1nNbF",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[cool, breezy, chill] ",
@@ -193,7 +193,7 @@
   "desc": "Minty (Candy Land): a peppermint-swirl race car. Cool, breezy surfer-cousin of a peppermint; says \"fresh!\" and \"buddy\"."
  },
  "snap": {
-  "voice": "",
+  "voice": "RD9SErUpOQvDHwV5LKRV",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[crisp drill sergeant, silly] ",
@@ -201,15 +201,15 @@
   "desc": "Sergeant Snap (Candy Land): a gingerbread soldier on a cookie tricycle with a drum. Crisp marching-band drill sergeant, but silly (\"Left! Right! CRUNCH!\")."
  },
  "lolly": {
-  "voice": "",
+  "voice": "FGY2WhTYpPnrIDTdsKH5",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[squealing, hyper cheerleader] ",
   "robot": { "pitch": 1.6, "rate": 1.25 },
-  "desc": "Lolly Lou (Candy Land): a go-kart with a giant lollipop head and licorice pigtails. Sugar-crazy cheerleader; squeals \"WHEEE!\", cheers every little thing."
+  "desc": "Lolly Lou (Candy Land): a go-kart with a giant lollipop head and licorice pigtails. Sugar-crazy cheerleader; squeals \"WHEEE!\", cheers every little thing. Cast with the ElevenLabs library voice Laura (clearer than the designed voice, whose squeals hid the words)."
  },
  "cocoa": {
-  "voice": "",
+  "voice": "1V7NmeiXayAqJr41ChkA",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[cozy, sleepy, yawning] ",
@@ -217,51 +217,51 @@
   "desc": "Cocoa (Candy Land): a hot-chocolate mug truck with a marshmallow lid. Cozy and sleepy, big yawns, talks like it's bedtime, trailing off."
  },
  "glaze": {
-  "voice": "",
+  "voice": "pNInz6obpgDQGcFmaJgB",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[deep, slow, very serious] ",
   "robot": { "pitch": 0.7, "rate": 0.85 },
-  "desc": "Officer Glaze (Candy Land): a donut police car. Deep, slow, very serious cop who keeps getting distracted by snacks (\"Hmm. Suspicious. ...Delicious.\")."
+  "desc": "Officer Glaze (Candy Land): a donut police car. Deep, slow, very serious cop who keeps getting distracted by snacks (\"Hmm. Suspicious. ...Delicious.\"). Cast with the ElevenLabs library voice Adam (the account's 30 custom voice slots are full)."
  },
  "wafer": {
-  "voice": "",
+  "voice": "pqHfZKP75CvOlQylNhV4",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[jolly old sailor] ",
   "robot": { "pitch": 0.8, "rate": 0.95 },
-  "desc": "Captain Wafer (Candy Land): a wafer riverboat with a whipped-cream beard. Jolly old sailor, \"Ahoy!\", \"Sweet seas!\", \"matey\"."
+  "desc": "Captain Wafer (Candy Land): a wafer riverboat with a whipped-cream beard. Jolly old sailor, \"Ahoy!\", \"Sweet seas!\", \"matey\". Cast with the ElevenLabs library voice Bill (the account's 30 custom voice slots are full)."
  },
  "jo": {
-  "voice": "",
+  "voice": "EXAVITQu4vr4xnSDxMaL",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[gravelly, giggly granny] ",
   "robot": { "pitch": 0.85, "rate": 1.0 },
-  "desc": "Jawbreaker Jo (Candy Land): a rock-candy truck with square teeth. Gravelly, giggly granny who LOVES crunching things; \"dearie\"."
+  "desc": "Jawbreaker Jo (Candy Land): a rock-candy truck with square teeth. Gravelly, giggly granny who LOVES crunching things; \"dearie\". Cast with the ElevenLabs library voice Sarah (the account's 30 custom voice slots are full)."
  },
  "fizzy": {
-  "voice": "",
+  "voice": "cgSgspJ2msm6clMCkdW9",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[bubbly, bouncy] ",
   "robot": { "pitch": 1.4, "rate": 1.15 },
-  "desc": "Fizzy (Candy Land): a soda-bottle jet-ski with a bendy straw. Bubbly and bouncy, burps mid-sentence and says \"'scuse me!\"."
+  "desc": "Fizzy (Candy Land): a soda-bottle jet-ski with a bendy straw. Bubbly and bouncy, burps mid-sentence and says \"'scuse me!\". Cast with the ElevenLabs library voice Jessica (the account's 30 custom voice slots are full)."
  },
  "sundae": {
-  "voice": "",
+  "voice": "TX3LPaxmHKxFdv7VOQHJ",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[shivering, teeth chattering, brave] ",
   "robot": { "pitch": 1.2, "rate": 1.05 },
-  "desc": "Sundae the Snowplow (Candy Land): an ice-cream-scoop snowplow in a scarf. Shivery, teeth chattering (\"B-b-brr!\"), but brave and excited."
+  "desc": "Sundae the Snowplow (Candy Land): an ice-cream-scoop snowplow in a scarf. Shivery, teeth chattering (\"B-b-brr!\"), but brave and excited. Cast with the ElevenLabs library voice Liam (the account's 30 custom voice slots are full)."
  },
  "puff": {
-  "voice": "",
+  "voice": "qBDvhofpxp92JgXJxDjB",
   "model": "eleven_v3",
   "settings": { "stability": 0.5 },
   "prefix": "[dreamy, whispery, floaty] ",
   "robot": { "pitch": 1.25, "rate": 0.75 },
-  "desc": "Puff (Candy Land): a cotton-candy cloud bus. Dreamy, whispery and floaty; everything is \"sooo fluffy\"."
+  "desc": "Puff (Candy Land): a cotton-candy cloud bus. Dreamy, whispery and floaty; everything is \"sooo fluffy\". Cast with the ElevenLabs library voice Lily Wolff (the account's 30 custom voice slots are full)."
  }
 }
