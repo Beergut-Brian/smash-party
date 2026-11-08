@@ -1098,5 +1098,35 @@
   "prompt": "Sandy canvas whump with a shushing sand spill",
   "dur": 0.6,
   "hash": "fbcada044d2f"
+ },
+ "dino_roar_1": {
+  "prompt": "A cute little cartoon dinosaur roar, rawwr, playful not scary, for kids",
+  "dur": 0.9,
+  "hash": "7ef8913d38f5"
+ },
+ "dino_roar_2": {
+  "prompt": "A goofy toy dinosaur roar with a squeaky end, rawr-eek, funny",
+  "dur": 0.9,
+  "hash": "fabfd44ea74e"
+ },
+ "siren_woo_1": {
+  "prompt": "A goofy cartoon toy siren, woo-woo, silly and bouncy, for kids",
+  "dur": 0.9,
+  "hash": "531b7c563005"
+ },
+ "siren_woo_2": {
+  "prompt": "A silly slide-whistle style police siren, wee-ooo wee-ooo, cartoon",
+  "dur": 1,
+  "hash": "f1578c186831"
+ },
+ "burp_horn_1": {
+  "prompt": "A big fizzy cartoon soda burp, funny, bubbly, for kids",
+  "dur": 0.8,
+  "hash": "b66c17ca5223"
+ },
+ "burp_horn_2": {
+  "prompt": "A long silly bubbly burp that ends in a fizz pop, cartoon",
+  "dur": 0.9,
+  "hash": "fadd7d6e8fa1"
  }
 }

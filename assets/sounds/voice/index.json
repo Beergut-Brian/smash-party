@@ -1876,5 +1876,2231 @@
   "speak": "My pen is right here! Push them in! Woof!",
   "voice": "woolly",
   "hash": "827b1b3ff9b3"
+ },
+ "gertie__roll_my_egg_home_sweetie": {
+  "text": "Roll my egg home, sweetie!",
+  "speak": "Roll my egg home, sweetie!",
+  "voice": "gertie",
+  "hash": "da685daab00f"
+ },
+ "gertie__now_where_was_i_oh_my_egg": {
+  "text": "Now where was I? Oh, my egg!",
+  "speak": "Now where was I? Oh, my egg!",
+  "voice": "gertie",
+  "hash": "0401b4430651"
+ },
+ "gertie__oh_hello_there_sweetie": {
+  "text": "Oh, hello there, sweetie.",
+  "speak": "Oh, hello there, sweetie.",
+  "voice": "gertie",
+  "hash": "9442e91d6834"
+ },
+ "gertie__my_egg_rolled_away_oh_dear": {
+  "text": "My egg rolled away! Oh dear.",
+  "speak": "My egg rolled away! Oh dear.",
+  "voice": "gertie",
+  "hash": "aa001b54c7b4"
+ },
+ "gertie__roll_my_egg_back_to_my_nest": {
+  "text": "Roll my egg back to my nest!",
+  "speak": "Roll my egg back to my nest!",
+  "voice": "gertie",
+  "hash": "e644274b0648"
+ },
+ "gertie__it_rolled_down_the_path_dear": {
+  "text": "It rolled down the path, dear!",
+  "speak": "It rolled down the path, dear!",
+  "voice": "gertie",
+  "hash": "29d35af002a6"
+ },
+ "gertie__into_the_green_circle_sweetie": {
+  "text": "Into the green circle, sweetie!",
+  "speak": "Into the green circle, sweetie!",
+  "voice": "gertie",
+  "hash": "47f67080be8e"
+ },
+ "gertie__back_in_the_nest_lovely": {
+  "text": "Back in the nest! Lovely!",
+  "speak": "Back in the nest! Lovely!",
+  "voice": "gertie",
+  "hash": "3ce3444522ed"
+ },
+ "gertie__now_three_soft_leaves_sweetie": {
+  "text": "Now three soft leaves, sweetie.",
+  "speak": "Now three soft leaves, sweetie.",
+  "voice": "gertie",
+  "hash": "e5d5abaac9a5"
+ },
+ "gertie__a_soft_one_lovely": {
+  "text": "A soft one! Lovely!",
+  "speak": "A soft one! Lovely!",
+  "voice": "gertie",
+  "hash": "30e459e8e7e8"
+ },
+ "gertie__now_where_was_i_oh_leaves": {
+  "text": "Now where was I? Oh, leaves!",
+  "speak": "Now where was I? Oh, leaves!",
+  "voice": "gertie",
+  "hash": "96e72b477bf8"
+ },
+ "gertie__leaves_round_the_square_dear": {
+  "text": "Leaves round the square, dear!",
+  "speak": "Leaves round the square, dear!",
+  "voice": "gertie",
+  "hash": "09b053a017fa"
+ },
+ "gertie__three_leaves_perfect": {
+  "text": "Three leaves! Perfect!",
+  "speak": "Three leaves! Perfect!",
+  "voice": "gertie",
+  "hash": "8cd9614d25cb"
+ },
+ "gertie__bring_them_here_to_tuck_it_in": {
+  "text": "Bring them here to tuck it in.",
+  "speak": "Bring them here to tuck it in.",
+  "voice": "gertie",
+  "hash": "1bd493ce6f84"
+ },
+ "gertie__over_here_sweetie": {
+  "text": "Over here, sweetie!",
+  "speak": "Over here, sweetie!",
+  "voice": "gertie",
+  "hash": "2b09edf9f036"
+ },
+ "gertie__snug_as_a_bug": {
+  "text": "Snug as a bug!",
+  "speak": "Snug as a bug!",
+  "voice": "gertie",
+  "hash": "bd5cb66bc69e"
+ },
+ "gertie__peep_peep_it_says_thank_you": {
+  "text": "Peep peep! It says thank you!",
+  "speak": "Peep peep! It says thank you!",
+  "voice": "gertie",
+  "hash": "0dda1979e701"
+ },
+ "gertie__have_a_waggy_dino_tail": {
+  "text": "Have a waggy dino tail!",
+  "speak": "Have a waggy dino tail!",
+  "voice": "gertie",
+  "hash": "673618e04cc4"
+ },
+ "gertie__now_where_was_i": {
+  "text": "Now where was I?",
+  "speak": "Now where was I?",
+  "voice": "gertie",
+  "hash": "c7d9e5bd42e0"
+ },
+ "gertie__shh_my_egg_is_napping": {
+  "text": "Shh. My egg is napping.",
+  "speak": "Shh. My egg is napping.",
+  "voice": "gertie",
+  "hash": "2dc6254cdc7a"
+ },
+ "rocky__rocky_race_eight_logs": {
+  "text": "Rocky race! Eight logs!",
+  "speak": "Rocky race! Eight logs!",
+  "voice": "rocky",
+  "hash": "72d5c53bff22"
+ },
+ "rocky__rocky_roadster_here": {
+  "text": "Rocky Roadster here!",
+  "speak": "Rocky Roadster here!",
+  "voice": "rocky",
+  "hash": "da15622a3be7"
+ },
+ "rocky__rocky_love_race": {
+  "text": "Rocky love race!",
+  "speak": "Rocky love race!",
+  "voice": "rocky",
+  "hash": "6d08d0479f18"
+ },
+ "rocky__go_through_eight_logs_rocky_race": {
+  "text": "Go through eight logs! Rocky race!",
+  "speak": "Go through eight logs! Rocky race!",
+  "voice": "rocky",
+  "hash": "d230c0c9c992"
+ },
+ "rocky__logs_go_round_the_village_go": {
+  "text": "Logs go round the village! Go!",
+  "speak": "Logs go round the village! Go!",
+  "voice": "rocky",
+  "hash": "82dbf3c8ccc1"
+ },
+ "rocky__whoa_you_fast": {
+  "text": "Whoa, you fast!",
+  "speak": "Whoa, you fast!",
+  "voice": "rocky",
+  "hash": "32f6f72dd0a2"
+ },
+ "rocky__rocky_like": {
+  "text": "Rocky like!",
+  "speak": "Rocky like!",
+  "voice": "rocky",
+  "hash": "02ab4e55432c"
+ },
+ "rocky__vroom_vroom_next_log": {
+  "text": "Vroom vroom! Next log!",
+  "speak": "Vroom vroom! Next log!",
+  "voice": "rocky",
+  "hash": "584dbde8bc07"
+ },
+ "rocky__faster_than_rocky": {
+  "text": "Faster than Rocky!",
+  "speak": "Faster than Rocky!",
+  "voice": "rocky",
+  "hash": "74ebf5fe187e"
+ },
+ "rocky__gold_log_that_way": {
+  "text": "Gold log! That way!",
+  "speak": "Gold log! That way!",
+  "voice": "rocky",
+  "hash": "12c2fc2a6c1f"
+ },
+ "rocky__rocky_dizzy_good_dizzy": {
+  "text": "Rocky dizzy. Good dizzy.",
+  "speak": "Rocky dizzy. Good dizzy.",
+  "voice": "rocky",
+  "hash": "462f03b64f98"
+ },
+ "rocky__you_fast_like_rocky": {
+  "text": "You fast like Rocky!",
+  "speak": "You fast like Rocky!",
+  "voice": "rocky",
+  "hash": "552d9bcbcf20"
+ },
+ "rocky__rocky_give_you_dino_feet": {
+  "text": "Rocky give you dino feet!",
+  "speak": "Rocky give you dino feet!",
+  "voice": "rocky",
+  "hash": "d9924933fd63"
+ },
+ "rocky__rocky_go_fast": {
+  "text": "Rocky go FAST!",
+  "speak": "Rocky go FAST!",
+  "voice": "rocky",
+  "hash": "a3f1822ac56d"
+ },
+ "rocky__rocky_still_dizzy": {
+  "text": "Rocky still dizzy.",
+  "speak": "Rocky still dizzy.",
+  "voice": "rocky",
+  "hash": "bd2314253727"
+ },
+ "mo__six_babies_catch_them": {
+  "text": "Six babies! Catch them!",
+  "speak": "Six babies! Catch them!",
+  "voice": "mo",
+  "hash": "0bc0b1811b36"
+ },
+ "mo__oh_hi_busy_busy": {
+  "text": "Oh! Hi! Busy busy!",
+  "speak": "Oh! Hi! Busy busy!",
+  "voice": "mo",
+  "hash": "285b6120d5e5"
+ },
+ "mo__they_hatched_they_ran": {
+  "text": "They hatched! They RAN!",
+  "speak": "They hatched! They RAN!",
+  "voice": "mo",
+  "hash": "ed3ef14441f7"
+ },
+ "mo__catch_my_six_babies_quick": {
+  "text": "Catch my six babies! Quick!",
+  "speak": "Catch my six babies! Quick!",
+  "voice": "mo",
+  "hash": "89599b765a0d"
+ },
+ "mo__they_are_running_round_my_nursery": {
+  "text": "They are running round my nursery!",
+  "speak": "They are running round my nursery!",
+  "voice": "mo",
+  "hash": "f2bd1a8157c1"
+ },
+ "mo__that_s_one_wait_two": {
+  "text": "That's one! Wait, two!",
+  "speak": "That's one! Wait, two!",
+  "voice": "mo",
+  "hash": "ea2822583e7c"
+ },
+ "mo__gotcha_little_one": {
+  "text": "Gotcha, little one!",
+  "speak": "Gotcha, little one!",
+  "voice": "mo",
+  "hash": "c99ec9e8f2b4"
+ },
+ "mo__count_count_count": {
+  "text": "Count count count!",
+  "speak": "Count count count!",
+  "voice": "mo",
+  "hash": "a65e51acc6b5"
+ },
+ "mo__bump_the_babies_gently": {
+  "text": "Bump the babies! Gently!",
+  "speak": "Bump the babies! Gently!",
+  "voice": "mo",
+  "hash": "9f4f8920517f"
+ },
+ "mo__all_six_phew": {
+  "text": "All six! Phew!",
+  "speak": "All six! Phew!",
+  "voice": "mo",
+  "hash": "e9e6d1bc32fc"
+ },
+ "mo__you_are_super_sitters": {
+  "text": "You are super sitters!",
+  "speak": "You are super sitters!",
+  "voice": "mo",
+  "hash": "eb4a6e72348d"
+ },
+ "mo__here_an_eggshell_hat_peep": {
+  "text": "Here, an eggshell hat! Peep!",
+  "speak": "Here, an eggshell hat! Peep!",
+  "voice": "mo",
+  "hash": "e52d24505604"
+ },
+ "mo__one_two_three_all_here": {
+  "text": "One, two, three... all here!",
+  "speak": "One, two, three... all here!",
+  "voice": "mo",
+  "hash": "7426026d4146"
+ },
+ "mo__phew_nap_time_maybe": {
+  "text": "Phew. Nap time. Maybe.",
+  "speak": "Phew. Nap time. Maybe.",
+  "voice": "mo",
+  "hash": "8ad1dc591a01"
+ },
+ "theo__find_my_two_sneakers_team": {
+  "text": "Find my two sneakers, team!",
+  "speak": "Find my two sneakers, team!",
+  "voice": "theo",
+  "hash": "5ffbd9daa7c3"
+ },
+ "theo__no_sneakers_no_stomp": {
+  "text": "No sneakers, no stomp!",
+  "speak": "No sneakers, no stomp!",
+  "voice": "theo",
+  "hash": "378b0ceb5437"
+ },
+ "theo__hey_team_theo_here": {
+  "text": "Hey, team! Theo here!",
+  "speak": "Hey, team! Theo here!",
+  "voice": "theo",
+  "hash": "44bf1c171dd6"
+ },
+ "theo__my_stompers_are_gone": {
+  "text": "My stompers are gone!",
+  "speak": "My stompers are gone!",
+  "voice": "theo",
+  "hash": "77349d0df9d4"
+ },
+ "theo__find_my_two_big_sneakers": {
+  "text": "Find my two big sneakers!",
+  "speak": "Find my two big sneakers!",
+  "voice": "theo",
+  "hash": "1d156a456c17"
+ },
+ "theo__one_on_the_big_nest_one_up_high": {
+  "text": "One on the big nest! One up high!",
+  "speak": "One on the big nest! One up high!",
+  "voice": "theo",
+  "hash": "0bd3729e2986"
+ },
+ "theo__one_sneaker_one_more": {
+  "text": "One sneaker! One more!",
+  "speak": "One sneaker! One more!",
+  "voice": "theo",
+  "hash": "c0ea521d790b"
+ },
+ "theo__bump_the_big_nest": {
+  "text": "Bump the big nest!",
+  "speak": "Bump the big nest!",
+  "voice": "theo",
+  "hash": "ee366b127cca"
+ },
+ "theo__jump_off_the_ramp_grab_it": {
+  "text": "Jump off the ramp! Grab it!",
+  "speak": "Jump off the ramp! Grab it!",
+  "voice": "theo",
+  "hash": "8400c7642bc6"
+ },
+ "theo__my_arms_can_t_reach_you_can": {
+  "text": "My arms can't reach! You can!",
+  "speak": "My arms can't reach! You can!",
+  "voice": "theo",
+  "hash": "b7dd16299fd4"
+ },
+ "theo__both_sneakers_yes": {
+  "text": "Both sneakers! Yes!",
+  "speak": "Both sneakers! Yes!",
+  "voice": "theo",
+  "hash": "c762f8f59513"
+ },
+ "theo__bring_them_here_team": {
+  "text": "Bring them here, team!",
+  "speak": "Bring them here, team!",
+  "voice": "theo",
+  "hash": "37b9852c4097"
+ },
+ "theo__over_here_tiny_arms_waving": {
+  "text": "Over here! Tiny arms waving!",
+  "speak": "Over here! Tiny arms waving!",
+  "voice": "theo",
+  "hash": "a6d5993aa0cd"
+ },
+ "theo__sneakers_on_now_watch_this": {
+  "text": "Sneakers on! Now watch this.",
+  "speak": "Sneakers on! Now watch this.",
+  "voice": "theo",
+  "hash": "801316887c2b"
+ },
+ "theo__jump_and_land_stomp": {
+  "text": "Jump and land! STOMP!",
+  "speak": "Jump and land! STOMP!",
+  "voice": "theo",
+  "hash": "96f6d0f75b35"
+ },
+ "theo__stomp_stomp_stomp": {
+  "text": "Stomp stomp stomp!",
+  "speak": "Stomp stomp stomp!",
+  "voice": "theo",
+  "hash": "0a1a1a69d0f3"
+ },
+ "theo__tiny_arms_big_feet": {
+  "text": "Tiny arms, big feet!",
+  "speak": "Tiny arms, big feet!",
+  "voice": "theo",
+  "hash": "c4cf180711b9"
+ },
+ "petra__five_hungry_nests_over": {
+  "text": "Five hungry nests, over!",
+  "speak": "Five hungry nests, over!",
+  "voice": "petra",
+  "hash": "ef2878bb32cb"
+ },
+ "petra__petra_here_come_in": {
+  "text": "Petra here! Come in!",
+  "speak": "Petra here! Come in!",
+  "voice": "petra",
+  "hash": "04c0d6109037"
+ },
+ "petra__babies_are_hungry_over": {
+  "text": "Babies are hungry, over!",
+  "speak": "Babies are hungry, over!",
+  "voice": "petra",
+  "hash": "694325f20793"
+ },
+ "petra__drop_worms_in_five_nests": {
+  "text": "Drop worms in five nests!",
+  "speak": "Drop worms in five nests!",
+  "voice": "petra",
+  "hash": "94b70fa7e4ed"
+ },
+ "petra__nests_are_all_over_the_hills_over": {
+  "text": "Nests are all over the hills, over!",
+  "speak": "Nests are all over the hills, over!",
+  "voice": "petra",
+  "hash": "b737447eefad"
+ },
+ "petra__delivery_roger": {
+  "text": "Delivery! Roger!",
+  "speak": "Delivery! Roger!",
+  "voice": "petra",
+  "hash": "bc51aa38e378"
+ },
+ "petra__chirp_chirp_got_it": {
+  "text": "Chirp chirp! Got it!",
+  "speak": "Chirp chirp! Got it!",
+  "voice": "petra",
+  "hash": "848c96aa20bf"
+ },
+ "petra__right_on_target": {
+  "text": "Right on target!",
+  "speak": "Right on target!",
+  "voice": "petra",
+  "hash": "ed7f93194db6"
+ },
+ "petra__glowing_nest_go_go": {
+  "text": "Glowing nest! Go go!",
+  "speak": "Glowing nest! Go go!",
+  "voice": "petra",
+  "hash": "7a057b1903b5"
+ },
+ "petra__all_fed_roger_that": {
+  "text": "All fed! Roger that!",
+  "speak": "All fed! Roger that!",
+  "voice": "petra",
+  "hash": "9ae33719da07"
+ },
+ "petra__mission_complete_over_and_out": {
+  "text": "Mission complete! Over and out!",
+  "speak": "Mission complete! Over and out!",
+  "voice": "petra",
+  "hash": "2e3764623910"
+ },
+ "petra__here_is_a_dino_roar_rawr": {
+  "text": "Here is a dino roar! RAWR!",
+  "speak": "Here is a dino roar! RAWR!",
+  "voice": "petra",
+  "hash": "bd967ab3dce6"
+ },
+ "petra__roger_that": {
+  "text": "Roger that!",
+  "speak": "Roger that!",
+  "voice": "petra",
+  "hash": "1a7c5ef35eb6"
+ },
+ "petra__clear_skies_over": {
+  "text": "Clear skies! Over!",
+  "speak": "Clear skies! Over!",
+  "voice": "petra",
+  "hash": "0f7a14043496"
+ },
+ "rolly__five_rocks_in_the_hole_hyuk": {
+  "text": "Five rocks in the hole! Hyuk!",
+  "speak": "Five rocks in the hole! Hyuk!",
+  "voice": "rolly",
+  "hash": "a43ad6b9bf62"
+ },
+ "rolly__hyuk_hyuk_hiya": {
+  "text": "Hyuk hyuk! Hiya!",
+  "speak": "Hyuk hyuk! Hiya!",
+  "voice": "rolly",
+  "hash": "a1f045a41b33"
+ },
+ "rolly__wanna_go_bowling": {
+  "text": "Wanna go bowling?",
+  "speak": "Wanna go bowling?",
+  "voice": "rolly",
+  "hash": "512086a997e0"
+ },
+ "rolly__roll_five_rocks_in_the_hole": {
+  "text": "Roll five rocks in the hole!",
+  "speak": "Roll five rocks in the hole!",
+  "voice": "rolly",
+  "hash": "f2abe9ecc9ba"
+ },
+ "rolly__the_hole_is_right_here_hyuk": {
+  "text": "The hole is right here! Hyuk!",
+  "speak": "The hole is right here! Hyuk!",
+  "voice": "rolly",
+  "hash": "d4b942414595"
+ },
+ "rolly__strike_hyuk_hyuk": {
+  "text": "STRIKE! Hyuk hyuk!",
+  "speak": "STRIKE! Hyuk hyuk!",
+  "voice": "rolly",
+  "hash": "0ceae463495e"
+ },
+ "rolly__spare_hyuk": {
+  "text": "Spare! Hyuk!",
+  "speak": "Spare! Hyuk!",
+  "voice": "rolly",
+  "hash": "0e2827834616"
+ },
+ "rolly__roll_roll_roll": {
+  "text": "Roll roll roll!",
+  "speak": "Roll roll roll!",
+  "voice": "rolly",
+  "hash": "94c85e709338"
+ },
+ "rolly__into_the_green_circle_hyuk": {
+  "text": "Into the green circle! Hyuk!",
+  "speak": "Into the green circle! Hyuk!",
+  "voice": "rolly",
+  "hash": "77256d6af03c"
+ },
+ "rolly__five_strikes_wowee": {
+  "text": "Five strikes! Wowee!",
+  "speak": "Five strikes! Wowee!",
+  "voice": "rolly",
+  "hash": "f5244c019783"
+ },
+ "rolly__best_bowler_ever": {
+  "text": "Best bowler ever!",
+  "speak": "Best bowler ever!",
+  "voice": "rolly",
+  "hash": "a9658b205b14"
+ },
+ "rolly__hyuk_hyuk_high_five": {
+  "text": "Hyuk hyuk! High five!",
+  "speak": "Hyuk hyuk! High five!",
+  "voice": "rolly",
+  "hash": "1efdf3b03d0e"
+ },
+ "rolly__strike_hyuk": {
+  "text": "STRIKE! Hyuk!",
+  "speak": "STRIKE! Hyuk!",
+  "voice": "rolly",
+  "hash": "189e8429197a"
+ },
+ "rolly__bowling_is_the_best": {
+  "text": "Bowling is the best.",
+  "speak": "Bowling is the best.",
+  "voice": "rolly",
+  "hash": "11250322c0f9"
+ },
+ "digby__four_bones_my_friend": {
+  "text": "Four bones, my friend!",
+  "speak": "Four bones, my friend!",
+  "voice": "digby",
+  "hash": "5dcf563b6a27"
+ },
+ "digby__the_mega_saurus_needs_its_bones": {
+  "text": "The Mega-Saurus needs its bones!",
+  "speak": "The Mega-Saurus needs its bones!",
+  "voice": "digby",
+  "hash": "25bd65f1110d"
+ },
+ "digby__ah_explorers_extraordinary": {
+  "text": "Ah! Explorers! Extraordinary!",
+  "speak": "Ah! Explorers! Extraordinary!",
+  "voice": "digby",
+  "hash": "7e9a8fc0b03a"
+ },
+ "digby__the_mega_saurus_is_missing_bones": {
+  "text": "The Mega-Saurus is missing bones!",
+  "speak": "The Mega-Saurus is missing bones!",
+  "voice": "digby",
+  "hash": "f02e6076249f"
+ },
+ "digby__find_four_giant_bones_my_friend": {
+  "text": "Find four giant bones, my friend!",
+  "speak": "Find four giant bones, my friend!",
+  "voice": "digby",
+  "hash": "31c6d45a5044"
+ },
+ "digby__smash_the_rock_mounds_in_my_dig": {
+  "text": "Smash the rock mounds in my dig!",
+  "speak": "Smash the rock mounds in my dig!",
+  "voice": "digby",
+  "hash": "2e455bba661d"
+ },
+ "digby__not_in_this_one": {
+  "text": "Not in this one!",
+  "speak": "Not in this one!",
+  "voice": "digby",
+  "hash": "3298800d1b48"
+ },
+ "digby__keep_digging_chum": {
+  "text": "Keep digging, chum!",
+  "speak": "Keep digging, chum!",
+  "voice": "digby",
+  "hash": "0ce129bdb838"
+ },
+ "digby__smash_the_rocks_jolly_good": {
+  "text": "Smash the rocks! Jolly good!",
+  "speak": "Smash the rocks! Jolly good!",
+  "voice": "digby",
+  "hash": "e049f51e5b8c"
+ },
+ "digby__extraordinary_a_leg_bone": {
+  "text": "Extraordinary! A leg bone!",
+  "speak": "Extraordinary! A leg bone!",
+  "voice": "digby",
+  "hash": "49a492f1a037"
+ },
+ "digby__bring_it_to_the_display_stand": {
+  "text": "Bring it to the display stand!",
+  "speak": "Bring it to the display stand!",
+  "voice": "digby",
+  "hash": "a845692247a8"
+ },
+ "digby__over_here_my_friend": {
+  "text": "Over here, my friend!",
+  "speak": "Over here, my friend!",
+  "voice": "digby",
+  "hash": "cd4adbaf9050"
+ },
+ "digby__three_more_tar_pit_ribcage_high_rock": {
+  "text": "Three more! Tar pit, ribcage, high rock!",
+  "speak": "Three more! Tar pit, ribcage, high rock!",
+  "voice": "digby",
+  "hash": "b54a389052c2"
+ },
+ "digby__jolly_good_another_bone": {
+  "text": "Jolly good! Another bone!",
+  "speak": "Jolly good! Another bone!",
+  "voice": "digby",
+  "hash": "85ac4a4d9b95"
+ },
+ "digby__in_the_sticky_tar_pit": {
+  "text": "In the sticky tar pit!",
+  "speak": "In the sticky tar pit!",
+  "voice": "digby",
+  "hash": "0282be81acf4"
+ },
+ "digby__on_top_of_the_big_ribcage": {
+  "text": "On top of the big ribcage!",
+  "speak": "On top of the big ribcage!",
+  "voice": "digby",
+  "hash": "48363d691914"
+ },
+ "digby__up_on_the_high_rock": {
+  "text": "Up on the high rock!",
+  "speak": "Up on the high rock!",
+  "voice": "digby",
+  "hash": "91ea28ea253f"
+ },
+ "digby__all_the_bones_marvelous": {
+  "text": "All the bones! Marvelous!",
+  "speak": "All the bones! Marvelous!",
+  "voice": "digby",
+  "hash": "93af51eaf32e"
+ },
+ "digby__to_the_stand_quick_quick": {
+  "text": "To the stand, quick quick!",
+  "speak": "To the stand, quick quick!",
+  "voice": "digby",
+  "hash": "412d66c283e8"
+ },
+ "digby__bring_the_bones_to_me": {
+  "text": "Bring the bones to me!",
+  "speak": "Bring the bones to me!",
+  "voice": "digby",
+  "hash": "b86c9637ea46"
+ },
+ "digby__it_is_complete_jolly_good": {
+  "text": "It is complete! Jolly good!",
+  "speak": "It is complete! Jolly good!",
+  "voice": "digby",
+  "hash": "699c4ff41dc8"
+ },
+ "digby__look_it_waves_extraordinary": {
+  "text": "Look! It waves! Extraordinary!",
+  "speak": "Look! It waves! Extraordinary!",
+  "voice": "digby",
+  "hash": "8876250fc31a"
+ },
+ "digby__what_an_extraordinary_day": {
+  "text": "What an extraordinary day!",
+  "speak": "What an extraordinary day!",
+  "voice": "digby",
+  "hash": "b171bbe2388d"
+ },
+ "digby__mind_the_bones_chum": {
+  "text": "Mind the bones, chum.",
+  "speak": "Mind the bones, chum.",
+  "voice": "digby",
+  "hash": "12a1db41625a"
+ },
+ "mossy__eight_hoops_slow_and_easy": {
+  "text": "Eight hoops... slow and easy...",
+  "speak": "Eight hoops... slow and easy...",
+  "voice": "mossy",
+  "hash": "837bbc2a0a48"
+ },
+ "mossy__mmm_hey_there": {
+  "text": "Mmm... hey there...",
+  "speak": "Mmm... hey there...",
+  "voice": "mossy",
+  "hash": "2eedd213c41c"
+ },
+ "mossy__float_with_me": {
+  "text": "Float with me...",
+  "speak": "Float with me...",
+  "voice": "mossy",
+  "hash": "d3fd7407f22c"
+ },
+ "mossy__through_eight_hoops_over_the_tar": {
+  "text": "Through eight hoops... over the tar...",
+  "speak": "Through eight hoops... over the tar...",
+  "voice": "mossy",
+  "hash": "0df0d80634df"
+ },
+ "mossy__hoops_are_over_the_swamp_float": {
+  "text": "Hoops are over the swamp... float...",
+  "speak": "Hoops are over the swamp... float...",
+  "voice": "mossy",
+  "hash": "63adc3fe2331"
+ },
+ "mossy__ooh_nice": {
+  "text": "Ooh, nice.",
+  "speak": "Ooh, nice.",
+  "voice": "mossy",
+  "hash": "28d7d78b56cf"
+ },
+ "mossy__mmm_smooth": {
+  "text": "Mmm... smooth.",
+  "speak": "Mmm... smooth.",
+  "voice": "mossy",
+  "hash": "f10704543537"
+ },
+ "mossy__float_on": {
+  "text": "Float on...",
+  "speak": "Float on...",
+  "voice": "mossy",
+  "hash": "92ec05f81fde"
+ },
+ "mossy__hold_jump_to_float": {
+  "text": "Hold jump to float...",
+  "speak": "Hold jump to float...",
+  "voice": "mossy",
+  "hash": "2eb3cda3adf7"
+ },
+ "mossy__the_gold_hoop_that_way": {
+  "text": "The gold hoop... that way...",
+  "speak": "The gold hoop... that way...",
+  "voice": "mossy",
+  "hash": "e0fc7688911a"
+ },
+ "mossy__best_swamp_day_ever": {
+  "text": "Best swamp day ever.",
+  "speak": "Best swamp day ever.",
+  "voice": "mossy",
+  "hash": "366c72d22a3a"
+ },
+ "mossy__mmm_you_float_good": {
+  "text": "Mmm... you float good.",
+  "speak": "Mmm... you float good.",
+  "voice": "mossy",
+  "hash": "668cb47ed7c4"
+ },
+ "mossy__come_back_any_time": {
+  "text": "Come back... any time...",
+  "speak": "Come back... any time...",
+  "voice": "mossy",
+  "hash": "e2d52059122e"
+ },
+ "mossy__mmm_floaty": {
+  "text": "Mmm... floaty...",
+  "speak": "Mmm... floaty...",
+  "voice": "mossy",
+  "hash": "81170fe27051"
+ },
+ "mossy__hmm_hmm_hmm": {
+  "text": "Hmm hmm hmm...",
+  "speak": "Hmm hmm hmm...",
+  "voice": "mossy",
+  "hash": "38b05e89726f"
+ },
+ "rosa__tweet_eight_trikes_in_the_corral": {
+  "text": "Tweet! Eight trikes in the corral!",
+  "speak": "Tweet! Eight trikes in the corral!",
+  "voice": "rosa",
+  "hash": "81e11e9a6375"
+ },
+ "rosa__tweet_tweet_ranger_rosa": {
+  "text": "Tweet tweet! Ranger Rosa!",
+  "speak": "Tweet tweet! Ranger Rosa!",
+  "voice": "rosa",
+  "hash": "d3234a84bf0b"
+ },
+ "rosa__trikes_on_the_loose": {
+  "text": "Trikes on the loose!",
+  "speak": "Trikes on the loose!",
+  "voice": "rosa",
+  "hash": "41e2f27d6eec"
+ },
+ "rosa__push_eight_trikes_in_the_corral": {
+  "text": "Push eight trikes in the corral!",
+  "speak": "Push eight trikes in the corral!",
+  "voice": "rosa",
+  "hash": "edeb0a892716"
+ },
+ "rosa__the_corral_is_right_here_tweet": {
+  "text": "The corral is right here! Tweet!",
+  "speak": "The corral is right here! Tweet!",
+  "voice": "rosa",
+  "hash": "2c37de9c0020"
+ },
+ "rosa__good_herding": {
+  "text": "Good herding!",
+  "speak": "Good herding!",
+  "voice": "rosa",
+  "hash": "62bba013a770"
+ },
+ "rosa__tweet_one_more": {
+  "text": "Tweet! One more!",
+  "speak": "Tweet! One more!",
+  "voice": "rosa",
+  "hash": "80900835bcfa"
+ },
+ "rosa__in_you_go_trike": {
+  "text": "In you go, trike!",
+  "speak": "In you go, trike!",
+  "voice": "rosa",
+  "hash": "bd1d8eab362c"
+ },
+ "rosa__into_the_green_circle_tweet": {
+  "text": "Into the green circle! Tweet!",
+  "speak": "Into the green circle! Tweet!",
+  "voice": "rosa",
+  "hash": "ee39139571de"
+ },
+ "rosa__all_in_ranger_approved": {
+  "text": "All in! Ranger approved!",
+  "speak": "All in! Ranger approved!",
+  "voice": "rosa",
+  "hash": "18b2cdfbc4fa"
+ },
+ "rosa__tweet_great_work_rangers": {
+  "text": "Tweet! Great work, rangers!",
+  "speak": "Tweet! Great work, rangers!",
+  "voice": "rosa",
+  "hash": "61cc99d42d09"
+ },
+ "rosa__you_are_honorary_rangers": {
+  "text": "You are honorary rangers!",
+  "speak": "You are honorary rangers!",
+  "voice": "rosa",
+  "hash": "171016fbe8fe"
+ },
+ "rosa__tweet_tweet": {
+  "text": "Tweet tweet!",
+  "speak": "Tweet tweet!",
+  "voice": "rosa",
+  "hash": "d9145a9bc3f1"
+ },
+ "rosa__all_trikes_safe_tweet": {
+  "text": "All trikes safe. Tweet!",
+  "speak": "All trikes safe. Tweet!",
+  "voice": "rosa",
+  "hash": "2ecb30d16480"
+ },
+ "theo__calm_down_rexy_use_your_stomp": {
+  "text": "Calm down Rexy! Use your STOMP!",
+  "speak": "Calm down Rexy! Use your STOMP!",
+  "voice": "theo",
+  "hash": "ed504082ce0d"
+ },
+ "theo__team_big_trouble": {
+  "text": "Team! Big trouble!",
+  "speak": "Team! Big trouble!",
+  "voice": "theo",
+  "hash": "3a49fa377aca"
+ },
+ "theo__my_big_brother_rexy_is_grumpy": {
+  "text": "My big brother Rexy is GRUMPY!",
+  "speak": "My big brother Rexy is GRUMPY!",
+  "voice": "theo",
+  "hash": "867fe472c227"
+ },
+ "theo__smash_rexy_he_needs_a_nap": {
+  "text": "Smash Rexy! He needs a nap!",
+  "speak": "Smash Rexy! He needs a nap!",
+  "voice": "theo",
+  "hash": "34319dbd6902"
+ },
+ "theo__he_is_stomping_by_the_volcano": {
+  "text": "He is stomping by the volcano!",
+  "speak": "He is stomping by the volcano!",
+  "voice": "theo",
+  "hash": "d4a074df5be9"
+ },
+ "theo__use_your_stomp": {
+  "text": "Use your STOMP!",
+  "speak": "Use your STOMP!",
+  "voice": "theo",
+  "hash": "10bdb0cff894"
+ },
+ "theo__he_is_sleepy_now": {
+  "text": "He is sleepy now.",
+  "speak": "He is sleepy now.",
+  "voice": "theo",
+  "hash": "a3f1296f71e2"
+ },
+ "theo__shh_night_night_rexy": {
+  "text": "Shh. Night night, Rexy.",
+  "speak": "Shh. Night night, Rexy.",
+  "voice": "theo",
+  "hash": "2ee184d7ff65"
+ },
+ "theo__thanks_team_best_team_ever": {
+  "text": "Thanks, team! Best team ever!",
+  "speak": "Thanks, team! Best team ever!",
+  "voice": "theo",
+  "hash": "a95d18cad1e5"
+ },
+ "theo__dino_land_is_saved": {
+  "text": "Dino Land is saved!",
+  "speak": "Dino Land is saved!",
+  "voice": "theo",
+  "hash": "42b685667b39"
+ },
+ "theo__shh_rexy_is_napping": {
+  "text": "Shh! Rexy is napping.",
+  "speak": "Shh! Rexy is napping.",
+  "voice": "theo",
+  "hash": "b109f2264f18"
+ },
+ "theo__stomp_quietly_team": {
+  "text": "Stomp quietly, team!",
+  "speak": "Stomp quietly, team!",
+  "voice": "theo",
+  "hash": "83cf837697ed"
+ },
+ "cinder__thirty_rocks_honey_smash_them": {
+  "text": "Thirty rocks, honey! Smash them!",
+  "speak": "Thirty rocks, honey! Smash them!",
+  "voice": "cinder",
+  "hash": "0b7b0c047785"
+ },
+ "cinder__phew_it_is_toasty": {
+  "text": "Phew! It is TOASTY!",
+  "speak": "Phew! It is TOASTY!",
+  "voice": "cinder",
+  "hash": "4fd046feee03"
+ },
+ "cinder__the_volcano_hiccupped_rocks": {
+  "text": "The volcano hiccupped rocks!",
+  "speak": "The volcano hiccupped rocks!",
+  "voice": "cinder",
+  "hash": "f7559abd4ceb"
+ },
+ "cinder__smash_thirty_lava_rocks_honey": {
+  "text": "Smash thirty lava rocks, honey!",
+  "speak": "Smash thirty lava rocks, honey!",
+  "voice": "cinder",
+  "hash": "9d5330deff08"
+ },
+ "cinder__they_are_all_round_my_beach_chair": {
+  "text": "They are all round my beach chair!",
+  "speak": "They are all round my beach chair!",
+  "voice": "cinder",
+  "hash": "b844ab73669c"
+ },
+ "cinder__ooh_that_s_cooler": {
+  "text": "Ooh, that's cooler!",
+  "speak": "Ooh, that's cooler!",
+  "voice": "cinder",
+  "hash": "39c68e6bcbcf"
+ },
+ "cinder__smash_lovely": {
+  "text": "Smash! Lovely!",
+  "speak": "Smash! Lovely!",
+  "voice": "cinder",
+  "hash": "e90d8043bb49"
+ },
+ "cinder__keep_going_honey": {
+  "text": "Keep going, honey!",
+  "speak": "Keep going, honey!",
+  "voice": "cinder",
+  "hash": "bc025ee3b959"
+ },
+ "cinder__phew_nice_one": {
+  "text": "Phew! Nice one!",
+  "speak": "Phew! Nice one!",
+  "voice": "cinder",
+  "hash": "fd76de1533f0"
+ },
+ "cinder__more_rocks_honey": {
+  "text": "More rocks, honey!",
+  "speak": "More rocks, honey!",
+  "voice": "cinder",
+  "hash": "a7cd1cd321af"
+ },
+ "cinder__ahh_a_nice_breeze": {
+  "text": "Ahh, a nice breeze!",
+  "speak": "Ahh, a nice breeze!",
+  "voice": "cinder",
+  "hash": "aae53bf1653e"
+ },
+ "cinder__you_are_so_cool_honey": {
+  "text": "You are so cool, honey!",
+  "speak": "You are so cool, honey!",
+  "voice": "cinder",
+  "hash": "1798a3581696"
+ },
+ "cinder__ahh_much_better": {
+  "text": "Ahh. Much better.",
+  "speak": "Ahh. Much better.",
+  "voice": "cinder",
+  "hash": "2c8cefb5e26d"
+ },
+ "cinder__phew_still_toasty": {
+  "text": "Phew! Still toasty.",
+  "speak": "Phew! Still toasty.",
+  "voice": "cinder",
+  "hash": "e28a893cd59c"
+ },
+ "cinder__pass_the_palm_leaf_honey": {
+  "text": "Pass the palm leaf, honey.",
+  "speak": "Pass the palm leaf, honey.",
+  "voice": "cinder",
+  "hash": "fe3ebbdfa214"
+ },
+ "gertie__ten_long_necks_for_the_photo": {
+  "text": "Ten long-necks for the photo!",
+  "speak": "Ten long-necks for the photo!",
+  "voice": "gertie",
+  "hash": "a766edc0d821"
+ },
+ "gertie__oh_hello_again_sweetie": {
+  "text": "Oh, hello again, sweetie!",
+  "speak": "Oh, hello again, sweetie!",
+  "voice": "gertie",
+  "hash": "8a894f9f8612"
+ },
+ "gertie__family_photo_time": {
+  "text": "Family photo time!",
+  "speak": "Family photo time!",
+  "voice": "gertie",
+  "hash": "6875cfafde00"
+ },
+ "gertie__round_up_ten_long_necks": {
+  "text": "Round up ten long-necks!",
+  "speak": "Round up ten long-necks!",
+  "voice": "gertie",
+  "hash": "f228426b9eb9"
+ },
+ "gertie__they_are_out_on_the_meadow_dear": {
+  "text": "They are out on the meadow, dear!",
+  "speak": "They are out on the meadow, dear!",
+  "voice": "gertie",
+  "hash": "fcbd06299cf4"
+ },
+ "gertie__say_cheese": {
+  "text": "Say CHEESE!",
+  "speak": "Say CHEESE!",
+  "voice": "gertie",
+  "hash": "5f42c46176c2"
+ },
+ "gertie__now_where_was_i_oh_yes": {
+  "text": "Now where was I? Oh, yes!",
+  "speak": "Now where was I? Oh, yes!",
+  "voice": "gertie",
+  "hash": "03c29f926a24"
+ },
+ "gertie__lovely_next_one": {
+  "text": "Lovely! Next one!",
+  "speak": "Lovely! Next one!",
+  "voice": "gertie",
+  "hash": "1e694b59ddbd"
+ },
+ "gertie__bump_the_long_necks_sweetie": {
+  "text": "Bump the long-necks, sweetie!",
+  "speak": "Bump the long-necks, sweetie!",
+  "voice": "gertie",
+  "hash": "ea6afe3c7a0b"
+ },
+ "gertie__everyone_is_here_say_cheese": {
+  "text": "Everyone is here! Say CHEESE!",
+  "speak": "Everyone is here! Say CHEESE!",
+  "voice": "gertie",
+  "hash": "76f358e0dcab"
+ },
+ "gertie__oh_i_will_frame_this_one": {
+  "text": "Oh, I will frame this one.",
+  "speak": "Oh, I will frame this one.",
+  "voice": "gertie",
+  "hash": "2a9394726fc7"
+ },
+ "gertie__thank_you_sweetie": {
+  "text": "Thank you, sweetie!",
+  "speak": "Thank you, sweetie!",
+  "voice": "gertie",
+  "hash": "8be0f0a99131"
+ },
+ "gertie__what_a_lovely_family": {
+  "text": "What a lovely family.",
+  "speak": "What a lovely family.",
+  "voice": "gertie",
+  "hash": "1b598c4e44fb"
+ },
+ "gertie__say_cheese_sweetie": {
+  "text": "Say cheese, sweetie!",
+  "speak": "Say cheese, sweetie!",
+  "voice": "gertie",
+  "hash": "c00da2c1e079"
+ },
+ "bun__three_cherries_for_the_cake_hee": {
+  "text": "Three cherries for the cake! Hee!",
+  "speak": "Three cherries for the cake! Hee!",
+  "voice": "bun",
+  "hash": "17178222fc1b"
+ },
+ "bun__my_cherries_hee_hee": {
+  "text": "My cherries! Hee hee!",
+  "speak": "My cherries! Hee hee!",
+  "voice": "bun",
+  "hash": "da9778fb73ac"
+ },
+ "bun__party_today_hee_hee": {
+  "text": "Party today! Hee hee!",
+  "speak": "Party today! Hee hee!",
+  "voice": "bun",
+  "hash": "8b3d9cfbee13"
+ },
+ "bun__my_cherries_rolled_away": {
+  "text": "My cherries rolled away!",
+  "speak": "My cherries rolled away!",
+  "voice": "bun",
+  "hash": "daff0341e391"
+ },
+ "bun__find_my_three_cherries_hee": {
+  "text": "Find my three cherries! Hee!",
+  "speak": "Find my three cherries! Hee!",
+  "voice": "bun",
+  "hash": "175e7f323c7f"
+ },
+ "bun__one_is_in_the_gumdrops_smash_them": {
+  "text": "One is in the gumdrops! Smash them!",
+  "speak": "One is in the gumdrops! Smash them!",
+  "voice": "bun",
+  "hash": "f563a7931160"
+ },
+ "bun__not_this_one_hee": {
+  "text": "Not this one! Hee!",
+  "speak": "Not this one! Hee!",
+  "voice": "bun",
+  "hash": "eab8a92d9507"
+ },
+ "bun__gumdrops_everywhere_hee": {
+  "text": "Gumdrops everywhere! Hee!",
+  "speak": "Gumdrops everywhere! Hee!",
+  "voice": "bun",
+  "hash": "dfa5360c3579"
+ },
+ "bun__smash_the_gumdrops_hee_hee": {
+  "text": "Smash the gumdrops! Hee hee!",
+  "speak": "Smash the gumdrops! Hee hee!",
+  "voice": "bun",
+  "hash": "4938d92e33df"
+ },
+ "bun__one_cherry_hee": {
+  "text": "One cherry! Hee!",
+  "speak": "One cherry! Hee!",
+  "voice": "bun",
+  "hash": "6a4e0e4fc562"
+ },
+ "bun__bring_it_here_hee": {
+  "text": "Bring it here! Hee!",
+  "speak": "Bring it here! Hee!",
+  "voice": "bun",
+  "hash": "a824ca3d2a1f"
+ },
+ "bun__over_here_sugar": {
+  "text": "Over here, sugar!",
+  "speak": "Over here, sugar!",
+  "voice": "bun",
+  "hash": "9d0c6a32e513"
+ },
+ "bun__two_more_the_street_and_a_rooftop": {
+  "text": "Two more! The street and a rooftop!",
+  "speak": "Two more! The street and a rooftop!",
+  "voice": "bun",
+  "hash": "549ddfd63c03"
+ },
+ "bun__another_cherry_hee": {
+  "text": "Another cherry! Hee!",
+  "speak": "Another cherry! Hee!",
+  "voice": "bun",
+  "hash": "dba884b1f91c"
+ },
+ "bun__down_the_street_hee": {
+  "text": "Down the street! Hee!",
+  "speak": "Down the street! Hee!",
+  "voice": "bun",
+  "hash": "c46023270272"
+ },
+ "bun__on_the_cupcake_house_bump_it": {
+  "text": "On the cupcake house! Bump it!",
+  "speak": "On the cupcake house! Bump it!",
+  "voice": "bun",
+  "hash": "95a4ed22d099"
+ },
+ "bun__all_my_cherries_hee_hee": {
+  "text": "All my cherries! Hee hee!",
+  "speak": "All my cherries! Hee hee!",
+  "voice": "bun",
+  "hash": "17e92035f34c"
+ },
+ "bun__bring_them_to_baker_bun": {
+  "text": "Bring them to Baker Bun!",
+  "speak": "Bring them to Baker Bun!",
+  "voice": "bun",
+  "hash": "702ec68e9727"
+ },
+ "bun__over_here_hee_hee": {
+  "text": "Over here! Hee hee!",
+  "speak": "Over here! Hee hee!",
+  "voice": "bun",
+  "hash": "05db86328fe3"
+ },
+ "bun__cherries_on_top_perfect": {
+  "text": "Cherries on top! Perfect!",
+  "speak": "Cherries on top! Perfect!",
+  "voice": "bun",
+  "hash": "594bac4d33f2"
+ },
+ "bun__a_cherry_hat_for_you_hee": {
+  "text": "A cherry hat for you! Hee!",
+  "speak": "A cherry hat for you! Hee!",
+  "voice": "bun",
+  "hash": "3d32f946538a"
+ },
+ "bun__hee_hee_party_soon": {
+  "text": "Hee hee! Party soon!",
+  "speak": "Hee hee! Party soon!",
+  "voice": "bun",
+  "hash": "4fb39b4ee1b1"
+ },
+ "bun__mmm_smells_like_cake": {
+  "text": "Mmm, smells like cake!",
+  "speak": "Mmm, smells like cake!",
+  "voice": "bun",
+  "hash": "1de64f16e61e"
+ },
+ "minty__five_gumballs_in_the_bowl_buddy": {
+  "text": "Five gumballs in the bowl, buddy!",
+  "speak": "Five gumballs in the bowl, buddy!",
+  "voice": "minty",
+  "hash": "e39c7af254cc"
+ },
+ "minty__yo_minty_here_fresh": {
+  "text": "Yo! Minty here. Fresh!",
+  "speak": "Yo! Minty here. Fresh!",
+  "voice": "minty",
+  "hash": "e5cfa7620bd5"
+ },
+ "minty__whoa_gumballs_everywhere": {
+  "text": "Whoa, gumballs everywhere!",
+  "speak": "Whoa, gumballs everywhere!",
+  "voice": "minty",
+  "hash": "60e3a4f2c9b1"
+ },
+ "minty__roll_five_gumballs_into_the_bowl": {
+  "text": "Roll five gumballs into the bowl!",
+  "speak": "Roll five gumballs into the bowl!",
+  "voice": "minty",
+  "hash": "ba27793669a4"
+ },
+ "minty__the_bowl_is_by_the_gumball_machine": {
+  "text": "The bowl is by the gumball machine!",
+  "speak": "The bowl is by the gumball machine!",
+  "voice": "minty",
+  "hash": "c92afdcd4bf6"
+ },
+ "minty__fresh": {
+  "text": "Fresh!",
+  "speak": "Fresh!",
+  "voice": "minty",
+  "hash": "1c5238849320"
+ },
+ "minty__nice_roll_buddy": {
+  "text": "Nice roll, buddy!",
+  "speak": "Nice roll, buddy!",
+  "voice": "minty",
+  "hash": "4861346c17ea"
+ },
+ "minty__minty_fresh": {
+  "text": "Minty fresh!",
+  "speak": "Minty fresh!",
+  "voice": "minty",
+  "hash": "b997a5b4ee7d"
+ },
+ "minty__into_the_green_circle_buddy": {
+  "text": "Into the green circle, buddy!",
+  "speak": "Into the green circle, buddy!",
+  "voice": "minty",
+  "hash": "b41c6f024c01"
+ },
+ "minty__all_five_super_fresh": {
+  "text": "All five! Super fresh!",
+  "speak": "All five! Super fresh!",
+  "voice": "minty",
+  "hash": "0129fa6a220e"
+ },
+ "minty__super_fresh_thanks": {
+  "text": "Super fresh. Thanks!",
+  "speak": "Super fresh. Thanks!",
+  "voice": "minty",
+  "hash": "cdac4574cde3"
+ },
+ "minty__have_a_gumball_trail_buddy": {
+  "text": "Have a gumball trail, buddy!",
+  "speak": "Have a gumball trail, buddy!",
+  "voice": "minty",
+  "hash": "753349a7bac1"
+ },
+ "minty__stay_fresh_buddy": {
+  "text": "Stay fresh, buddy!",
+  "speak": "Stay fresh, buddy!",
+  "voice": "minty",
+  "hash": "c0aeae10a18b"
+ },
+ "minty__minty_cool": {
+  "text": "Minty cool.",
+  "speak": "Minty cool.",
+  "voice": "minty",
+  "hash": "bffe43cec5e8"
+ },
+ "snap__eight_arches_left_right": {
+  "text": "Eight arches! Left! Right!",
+  "speak": "Eight arches! Left! Right!",
+  "voice": "snap",
+  "hash": "ef875e64089e"
+ },
+ "snap__ten_hut_sergeant_snap": {
+  "text": "Ten-HUT! Sergeant Snap!",
+  "speak": "Ten-HUT! Sergeant Snap!",
+  "voice": "snap",
+  "hash": "3d169df05c7f"
+ },
+ "snap__band_ready_march": {
+  "text": "Band, ready! March!",
+  "speak": "Band, ready! March!",
+  "voice": "snap",
+  "hash": "1e3659625441"
+ },
+ "snap__drive_through_eight_frosting_arches": {
+  "text": "Drive through eight frosting arches!",
+  "speak": "Drive through eight frosting arches!",
+  "voice": "snap",
+  "hash": "674b501f75f3"
+ },
+ "snap__arches_go_round_cake_town_march": {
+  "text": "Arches go round Cake Town! March!",
+  "speak": "Arches go round Cake Town! March!",
+  "voice": "snap",
+  "hash": "138298745ffc"
+ },
+ "snap__left_right_crunch": {
+  "text": "Left! Right! CRUNCH!",
+  "speak": "Left! Right! CRUNCH!",
+  "voice": "snap",
+  "hash": "0853920b248b"
+ },
+ "snap__good_marching": {
+  "text": "Good marching!",
+  "speak": "Good marching!",
+  "voice": "snap",
+  "hash": "0b4f1aefa101"
+ },
+ "snap__keep_the_beat": {
+  "text": "Keep the beat!",
+  "speak": "Keep the beat!",
+  "voice": "snap",
+  "hash": "2ef1b6f7811a"
+ },
+ "snap__hup_hup": {
+  "text": "Hup hup!",
+  "speak": "Hup hup!",
+  "voice": "snap",
+  "hash": "47cff7a657d8"
+ },
+ "snap__the_gold_arch_march": {
+  "text": "The gold arch! March!",
+  "speak": "The gold arch! March!",
+  "voice": "snap",
+  "hash": "bd7818772547"
+ },
+ "snap__best_parade_at_ease": {
+  "text": "Best parade! At ease!",
+  "speak": "Best parade! At ease!",
+  "voice": "snap",
+  "hash": "a21c4dad9426"
+ },
+ "snap__splendid_marching_troops": {
+  "text": "Splendid marching, troops!",
+  "speak": "Splendid marching, troops!",
+  "voice": "snap",
+  "hash": "056804a841a8"
+ },
+ "snap__a_band_hat_for_you_crunch": {
+  "text": "A band hat for you! CRUNCH!",
+  "speak": "A band hat for you! CRUNCH!",
+  "voice": "snap",
+  "hash": "19d71225f5cf"
+ },
+ "snap__at_ease_troops": {
+  "text": "At ease, troops.",
+  "speak": "At ease, troops.",
+  "voice": "snap",
+  "hash": "d67279fcfc04"
+ },
+ "lolly__ten_gummy_cubs_wheee": {
+  "text": "Ten gummy cubs! WHEEE!",
+  "speak": "Ten gummy cubs! WHEEE!",
+  "voice": "lolly",
+  "hash": "3b8be08d4751"
+ },
+ "lolly__hiii_i_m_lolly_lou": {
+  "text": "Hiii! I'm Lolly Lou!",
+  "speak": "Hiii! I'm Lolly Lou!",
+  "voice": "lolly",
+  "hash": "ddb04dd7b68d"
+ },
+ "lolly__the_gummy_cubs_got_out": {
+  "text": "The gummy cubs got out!",
+  "speak": "The gummy cubs got out!",
+  "voice": "lolly",
+  "hash": "4a91a355e1d5"
+ },
+ "lolly__catch_ten_gummy_cubs_wheee": {
+  "text": "Catch ten gummy cubs! WHEEE!",
+  "speak": "Catch ten gummy cubs! WHEEE!",
+  "voice": "lolly",
+  "hash": "7aa9816cda5f"
+ },
+ "lolly__they_re_bouncing_in_the_forest_clearing": {
+  "text": "They're bouncing in the forest clearing!",
+  "speak": "They're bouncing in the forest clearing!",
+  "voice": "lolly",
+  "hash": "c0c65316baf8"
+ },
+ "lolly__gotcha_gummy": {
+  "text": "Gotcha, gummy!",
+  "speak": "Gotcha, gummy!",
+  "voice": "lolly",
+  "hash": "aa4697e70d80"
+ },
+ "lolly__wheee_one_more": {
+  "text": "WHEEE! One more!",
+  "speak": "WHEEE! One more!",
+  "voice": "lolly",
+  "hash": "956225e1c8a9"
+ },
+ "lolly__yay_yay_yay": {
+  "text": "Yay yay yay!",
+  "speak": "Yay yay yay!",
+  "voice": "lolly",
+  "hash": "8c21a493d38a"
+ },
+ "lolly__so_bouncy": {
+  "text": "So bouncy!",
+  "speak": "So bouncy!",
+  "voice": "lolly",
+  "hash": "c7fa335db192"
+ },
+ "lolly__bump_the_gummy_cubs": {
+  "text": "Bump the gummy cubs!",
+  "speak": "Bump the gummy cubs!",
+  "voice": "lolly",
+  "hash": "f15e567bdbc5"
+ },
+ "lolly__all_ten_you_re_fast": {
+  "text": "All ten! You're FAST!",
+  "speak": "All ten! You're FAST!",
+  "voice": "lolly",
+  "hash": "94f4cdb4520a"
+ },
+ "lolly__want_to_be_faster": {
+  "text": "Want to be FASTER?",
+  "speak": "Want to be FASTER?",
+  "voice": "lolly",
+  "hash": "b5042c9eed5c"
+ },
+ "lolly__hold_turbo_sugar_rush": {
+  "text": "Hold turbo! SUGAR RUSH!",
+  "speak": "Hold turbo! SUGAR RUSH!",
+  "voice": "lolly",
+  "hash": "3f54deca4551"
+ },
+ "lolly__wheee": {
+  "text": "WHEEE!",
+  "speak": "Wheee!",
+  "voice": "lolly",
+  "hash": "8e73d282e2d8"
+ },
+ "lolly__sugar_rush_wheee": {
+  "text": "Sugar rush! WHEEE!",
+  "speak": "Sugar rush! WHEEE!",
+  "voice": "lolly",
+  "hash": "8b37ad589d12"
+ },
+ "lolly__go_go_go": {
+  "text": "Go go go!",
+  "speak": "Go go go!",
+  "voice": "lolly",
+  "hash": "2391057572bd"
+ },
+ "cocoa__five_cups_of_cocoa_yawn": {
+  "text": "Five cups of cocoa... yawn...",
+  "speak": "Five cups of cocoa... yawn...",
+  "voice": "cocoa",
+  "hash": "8292ec6ec24d"
+ },
+ "cocoa__mmm_hello_friend": {
+  "text": "Mmm... hello, friend...",
+  "speak": "Mmm... hello, friend...",
+  "voice": "cocoa",
+  "hash": "cf1ea833d25e"
+ },
+ "cocoa__mmm_cocoa_time": {
+  "text": "Mmm, cocoa time...",
+  "speak": "Mmm, cocoa time...",
+  "voice": "cocoa",
+  "hash": "165d71bae37d"
+ },
+ "cocoa__bring_cocoa_to_five_houses": {
+  "text": "Bring cocoa to five houses...",
+  "speak": "Bring cocoa to five houses...",
+  "voice": "cocoa",
+  "hash": "12f00556e2b1"
+ },
+ "cocoa__the_gingerbread_houses_in_the_forest": {
+  "text": "The gingerbread houses... in the forest...",
+  "speak": "The gingerbread houses... in the forest...",
+  "voice": "cocoa",
+  "hash": "bd93e89c3fff"
+ },
+ "cocoa__warm_and_cozy": {
+  "text": "Warm and cozy!",
+  "speak": "Warm and cozy!",
+  "voice": "cocoa",
+  "hash": "377acd8822e4"
+ },
+ "cocoa__mmm_lovely": {
+  "text": "Mmm... lovely...",
+  "speak": "Mmm... lovely...",
+  "voice": "cocoa",
+  "hash": "6d61d2513805"
+ },
+ "cocoa__yawn_nice_one": {
+  "text": "Yawn... nice one.",
+  "speak": "Yawn... nice one.",
+  "voice": "cocoa",
+  "hash": "36397a3ef8f2"
+ },
+ "cocoa__the_glowing_doorstep_that_way": {
+  "text": "The glowing doorstep... that way...",
+  "speak": "The glowing doorstep... that way...",
+  "voice": "cocoa",
+  "hash": "4e842e3dbdf5"
+ },
+ "cocoa__all_done_so_cozy": {
+  "text": "All done... so cozy...",
+  "speak": "All done... so cozy...",
+  "voice": "cocoa",
+  "hash": "beddcbc6dbdb"
+ },
+ "cocoa__thank_you_so_cozy": {
+  "text": "Thank you... so cozy...",
+  "speak": "Thank you... so cozy...",
+  "voice": "cocoa",
+  "hash": "328cde975acb"
+ },
+ "cocoa__time_for_a_nap": {
+  "text": "Time for a nap...",
+  "speak": "Time for a nap...",
+  "voice": "cocoa",
+  "hash": "c7f2bf73def7"
+ },
+ "cocoa__mmm_cocoa": {
+  "text": "Mmm... cocoa...",
+  "speak": "Mmm... cocoa...",
+  "voice": "cocoa",
+  "hash": "448725a344b5"
+ },
+ "cocoa__zzz_oh_hi": {
+  "text": "Zzz... oh, hi.",
+  "speak": "Zzz... oh, hi.",
+  "voice": "cocoa",
+  "hash": "40f73d12b9e8"
+ },
+ "bun__save_the_cake_smash_sir_sprinkles": {
+  "text": "Save the cake! Smash Sir Sprinkles!",
+  "speak": "Save the cake! Smash Sir Sprinkles!",
+  "voice": "bun",
+  "hash": "e472a0902fca"
+ },
+ "bun__oh_no_oh_no_hee_no": {
+  "text": "Oh no! Oh no! Hee... no!",
+  "speak": "Oh no! Oh no! Hee... no!",
+  "voice": "bun",
+  "hash": "78c1f61d432b"
+ },
+ "bun__sir_sprinkles_wants_the_whole_cake": {
+  "text": "Sir Sprinkles wants the WHOLE cake!",
+  "speak": "Sir Sprinkles wants the WHOLE cake!",
+  "voice": "bun",
+  "hash": "379bf812aa6a"
+ },
+ "bun__smash_sir_sprinkles_save_the_party": {
+  "text": "Smash Sir Sprinkles! Save the party!",
+  "speak": "Smash Sir Sprinkles! Save the party!",
+  "voice": "bun",
+  "hash": "0913cc499184"
+ },
+ "bun__he_is_at_the_cake_plaza": {
+  "text": "He is at the cake plaza!",
+  "speak": "He is at the cake plaza!",
+  "voice": "bun",
+  "hash": "b2622eaa5996"
+ },
+ "bun__smash_his_frosting": {
+  "text": "Smash his frosting!",
+  "speak": "Smash his frosting!",
+  "voice": "bun",
+  "hash": "1362b62da81a"
+ },
+ "bun__party_saved_hee_hee": {
+  "text": "Party saved! Hee hee!",
+  "speak": "Party saved! Hee hee!",
+  "voice": "bun",
+  "hash": "b313e5b5c8a4"
+ },
+ "bun__cake_for_everyone": {
+  "text": "Cake for everyone!",
+  "speak": "Cake for everyone!",
+  "voice": "bun",
+  "hash": "841cf9eeb7d4"
+ },
+ "bun__happy_birthday_candy_land": {
+  "text": "Happy birthday, Candy Land!",
+  "speak": "Happy birthday, Candy Land!",
+  "voice": "bun",
+  "hash": "71fc69bf1047"
+ },
+ "bun__you_are_the_sweetest_heroes": {
+  "text": "You are the sweetest heroes!",
+  "speak": "You are the sweetest heroes!",
+  "voice": "bun",
+  "hash": "5cafcca3e4c6"
+ },
+ "bun__hee_hee_more_cake": {
+  "text": "Hee hee! More cake?",
+  "speak": "Hee hee! More cake?",
+  "voice": "bun",
+  "hash": "6a5713b664dc"
+ },
+ "bun__best_party_ever": {
+  "text": "Best party ever!",
+  "speak": "Best party ever!",
+  "voice": "bun",
+  "hash": "c4f5309fa4a6"
+ },
+ "glaze__six_donuts_roll_them_back": {
+  "text": "Six donuts. Roll them back.",
+  "speak": "Six donuts. Roll them back.",
+  "voice": "glaze",
+  "hash": "8b71318b6e00"
+ },
+ "glaze__officer_glaze_hmm": {
+  "text": "Officer Glaze. Hmm.",
+  "speak": "Officer Glaze. Hmm.",
+  "voice": "glaze",
+  "hash": "c4b766ba51c0"
+ },
+ "glaze__runaway_donuts_serious_business": {
+  "text": "Runaway donuts. Serious business.",
+  "speak": "Runaway donuts. Serious business.",
+  "voice": "glaze",
+  "hash": "b10d426aeb89"
+ },
+ "glaze__roll_six_donuts_back_to_the_shop": {
+  "text": "Roll six donuts back to the shop.",
+  "speak": "Roll six donuts back to the shop.",
+  "voice": "glaze",
+  "hash": "88544cf6569c"
+ },
+ "glaze__the_shop_lot_is_right_here": {
+  "text": "The shop lot is right here.",
+  "speak": "The shop lot is right here.",
+  "voice": "glaze",
+  "hash": "75aef9a9beaa"
+ },
+ "glaze__good_work_deputy": {
+  "text": "Good work, deputy.",
+  "speak": "Good work, deputy.",
+  "voice": "glaze",
+  "hash": "d7950ae8aa56"
+ },
+ "glaze__hmm_suspicious_delicious": {
+  "text": "Hmm. Suspicious. Delicious.",
+  "speak": "Hmm. Suspicious. Delicious.",
+  "voice": "glaze",
+  "hash": "ef56312fcb3c"
+ },
+ "glaze__roll_on_deputy": {
+  "text": "Roll on, deputy.",
+  "speak": "Roll on, deputy.",
+  "voice": "glaze",
+  "hash": "81de436cde4a"
+ },
+ "glaze__into_the_green_circle_deputy": {
+  "text": "Into the green circle, deputy.",
+  "speak": "Into the green circle, deputy.",
+  "voice": "glaze",
+  "hash": "f0d25765d189"
+ },
+ "glaze__case_closed": {
+  "text": "Case closed.",
+  "speak": "Case closed.",
+  "voice": "glaze",
+  "hash": "8798bfc04a3e"
+ },
+ "glaze__case_closed_snack_time": {
+  "text": "Case closed. Snack time.",
+  "speak": "Case closed. Snack time.",
+  "voice": "glaze",
+  "hash": "946380064413"
+ },
+ "glaze__here_is_a_siren_woo_woo": {
+  "text": "Here is a siren. Woo woo.",
+  "speak": "Here is a siren. Woo woo.",
+  "voice": "glaze",
+  "hash": "cef8bf3b6065"
+ },
+ "glaze__hmm_delicious": {
+  "text": "Hmm. Delicious.",
+  "speak": "Hmm. Delicious.",
+  "voice": "glaze",
+  "hash": "fdd3d9f0ead0"
+ },
+ "glaze__serious_business": {
+  "text": "Serious business.",
+  "speak": "Serious business.",
+  "voice": "glaze",
+  "hash": "e3ecb15dcde0"
+ },
+ "wafer__four_life_rings_matey": {
+  "text": "Four life rings, matey!",
+  "speak": "Four life rings, matey!",
+  "voice": "wafer",
+  "hash": "c43eaa066d4d"
+ },
+ "wafer__ahoy_there_mateys": {
+  "text": "Ahoy there, mateys!",
+  "speak": "Ahoy there, mateys!",
+  "voice": "wafer",
+  "hash": "0b1ec30cbe29"
+ },
+ "wafer__my_life_rings_floated_off": {
+  "text": "My life rings floated off!",
+  "speak": "My life rings floated off!",
+  "voice": "wafer",
+  "hash": "553652acb5c4"
+ },
+ "wafer__find_four_life_rings_matey": {
+  "text": "Find four life rings, matey!",
+  "speak": "Find four life rings, matey!",
+  "voice": "wafer",
+  "hash": "a5c80e60d00e"
+ },
+ "wafer__they_are_all_down_the_river_ahoy": {
+  "text": "They are all down the river! Ahoy!",
+  "speak": "They are all down the river! Ahoy!",
+  "voice": "wafer",
+  "hash": "e64225b0cd47"
+ },
+ "wafer__ha_another_one": {
+  "text": "Ha! Another one!",
+  "speak": "Ha! Another one!",
+  "voice": "wafer",
+  "hash": "b1e440357b0b"
+ },
+ "wafer__sweet_seas": {
+  "text": "Sweet seas!",
+  "speak": "Sweet seas!",
+  "voice": "wafer",
+  "hash": "77c9cb4d8960"
+ },
+ "wafer__ha_one_more": {
+  "text": "Ha! One more!",
+  "speak": "Ha! One more!",
+  "voice": "wafer",
+  "hash": "a6f2fff2199f"
+ },
+ "wafer__float_over_the_chocolate": {
+  "text": "Float over the chocolate!",
+  "speak": "Float over the chocolate!",
+  "voice": "wafer",
+  "hash": "9e89db94d818"
+ },
+ "wafer__under_the_wafer_bridge": {
+  "text": "Under the wafer bridge!",
+  "speak": "Under the wafer bridge!",
+  "voice": "wafer",
+  "hash": "d7746a3a08ca"
+ },
+ "wafer__by_the_waterfall_matey": {
+  "text": "By the waterfall, matey!",
+  "speak": "By the waterfall, matey!",
+  "voice": "wafer",
+  "hash": "6bb48e4d353e"
+ },
+ "wafer__all_four_rings_ahoy": {
+  "text": "All four rings! Ahoy!",
+  "speak": "All four rings! Ahoy!",
+  "voice": "wafer",
+  "hash": "f820e3b2f470"
+ },
+ "wafer__bring_them_to_my_dock": {
+  "text": "Bring them to my dock!",
+  "speak": "Bring them to my dock!",
+  "voice": "wafer",
+  "hash": "f064605a365a"
+ },
+ "wafer__over_here_matey": {
+  "text": "Over here, matey!",
+  "speak": "Over here, matey!",
+  "voice": "wafer",
+  "hash": "c2232d9e5118"
+ },
+ "wafer__sweet_seas_thank_ye": {
+  "text": "Sweet seas! Thank ye!",
+  "speak": "Sweet seas! Thank ye!",
+  "voice": "wafer",
+  "hash": "b15bd1dfb065"
+ },
+ "wafer__you_are_real_sailors_now": {
+  "text": "You are real sailors now!",
+  "speak": "You are real sailors now!",
+  "voice": "wafer",
+  "hash": "d15f47e99ba0"
+ },
+ "wafer__ahoy": {
+  "text": "Ahoy!",
+  "speak": "Ahoy!",
+  "voice": "wafer",
+  "hash": "05a5a2e9567e"
+ },
+ "wafer__sweet_seas_mateys": {
+  "text": "Sweet seas, mateys!",
+  "speak": "Sweet seas, mateys!",
+  "voice": "wafer",
+  "hash": "c04a90e32734"
+ },
+ "jo__fifty_crystals_dearie_crunch": {
+  "text": "Fifty crystals, dearie! Crunch!",
+  "speak": "Fifty crystals, dearie! Crunch!",
+  "voice": "jo",
+  "hash": "46ea7d3d7c34"
+ },
+ "jo__ooh_hello_dearie": {
+  "text": "Ooh, hello, dearie!",
+  "speak": "Ooh, hello, dearie!",
+  "voice": "jo",
+  "hash": "4a5dbb2f16aa"
+ },
+ "jo__a_quarry_full_of_crunch": {
+  "text": "A quarry full of crunch!",
+  "speak": "A quarry full of crunch!",
+  "voice": "jo",
+  "hash": "c504b40ed47c"
+ },
+ "jo__crunch_fifty_candy_crystals_dearie": {
+  "text": "Crunch fifty candy crystals, dearie!",
+  "speak": "Crunch fifty candy crystals, dearie!",
+  "voice": "jo",
+  "hash": "77a42e8513f2"
+ },
+ "jo__they_are_all_in_my_quarry": {
+  "text": "They are all in my quarry!",
+  "speak": "They are all in my quarry!",
+  "voice": "jo",
+  "hash": "d08bef3aa556"
+ },
+ "jo__crunchy_hee_hee": {
+  "text": "Crunchy! Hee hee!",
+  "speak": "Crunchy! Hee hee!",
+  "voice": "jo",
+  "hash": "eb16c86cb98e"
+ },
+ "jo__crunch_it_dearie": {
+  "text": "Crunch it, dearie!",
+  "speak": "Crunch it, dearie!",
+  "voice": "jo",
+  "hash": "32ab8df52b48"
+ },
+ "jo__ooh_sparkly": {
+  "text": "Ooh, sparkly!",
+  "speak": "Ooh, sparkly!",
+  "voice": "jo",
+  "hash": "64c203f332bc"
+ },
+ "jo__more_crunch": {
+  "text": "More crunch!",
+  "speak": "More crunch!",
+  "voice": "jo",
+  "hash": "f73ef00fd899"
+ },
+ "jo__more_crystals_dearie": {
+  "text": "More crystals, dearie!",
+  "speak": "More crystals, dearie!",
+  "voice": "jo",
+  "hash": "9bef039633f6"
+ },
+ "jo__best_crunch_of_my_life": {
+  "text": "Best crunch of my life.",
+  "speak": "Best crunch of my life.",
+  "voice": "jo",
+  "hash": "a1f5dc285c14"
+ },
+ "jo__hee_hee_crunchy": {
+  "text": "Hee hee! Crunchy!",
+  "speak": "Hee hee! Crunchy!",
+  "voice": "jo",
+  "hash": "fd02877dbee2"
+ },
+ "jo__you_crunch_like_a_champ": {
+  "text": "You crunch like a champ!",
+  "speak": "You crunch like a champ!",
+  "voice": "jo",
+  "hash": "286a76039521"
+ },
+ "jo__crunch_crunch": {
+  "text": "Crunch crunch!",
+  "speak": "Crunch crunch!",
+  "voice": "jo",
+  "hash": "2ce78b043238"
+ },
+ "jo__ooh_my_teeth_hee_hee": {
+  "text": "Ooh, my teeth! Hee hee!",
+  "speak": "Ooh, my teeth! Hee hee!",
+  "voice": "jo",
+  "hash": "87522b4a18fc"
+ },
+ "fizzy__eight_hoops_on_the_river_burp": {
+  "text": "Eight hoops on the river! Burp!",
+  "speak": "Eight hoops on the river! Burp!",
+  "voice": "fizzy",
+  "hash": "2a175c1b4c65"
+ },
+ "fizzy__heya_fizzy_here": {
+  "text": "Heya! Fizzy here!",
+  "speak": "Heya! Fizzy here!",
+  "voice": "fizzy",
+  "hash": "3f51efc8f5a7"
+ },
+ "fizzy__hoop_race_on_the_river": {
+  "text": "Hoop race on the river!",
+  "speak": "Hoop race on the river!",
+  "voice": "fizzy",
+  "hash": "1eb5fb85662e"
+ },
+ "fizzy__fly_through_eight_hoops_burp": {
+  "text": "Fly through eight hoops! Burp!",
+  "speak": "Fly through eight hoops! Burp!",
+  "voice": "fizzy",
+  "hash": "5172d98ff0f2"
+ },
+ "fizzy__hoops_over_the_chocolate_river": {
+  "text": "Hoops over the chocolate river!",
+  "speak": "Hoops over the chocolate river!",
+  "voice": "fizzy",
+  "hash": "3b95d9c2c523"
+ },
+ "fizzy__scuse_me_nice_one": {
+  "text": "'Scuse me! Nice one!",
+  "speak": "'Scuse me! Nice one!",
+  "voice": "fizzy",
+  "hash": "ee8d1573b2eb"
+ },
+ "fizzy__fizztastic": {
+  "text": "Fizztastic!",
+  "speak": "Fizztastic!",
+  "voice": "fizzy",
+  "hash": "aab81d49b955"
+ },
+ "fizzy__pop_pop_pop": {
+  "text": "Pop pop pop!",
+  "speak": "Pop pop pop!",
+  "voice": "fizzy",
+  "hash": "95722d19d3e2"
+ },
+ "fizzy__whoosh_burp": {
+  "text": "Whoosh! Burp!",
+  "speak": "Whoosh! Burp!",
+  "voice": "fizzy",
+  "hash": "653ccd81c098"
+ },
+ "fizzy__hold_jump_to_float": {
+  "text": "Hold jump to float!",
+  "speak": "Hold jump to float!",
+  "voice": "fizzy",
+  "hash": "316b9a919bb8"
+ },
+ "fizzy__the_gold_hoop_that_way": {
+  "text": "The gold hoop! That way!",
+  "speak": "The gold hoop! That way!",
+  "voice": "fizzy",
+  "hash": "1bf9d5df2f51"
+ },
+ "fizzy__fizztastic_you_did_it": {
+  "text": "Fizztastic! You did it!",
+  "speak": "Fizztastic! You did it!",
+  "voice": "fizzy",
+  "hash": "c0743d1b2f9f"
+ },
+ "fizzy__you_re_fizztastic": {
+  "text": "You're fizztastic!",
+  "speak": "You're fizztastic!",
+  "voice": "fizzy",
+  "hash": "8839597236e8"
+ },
+ "fizzy__here_a_burp_horn_burp": {
+  "text": "Here, a burp horn! BURP!",
+  "speak": "Here, a burp horn! BURP!",
+  "voice": "fizzy",
+  "hash": "e052a01ec5d1"
+ },
+ "fizzy__burp_scuse_me": {
+  "text": "Burp! 'Scuse me!",
+  "speak": "Burp! 'Scuse me!",
+  "voice": "fizzy",
+  "hash": "fe1f88988aa1"
+ },
+ "fizzy__fizz_fizz": {
+  "text": "Fizz fizz!",
+  "speak": "Fizz fizz!",
+  "voice": "fizzy",
+  "hash": "ff88d4c6d118"
+ },
+ "sundae__the_cherry_on_top_b_b_brave": {
+  "text": "The cherry on top! B-b-brave!",
+  "speak": "The cherry on top! B-b-brave!",
+  "voice": "sundae",
+  "hash": "8126c5b47107"
+ },
+ "sundae__b_b_brr_hi_there": {
+  "text": "B-b-brr! Hi there!",
+  "speak": "B-b-brr! Hi there!",
+  "voice": "sundae",
+  "hash": "bd4280edc057"
+ },
+ "sundae__i_want_the_cherry_on_top": {
+  "text": "I want the cherry on top!",
+  "speak": "I want the cherry on top!",
+  "voice": "sundae",
+  "hash": "79a8e1b12221"
+ },
+ "sundae__get_the_cherry_from_the_mountain_top": {
+  "text": "Get the cherry from the mountain top!",
+  "speak": "Get the cherry from the mountain top!",
+  "voice": "sundae",
+  "hash": "4a75d749f6fd"
+ },
+ "sundae__up_up_up_the_mountain_b_b_brr": {
+  "text": "Up up up the mountain! B-b-brr!",
+  "speak": "Up up up the mountain! B-b-brr!",
+  "voice": "sundae",
+  "hash": "e14c81d289f1"
+ },
+ "sundae__higher_b_b_brave": {
+  "text": "Higher! B-b-brave!",
+  "speak": "Higher! B-b-brave!",
+  "voice": "sundae",
+  "hash": "2c547a15a7f0"
+ },
+ "sundae__jump_and_float_up": {
+  "text": "Jump and float up!",
+  "speak": "Jump and float up!",
+  "voice": "sundae",
+  "hash": "329200cb10a1"
+ },
+ "sundae__you_got_it_w_w_wow": {
+  "text": "You got it! W-w-wow!",
+  "speak": "You got it! W-w-wow!",
+  "voice": "sundae",
+  "hash": "bcafd8e23112"
+ },
+ "sundae__bring_it_down_to_me": {
+  "text": "Bring it down to me!",
+  "speak": "Bring it down to me!",
+  "voice": "sundae",
+  "hash": "770bf2bb3889"
+ },
+ "sundae__over_here_b_b_brr": {
+  "text": "Over here! B-b-brr!",
+  "speak": "Over here! B-b-brr!",
+  "voice": "sundae",
+  "hash": "293521dede5d"
+ },
+ "sundae__you_did_it_w_w_wow": {
+  "text": "You did it! W-w-wow!",
+  "speak": "You did it! W-w-wow!",
+  "voice": "sundae",
+  "hash": "7972b70ff0be"
+ },
+ "sundae__a_rainbow_trail_for_you": {
+  "text": "A rainbow trail for you!",
+  "speak": "A rainbow trail for you!",
+  "voice": "sundae",
+  "hash": "e5cfe61618f2"
+ },
+ "sundae__b_b_brr_so_cold": {
+  "text": "B-b-brr! So cold!",
+  "speak": "B-b-brr! So cold!",
+  "voice": "sundae",
+  "hash": "d2c346412d5a"
+ },
+ "sundae__w_w_what_a_view": {
+  "text": "W-w-what a view!",
+  "speak": "W-w-what a view!",
+  "voice": "sundae",
+  "hash": "173cfc854b70"
+ },
+ "puff__twelve_fluffy_sheep_gently": {
+  "text": "Twelve fluffy sheep... gently...",
+  "speak": "Twelve fluffy sheep... gently...",
+  "voice": "puff",
+  "hash": "3575c0529479"
+ },
+ "puff__oh_hello_sooo_fluffy": {
+  "text": "Oh... hello... sooo fluffy...",
+  "speak": "Oh... hello... sooo fluffy...",
+  "voice": "puff",
+  "hash": "e026ac250933"
+ },
+ "puff__my_marshmallow_sheep_floated_off": {
+  "text": "My marshmallow sheep floated off...",
+  "speak": "My marshmallow sheep floated off...",
+  "voice": "puff",
+  "hash": "3f1ca7180dd6"
+ },
+ "puff__catch_twelve_fluffy_sheep_gently": {
+  "text": "Catch twelve fluffy sheep... gently...",
+  "speak": "Catch twelve fluffy sheep... gently...",
+  "voice": "puff",
+  "hash": "9093227ad4bb"
+ },
+ "puff__they_are_on_the_cloud_meadow": {
+  "text": "They are on the cloud meadow...",
+  "speak": "They are on the cloud meadow...",
+  "voice": "puff",
+  "hash": "c68d748bb4f9"
+ },
+ "puff__sooo_fluffy": {
+  "text": "Sooo fluffy...",
+  "speak": "Sooo fluffy...",
+  "voice": "puff",
+  "hash": "da8350d5ecf7"
+ },
+ "puff__gently_nice": {
+  "text": "Gently... nice...",
+  "speak": "Gently... nice...",
+  "voice": "puff",
+  "hash": "f70845b8b380"
+ },
+ "puff__baa_fluffy": {
+  "text": "Baa... fluffy...",
+  "speak": "Baa... fluffy...",
+  "voice": "puff",
+  "hash": "3047f6b53182"
+ },
+ "puff__bump_the_fluffy_sheep": {
+  "text": "Bump the fluffy sheep...",
+  "speak": "Bump the fluffy sheep...",
+  "voice": "puff",
+  "hash": "70689bce7715"
+ },
+ "puff__all_home_sweet_dreams": {
+  "text": "All home... sweet dreams...",
+  "speak": "All home... sweet dreams...",
+  "voice": "puff",
+  "hash": "1bc7b35dc68f"
+ },
+ "puff__thank_you_sooo_nice": {
+  "text": "Thank you... sooo nice...",
+  "speak": "Thank you... sooo nice...",
+  "voice": "puff",
+  "hash": "eebadf7a13d5"
+ },
+ "puff__sweet_dreams": {
+  "text": "Sweet dreams...",
+  "speak": "Sweet dreams...",
+  "voice": "puff",
+  "hash": "3dd1eed3fff2"
+ },
+ "puff__zzz_baa": {
+  "text": "Zzz... baa...",
+  "speak": "Zzz... baa...",
+  "voice": "puff",
+  "hash": "e97c3410d630"
  }
 }
