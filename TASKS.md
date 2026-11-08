@@ -196,8 +196,10 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 - [ ] **D13: Start street set-dressing** `NEEDS DESIGN` (world-props; from L21)
   - The cars now start at micro size in the right lane of the home road (`SPAWN_DEFAULT` in game.js: [2.6,48] and [3.8,48.6], facing −Z). The camera is close, so props around it look giant. Dress the spot: a curb + sidewalk along the road edge (x≈5), sidewalk cracks, a puddle, a mailbox towering over the cars, toy-sized clutter (pebbles, leaves, soda cans, flowers). Move the spot with `const START_STREET=[[x,z],[x,z]]` in objects.js if a better one fits. Keep the first few meters in front of the cars drivable.
 
-- [ ] **AU2: Record "Beep beep!"** `NEEDS AUDIO` (audio agent; from L21)
+- [ ] **AU4: Record "Beep beep!"** `NEEDS AUDIO` (audio agent; from L21)
   - New line in `tools/voice-lines.json`, played with a synth horn when the cars appear. Run `make-voices.mjs --dry`, then generate.
+
+- [ ] **L25: Boss fight draw calls** `NEEDS LOGIC` (**high priority**, found in PR #12): on a real GPU at high quality the boss fight measures **~1,800–3,700 draw calls** (main and branch alike), far over the ~900 budget, and it will stutter on the GTX 1060. Profile what's drawn during the fight (boss parts, arena debris, explosions, shots, awake buildings at GIANT range) and batch/merge/cap it. Re-measure on the real GPU, not headless (SwiftShader under-reports this: it showed ~500).
 
 - [ ] **L22: Zone music + zone sound effects** (do right after L21; the zone agents need it)
   - **Music per zone:** `registerZone({…, music:{drive:'candy_drive', boss:'candy_boss'}})`. When the players drive into a zone, cross-fade to that zone's drive track (debounced so zone edges don't flicker; with two players in different zones, follow P1 or the zone most of the screen shows). Fall back to the default `drive` if a track is missing.
