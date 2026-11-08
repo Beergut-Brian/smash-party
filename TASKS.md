@@ -241,6 +241,81 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - **Mama Stegosaurus "Plates"** 🦕: a chunky stegosaurus whose back plates are a row of giant colorful pastel plates (each a `whole:true` extra that flies off), with a giant egg balanced on her tail. Weak spots: her four painted belly spots low on her sides (1), the tail-spike thumbs near the ground (2), her front feet (3). When beaten the egg on her tail hatches a baby that waves bye.
   - Zone colors are global constants in `src/world/zones/dino.js` (`DINO_LEAF`, `DINO_STONE`, `DINO_EGG`, `DINO_SPOT`, `DINO_BONE`, `DINO_LAVA`, `DINO_GLOW`…), and `dinoEyes(P,x,y,z,size,floor)` makes the googly eyes; reuse them. Boss music is the zone's `dino_boss` track (AU5). Voice lines (intro, 2–3 funny taunts, defeat) go to the audio agent once a name is picked.
 
+### Play-test round 3 (Kaden + son, Nov 8): scenes, quests, worlds
+Full spec and contracts: **`docs/ADVENTURE.md`** (read it before any task below). Decisions: portals shrink you back to tiny, the garage rises out of the ground near you, Adventure starts on the street, Adventure auto-saves.
+
+**Phase A (start now, in parallel)**
+
+- [ ] **L31: Scenes + calmer filler** `NEEDS LOGIC` (logic-systems; spec §2)
+  - Scene contract: `SCENES` in objects.js and `registerZone({scenes})`, `ctx.scene(id,x,z,th)` in layouts, filler scenes dropped into open ground near the players by zone/spot/size. Scenes scale to any size class (positions and props ×1.65 per step), are remembered per chunk, and face their +Z toward the nearest road or the camera.
+  - Cut the random filler to about 40% at micro–small and about 60% at medium+, keep empty ground between scenes, and keep growth pacing about the same (tune points if needed). Both modes.
+  - Placeholder scenes from today's props so it's testable before design lands. Measure props on screen and `__sp.stats().calls` on the start street, a town chunk and in the bedroom, before and after.
+  - Hand-off: D18 (world-props) and Z4 (zone-bedroom) write the real scenes.
+
+- [ ] **L32: The garage is a building you drive into** `NEEDS LOGIC` (logic-gameplay; spec §3)
+  - At a new tier, LEVEL UP raises the Grow-Up Garage out of the ground a short drive ahead (rumble, dust, beacon, gold arrow), scaled to the players. Drive in the front door → camera swoops inside → pick (as today) → the back door rolls up with the GO arrow (A / START still works) → drive out into the world set up for the new size (Arcade: fresh world as today; Adventure: same world, regrown and restocked around the exit) → the garage sinks away.
+  - Roomier inside: cars ~1.5× bigger, pads ~2× farther apart, a wider floor.
+  - Fix the floor flicker at the front and back of the garage floor (placeholder floor, stripes and the ground are all at y=0; lift each layer and keep the ground from showing through).
+  - Hooks: `buildGarageBuilding()` in objects.js (outside; D18), `buildGarage()` in cars.js gets a back exit door (D19). Placeholder looks until then.
+
+- [ ] **L35: Quest engine** `NEEDS LOGIC` (logic-gameplay, after L32; spec §4)
+  - New file `src/quests.js` (logic) loaded before `src/world/quests/*.js` (from `src/world/quests/index.json`, like zones) and before game.js. `registerQuest({...})` as drafted in the spec; final contract in CLAUDE.md.
+  - Givers: NPC characters at the players' size, idle bob, "!" balloon with their emoji (gold main, blue side), picture bubble with item icon + dots, voice via `say(text,{voice})` (L34), reminder when you come back.
+  - Step verbs: `talk`, `find`, `bring`, `catch`, `smash`, `deliver`, `rings`, `push`, `reach`, `boss`. Quest stages are scenes (L31) spawned at the players' size when the quest starts. Items ride on the car roof. Nothing can fail, no timers.
+  - One active quest at a time, the gold arrow + ground sparkle trail point at the next target, shared co-op progress, confetti + voice cheer per step, reward ceremony.
+  - Chapters: 4, one per car tier. The next garage only rises once the chapter's main quest is done (the LEVEL UP button shows that giver's emoji meanwhile).
+  - Placeholder Hank quest with a blocky giver so it's testable. `__sp.quest('id')` starts one, `__sp.quest('id',true)` finishes it.
+  - Hand-off: Q1 (quests lane) writes the real Home World quests; D19 styles the bubbles.
+
+- [ ] **L34: Character voices** `NEEDS LOGIC` (logic-systems; spec §7)
+  - `tools/voices.json` cast (`{"hank":{"voice":"<id>","model":"…","settings":{…},"prefix":"…"}}`), `"voice":"hank"` on lines in `tools/voice-lines.json`, `make-voices.mjs` uses each line's voice (clip id includes the voice; `--dry` shows cost per voice), `say(text,{voice})` in core.js plays it (robot voice fallback, maybe pitched per character). The announcer stays the default.
+  - Hand-off: AU13 (audio) casts the voices.
+
+- [ ] **D18: Home World scenes + quest spots + garage outside** `NEEDS DESIGN` (world-props; needs L31 for scenes, L32 for the garage hook)
+  - 6–10 `SCENES` each for town, farm, park and home, across the size bands (ideas in spec §2: ant picnic, snail race, gnome tea party at micro; yard sale, lemonade stand, birthday party, car wash, traffic jam; pumpkin patch, hay maze, pig pen; picnic, sandcastle, kite field, soccer game…).
+  - Quest stages for the Home World quests (spec §4): Hank's yard by the start, Garry's garden, the chicken pasture, the crop circle with the crashed saucer, Dozer Dot's crate yard, the parade route arches, the pond island with a treasure chest, the sheep pen. Mark each with a `ctx.spot('quest_<id>',…)` at a fixed spot in the hand-made Home World map.
+  - `buildGarageBuilding()`: the Grow-Up Garage outside (front door on +Z ~10 wide at car scale 1, roof sign, beacon; floor at y=0).
+
+- [ ] **Z4: Bedroom scenes, less clutter** `NEEDS DESIGN` (zone-bedroom; needs L31)
+  - Replace most of the random toys with scenes: toy-car race on the play-mat road (8 cars on a starting grid, ramp, checkered flag, block grandstand with plush fans), tea party, block city, sock mountain by the laundry basket, crayon art corner, train loop, dino-toy standoff, pillow fort, marble run, snack-bowl spill. Fewer repeats of the castles and towers at the big sizes.
+
+**Phase B (after Phase A merges)**
+
+- [ ] **Q1: Home World quest pack** `NEEDS DESIGN` (quests lane, see `agents/quests.md`; needs L35)
+  - `src/world/quests/home.js`: the 11 quests in spec §4 (Hank, Garry, Zippy, Farmer Fern, Bubbles, Pip, Zorp & Blip, Dozer Dot, Mayor Wheelie, Captain Kite, Woolly, then The Big Stomp). Polish the ideas, keep them silly, keep every step doable by a 5-year-old without reading.
+  - Block-built giver looks with faces and personality (original designs, `M()` colors), their stage scene ids (from D18), all their lines (~10–15 each, short), and a voice description per character for casting.
+  - Hand-off: `NEEDS AUDIO` (AU13) with the cast list + lines added to `tools/voice-lines.json` with `"voice"`.
+
+- [ ] **L36: Abilities + Adventure / Arcade modes** `NEEDS LOGIC` (logic-gameplay; needs L35; spec §1 and §4)
+  - Start screen: 🗺️ Adventure / 🕹️ Arcade picture picker (remembered). Adventure = the hand-made Home World with quests; Arcade = today.
+  - Ability flags (`hammer`, `shoot`, `hover`, `dozer`, `glide`) plus cosmetics (hats, trails, engine sounds); Arcade turns them all on. Before the hammer: hits wobble + boing + star puff + small bounce-back, no damage, no meter; animals still launch, rollers still roll. Hover: hold B in the air, drift over water. Glide: hold B after a jump.
+  - Each new ability: ceremony (car spins up, the part pops onto the car) and a pulsing button glyph with a picture until first use.
+  - Hand-off: `NEEDS DESIGN` cars-ui (D19) for the hammer, wings, hover glow and cosmetic parts on the cars + the mode picker look.
+
+- [ ] **L37: Save + Continue** `NEEDS LOGIC` (logic-systems; needs L35; spec §6)
+  - Adventure auto-saves to localStorage after each quest step and garage visit (quests, abilities, cosmetics, cars, size, unlocked worlds). Start screen: ▶️ Continue and 🆕 New Adventure (2-second hold). Arcade only remembers unlocked worlds.
+
+- [ ] **D19: Garage inside v2 + quest UI** `NEEDS DESIGN` (cars-ui; needs L32, L35, L36)
+  - `buildGarage()` with the roomier floor and a back exit door; the GO arrow over the door.
+  - Style the giver "!" balloons (gold / blue), picture bubbles with dots, the ability glyph pop-up, the mode picker and Continue / New tiles. Icons only.
+  - Car parts for abilities and cosmetics: roof hammer, egg-blaster nozzle, hover glow ring, glide wings, party hat, crown.
+
+- [ ] **AU13: Character voices + quest sounds** `NEEDS AUDIO` (audio; needs L34 and Q1)
+  - Cast every giver in `tools/voices.json` from the ElevenLabs voice library or with Voice Design, matching the personality notes (Hank gravelly old-timer, Fern loud and laughing, Zorp high and squeaky, Blip low and bubbly, Zippy super fast…). Generate all Q1 lines.
+  - Sfx: portal whoosh + roar (dino) + giggle (candy), hammer bonk, egg plop, hover hum, glide whoosh, kazoo engine, quest start / step / done jingles, the wobble-but-don't-break boing. Music: the parade march.
+
+- [ ] **QA round 3** (qa; after Phase B): play the whole Home World adventure from Hank to the boss with two controllers, check spacing/scenes at every size, the garage drive-in/out, saving and continue.
+
+**Phase C (after QA round 3)**
+
+- [ ] **L33: Worlds + portals** `NEEDS LOGIC` (logic-systems; spec §5)
+  - `src/worlds.js`: `registerWorld({id, name, emoji, zones, start, portal, music})`. Home World = town/farm/park/home; Dino Land and Candy Land become their own worlds and stop being mixed into Home World's NEW WORLD.
+  - After the Home World boss: two portals rise (🦖 jungle swirl + roar, 🍭 sprinkle swirl + giggle); driving in = swirl transition, arrive tiny in that world (cars, abilities, cosmetics carry over). A home portal near each world's start. Arcade: unlocked worlds show on the start screen.
+  - Hand-off: Z5, Z6 (zone lanes), Q2, Q3 (quests lane).
+- [ ] **Z5: Dino Land as a whole world** `NEEDS DESIGN` (zone-dino; needs L33): 3–4 more sub-zones (jungle, volcano, tar-pit swamp, fossil dig, nest hills), each with layouts, scenes and quest spots.
+- [ ] **Z6: Candy Land as a whole world** `NEEDS DESIGN` (zone-candy; needs L33): 3–4 more sub-zones (gumdrop forest, chocolate river, lollipop meadow, cake town, ice-cream mountains), each with layouts, scenes and quest spots.
+- [ ] **Q2 / Q3: Dino Land and Candy Land quest packs** `NEEDS DESIGN` (quests lane; needs Z5 / Z6): 4 chapters each, new givers and land abilities, ending at that land's boss.
+
 ### Play-test round 2 (Kaden + son, Nov 7): "it was fun!"
 
 - [x] **Z3: Inside the House (kid's bedroom) zone** `NEEDS DESIGN` (zone-bedroom agent, see `agents/zone.md`; needs L20)

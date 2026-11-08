@@ -2,8 +2,10 @@
 
 **You are the game-systems engineer.** Everything that makes the game *work*: driving, smashing, growth, collapse, streaming, camera, input, HUD behavior, performance.
 
-**Owns:** `src/core.js`, `src/game.js`, `src/boot.mjs`, the loader in `index.html`, `tools/decimate.py`.
+**Owns:** `src/core.js`, `src/game.js`, `src/quests.js`, `src/worlds.js`, `src/boot.mjs`, the loader in `index.html`, `tools/decimate.py`.
 **Never edits:** `src/cars.js`, `src/objects.js`, `src/world/**`, `style.css`, `assets/**` (except via the audio role).
+
+Round 3 spec (scenes, garage building, quests, modes, worlds): **`docs/ADVENTURE.md`**.
 
 ## Work queue (in order)
 1. `NEEDS LOGIC` tasks in `TASKS.md` (hand-offs from design lanes block them, so they go first).
@@ -16,8 +18,8 @@ Logic runs as two sessions that split `game.js` by system. Start one with "You a
 
 | Lane | Tasks (in order) | Sections you mainly touch |
 |---|---|---|
-| **logic-systems** | L22 zone music + sfx → L25 GIANT/boss draw calls (+ L24) → L19 placement spots → L20 Inside the House | `core.js` audio + renderer, streaming/chunks, scatter, batching, world build |
-| **logic-gameplay** | L23 themed bosses → L27 boss taunts/defeat → L18 car stats, perks + strength smashing → D9 hooks | boss section, smashing/damage, players/driving, garage |
+| **logic-systems** | L31 scenes + calmer filler → L34 character voices → L37 save + continue → L33 worlds + portals | `core.js` audio + renderer, streaming/chunks, scatter, batching, world build, `worlds.js` |
+| **logic-gameplay** | L32 garage building → L35 quest engine → L36 abilities + modes | garage, `quests.js`, smashing/damage, players/driving, bosses |
 
 - Branch `logic-systems/<task>` or `logic-gameplay/<task>`, own worktree as always.
 - **Stay in your sections.** If you need a change in the other lane's area, keep it small and say so in the PR ("touches spawnScatter for X"), or leave a `NEEDS LOGIC` task for the other lane.

@@ -3,9 +3,10 @@
 A co-op driving-and-smashing game for a dad and his 5-year-old, played on a TV with two controllers. Plain HTML + three.js (r186 via an import map; `src/boot.mjs` exposes it as the global `THREE`), no build step, no frameworks. GitHub Pages serves `main` as-is.
 
 ## Agent roles
-Every session has a role. Started with "You are the `<role>` agent", read `agents/<role>.md` and follow it: it says what you own, what to work on and how to finish. Index: `agents/README.md` (logic, audio, cars-ui, world-props, world-animals, world-bosses, zone-<name>, qa, reviewer, art-pipeline).
+Every session has a role. Started with "You are the `<role>` agent", read `agents/<role>.md` and follow it: it says what you own, what to work on and how to finish. Index: `agents/README.md` (logic, audio, cars-ui, world-props, world-animals, world-bosses, zone-<name>, quests, qa, reviewer, art-pipeline).
 
 ## Design rules (do not break these)
+- **Two modes (round 3, spec `docs/ADVENTURE.md`):** 🗺️ Adventure (quests, start unable to smash, earn abilities, saved) and 🕹️ Arcade (smash everything, today's game). Prefer **scenes** (little set-ups that tell a story) over random scatter.
 - **Co-op only.** No losing, no timers that end the game, no player-vs-player scoring. Everything feeds one shared smash meter.
 - **Kid-simple controls.** Stick = point where you want to go. A/RT = turbo, B = jump (becomes 💥 BOOM when stuck), X or Y = shoot (and LEVEL UP when the gold button shows; either works because 8BitDo/Nintendo pads swap the X/Y labels; LB/RB also LEVEL UP). Cars change only in the level-up garage: drive into the car you want. Never require reading.
 - **Big, loud, funny feedback.** Every action should have a sound, a puff, or a wobble.
@@ -22,10 +23,12 @@ Several lanes work on this repo at the same time: **logic** (Claude Code), **car
 | `src/world/animals.js` | **world-animals** session | `ANIMAL` looks |
 | `src/world/bosses.js` | **world-bosses** session | `BOSSES` models |
 | `src/world/zones/<name>.js` | **zone-<name>** session | One themed zone each (plug-in contract: L15 ✅) |
+| `src/world/quests/<world>.js` | **quests** session | Quest packs: givers, lines, steps, rewards (Adventure mode, `docs/ADVENTURE.md`) |
 | `style.css` | **Cursor** (cars & UI) | All UI styles |
 | `assets/**` | **Cursor**: `assets/cars/`, UI art. **world-props**: `assets/props/` (top level), `assets/textures/`. **world-animals**: `assets/props/animals/`. **world-bosses**: `assets/props/bosses/` | `.glb` models, `cars.json`, textures, sounds (except the generated `assets/sounds/voice/`, `sfx/` and `music/`) |
 | `tools/`, `assets/sounds/voice/`, `sfx/`, `music/` | **Claude Code** (logic; the **audio** role runs the generators) | ElevenLabs generators (`make-voices.mjs`, `make-sfx.mjs`, `make-music.mjs`), their lists (`*-lines.json`), and the generated mp3s + `index.json` |
 | `src/core.js` | **Claude Code** (logic) | Helpers (`mk`, `M`, `E`, `rand`…), renderer, scene, ground/roads/walls, ramps + `groundH`, audio |
+| `src/quests.js`, `src/worlds.js` | **Claude Code** (logic) | Quest engine + abilities (L35/L36), worlds + portals (L33); created by those tasks |
 | `src/game.js` | **Claude Code** (logic) | Debris, smashing, scoring, respawn, celebration, players/driving, input, collisions, camera, HUD, main loop |
 | `src/boot.mjs` | **Claude Code** (logic) | Imports three.js + addons, sets `window.THREE`, loads the plain scripts in order |
 | `index.html`, `CLAUDE.md` | Shared | Change rarely; mention it in the commit message |
