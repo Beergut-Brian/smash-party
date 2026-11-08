@@ -306,7 +306,7 @@ function updateShots(dt){
         if(Math.hypot(s.x-_wpB.x,s.z-_wpB.z)<s.r+q.s0.x*o.s0*0.5+2){const d=Math.hypot(s.vx,s.vz)||1;hitWeak(q,s.p,s.vx/d,s.vz/d);done=true;break;}}
       if(!done&&Math.hypot(s.x-o.x,s.z-o.z)<o.r*0.6&&s.y<o.h){o.wob=Math.max(o.wob||0,0.5);done=true;}}
     if(!done)for(const o of objects){if(!o.alive||o.boss)continue;const dx=o.x-s.x,dz=o.z-s.z,rr=o.r+s.r;
-      if(dx*dx+dz*dz>rr*rr||s.y>o.h+o.fy+s.r)continue;
+      if(dx*dx+dz*dz>rr*rr||s.y>o.h+o.fy+(o.gy||0)+s.r)continue;
       if(s.rk){done=true;break;}
       if(s.bub){if(o.bld)damageBuilding(o,s.x,s.z,s.r*3+S,1,s.y-S,s.y+S,s.vx,s.vz,12);else if(o.sz<=tier)smash(o,s.vx,s.vz,12*Math.sqrt(S));else{o.wob=1;wakeObj(o);}done=true;break;}
       if(o.bld)damageBuilding(o,s.x,s.z,s.r*4+2*S,3,s.y-2*S,s.y+2*S,s.vx,s.vz,30);
@@ -472,13 +472,13 @@ function spawnFalling(cx,cz,spread,type){
     if(!spotOK(x,z,3.6))continue;
     if(players.some(p=>Math.hypot(p.x-x,p.z-z)<(cx!=null?8:16)))continue;
     if(objects.some(o=>o.alive&&Math.hypot(o.x-x,o.z-z)<o.r+3.8))continue;
-    const o=OBJ[type](x,z);o.falling=true;o.fy=rand(28,60);o.vy=0;o.g.position.y=o.fy;return o;}
+    const o=OBJ[type](x,z);o.falling=true;o.fy=rand(28,60);o.vy=0;o.g.position.y=(o.gy||0)+o.fy;return o;}
   return null;
 }
 /* QA2: things dropping in (filler rain, filler scenes, regrowth) go into the shared pools before they fall and slide
    down there, instead of drawing every part as its own mesh until they land: a GIANT-size refill after a boss landing
    rained ~600 building parts (~1,900 draw calls). Undamaged pack buildings fall as their proxy. A hit wakes it as usual. */
-function dropIn(o,fy){o.falling=true;o.fy=fy;o.vy=0;o.g.position.y=0;if(o.scat||o.rec)poolAdopt(o);o.g.position.y=fy;fallPose(o);}
+function dropIn(o,fy){o.falling=true;o.fy=fy;o.vy=0;o.g.position.y=o.gy||0;if(o.scat||o.rec)poolAdopt(o);o.g.position.y=(o.gy||0)+fy;fallPose(o);}
 function fallPose(o){if(!o.sleep||!o.inst)return;
   for(const [im,i,m,mesh] of o.inst){if(mesh.userData.dead)continue;_pm.copy(m);_pm.elements[13]+=o.fy;im.setMatrixAt(i,_pm);im.instanceMatrix.needsUpdate=true;}}
 function updateObjects(dt){
@@ -488,7 +488,7 @@ function updateObjects(dt){
     o.vy-=40*dt;o.fy+=o.vy*dt;
     if(o.fy<=0){o.fy=0;o.falling=false;if(o.scat||o.rec)queue.push({t:0,fn:()=>poolAdopt(o)});const k=sizeK(o);if(o.sz>=tier-1)sfxIn(zoneXZ(o.x,o.z),'thud');puff(o.x,0.4*k,o.z,4,1.4*k);
       if(o.sz>=tier)for(const p of players)if(Math.hypot(p.x-o.x,p.z-o.z)<p.r+o.r){p.air=true;p.vy=10*p.sm;}}
-    o.g.position.y=o.fy;fallPose(o);}
+    o.g.position.y=(o.gy||0)+o.fy;fallPose(o);}
   if((deadT-=dt)<=0){deadT=0.25;objectsCompact();}
 }
 /* L43: dead objects (smashed, squished, LOD-pruned, filler that stepped aside) leave the per-frame list within a quarter
@@ -510,7 +510,7 @@ const wakeR=()=>3+7*S; // woken things (hit, wobbling) go back to sleep once the
 const chunks=new Map();
 const chunkKey=(ci,cj)=>ci+','+cj;
 function getChunk(ci,cj){const k=chunkKey(ci,cj);let c=chunks.get(k);
-  if(!c){c={k,ci,cj,zone:zoneAt(ci,cj),x0:ci*CHUNK-CHUNK/2,z0:cj*CHUNK-CHUNK/2,recs:[],rampList:[],herds:[],spots:[],scenes:[],planned:false,gen:false,loaded:false,group:null,box:null};chunks.set(k,c);}
+  if(!c){c={k,ci,cj,zone:zoneAt(ci,cj),x0:ci*CHUNK-CHUNK/2,z0:cj*CHUNK-CHUNK/2,recs:[],rampList:[],steps:[],herds:[],spots:[],scenes:[],planned:false,gen:false,loaded:false,group:null,box:null};chunks.set(k,c);}
   return c;}
 const chunkOf=(x,z)=>getChunk(chunkIdx(x),chunkIdx(z));
 const zoneXZ=(x,z)=>zoneAt(chunkIdx(x),chunkIdx(z)); // L22: which zone a sound happens in
@@ -564,7 +564,8 @@ function updateRoom(dt){
     if(ok&&!doorSaid&&state==='play'){doorSaid=true;showBig('BREAK OUT!');say('Smash the door!');}}
   const d=doorArrow&&doorArrow.userData.o;
   if(d){const k=Math.max(d.h*0.25,4*S);doorArrow.scale.set(k,k*1.5,k);doorArrow.position.set(d.x,d.h*(d.s0||1)+k*(0.6+0.3*Math.sin(T*5)),d.z+2);}}
-for(const t in OBJ){const f=OBJ[t];OBJ[t]=(x,z,arg,sc)=>{const o=f(x,z,arg);o.type=t;o.arg=arg;o.chunk=chunkOf(x,z).k;o.sz=sizeClass(o);initBld(o);scaleObj(o,sc);o.fr=footprint(o);setupSpin(o);return o;};}
+for(const t in OBJ){const f=OBJ[t];OBJ[t]=(x,z,arg,sc)=>{const o=f(x,z,arg);o.type=t;o.arg=arg;o.chunk=chunkOf(x,z).k;o.sz=sizeClass(o);initBld(o);scaleObj(o,sc);o.fr=footprint(o);setupSpin(o);
+  if(steps.length){o.gy=stepH(x,z);if(o.gy)o.g.position.y=o.gy;}return o;};} // L52: on a sidewalk / curb
 // deterministic randomness, so a chunk (and each house in it) looks the same every time it's rebuilt
 function mulberry(a){return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 function withSeed(seed,fn){const r=Math.random;Math.random=mulberry(seed);try{return fn();}finally{Math.random=r;}}
@@ -604,7 +605,7 @@ function chunkSpot(c,kind,x,z,w,d,th=0){
    registerZone({spotLook:{sand:'#ffc8dd'}})) are painted as flat tiles, one merged mesh per chunk with the color per
    vertex. Bigger spots go first in the index buffer and the tiles don't write depth, so a path drawn over a lawn wins
    without z-fighting at any camera distance. They sit just above the zone ground and under the roads (top y=0.05). */
-const SPOT_Y=0.03;let spotMat=null;
+const SPOT_Y=0.015;let spotMat=null; // L52: flat (≤0.02), so even a micro car doesn't sink into a painted spot
 function spotTiles(c){
   const zl=ZONES[c.zone]&&ZONES[c.zone].spotLook,look=k=>(zl&&zl[k])||(typeof SPOT_LOOK!=='undefined'&&SPOT_LOOK[k]);
   const list=c.spots.filter(q=>look(q.kind)).sort((a,b)=>b.area-a.area);if(!list.length)return null;
@@ -625,11 +626,12 @@ function chunkRamp(c,x,z,th,L=11,W=7,H=3.6){
   for(const q of [...c.recs,...c.rampList.map(o=>({x:o.x,z:o.z,r:o.L}))])
     for(const [a,b] of [[0,0],[q.r+1,0],[-q.r-1,0],[0,q.r+1],[0,-q.r-1]])if(rampsH([r],q.x+a,q.z+b)>0)return false;
   c.rampList.push(r);return true;}
+function chunkStep(c,x,z,w,d,h,th){if(!(w>0&&d>0&&h>0))return false;c.steps.push(groundStep(x,z,w,d,h,th,{chunk:true}));if(c.loaded)steps.push(c.steps[c.steps.length-1]);return true;} // L52
 function genChunk(c){
   c.gen=true;
   withSeed((c.ci+50)*7919+(c.cj+50)*104729+worldSeed,()=>{
     const ctx={zone:c.zone,ci:c.ci,cj:c.cj,x0:c.x0,z0:c.z0,x1:c.x0+CHUNK,z1:c.z0+CHUNK,cx:c.ci*CHUNK,cz:c.cj*CHUNK,size:CHUNK,
-      place:(type,x,z,arg,r)=>chunkPlace(c,type,x,z,arg,r),ramp:(x,z,th,L,W,H)=>chunkRamp(c,x,z,th,L,W,H),free:(x,z,r)=>spotFree(c,x,z,r),spot:(kind,x,z,w,d,th)=>chunkSpot(c,kind,x,z,w,d,th),herd:(kind,x,z,n)=>chunkHerd(c,kind,x,z,n),
+      place:(type,x,z,arg,r)=>chunkPlace(c,type,x,z,arg,r),ramp:(x,z,th,L,W,H)=>chunkRamp(c,x,z,th,L,W,H),step:(x,z,w,d,h,th)=>chunkStep(c,x,z,w,d,h,th),free:(x,z,r)=>spotFree(c,x,z,r),spot:(kind,x,z,w,d,th)=>chunkSpot(c,kind,x,z,w,d,th),herd:(kind,x,z,n)=>chunkHerd(c,kind,x,z,n),
       scene:(id,x,z,th,size)=>layoutScene(c,id,x,z,th,size),roads:chunkRoads(c),planned:false};
     ctx.block=list=>chunkBlock(c,ctx,list);
     // TODO(design): ZONE_LAYOUT.town/farm/park/home in objects.js replaces these placeholder fillers (D1)
@@ -666,6 +668,7 @@ function chunkBlock(c,ctx,list){
     scene:(id,x,z,th,size)=>{const [wx,wz]=W(x,z);return layoutScene(c,id,wx,wz,TH(th),size);},
     spot:(kind,x,z,w,d,th)=>{const [wx,wz]=W(x,z);return chunkSpot(c,kind,wx,wz,w,d,TH(th));},
     ramp:(x,z,th,L,Wd,H)=>{const [wx,wz]=W(x,z);return chunkRamp(c,wx,wz,TH(th),L,Wd,H);},
+    step:(x,z,w,d,h,th)=>{const [wx,wz]=W(x,z);return chunkStep(c,wx,wz,w,d,h,TH(th));}, // L52
     herd:(kind,x,z,n)=>{const [wx,wz]=W(x,z);return chunkHerd(c,kind,wx,wz,n);},
     free:(x,z,r)=>{const [wx,wz]=W(x,z);return spotFree(c,wx,wz,r);}});
   blk.build(b);ctx.planned=true;return true;}
@@ -705,7 +708,7 @@ function homeCtx(o={}){
   const near=(x,z,r,tag)=>{for(let a=chunkIdx(x-r-6);a<=chunkIdx(x+r+6);a++)for(let b=chunkIdx(z-r-6);b<=chunkIdx(z+r+6);b++){const c=chunks.get(chunkKey(a,b));if(!c)continue;
       for(const q of c.recs)if((tag==null||q.scene!==tag)&&Math.hypot(q.x-x,q.z-z)<q.r+r+0.4)return true;}return false;};
   const free=(x,z,r,type,tag)=>{if(Math.abs(x)>L||Math.abs(z)>L||onRoad(x,z,r))return false;
-    for(const [a,b] of [[0,0],[r+1,0],[-r-1,0],[0,r+1],[0,-r-1]])if(groundH(x+a,z+b)>0)return false;
+    for(const [a,b] of [[0,0],[r+1,0],[-r-1,0],[0,r+1],[0,-r-1]])if(rampH(x+a,z+b)>0)return false;
     for(const q of objects)if(Math.hypot(q.x-x,q.z-z)<(q.r+r)*0.8)return false;
     if(near(x,z,r,tag))return false;return ok(type,x,z,r);};
   const place=(type,x,z,arg,r,th,f,tag)=>{if(!OBJ[type])return false;f=f||1;r=r||recR(type)*f;if(!free(x,z,r,type,tag))return false;
@@ -717,6 +720,7 @@ function homeCtx(o={}){
     spot:(kind,x,z,w,d,th)=>chunkSpot(chunkOf(x,z),kind,x,z,w,d,th),
     herd:(kind,x,z,n)=>chunkHerd(chunkOf(x,z),kind,x,z,n),
     ramp:(x,z,th,L,W,H)=>{addRamp(x,z,th,L,W,H);return true;},
+    step:(x,z,w,d,h,th)=>chunkStep(chunkOf(x,z),x,z,w,d,h,th), // L52
     scene(id,x,z,th=0,size){const def=sceneDef(id,'home');if(!def){console.warn('unknown scene',id);return false;}
       const k=sizeIdx(size!=null?size:def.size),f=sceneF(def,k),tag='hc'+(++sceneSeq),it=sceneItems(def,x,z,th,f,(Math.random()*1e9)|0,'home',k);
       let n=0;for(const q of it.place)n+=place(q.type,q.x,q.z,q.arg,null,q.th,f*q.sc,tag);
@@ -784,6 +788,7 @@ function loadChunk(c){
   c.loaded=true;c.group=new THREE.Group();scene.add(c.group);
   c.box=new THREE.Box3(new THREE.Vector3(c.x0-12,-1,c.z0-12),new THREE.Vector3(c.x0+CHUNK+12,40,c.z0+CHUNK+12));
   for(const r of c.rampList){c.group.add(r.mesh);ramps.push(r);}
+  for(const st of c.steps)steps.push(st); // L52
   if(c.spots.length){const t=spotTiles(c);if(t)c.group.add(t);} // L30
   /* L25: sleepers go into the shared pools (one InstancedMesh per shape for the whole world, like the scatter props)
      instead of a batch per shape per chunk: at GIANT size ~70 chunks are loaded, which was ~850 batches (most holding
@@ -800,6 +805,7 @@ function loadChunk(c){
 function unloadChunk(c){
   c.loaded=false;for(const h of c.herds)if(h.on)herdOff(h);
   for(const r of c.rampList)removeRamp(r);
+  for(const st of c.steps){const i=steps.indexOf(st);if(i>=0)steps.splice(i,1);}
   objects=objects.filter(o=>{if(o.chunk!==c.k)return true;poolRelease(o);scene.remove(o.g);return false;}); // alive records stay alive
   c.group.traverse(m=>{if(m.isInstancedMesh)m.dispose();else if(m.userData.spotTiles)m.geometry.dispose();});scene.remove(c.group);c.group=null;
 }
@@ -922,7 +928,7 @@ class Player{
     if(inp.boost&&!this.wasBoost){sfx.turbo();const en=cosEngine();if(en==='kazoo')kazooToot(this,0.75);else if(en)engineToot(en);}this.wasBoost=inp.boost;
     if(kazooOn()&&Math.abs(this.speed)>8*this.sm&&(this.kazooT-=dt)<=0)kazooToot(this,0.45); // 🎺 a toot now and then while driving
     if(!this.air){const a=(target>this.speed?30:18)*sm*(0.85+0.05*this.handling);this.speed+=clamp(target-this.speed,-a*dt,a*dt);}
-    const fx=Math.sin(this.heading),fz=Math.cos(this.heading);
+    const fx=Math.sin(this.heading),fz=Math.cos(this.heading),x0=this.x,z0=this.z;
     this.x+=(fx*this.speed+this.kx)*dt;this.z+=(fz*this.speed+this.kz)*dt;
     const kd=Math.pow(0.05,dt);this.kx*=kd;this.kz*=kd;
     const lim=WB-2.5*S;this.wallT-=dt;
@@ -930,9 +936,16 @@ class Player{
       if(Math.abs(this.x)>lim){this.x=Math.sign(this.x)*lim;this.kx=-Math.sign(this.x)*6;}
       if(Math.abs(this.z)>lim){this.z=Math.sign(this.z)*lim;this.kz=-Math.sign(this.z)*6;}
       if(this.speed>10&&this.wallT<=0){sfx.thud();shake=Math.min(1,shake+.3);this.wallT=.4;}this.speed*=0.6;}
-    const gh=groundH(this.x,this.z)+garageH(this.x,this.z);
+    let gh=groundH(this.x,this.z)+garageH(this.x,this.z);
+    if(steps.length){const top=this.y+STEP_CLIMB*this.r,gAt=(x,z)=>groundH(x,z)+garageH(x,z); // L52: a step too tall to climb is a wall
+      if(gh>top&&stepH(this.x,this.z)>=gh-garageH(this.x,this.z)-1e-6&&gAt(x0,z0)<=top){
+        if(gAt(this.x,z0)<=top)this.z=z0;else if(gAt(x0,this.z)<=top)this.x=x0;else{this.x=x0;this.z=z0;} // slide along it
+        if(Math.abs(this.speed)>6*this.sm&&this.wallT<=0){sfx.thud();this.wallT=.4;}this.speed*=0.6;gh=gAt(this.x,this.z);}
+      else if(!this.air&&gh>this.y+0.3*this.r&&gh<=top){this.pitch+=clamp((gh-this.y)/this.r*0.5,0,0.4); // up a curb: a little nose-up bump
+        if(gh-this.y>0.6*this.r)puff(this.x+fx*this.r,gh,this.z+fz*this.r,2,0.5*this.r,'#e2e2e2');}}
     if(!this.air){this.hoverF=2.5;if(this.partMap&&(this.partMap.hover||this.partMap.glide)){if(this.partMap.hover)this.partMap.hover.visible=false;if(this.partMap.glide)this.partMap.glide.visible=false;}
       if(gh<this.y-0.4){this.air=true;this.vy=Math.max(5,this.speed*0.5+3)*(this.rush?1.25:1);this.jumped=false;this.airT=0;}
+      else if(steps.length&&gh<this.y-0.3*this.r){this.air=true;this.vy=0;this.jumped=false;this.airT=0;} // L52: off a curb: a little drop
       else this.y=gh;
       if(inp.jumpP&&!this.air&&this.stuck){boomOut(this);}
       else if(inp.jumpP&&!this.air){this.air=true;this.vy=13*clamp(Math.pow(S,0.4),0.33,1.8);sfx.jump();this.jumped=true;this.airT=0;
@@ -1408,7 +1421,7 @@ function collisions(){
     if(d>95){const nx=dx/d,nz=dz/d;a.kx+=nx*30*0.016;a.kz+=nz*30*0.016;b.kx-=nx*30*0.016;b.kz-=nz*30*0.016;}}
   for(const p of players){const vx=Math.sin(p.heading)*p.speed+p.kx,vz=Math.cos(p.heading)*p.speed+p.kz,spd=Math.hypot(vx,vz);
     for(const o of objects){if(!o.alive||o.boss||(o.falling&&o.fy>p.y+3*S))continue;const dx=o.x-p.x,dz=o.z-p.z,rr=p.r+o.r;
-      if(dx*dx+dz*dz<rr*rr&&p.y<o.h+o.fy){
+      if(dx*dx+dz*dz<rr*rr&&p.y<o.h+o.fy+(o.gy||0)){
         if(o.rolling)continue;
         if(o.roll&&o.sz<=tier&&(spd>4*p.sm||p.air)){startRoll(o,vx||dx,vz||dz,Math.max(spd,10*p.sm));continue;}
         if(!hasAbility('hammer')){noHammerHit(p,o,dx,dz,rr,spd);continue;} // L36: wobble, boing, star puff
@@ -1561,7 +1574,7 @@ function spawnScatter(p,fill){
     let x=p.x+Math.sin(a)*d,z=p.z+Math.cos(a)*d,sp=null;const k=scatterSize(),r=GROW_S[k]*2.5+0.1;
     if(Math.random()>SPOT_LEFTOVER){sp=spotAt(x,z);  // L19: land in a spot when there's one nearby
       if(!sp){const q=spotPoint(p.x,p.z,fill?0.2*Rs:Rs,1.4*Rs);if(q)[x,z,sp]=q;}}
-    if(Math.abs(x)>WB-r-2||Math.abs(z)>WB-r-2||groundH(x,z)>0||groundH(x+r,z)>0||groundH(x-r,z)>0||groundH(x,z+r)>0||groundH(x,z-r)>0)continue;
+    if(Math.abs(x)>WB-r-2||Math.abs(z)>WB-r-2||rampH(x,z)>0||rampH(x+r,z)>0||rampH(x-r,z)>0||rampH(x,z+r)>0||rampH(x,z-r)>0)continue;
     if(k>tier&&(onRoad(x,z,r)||(arenaOn()&&typeof startLane==='function'&&startLane(x,z))))continue; // L26: nothing too big to smash lands on the road or in the start lane
     if(objects.some(o=>o.alive&&Math.abs(o.x-x)<o.r+r+0.3&&Math.abs(o.z-z)<o.r+r+0.3&&Math.hypot(o.x-x,o.z-z)<o.r+r+0.3))continue;
     if(players.some(q=>Math.hypot(q.x-x,q.z-z)<q.r+r+1))continue;
@@ -1730,7 +1743,7 @@ function sceneSpotPoint(px,pz,d0,d1,kind){const l=[];
 function scenePropFree(x,z,r,road,skip){ // skip: tags of scenes about to make way (or a test on the record)
   if(Math.abs(x)>WB-r-2||Math.abs(z)>WB-r-2)return false;
   if(!road&&onRoad(x,z,r))return false;if(arenaOn()&&typeof startLane==='function'&&startLane(x,z))return false;
-  if(groundH(x,z)>0||groundH(x+r,z)>0||groundH(x-r,z)>0||groundH(x,z+r)>0||groundH(x,z-r)>0)return false;
+  if(rampH(x,z)>0||rampH(x+r,z)>0||rampH(x-r,z)>0||rampH(x,z+r)>0||rampH(x,z-r)>0)return false;
   const c=chunks.get(chunkKey(chunkIdx(x),chunkIdx(z)));if(!c||!c.gen)return false;
   const pad=Math.min(0.6,r*0.6); // tiny props may stand closer
   for(let ci=chunkIdx(x-r-4);ci<=chunkIdx(x+r+4);ci++)for(let cj=chunkIdx(z-r-4);cj<=chunkIdx(z+r+4);cj++){const q=chunks.get(chunkKey(ci,cj));
@@ -2253,7 +2266,7 @@ function placePad(){
     const c=pick(near);if(objects.filter(o=>o.alive&&o.sz<=tier&&Math.hypot(o.x-c.x,o.z-c.z)<10*Math.max(S,0.15)).length<3)continue;
     // the pad sits between the car and the cluster, so driving toward the stuff hits the pad first
     const r=padR(),dx=c.x-p.x,dz=c.z-p.z,d=Math.hypot(dx,dz)||1,off=Math.min(d*0.5,r*3+c.r);const x=c.x-dx/d*off,z=c.z-dz/d*off;
-    if(Math.abs(x)>WB-r-2||Math.abs(z)>WB-r-2||groundH(x,z)>0)continue;
+    if(Math.abs(x)>WB-r-2||Math.abs(z)>WB-r-2||rampH(x,z)>0)continue;
     if(objects.some(o=>o.alive&&o.sz>=tier-1&&Math.hypot(o.x-x,o.z-z)<o.r+r*0.9)||pads.some(q=>Math.hypot(q.x-x,q.z-z)<q.r*4)||players.some(q=>Math.hypot(q.x-x,q.z-z)<q.r+r*2))continue;
     const g=(typeof buildLaunchPad!=='undefined'?buildLaunchPad():defaultPad());g.scale.setScalar(r/2.15);g.position.set(x,0,z);scene.add(g);
     pads.push({g,x,z,r,sq:0});return;}}
