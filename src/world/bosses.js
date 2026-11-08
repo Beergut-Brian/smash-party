@@ -33,7 +33,10 @@
                    Weak spots: 1 cherry kneecaps · 2 sprinkle patches on the bottom tier · 3 the cake-board feet.
    Mama Stegosaurus "Plates" 🦕 (dino) a chunky pastel stego with a row of giant colorful back plates (they fly off
                    whole), eyelashes, a flower bow, and a spotted egg balanced on her tail.
-                   Weak spots: 1 painted belly spots (sides) · 2 tail-spike thumbs on the ground · 3 front feet. */
+                   Weak spots: 1 painted belly spots (sides) · 2 tail-spike thumbs on the ground · 3 front feet.
+   Captain Cuddles 🧸 (bedroom) a big living teddy bear in striped pajamas and a floppy nightcap with a pompom, one
+                   sleepy button eye, dragging his yellow blankie along.
+                   Weak spots: 1 pajama buttons · 2 pink foot pads · 3 the blankie corner (front) + stubby tail (back). */
 
 // helpers (prefixed boss… so no other lane collides)
 function bossRot(m,x=0,y=0,z=0){m.rotation.set(x,y,z);return m;}
@@ -403,5 +406,54 @@ const BOSSES=[
     const pl=[[2.3,1.6],[1.1,2.4],[-0.2,2.9],[-1.5,2.5],[-2.7,1.8]];
     pl.forEach(([z,s],i)=>{const x=(i%2?0.4:-0.4);
       P(BP(bossRot(mk('box',0.35,s,s,plates[i],x,5.6+s*0.45,z),Math.PI/4),2,'roof'),1,true,s*0.5);});
+  }},
+
+  {id:'cuddles',zone:'bedroom',name:'Captain Cuddles',emoji:'🧸',sway:0.12,
+   taunts:['Yaaawn! Is it bedtime yet?','No pillow fights allowed! Hee hee!','You can\'t catch the Captain!'],
+   defeat:'Okay, okay! Nap time. Night night, friends!',
+   build(P,g,o){
+    const fur='#c68b59',muz='#f1d3b3',pj='#a0c4ff',stripe='#ffffff',pink='#ffafcc',blank='#fff3b0',ink='#3d2b1f';
+    // floor 0: furry feet with pink pads, pajama legs, round pajama tummy
+    for(const sx of [-1,1]){const x=sx*1.25;
+      P(BP(mk('sph',1.9,1.1,2.5,fur,x,0.55,0.5),0,'wall'),4);                             // foot
+      P(bossWeak(mk('sph',1.1,0.95,0.55,'#ffd60a',x,0.6,1.7),0,2),3);                    // phase 2: pink foot pads
+      P(BP(mk('sph',1.9,2.2,1.9,pj,sx*1.15,1.8,0),0,'wall'),4);                          // pajama leg
+      P(BP(mk('cyl',1.7,0.3,1.7,stripe,sx*1.15,1.05,0),0,'extra'),1,true,0.4);}           // pajama cuff
+    for(const sx of [-1,1])for(const sz of [-1,1])P(BP(mk('sph',3,3.4,3,pj,sx*0.85,3.6,sz*0.8),0,'wall'),4);
+    for(const y of [2.4,4.6])P(BP(mk('cyl',4.5,0.4,4.4,stripe,0,y,0),0,'extra'),2,true,1);  // pajama stripes
+    P(BP(mk('sph',2.6,3,1.4,pj,0,3.6,1.6),0,'extra'),3,true,1);                           // pajama front
+    P(bossWeak(mk('sph',0.9,0.9,0.45,'#ffd60a',0,3.35,2.35),0,1),3);                     // phase 1: pajama buttons
+    P(bossWeak(mk('sph',0.9,0.9,0.45,'#ffd60a',0,2.5,2.15),0,1),3);
+    P(bossWeak(mk('sph',1.1,1,1,'#ffd60a',0,2.5,-2.3),0,3),3);                           // phase 3: stubby tail (back)
+    // floor 1: chest, pajama sleeves, paws, the blankie dragging from his right paw
+    P(BP(mk('cyl',3.6,0.45,3.4,pj,0,5.25,0),1,'slab'),3);
+    for(const sx of [-1,1])for(const sz of [-1,1])P(BP(mk('sph',2.6,2.8,2.6,pj,sx*0.75,6.5,sz*0.6),1,'wall'),3);
+    P(BP(mk('cyl',3.7,0.4,3.4,stripe,0,6.3,0),1,'extra'),2,true,0.8);
+    P(BP(mk('cyl',2.6,0.45,2.4,stripe,0,7.75,0),1,'extra'),2,true,0.7);                  // pajama collar
+    for(const sx of [-1,1]){
+      P(BP(bossRot(mk('sph',1.15,2.7,1.15,pj,sx*2.3,4.7,0.6),0,0,sx*0.35),1,'extra'),2,true,0.6); // sleeve
+      P(BP(mk('sph',1.25,1.2,1.25,fur,sx*2.75,3.3,0.9),1,'extra'),1,true,0.5);}           // paw
+    P(BP(bossRot(mk('box',1.7,2.6,0.14,blank,2.95,1.85,1.1),0.15,0,-0.12),0,'extra'),2,true,0.7); // blankie hanging…
+    P(BP(mk('box',2,0.14,1.8,blank,3.1,0.08,2.2),0,'extra'),2,true,0.7);                   // …and dragging on the floor
+    for(const [x,y,z] of [[2.6,2.4,1.2],[3.2,1.4,1.05],[2.7,0.18,2.5]])P(BP(mk('sph',0.4,0.4,0.15,pink,x,y,z),0,'extra'),1,true,0.15); // polka dots
+    P(bossWeak(mk('sph',1.1,0.6,1.1,'#ffd60a',3.4,0.35,3),0,3),3);                       // phase 3: the blankie corner (front)
+    // floor 2: big furry head, muzzle, one wide button eye and one sleepy one
+    for(const sx of [-1,1])P(BP(mk('sph',2.3,3,2.8,fur,sx*0.7,9,0.1),2,'wall'),4);
+    P(BP(mk('sph',3,2.8,1.8,fur,0,9,-0.7),2,'wall'),3);
+    P(BP(mk('sph',1.9,1.4,1.4,muz,0,8.55,1.45),2,'extra'),1,true,0.5);                    // muzzle
+    P(BP(mk('sph',0.8,0.55,0.5,ink,0,8.95,2.1),2,'extra'),1,true,0.3);                    // nose
+    P(BP(bossSmile(ink,0,8.45,2.05,1,0.6,1),2,'extra'),1,true,0.3);
+    P(BP(bossRot(mk('cyl',0.85,0.2,0.85,'#111111',-0.62,9.7,1.4),Math.PI/2),2,'extra'),1,true,0.3); // wide-awake button eye
+    P(BP(bossRot(mk('cyl',0.75,0.2,0.75,'#111111',0.62,9.65,1.4),Math.PI/2),2,'extra'),1,true,0.3); // sleepy button eye…
+    P(BP(mk('sph',0.9,0.42,0.42,fur,0.62,9.82,1.52),2,'extra'),1,true,0.3);               // …with a droopy lid
+    P(BP(mk('box',0.85,0.09,0.1,ink,0.62,9.62,1.74),2,'extra'),1,true,0.15);               // sleepy lash line
+    for(const sx of [-1,1])P(BP(mk('sph',0.6,0.4,0.2,pink,sx*1.15,8.75,1.3),2,'extra'),1,true,0.2); // rosy cheeks
+    // floor 3: round ears + a floppy striped nightcap with a pompom
+    for(const sx of [-1,1]){P(BP(mk('sph',1.15,1.15,0.7,fur,sx*1.3,10.25,0),3,'roof'),2,true,0.5);
+      P(BP(mk('sph',0.6,0.6,0.3,pink,sx*1.3,10.25,0.3),3,'roof'),1,true,0.25);}
+    P(BP(mk('cyl',2.4,0.45,2.3,stripe,0,10.45,0),3,'roof'),1,true,0.6);                   // cap brim
+    P(BP(bossRot(mk('cone',2,2.3,2,pj,0.5,11.4,0),0,0,-0.8),3,'roof'),2,true,0.7);     // floppy cap
+    P(BP(bossRot(mk('cyl',1.25,0.3,1.25,stripe,0.65,11.45,0),0,0,-0.75),3,'roof'),1,true,0.4); // cap stripe
+    P(BP(mk('sph',0.9,0.9,0.9,stripe,1.6,11.55,0),3,'roof'),1,true,0.4);                 // pompom
   }}
 ];
