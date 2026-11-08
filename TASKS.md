@@ -246,17 +246,20 @@ Full spec and contracts: **`docs/ADVENTURE.md`** (read it before any task below)
 
 **Phase A (start now, in parallel)**
 
-- [ ] **L31: Scenes + calmer filler** `NEEDS LOGIC` (logic-systems; spec §2)
-  - Scene contract: `SCENES` in objects.js and `registerZone({scenes})`, `ctx.scene(id,x,z,th)` in layouts, filler scenes dropped into open ground near the players by zone/spot/size. Scenes scale to any size class (positions and props ×1.65 per step), are remembered per chunk, and face their +Z toward the nearest road or the camera.
-  - Cut the random filler to about 40% at micro–small and about 60% at medium+, keep empty ground between scenes, and keep growth pacing about the same (tune points if needed). Both modes.
-  - Placeholder scenes from today's props so it's testable before design lands. Measure props on screen and `__sp.stats().calls` on the start street, a town chunk and in the bedroom, before and after.
-  - Hand-off: D18 (world-props) and Z4 (zone-bedroom) write the real scenes.
+- [ ] **L31: Planned world: lots, scenes, less random filler** `NEEDS LOGIC` (logic-systems; spec §2, updated Nov 8: **planned beats random**)
+  - Scene contract: `SCENES` in objects.js and `registerZone({scenes})`, `ctx.scene(id,x,z,th)` in layouts. Lots (a house plot with everything from the house down to the flowers) are just bigger scenes. Scenes scale to any size class (positions and props ×1.65 per step), are remembered per chunk, and regrow in place.
+  - Random filler becomes a small top-up (about 10–20% of what's on screen in planned chunks; it can drop a filler scene instead of single props). Zones/chunks with no planned layout keep more filler until design fills them. Both modes.
+  - **Size LOD for performance:** don't build (or don't keep awake) props 3+ sizes below the players in loaded chunks; build them again when the players are small. Planned yards are full of micro detail, so this keeps GIANT cheap (and helps QA2).
+  - Arcade random worlds: support a library of planned chunk **blocks** per zone (a layout picks one of several hand-made block designs, mirrored/rotated). Probably just a helper; the design lanes write the blocks.
+  - Placeholder scenes/lots from today's props so it's testable before design lands. Measure props on screen and `__sp.stats().calls` on the start street, a town chunk, in the bedroom, and at GIANT, before and after.
+  - Hand-off: D18 (world-props) plans the Home World and the blocks; Z4 (zone-bedroom) the bedroom.
 
 - [x] **L32: The garage is a building you drive into** `NEEDS LOGIC` (logic-gameplay; spec §3)
   - Done: the garage rises in the world a short drive ahead (rumble, dust, beacon, 3D gold arrow over the door, 🏁 at the screen edge when it's off screen, "Drive into the garage!" reminders); whatever stood there flies off (no points), ramps tuck away, scatter stays out. Walls are solid, doors are only open when they should be; the roof and front wall hide while someone's inside, the first one in waits, then the front door closes and the camera frames the showroom. Back door rolls up when everyone has picked; driving out (or A / START) rolls the fresh world with the garage right behind the start, and it sinks away. Inside: GARAGE_R 40 (was 26), parked cars ×1.5, pads twice as far apart, front-row cards sit below their cars so they don't overlap. Flicker: the whole garage sits GARAGE_LIFT above the ground with each floor layer ≥0.04 apart. Contract in CLAUDE.md ("Grow-Up Garage"); `garageFresh()` is the Adventure switch for L36. New lines "Drive into the garage!" and "Out the back door!" in voice-lines.json (robot voice until the audio role runs make-voices).
   - At a new tier, LEVEL UP raises the Grow-Up Garage out of the ground a short drive ahead (rumble, dust, beacon, gold arrow), scaled to the players. Drive in the front door → camera swoops inside → pick (as today) → the back door rolls up with the GO arrow (A / START still works) → drive out into the world set up for the new size (Arcade: fresh world as today; Adventure: same world, regrown and restocked around the exit) → the garage sinks away.
   - Roomier inside: cars ~1.5× bigger, pads ~2× farther apart, a wider floor.
-  - Fix the floor flicker at the front and back of the garage floor (placeholder floor, stripes and the ground are all at y=0; lift each layer and keep the ground from showing through).
+  - D9 (PR #42) shipped Cursor's candy `buildGarage()` floor; keep it and scale/extend it. Today the stat cards of neighbouring cars overlap each other; the wider spacing should fix that (check with two players).
+  - Fix the floor flicker at the front and back of the garage floor. Cause: the floor top sat at y=0, the same height as the world's ground plane, which reaches under the garage. The reviewer lifted `buildGarage()`'s floor (top y=0.08, pie wedges 0.12) when merging #42; do the same for the logic placeholder and check on the real GPU that it's gone.
   - Hooks: `buildGarageBuilding()` in objects.js (outside; D18), `buildGarage()` in cars.js gets a back exit door (D19). Placeholder looks until then.
 
 - [ ] **L35: Quest engine** `NEEDS LOGIC` (logic-gameplay, after L32; spec §4)
@@ -272,13 +275,16 @@ Full spec and contracts: **`docs/ADVENTURE.md`** (read it before any task below)
   - `tools/voices.json` cast (`{"hank":{"voice":"<id>","model":"…","settings":{…},"prefix":"…"}}`), `"voice":"hank"` on lines in `tools/voice-lines.json`, `make-voices.mjs` uses each line's voice (clip id includes the voice; `--dry` shows cost per voice), `say(text,{voice})` in core.js plays it (robot voice fallback, maybe pitched per character). The announcer stays the default.
   - Hand-off: AU13 (audio) casts the voices.
 
-- [ ] **D18: Home World scenes + quest spots + garage outside** `NEEDS DESIGN` (world-props; needs L31 for scenes, L32 for the garage hook)
-  - 6–10 `SCENES` each for town, farm, park and home, across the size bands (ideas in spec §2: ant picnic, snail race, gnome tea party at micro; yard sale, lemonade stand, birthday party, car wash, traffic jam; pumpkin patch, hay maze, pig pen; picnic, sandcastle, kite field, soccer game…).
-  - Quest stages for the Home World quests (spec §4): Hank's yard by the start, Garry's garden, the chicken pasture, the crop circle with the crashed saucer, Dozer Dot's crate yard, the parade route arches, the pond island with a treasure chest, the sheep pen. Mark each with a `ctx.spot('quest_<id>',…)` at a fixed spot in the hand-made Home World map.
+- [ ] **D18: Plan the Home World (lots, scenes, quest spots) + garage outside** `NEEDS DESIGN` (world-props; needs L31, L32 for the garage hook)
+  - **A planned town, not random props** (Kaden: Kenney's suburban sample scenes are the look). Lot templates with detail at every scale (house, driveway car, fence, mailbox, bike, trash cans, gnome, flowerbed, flowers, toys), mirrored and recolored into streets; a big park next to the neighborhood; a downtown main street; school; the farm belt at the edge; the construction site; the cornfield.
+  - The hand-made Home World map: every chunk designed (the first world and Adventure's world). Then 2–4 planned **blocks** per zone (town, farm, park, home) for Arcade's random worlds.
+  - 6–10 `SCENES` per zone across the size bands for the lots, parks and fields (ideas in spec §2: ant picnic, snail race, gnome tea party at micro; yard sale, lemonade stand, birthday party, car wash; pumpkin patch, hay maze, pig pen; picnic, sandcastle, kite field, soccer game…).
+  - Quest stages for the Home World quests (spec §4): Hank's yard by the start, Garry's garden, the chicken pasture, the crop circle with the crashed saucer, Dozer Dot's crate yard, the parade route arches, the pond island with a treasure chest, the sheep pen. Mark each with a `ctx.spot('quest_<id>',…)` at a fixed spot.
   - `buildGarageBuilding()`: the Grow-Up Garage outside (front door on +Z ~10 wide at car scale 1, roof sign, beacon; floor at y=0).
+  - Big task: fine to split into PRs (lot templates + one street first, then the full map, then the Arcade blocks).
 
 - [ ] **Z4: Bedroom scenes, less clutter** `NEEDS DESIGN` (zone-bedroom; needs L31)
-  - Replace most of the random toys with scenes: toy-car race on the play-mat road (8 cars on a starting grid, ramp, checkered flag, block grandstand with plush fans), tea party, block city, sock mountain by the laundry basket, crayon art corner, train loop, dino-toy standoff, pillow fort, marble run, snack-bowl spill. Fewer repeats of the castles and towers at the big sizes.
+  - The bedroom is one room, so plan it fully (furniture and every scene at fixed spots, little random filler). Replace most of the random toys with scenes: toy-car race on the play-mat road (8 cars on a starting grid, ramp, checkered flag, block grandstand with plush fans), tea party, block city, sock mountain by the laundry basket, crayon art corner, train loop, dino-toy standoff, pillow fort, marble run, snack-bowl spill. Fewer repeats of the castles and towers at the big sizes.
 
 **Phase B (after Phase A merges)**
 
@@ -329,11 +335,12 @@ Full spec and contracts: **`docs/ADVENTURE.md`** (read it before any task below)
 
 - [ ] **D17: Start-screen help text is out of date** `NEEDS DESIGN` (cars-ui; found reviewing PR #40). The three control cards on the start screen (index.html, shared) still say "LB / RB: switch car", "Q: switch car" and "/ : switch car". Cars now change only in the level-up garage. Update the cards (and the pause menu, if it repeats them) to match CLAUDE.md's controls, mention the garage ("new cars: drive into the one you want"), and add the 🛏️/🌳 picker hint.
 
-- [ ] **D9: Garage look + car stats and perks** `NEEDS DESIGN` (cars-ui; needs L17 + L18)
+- [x] **D9: Garage look + car stats and perks** `NEEDS DESIGN` (cars-ui; needs L17 + L18)
   - Give every recipe car `speed`, `power`, `handling` and a fitting `perk` (rocket cars get `autoRockets`, dozers get `bulldozer`, and so on). Balance: faster cars are weaker, strong cars are slower.
   - L18 ✅: the stats are live (contract in CLAUDE.md under Block-built car). Today's defaults: `carStats` + `CAR_PERK` in game.js (setting them in cars.js overrides). Card markup: three dot rows (⚡ 💪 🌀) then the weapon icon and `<i class="perk">` (🚀 🧲 🚜 🦘); style `.garageCard .perk`.
   - Style the garage: pads, spotlights, the floating stat cards (icons + bars, no text), the picked-car burst, the GO! prompt.
   - Hooks now live (L17 ✅): `function buildGarage(){…}` in cars.js replaces the placeholder showroom (contract in CLAUDE.md); style `.garageCard` (`.soon` = placeholder car, `--pc` = player color) and `#garageGo` in style.css. The garage look can ship before L18; the stats part needs L18.
+  - ✅ Done (`cars/D9`): every block / recipe / `cars.json` car sets `power`, `handling`, and `perk` (faster = weaker; dozers → bulldozer, rockets → autoRockets, magnets / bouncers themed). `pushCar` copies the new fields. `buildGarage()` = candy pie-floor showroom, striped curb open to +Z, back banner, spotlights, entrance cones. `.garageCard` / `.perk` / `#garageGo` restyled in style.css (gold perk badge, chunky player-color card, pulsing GO!).
 
 - [x] **D11: Real neighborhoods** `NEEDS DESIGN` (world-props; needs L19)
   - Town: houses lined up along streets with yards, fences, driveways and mailboxes; shops on a main street; a park block. Farm: fenced fields with crops in rows, animals in pens, the barn yard. Park: paths, a playground area, the pond.
@@ -428,6 +435,31 @@ Full spec and contracts: **`docs/ADVENTURE.md`** (read it before any task below)
   - Play-test the whole v2 loop: small, then medium, then giant. Make sure growth pacing feels good in a ~20 minute session with a 5-year-old.
   - ~~Phone check~~: not needed, the game is computer only (Kaden, 2026-11-07).
   - ✅ Performance pass (v0.13.1): batch sleeping props by shape with per-instance colors, shared pools for scatter, wake radius scales with car size, merged animal models, herds only near the cars, debris boxes in one batch. Draw calls in the benchmark: micro 725→214, medium town 1,460→397, giant town 3,491→1,048, boss fight 6,412→880, debris storm 7,042→1,113; the 0.8 s level-up hitch is gone.
+
+## QA findings
+
+### Round 1 (v0.35.1, Nov 8): Chrome on Mac GPU (`--use-angle=metal`), 1920×1080, quality BEST, P1 + P2 on keyboard
+Passed: boot with no script errors, version on the start screen, both players join/drive/turbo/jump/shoot, garage at tiny (drive into a car → picked within ~1 s, GO shows, Space = GO → fresh world with the new cars), every size up to GIANT, home/town/farm/park, `__sp.zone` candy/dino/bedroom, `__sp.room()`, all 10 bosses spawn by id, NEW WORLD after a beaten boss, pause menu.
+
+- [ ] **QA1: M (mute) and F (fullscreen) keys do nothing** `NEEDS LOGIC` (logic-gameplay, `src/game.js`)
+  - Cause: in the `keydown` handler (game.js:928) the line ends with `// debug: cycle cars (play uses the garage)if(e.code==='KeyM')toggleMute();if(e.code==='KeyF')toggleFS();`, so the M and F checks sit inside the comment. The start screen tells players "F = fullscreen · M = sound".
+  - Repro: start, join, press M → the 🔊 button stays 🔊 and the sound stays on.
+  - Expected: M toggles 🔊/🔇, F toggles fullscreen. Fix: move the two checks onto their own line.
+  - Reviewer: a two-minute fix; logic-gameplay can fold it into its L32 PR.
+- [ ] **QA2: Draw calls go over budget at GIANT and in some boss fights** `NEEDS LOGIC` (logic-systems)
+  - Repro (P1 + P2 joined): `__sp.level(7)` (pick cars in each garage or `__sp.garageGo()`), then `__sp.stats()` at home, `__sp.tp(240,-80)` (town), `__sp.tp(-400,-400)` (farm). Bosses: `__sp.room(false); __sp.boss('<id>')`, wait 6 s, `__sp.stats()`.
+  - Measured `calls` / `tris`: GIANT home **1161–1257** / 5.2–7.1M, GIANT town **1029** / 5.1M, GIANT farm **1078** / 2.5M. Boss fights: clankzilla **1037** / 9.1M, sirsprinkles **905** / 8.1M, kingwobbles 806, shelldozer 795, rexy 784, gumbotron 765 / 8.1M, cuddles 758 / 8.6M, the rest 612–683. Budget: ~700 (~900 in a boss fight). For comparison: micro home 339, micro town 308, `__sp.zone('candy')` at GIANT 771.
+  - The triangle counts (5–9M) are a big jump from ~0.8–1.5M at small sizes and may hurt a GTX 1060 as much as the draw calls. Check whether the far ring of chunks at GIANT (67–102 chunks loaded) can be thinner or use lower detail.
+  - Reviewer: do this **after L31** (scenes + less filler changes these numbers a lot); re-measure first, then fix what's still over.
+- [ ] **QA3: Big center text covers the action** `NEEDS DESIGN` (cars-ui, `style.css` `#big` / `#combo`)
+  - Seen: "GOLDEN!" and "×93 COMBO!" drawn on top of each other in the middle of the screen (an unreadable jumble); in a boss fight a see-through "KABOOM!" spans the boss while "×164 COMBO!" sits right on both cars, so you can't see your own car for a moment.
+  - Repro: GIANT (`__sp.level(7,true)`), `__sp.mega()` near a golden prop or `__sp.boss('clankzilla')` + `__sp.explode(x,z)` a few times next to it.
+  - Expected: one banner at a time (or stacked), and the combo label offset so it never covers the cars. Positioning is in game.js (`showBig`, the combo label placement); if a style change isn't enough, add a `NEEDS LOGIC` task.
+- [ ] **QA4: Switching LOOKS in the pause menu throws away the game** `NEEDS LOGIC` (logic-systems, `setQuality` in core.js)
+  - Repro: play to any size, Esc → "LOOKS: BEST (switch to FAST)" → the page reloads to the start screen at micro size and players must rejoin.
+  - Expected: switch without a reload, or label it clearly (e.g. "restarts") so a long session isn't wiped by accident.
+- [ ] **QA5: favicon.ico 404 on every boot** `NEEDS DESIGN` (cars-ui, UI art; `index.html` is shared)
+  - The only console error on a clean boot is `GET /favicon.ico 404`. Add a small icon (or `<link rel="icon" href="data:,">`) so the console is clean for testing.
 
 ---
 

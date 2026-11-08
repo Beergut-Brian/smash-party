@@ -261,16 +261,17 @@ function buildBubble(){const c=base();
     mk('sph',0.45,0.45,0.45,'#ffbe0b',0,4.35,-0.6),mk('sph',0.5,0.5,0.5,null,-0.8,1.4,1.7,glow('#fff6a0')),mk('sph',0.5,0.5,0.5,null,0.8,1.4,1.7,glow('#fff6a0')));
   c.ex.set(0,1,-2);c.h=4.7;return c;}
 
-/* tier 0 = humble starters, 3 = coolest smash machines. weapon is visible on tier 2–3. */
+/* tier 0 = humble starters, 3 = coolest smash machines. weapon is visible on tier 2–3.
+   D9: power 1–5, handling 1–5, perk (faster = weaker). perk:null = none. */
 const CARS=[
-  {name:'Big Bouncer',emoji:'🛻',speed:24,r:2.6,tier:1,build:buildMonster},
-  {name:'Rocket Racer',emoji:'🚀',speed:32,r:2.0,tier:3,weapon:'rocket',build:buildRocket},
-  {name:'Shark Attack',emoji:'🦈',speed:27,r:2.2,tier:3,weapon:'rocket',build:buildShark},
-  {name:'Dino Dozer',emoji:'🦖',speed:21,r:2.8,tier:2,weapon:'cannon',build:buildDino},
-  {name:'Ice Cream Smasher',emoji:'🍦',speed:24,r:2.4,tier:0,build:buildIceCream},
-  {name:'Hot Dog Hot Rod',emoji:'🌭',speed:28,r:2.3,tier:1,build:buildHotdog},
-  {name:'Fire Truck',emoji:'🚒',speed:25,r:2.6,tier:2,weapon:'cannon',build:buildFire},
-  {name:'Bubble Buggy',emoji:'🫧',speed:26,r:2.2,tier:0,build:buildBubble}
+  {name:'Big Bouncer',emoji:'🛻',speed:24,r:2.6,tier:1,power:4,handling:2,perk:'bouncy',build:buildMonster},
+  {name:'Rocket Racer',emoji:'🚀',speed:32,r:2.0,tier:3,weapon:'rocket',power:2,handling:5,perk:'autoRockets',build:buildRocket},
+  {name:'Shark Attack',emoji:'🦈',speed:27,r:2.2,tier:3,weapon:'rocket',power:3,handling:4,perk:'magnet',build:buildShark},
+  {name:'Dino Dozer',emoji:'🦖',speed:21,r:2.8,tier:2,weapon:'cannon',power:5,handling:2,perk:'bulldozer',build:buildDino},
+  {name:'Ice Cream Smasher',emoji:'🍦',speed:24,r:2.4,tier:0,power:3,handling:3,perk:'bouncy',build:buildIceCream},
+  {name:'Hot Dog Hot Rod',emoji:'🌭',speed:28,r:2.3,tier:1,power:2,handling:4,perk:null,build:buildHotdog},
+  {name:'Fire Truck',emoji:'🚒',speed:25,r:2.6,tier:2,weapon:'cannon',power:4,handling:2,perk:'bulldozer',build:buildFire},
+  {name:'Bubble Buggy',emoji:'🫧',speed:26,r:2.2,tier:0,power:2,handling:4,perk:'bouncy',build:buildBubble}
 ];
 
 /* ---------- car recipes ----------
@@ -279,27 +280,27 @@ const CARS=[
    paint replaces the body color. Wheel meshes keep the Kenney texture and still spin.
    at is [x, y, z] in car space. rot is [x, y, z] radians. */
 const RECIPES=[
-  {name:'Yellow Cab',emoji:'🚕',base:'taxi.glb',speed:25,r:2.2,tier:1,scale:1.636,height:2.7,
+  {name:'Yellow Cab',emoji:'🚕',base:'taxi.glb',speed:25,r:2.2,tier:1,power:3,handling:3,perk:null,scale:1.636,height:2.7,
     paint:'#ffd60a',exhaust:[0,.9,-2.1],
     parts:[
       {id:'stripe',at:[0,.55,0],color:'#222',w:2.15,h:.16,d:3.9},
       {id:'roofsign',at:[0,2.42,.15],color:'#111'},
       {id:'glass',at:[0,1.85,1.15],w:1.35,h:.42}]},
-  {name:'Hose Hero',emoji:'🚒',base:'firetruck.glb',speed:24,r:2.3,tier:2,weapon:'cannon',scale:1.324,height:2.55,
+  {name:'Hose Hero',emoji:'🚒',base:'firetruck.glb',speed:24,r:2.3,tier:2,weapon:'cannon',power:4,handling:2,perk:'bulldozer',scale:1.324,height:2.55,
     paint:'#d62828',exhaust:[0,.8,-2.15],
     parts:[
       {id:'stripe',at:[0,1.15,0],color:'#f8f9fa',w:2.05,h:.14,d:4.15},
       {id:'ladder',at:[0,2.2,-.15],color:'#f8f9fa'},
       {id:'lightbar',at:[0,2.35,1.15],a:'#ff2d55',b:'#ff2d55'},
       {id:'cannon',at:[0,2.05,2.05],color:'#495057',tip:'#212529',band:'#ffd60a'}]},
-  {name:'Dash Racer',emoji:'🏎️',base:'race.glb',speed:30,r:2.15,tier:2,weapon:'cannon',scale:1.758,height:1.7,
+  {name:'Dash Racer',emoji:'🏎️',base:'race.glb',speed:30,r:2.15,tier:2,weapon:'cannon',power:2,handling:5,perk:'autoRockets',scale:1.758,height:1.7,
     paint:'#3a86ff',exhaust:[0,.45,-2.05],
     parts:[
       {id:'stripe',at:[0,1.22,.15],color:'#fff',w:.22,h:.06,d:3.3},
       {id:'spoiler',at:[0,1.05,-1.55],color:'#ffd60a'},
       {id:'glass',at:[0,.95,.85],color:'#caf0f8',w:1.05,h:.28},
       {id:'cannon',at:[0,.85,1.85],color:'#1d3557',tip:'#0a1628',band:'#ff006e',scale:.85}]},
-  {name:'Honk Bus',emoji:'🚌',base:'van.glb',speed:22,r:2.45,tier:2,weapon:'cannon',scale:1.636,tweak:[1,1.08,1.12],height:2.7,
+  {name:'Honk Bus',emoji:'🚌',base:'van.glb',speed:22,r:2.45,tier:2,weapon:'cannon',power:4,handling:2,perk:'magnet',scale:1.636,tweak:[1,1.08,1.12],height:2.7,
     paint:'#ffbe0b',exhaust:[0,.7,-2.3],
     parts:[
       {id:'stripe',at:[0,1.35,0],color:'#222',w:2.35,h:.2,d:4.5},
@@ -307,14 +308,14 @@ const RECIPES=[
       {id:'stopSign',at:[1.35,1.45,1.55],color:'#e63946'},
       {id:'glass',at:[0,1.85,1.35],w:1.7,h:.5},
       {id:'cannon',at:[0,2.15,1.95],color:'#6c757d',band:'#ffbe0b'}]},
-  {name:'Snow Pusher',emoji:'❄️',base:'truck.glb',speed:21,r:2.35,tier:2,weapon:'cannon',scale:1.525,height:2.2,
+  {name:'Snow Pusher',emoji:'❄️',base:'truck.glb',speed:21,r:2.35,tier:2,weapon:'cannon',power:5,handling:2,perk:'bulldozer',scale:1.525,height:2.2,
     paint:'#e7f5ff',exhaust:[0,.7,-2.1],
     parts:[
       {id:'stripe',at:[0,1.15,.2],color:'#3a86ff',w:2.1,h:.16,d:2.2},
       {id:'plow',at:[0,.95,2.55],color:'#ff9f1c'},
       {id:'lightbar',at:[0,1.95,.55],a:'#ffd60a',b:'#ffd60a'},
       {id:'cannon',at:[0,1.85,1.15],color:'#adb5bd',tip:'#343a40',band:'#3a86ff'}]},
-  {name:'Spinny Mixer',emoji:'🌀',base:'truck.glb',speed:20,r:2.4,tier:2,weapon:'cannon',scale:1.525,height:2.7,
+  {name:'Spinny Mixer',emoji:'🌀',base:'truck.glb',speed:20,r:2.4,tier:2,weapon:'cannon',power:4,handling:2,perk:'magnet',scale:1.525,height:2.7,
     paint:'#f77f00',exhaust:[0,.7,-2.1],
     parts:[
       {id:'drum',at:[0,1.55,-.35],color:'#fff3bf',band:'#f77f00'},
@@ -322,13 +323,13 @@ const RECIPES=[
       {id:'stripe',at:[0,.7,.4],color:'#fff',w:1.9,h:.12,d:1.6},
       {id:'cannon',at:[0,1.35,2.05],color:'#495057',band:'#f77f00'}]},
   /* D4 wish-list: T-rex truck, taco truck, monster truck */
-  {name:'Rex Rammer',emoji:'🦕',base:'truck.glb',speed:22,r:2.55,tier:3,weapon:'rocket',scale:1.525,tweak:[1.05,1.12,1.08],height:3.8,
+  {name:'Rex Rammer',emoji:'🦕',base:'truck.glb',speed:22,r:2.55,tier:3,weapon:'rocket',power:5,handling:2,perk:'bulldozer',scale:1.525,tweak:[1.05,1.12,1.08],height:3.8,
     paint:'#52b788',exhaust:[0,.75,-2.15],
     parts:[
       {id:'trexHead',at:[0,2.05,2.85],scale:1.35,color:'#52b788',jaw:'#2d6a4f',crest:'#f77f00'},
       {id:'stripe',at:[0,.85,.1],color:'#ffd60a',w:2.05,h:.14,d:2.4},
       {id:'rockets',at:[0,1.65,-.85],scale:1.25,color:'#40916c',fin:'#ffd60a',glow:'#95d5b2'}]},
-  {name:'Taco Tornado',emoji:'🌮',base:'van.glb',speed:24,r:2.4,tier:2,weapon:'cannon',scale:1.636,tweak:[1.02,1.1,1.05],height:3.6,
+  {name:'Taco Tornado',emoji:'🌮',base:'van.glb',speed:24,r:2.4,tier:2,weapon:'cannon',power:3,handling:3,perk:'magnet',scale:1.636,tweak:[1.02,1.1,1.05],height:3.6,
     paint:'#f4a261',exhaust:[0,.75,-2.25],
     parts:[
       {id:'tacoShell',at:[0,2.65,0],scale:1.35,color:'#e9c46a',fill:'#e76f51',top:'#2a9d8f'},
@@ -336,7 +337,7 @@ const RECIPES=[
       {id:'roofsign',at:[0,3.55,.2],color:'#e63946'},
       {id:'cannon',at:[0,1.95,2.25],scale:1.15,color:'#2a9d8f',tip:'#264653',band:'#e9c46a'},
       {id:'glass',at:[0,1.75,1.35],w:1.55,h:.45,color:'#ffe8d6'}]},
-  {name:'Stomp King',emoji:'🛞',base:'suv.glb',speed:23,r:2.7,tier:3,weapon:'rocket',scale:1.667,tweak:[1.12,1.4,1.08],y:.15,height:3.8,
+  {name:'Stomp King',emoji:'🛞',base:'suv.glb',speed:23,r:2.7,tier:3,weapon:'rocket',power:5,handling:2,perk:'bulldozer',scale:1.667,tweak:[1.12,1.4,1.08],y:.15,height:3.8,
     paint:'#e63946',exhaust:[0,1.1,-2.2],
     parts:[
       {id:'fatTire',at:[-1.7,1.05,1.45],r:1.2,w:.95,hub:'#ffd60a'},
@@ -348,21 +349,21 @@ const RECIPES=[
       {id:'rockets',at:[0,2.05,-.55],scale:1.3,color:'#9b2226',fin:'#ffd60a',glow:'#ff7b00'},
       {id:'spoiler',at:[0,2.7,-1.55],color:'#111'}]},
   /* D4 tier-0 humble starters — toy-ish, no weapons (bubbles) */
-  {name:'Pedal Putter',emoji:'🚲',base:'kart-oozi.glb',speed:22,r:2.05,tier:0,scale:2.0,height:2.9,
+  {name:'Pedal Putter',emoji:'🚲',base:'kart-oozi.glb',speed:22,r:2.05,tier:0,power:2,handling:3,perk:'bouncy',scale:2.0,height:2.9,
     paint:'#ff6b6b',exhaust:[0,.95,-1.35],
     parts:[
       {id:'pedals',at:[0,.55,.55],color:'#ffd60a',arm:'#495057'},
       {id:'stripe',at:[0,1.05,.1],color:'#fff',w:.35,h:.1,d:2.0},
       {id:'googly',at:[0,1.55,1.15],s:.28},
       {id:'flag',at:[.75,1.55,-.55],color:'#3a86ff',tip:'#ffbe0b'}]},
-  {name:'Cart Crash',emoji:'🛒',base:'van.glb',speed:21,r:2.25,tier:0,scale:1.45,tweak:[.92,.88,.9],height:2.8,
+  {name:'Cart Crash',emoji:'🛒',base:'van.glb',speed:21,r:2.25,tier:0,power:2,handling:2,perk:'magnet',scale:1.45,tweak:[.92,.88,.9],height:2.8,
     paint:'#adb5bd',exhaust:[0,.65,-2.0],
     parts:[
       {id:'basket',at:[0,1.35,.15],w:1.7,h:1.15,d:2.0,color:'#dee2e6',a:'#e76f51',b:'#ffd60a',fill:'#2a9d8f'},
       {id:'handlebar',at:[0,1.55,-1.55],color:'#495057',grip:'#e63946',bell:'#ffd60a'},
       {id:'googly',at:[0,1.85,1.55],s:.3},
       {id:'stripe',at:[0,.55,0],color:'#ff006e',w:2.0,h:.12,d:3.4}]},
-  {name:'Scoot Zoom',emoji:'🛴',base:'race.glb',speed:27,r:2.0,tier:0,scale:1.55,tweak:[.72,.55,1.2],height:2.2,
+  {name:'Scoot Zoom',emoji:'🛴',base:'race.glb',speed:27,r:2.0,tier:0,power:1,handling:5,perk:'bouncy',scale:1.55,tweak:[.72,.55,1.2],height:2.2,
     paint:'#06d6a0',exhaust:[0,.35,-2.0],
     parts:[
       {id:'handlebar',at:[0,.55,1.55],color:'#212529',grip:'#ff006e',bell:'#ffd60a',scale:1.05},
@@ -370,7 +371,7 @@ const RECIPES=[
       {id:'googly',at:[0,.85,1.05],s:.24},
       {id:'flag',at:[-.55,.9,-1.15],color:'#ffbe0b',tip:'#e63946',scale:.85}]},
   /* D12 tier-3 garage cars — exact GARAGE_WANTED names so placeholders disappear */
-  {name:'Rocket Sled',emoji:'🛷',base:'race.glb',speed:31,r:2.2,tier:3,weapon:'rocket',scale:1.7,tweak:[.85,.55,1.35],y:.05,height:2.4,
+  {name:'Rocket Sled',emoji:'🛷',base:'race.glb',speed:31,r:2.2,tier:3,weapon:'rocket',power:2,handling:4,perk:'autoRockets',scale:1.7,tweak:[.85,.55,1.35],y:.05,height:2.4,
     paint:'#ff595e',exhaust:[0,.55,-2.4],
     parts:[
       {id:'sledRunners',at:[0,.25,0],color:'#ced4da',tip:'#ffd60a'},
@@ -378,7 +379,7 @@ const RECIPES=[
       {id:'spoiler',at:[0,.85,-1.85],color:'#222',scale:.9},
       {id:'rockets',at:[0,.95,-.15],scale:1.15,color:'#c1121f',fin:'#ffd60a',glow:'#ff7b00'},
       {id:'googly',at:[0,.95,1.55],s:.22}]},
-  {name:'Robo Walker',emoji:'🤖',base:'truck.glb',speed:22,r:2.6,tier:3,weapon:'rocket',scale:1.45,tweak:[1.05,1.15,1.0],y:.85,height:4.2,
+  {name:'Robo Walker',emoji:'🤖',base:'truck.glb',speed:22,r:2.6,tier:3,weapon:'rocket',power:4,handling:3,perk:'autoRockets',scale:1.45,tweak:[1.05,1.15,1.0],y:.85,height:4.2,
     paint:'#8d99ae',exhaust:[0,1.55,-2.0],
     parts:[
       {id:'roboLegs',at:[0,0,0],color:'#6c757d',joint:'#ffd60a',boot:'#212529'},
@@ -387,7 +388,7 @@ const RECIPES=[
       {id:'flag',at:[.7,2.35,-.4],color:'#3a86ff',tip:'#ff006e',pole:'#adb5bd',scale:.9},
       {id:'rockets',at:[0,2.15,-.75],scale:1.2,color:'#495057',fin:'#ffd60a',glow:'#48cae4'},
       {id:'lightbar',at:[0,2.65,.35],a:'#ff2d55',b:'#3a86ff'}]},
-  {name:'Spike-o-saurus',emoji:'🦕',base:'truck.glb',speed:23,r:2.7,tier:3,weapon:'rocket',scale:1.55,tweak:[1.08,1.15,1.1],height:3.6,
+  {name:'Spike-o-saurus',emoji:'🦕',base:'truck.glb',speed:23,r:2.7,tier:3,weapon:'rocket',power:5,handling:2,perk:'bulldozer',scale:1.55,tweak:[1.08,1.15,1.1],height:3.6,
     paint:'#57cc99',exhaust:[0,.8,-2.2],
     parts:[
       {id:'stegoSpikes',at:[0,1.85,-.15],scale:1.2,color:'#38a3a5',b:'#ffbe0b'},
@@ -395,7 +396,7 @@ const RECIPES=[
       {id:'stripe',at:[0,.9,.15],color:'#22577a',w:2.1,h:.16,d:2.6},
       {id:'rockets',at:[0,1.55,-.95],scale:1.25,color:'#2a9d8f',fin:'#ffbe0b',glow:'#95d5b2'},
       {id:'plow',at:[0,.85,2.55],color:'#80ed99',scale:.85}]},
-  {name:'Hover Zoomer',emoji:'🛸',base:'race-future.glb',speed:29,r:2.3,tier:3,weapon:'rocket',scale:1.65,tweak:[1.05,.9,1.05],y:.35,height:2.8,
+  {name:'Hover Zoomer',emoji:'🛸',base:'race-future.glb',speed:29,r:2.3,tier:3,weapon:'rocket',power:2,handling:5,perk:'magnet',scale:1.65,tweak:[1.05,.9,1.05],y:.35,height:2.8,
     paint:'#9b5de5',exhaust:[0,.7,-2.1],
     parts:[
       {id:'hoverDisc',at:[0,.55,0],scale:1.05,color:'#7b2cbf',rim:'#22223b',dome:'#caf0f8',glow:'#48cae4',spot:'#ffd60a'},
@@ -440,6 +441,8 @@ function buildRecipe(def,tmpl){
 function pushCar(def,tmpl){
   const car={name:def.name,emoji:def.emoji||'🚗',speed:def.speed||25,r:def.r||2.3,build:buildRecipe(def,tmpl)};
   if(def.tier!=null)car.tier=def.tier;if(def.weapon)car.weapon=def.weapon;
+  if(def.power!=null)car.power=def.power;if(def.handling!=null)car.handling=def.handling;
+  if(def.perk!==undefined)car.perk=def.perk;
   CARS.push(car);
 }
 function loadModelCars(){
@@ -461,3 +464,43 @@ function loadModelCars(){
   RECIPES.forEach(def=>ready(def.base,tmpl=>pushCar(def,tmpl)));
 }
 loadModelCars();
+
+/* D9: level-up garage showroom. Floor top at y=0, ~26 radius, open toward +Z (camera). Logic scales + places it. */
+function buildGarage(){
+  const g=new THREE.Group(),R=26;
+  const floor=mk('cyl',R*2,.35,R*2,'#2b2d42',0,-.095,0); // top at y=.08 so it never fights the ground plane (y=0)floor.castShadow=false;g.add(floor);
+  // candy pie wedges on the floor
+  const wedges=['#ff6b6b','#ffd60a','#06d6a0','#3a86ff','#9b5de5','#ff9f1c','#48cae4','#f72585'];
+  for(let i=0;i<8;i++){
+    const wedge=new THREE.Mesh(new THREE.CircleGeometry(R*.92,24,i*Math.PI/4,Math.PI/4),M(wedges[i]));
+    wedge.rotation.x=-Math.PI/2;wedge.position.y=.12;wedge.castShadow=false;wedge.receiveShadow=true;g.add(wedge);
+  }
+  const hub=mk('cyl',6.4,.12,6.4,'#fff',0,.1,0);hub.castShadow=false;g.add(hub);
+  g.add(mk('cyl',3.2,.16,3.2,'#ffd60a',0,.14,0));
+  // low curb ring (open toward +Z so the camera can see in)
+  const curb=new THREE.Mesh(new THREE.CylinderGeometry(R,R,1.1,48,1,true,Math.PI*.28,Math.PI*1.44),
+    litMat({color:'#ffd60a',side:THREE.DoubleSide}));
+  curb.position.y=.55;curb.receiveShadow=true;g.add(curb);
+  // candy stripes on the curb
+  for(let i=0;i<14;i++){
+    const a=Math.PI*.32+i*(Math.PI*1.36/14),x=Math.sin(a)*(R-.15),z=Math.cos(a)*(R-.15);
+    g.add(mk('box',R*.12,.95,.22,i%2?'#fff':'#e63946',x,.5,z));
+  }
+  // back banner + checkered strip
+  g.add(mk('box',R*1.15,6.5,1.1,'#e63946',0,3.4,-R+.55));
+  g.add(mk('box',R*1.15,1.4,1.3,'#fff',0,7.1,-R+.55));
+  for(let i=0;i<9;i++)g.add(mk('box',R*.12,R*.12*.55,.28,i%2?'#111':'#fff',(i-4)*R*.12,4.1,-R+1.15));
+  // spotlights around the back half
+  for(let i=0;i<5;i++){
+    const a=Math.PI*.55+i*(Math.PI*.9/4),x=Math.sin(a)*(R-2.2),z=Math.cos(a)*(R-2.2);
+    g.add(mk('cyl',.22,7.2,.22,'#adb5bd',x,3.6,z));
+    const lamp=mk('cone',1.1,1.4,1.1,'#212529',x,7.4,z);lamp.rotation.x=Math.PI;g.add(lamp);
+    g.add(mk('sph',.55,.55,.55,null,x,6.7,z,glow('#fff6a0')));
+  }
+  // little toy cones marking the open entrance
+  [[-10,R-1.2],[10,R-1.2],[-16,R-3],[16,R-3]].forEach(([x,z],i)=>{
+    g.add(mk('cone',.9,1.6,.9,i%2?'#ff9f1c':'#ffd60a',x,.8,z));
+    g.add(mk('cyl',.95,.18,.95,'#fff',x,.15,z));
+  });
+  return g;
+}

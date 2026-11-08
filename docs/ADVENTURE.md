@@ -40,13 +40,22 @@ In Adventure the first couple of minutes are "look but don't break". It still ha
 ## 2. Scenes instead of confetti (both modes)
 
 ### The idea
-A **scene** is a small hand-made arrangement of props that tells a story at a glance: a lemonade stand with a line of toy customers, a toy-car race lined up on the play-mat road, a picnic with an ant parade. The world should read as **scenes with open ground between them**, plus a light sprinkle of filler, instead of a carpet of random props.
+The world should look **planned, like a real place**: a suburb where the houses sit together on streets with yards, driveways, fences and sidewalks, a big park right next to the neighborhood, a downtown main street, farms out at the edge. Kenney's suburban sample scenes are the reference (Kaden, Nov 8). Planned beats random wherever it looks better; random filler becomes a small top-up, not the main way the world gets stocked.
+
+Two building blocks, both hand-made by the design lanes:
+- **Lots** (templates): one plot with everything on it at every scale. A house lot is the house (huge), the car in the driveway and the fence (medium/large), a mailbox, a bike and trash cans (small), a gnome and a flowerbed (mini), flowers, pebbles and a dropped toy (micro). A row of lots makes a street; the same few lot templates, mirrored and recolored, build a whole suburb.
+- **Scenes**: a small arrangement that tells a story at a glance (a lemonade stand with a line of toy customers, a toy-car race on the play-mat road, a picnic with an ant parade). Scenes sit inside lots, parks and fields to give each block something to find.
+
+So every size has planned things to smash: at micro you're among the flowerbeds and toys of a front yard, at medium you're knocking over cars and fences, at huge you're flattening the houses. Nothing appears out of nowhere.
+
+**The Home World is fully planned** (Adventure, and Arcade's first world): one hand-made map where every 80×80 chunk is designed, with the neighborhood, park, downtown, school, farm belt, construction site and cornfield where the quests need them. **Arcade's random worlds** keep their random zone map but fill each chunk from a library of planned **blocks** (2–4 hand-made chunk layouts per zone, mirrored and rotated), so a random world still looks planned.
+
+Performance: planned is as cheap as random or cheaper (fixed counts, the same few templates, everything sleeps in the instanced pools). The one risk is all the micro and mini detail across many chunks once the players are big; logic skips building props 3+ sizes below the players (they'd only get squished without counting anyway) and builds them again when you're small.
 
 Targets (logic measures these before and after, on the start street and in a town chunk):
-- **About 40% as many filler props** as today at micro to small sizes, about 60% at medium and up.
-- **2–4 scenes on screen** at a time, with visible empty ground between them.
-- Of the filler that's left, most sits inside a scene or a spot (L19 already does the spot part).
-- Growth pacing stays about the same: fewer things, but scenes are dense little piles worth smashing, and quests give big growth rewards.
+- **Random filler is a top-up only**: about 10–20% of what's on screen in planned areas (it keeps a freshly smashed area from staying empty), more only in zones that have no planned blocks yet.
+- **Visible empty ground**: streets, lawns and plazas stay open enough to drive and explore.
+- Growth pacing stays about the same; quests give big growth rewards on top.
 
 ### Scene contract (draft)
 Scenes live in the design files: `SCENES` in `objects.js` (town, farm, park, home) and `registerZone({scenes:{…}})` in a zone file.
@@ -69,7 +78,7 @@ const SCENES={
 
 - Coordinates are local to the scene; **+Z is the front** (logic turns the front toward the nearest road or the camera).
 - **Scenes scale.** Logic can build any scene at any size class: it scales the positions and each prop by 1.65 per size step (props already support a scale argument). So "toy-car race" works at micro on the bedroom rug and at medium in a parking lot. A scene can list `sizes:['micro','mini','tiny']` to limit where it's used.
-- **Two ways to place them.** A zone layout can place a scene at a fixed spot with `ctx.scene('race_day',x,z,th)` (landmark scenes, quest stages). The size-matched filler also drops **filler scenes** into open ground near the players, picked by zone, spot and size: this replaces most of the random scatter.
+- **Placing them.** Layouts place lots and scenes at fixed spots with `ctx.scene('house_lot_a',x,z,th)` (a lot is just a bigger scene). Logic can also drop a **filler scene** into open ground near the players as part of the small top-up, picked by zone, spot and size.
 - Scenes are remembered per chunk like props (smashed stays smashed, regrows later).
 - Quest stages (section 4) are just scenes that spawn when a quest starts.
 

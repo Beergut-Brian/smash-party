@@ -11,7 +11,7 @@ The card tells the agent what it owns, what to work on, how to test, and how to 
 | [`logic-systems`](logic.md) | Claude Code | `core.js`, `boot.mjs`, `worlds.js`, and `game.js` systems (audio, rendering, streaming, scatter, world, saving) | L31, L34, L37, L33 |
 | [`logic-gameplay`](logic.md) | Claude Code | `quests.js` and `game.js` gameplay (bosses, smashing, players, garage, abilities) | L32, L35, L36 |
 | [`audio`](audio.md) | Claude Code (on the Mac with the ElevenLabs key) | `tools/*-lines.json`, generated `assets/sounds/voice|sfx|music/` | New voice lines, car names, animal sounds, music |
-| [`cars-ui`](cars-ui.md) | Cursor | `src/cars.js`, `assets/cars/`, `style.css` | `D4`, `D6`, car/UI `NEEDS DESIGN`, kid car ideas |
+| [`cars-ui`](cars-ui.md) | Cursor (moving to Claude Code) | `src/cars.js`, `assets/cars/`, `style.css` | `D4`, `D6`, car/UI `NEEDS DESIGN`, kid car ideas |
 | [`world-props`](world-props.md) | Claude Code | `src/objects.js`, `assets/props/` (top level), `assets/textures/` | `D8b`, `D7`, town/farm/park/home, prop `NEEDS DESIGN` |
 | [`world-animals`](world-animals.md) | Claude Code | `src/world/animals.js`, `assets/props/animals/` | Animal `NEEDS DESIGN` |
 | [`world-bosses`](world-bosses.md) | Claude Code | `src/world/bosses.js`, `assets/props/bosses/` | Boss `NEEDS DESIGN` |

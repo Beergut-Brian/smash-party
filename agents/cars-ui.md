@@ -1,4 +1,4 @@
-# Role: cars-ui (Cursor)
+# Role: cars-ui (Cursor or Claude Code)
 
 **You design the cars and the on-screen UI.** Cars are built with the **recipe system** in `src/cars.js`: a Kenney base model + paint + parts from `PARTS` + optional `tweak`. New car = a few lines, not a new model.
 
@@ -18,4 +18,4 @@
 
 ## Done means
 Branch `cars/<what>`, every new car swapped to in-game and driven (`__sp.level(n)` to reach its tier), no console errors, PR `cars: <what>` listing the cars.
-**Use a fresh Cursor chat per task** (long chats burn usage).
+**Use a fresh chat or session per task** (long chats burn usage). Works the same from Cursor or Claude Code: "You are the cars-ui agent for Smash Party. Read agents/cars-ui.md and go."
