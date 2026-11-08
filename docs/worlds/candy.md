@@ -139,6 +139,16 @@ Each block: id · giver (emoji, name, look, voice for casting) · steps · rewar
 - *Reward:* ⭐⭐⭐.
 - *Spots:* `giver` on the cloud meadow (r 6); `stage` ~120×80.
 
+## Where it is (Z6, built)
+`CANDY_QUEST_AT` in `src/world/zones/candy_land.js` (the land's `questAt`, so `worldQuestAt(id,k)` works in Candy Land) has every spot below. Notes for the pack:
+- Map: Frosting Lane (start, x −160, z 290–360) · Gumdrop Forest west (ch2, x −290…−330, z 130–330) · the river hub east of the plaza (ch3, x 0–120, z −120…20) · the cake plaza (x −80, z −140) · the mountains north (ch4, z < −200).
+- `bun_cherries`: `cake` is the party cake next to Bun (a `bring` goes back to the giver, who stands beside it); `cherries.roof` is a cupcake house (use `lift:true`); `piles` are 3 painted patches for the `smash` step.
+- `minty_gumballs` / `glaze_donuts`: `goal` + `goalR` (world units at the chapter's first size).
+- `wafer_rings`: `rings_at.falls` is on top of the Chocolate Falls, `fallsY` = 15.5 world units high; a `find` item's `y` is at car scale 1, so use about `fallsY / car scale` (≈28 at medium). The island is a dry `mallow_isle` spot in the deep middle.
+- `sundae_summit`: `summit` is the top of the long slope beside the volcano, `summitY` = 10 (world units, like a `reach` step's `y`).
+- `fizzy_hoops`: `rings` are 8 points down the river, two of them past the Falls; `ramps` are the two bank jumps.
+- The sub-zone ids are `candy`, `candy_forest`, `candy_river`, `candy_peaks` (not `candy_mountain`).
+
 ## Spot checklist for the zone lane (`questAt`)
 Same shape as `HOME_QUEST_AT`: `{giver:[x,z], r, stage:[x,z,w,d], …point lists}`. The layouts mark each stage as a `quest_<id>` spot and keep each giver spot clear.
 

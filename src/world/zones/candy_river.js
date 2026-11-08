@@ -6,7 +6,8 @@
    Falls at the river's head. weight:0: only part of Candy Land. Every top-level name starts with candy/CANDY. */
 const CANDY_FUDGE=['#7f4f24','#936639'],CANDY_COCOA=['#3d1f0d','#5c3317','#6f4518'],CANDY_SILVER='#dee2e6';
 Object.assign(CANDY_R,{cocoa:.25,chip:.22,truffle:.4,bonbon:.45,reed:.5,wafer:1.1,rock:1,raft:1.4,cocoatree:1.4,strawberry:1.1,
-  mill:3.6,fudgehouse:4.6,fountain:3.6,falls:11});
+  mill:3.6,fudgehouse:4.6,fountain:3.6,falls:11,rockcandy:.8,geode:3});
+const CANDY_GEM=['#e0aaff','#a0c4ff','#9bf6ff','#ffafcc','#caffbf','#fdffb6'];
 
 const CANDY_RIVER_PROPS={
   /* ---- micro ---- */
@@ -76,6 +77,18 @@ const CANDY_RIVER_PROPS={
     for(const sx of [-1,1]){P(BP(mk('box',1,1,.18,'#a0e7ff',sx*2.3,1.7,3.15),0,'extra'),1,true,.3);P(BP(mk('box',1,.9,.18,'#a0e7ff',sx*1.6,5,3.15),1,'extra'),1,true,.3);}
     candyFace(g,arg);},{building:true}),
   // a three-tier chocolate fountain in a chocolate pool, a cherry on top
+  // rock candy (Z6 part 2, Jawbreaker Jo's quarry): a cluster of sugar crystals on a sugar lump; the crystals pop off whole
+  candy_rockcandy:(x,z)=>sized(x,z,CANDY_R.rockcandy,2.2,3,'small',(P,g)=>{const c=pick(CANDY_GEM),d=pick(CANDY_GEM);
+    P(mk('sph',1.5,.7,1.3,'#f8edeb',0,.25,0),2);
+    for(let i=0;i<5;i++){const a=i/5*Math.PI*2+rand(0,.6),h=i?rand(.9,1.4):2,r=i?.38:0,t=i?.4:0;
+      const m=mk('box',i?.34:.46,h,i?.34:.46,i%2?d:c,Math.sin(a)*r,.3+h/2*.9,Math.cos(a)*r);m.rotation.set(Math.cos(a)*t,a,-Math.sin(a)*t,'YXZ');P(m,1,true,.25);}
+    g.rotation.y=rand(0,6.28);}),
+  // a rock-candy boulder (large): the quarry's landmarks, a sugar rock bristling with big crystals
+  candy_geode:(x,z)=>sized(x,z,CANDY_R.geode,6.4,8,'large',(P,g)=>{const c=pick(CANDY_GEM),d=pick(CANDY_GEM);
+    P(mk('sph',5.4,2.6,4.6,'#f1e3f3',0,1,0),4);P(mk('sph',3.4,2,3,'#e5d4ef',.8,2.2,-.4),3);
+    for(let i=0;i<8;i++){const a=i/8*Math.PI*2+.3,h=i%3?rand(2.4,3.6):5,r=i%3?1.6:.6,t=i%3?.45:.15;
+      const m=mk('box',.9,h,.9,i%2?d:c,Math.sin(a)*r,1.6+h/2*.9,Math.cos(a)*r);m.rotation.set(Math.cos(a)*t,a,-Math.sin(a)*t,'YXZ');P(m,2,true,.6);}
+    g.rotation.y=rand(0,6.28);},{big:true}),
   candy_fountain:(x,z)=>sized(x,z,CANDY_R.fountain,9.9,16,'huge',P=>{
     P(mk('cyl',7.2,.8,7.2,'#e9b872',0,.4,0),4);P(mk('cyl',6.4,.85,6.4,'#5c3317',0,.45,0),3);
     P(mk('cyl',.8,8,.8,CANDY_SILVER,0,4.5,0),3);
@@ -104,7 +117,7 @@ const CANDY_RIVER_X=20,CANDY_RIVER_WADE=18,CANDY_RIVER_DEEP=7,CANDY_RIVER_BANK=2
 const candyRiverX=(z,ci)=>ci*CHUNK+CANDY_RIVER_X+Math.sin(z*.045+ci*1.7)*4;
 const candyRiverTh=(z,ci)=>Math.atan(Math.cos(z*.045+ci*1.7)*.18);
 // bridges: every road that crosses the river, plus one footbridge per chunk
-const candyBridges=ctx=>(ctx.cj%2===0)?[ctx.cz,ctx.cz-26]:[ctx.cz-14,ctx.cz+18];
+const candyBridges=ctx=>(typeof candyLandBridges==='function'&&candyLandBridges(ctx))||((ctx.cj%2===0)?[ctx.cz,ctx.cz-26]:[ctx.cz-14,ctx.cz+18]);
 const candyDry=(ctx,x,z,r)=>Math.abs(x-candyRiverX(z,ctx.ci))>CANDY_RIVER_BANK/2+r;
 const candyBankPut=(ctx,type,x,z,arg)=>candyDry(ctx,x,z,CANDY_R[type.slice(6)]||1.2)&&candyPut(ctx,type,x,z,arg);
 function candyRiverSpots(ctx){
@@ -145,9 +158,11 @@ const CANDY_BRIDGE={micro:['candy_cocoa','candy_wrap'],mini:['candy_truffle'],ti
 
 /* ---------- layout: the river and its bridges first, then the bank: a mill, a fudge factory or a cocoa orchard ---------- */
 function candyRiverLayout(ctx){
+  if(candyLand(ctx))return;
   const ci=ctx.ci;
   // the river's head: the Chocolate Falls (north end of the first river chunk), placed before the bridge posts
-  if(candyIsSlot(ctx,'candy_river','first')){const z=ctx.z0+16;ctx.place('candy_falls',candyRiverX(z,ci),z,0,CANDY_R.falls);}
+  if(!candyLandOn()&&candyIsSlot(ctx,'candy_river','first')){ // the land's Falls stand mid-river at Captain Wafer's dock (candy_land.js)
+    const z=ctx.z0+16;ctx.place('candy_falls',candyRiverX(z,ci),z,0,CANDY_R.falls);}
   const bz=candyRiverSpots(ctx);
   // the fountain a third of the way down the river (the very middle is often the home arena), on the west bank
   if(candyIsSlot(ctx,'candy_river',.35,3))for(const [dx,dz] of [[-18,-18],[-18,18],[-20,0]])
@@ -182,16 +197,17 @@ registerZone({
     micro:['candy_cocoa','candy_chip','candy_wrap'],
     mini:['candy_truffle','candy_bonbon','candy_cookie'],
     tiny:['candy_reed','candy_cupcake'],
-    small:['candy_wafer','candy_rock','candy_raft'],
+    small:['candy_wafer','candy_rock','candy_raft','candy_rockcandy'],
     medium:['candy_cocoatree','candy_strawberry','candy_choco'],
-    large:['candy_mill','candy_swirl'],
+    large:['candy_mill','candy_swirl','candy_geode'],
     huge:['candy_fudgehouse','candy_mill','candy_fountain'],
     mega:['candy_fudgehouse','candy_mill']      // the Falls only stands at the river's head, the big fountain mid-river
   },
   spots:{choco_river:CANDY_FLOAT,choco_deep:CANDY_FLOAT,wafer:CANDY_BRIDGE,
     cocoa_bank:{micro:['candy_cocoa','candy_chip'],mini:['candy_truffle','candy_bonbon'],tiny:['candy_reed'],small:['candy_wafer','candy_rock']},
+    mallow_isle:{micro:['candy_wrap'],mini:['candy_gumdrop']},
     berry_field:{micro:['candy_cocoa'],mini:['candy_bonbon'],tiny:['candy_reed'],small:['candy_rock'],medium:['candy_strawberry']}},
-  spotLook:{choco_river:'#7b4a2a',choco_deep:'#5c3317',cocoa_bank:'#d9a26b',wafer:'#f4d58d',berry_field:'#e07a5f'},
-  herds:[['duck',4],['bunny',3]],
+  spotLook:{choco_river:'#7b4a2a',choco_deep:'#5c3317',cocoa_bank:'#d9a26b',wafer:'#f4d58d',berry_field:'#e07a5f',mallow_isle:'#fff8fb'}, // mallow_isle: a dry marshmallow island in the deep middle (Z6 part 2)
+  herds:[['duck',4],[CANDY_BEAR,3]],     // A5b: gummy bears on the banks
   layout:candyRiverLayout
 });

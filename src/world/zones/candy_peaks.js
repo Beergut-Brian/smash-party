@@ -111,7 +111,7 @@ const CANDY_PEAKS_SCENES={
     s.spot('berry_slope',0,0,22,20,0);
     s.place('candy_iglu',-5,-4,0);s.place('candy_iglu',5,-4.5,0);s.place('candy_iglu',0,4,0);
     s.place('candy_softserve',-8.5,3);s.place('candy_parfait',8.4,2.5);s.place('candy_snowcone',2.5,-9.4);
-    s.ramp(-9,9,0,8,5,2.4);s.herd('chick',4,8,4);}},
+    s.ramp(-9,9,0,8,5,2.4);s.herd(CANDY_SHEEP,4,8,4);}},
   // the parlor with its patio: parfaits out front, soft-serve signs, ice-cream trees
   candy_parlor_lot:{size:'huge',r:13,sizes:['large','huge','mega'],build(s){
     s.spot('berry_slope',0,-1,24,14,0);s.spot('patio',0,8.5,18,6,0);s.place('candy_parlor',0,-2,0);
@@ -123,10 +123,11 @@ const CANDY_SLOPE={micro:['candy_sprinkles','candy_cherry'],mini:['candy_scoopmi
 
 /* ---------- layout: big mint / strawberry slopes with jumps on them, a scene, scoop trees; one volcano and one scoop hill per map ---------- */
 function candyPeaksLayout(ctx){
+  if(candyLand(ctx))return;
   for(let i=0;i<2;i++){const x=rand(ctx.x0+16,ctx.x1-16),z=rand(ctx.z0+16,ctx.z1-16),th=(Math.random()*4|0)*Math.PI/2;
     ctx.spot(i?'berry_slope':'mint_slope',x,z,rand(20,28),rand(18,26),rand(-.3,.3));ctx.ramp(x,z,th,12,8,4);}
   candyRamps(ctx,1);
-  if(candyIsSlot(ctx,'candy_peaks','mid')){const p=candyDrop(ctx,'candy_volcano',0);
+  if(!candyLandOn()&&candyIsSlot(ctx,'candy_peaks','mid')){const p=candyDrop(ctx,'candy_volcano',0); // the land's volcano is Sundae's mountain (candy_land.js)
     if(p){candyRingOf(ctx,p.x,p.z,CANDY_R.volcano+3,10,'candy_scoopmini');candyRingOf(ctx,p.x,p.z,CANDY_R.volcano+6,8,'candy_popsicle');}}
   else if(candyIsSlot(ctx,'candy_peaks','first',2)){const p=candyDrop(ctx,'candy_scoophill',0);
     if(p){ctx.spot('melt',p.x+4,p.z+8,12,6,.2);candyRingOf(ctx,p.x,p.z,CANDY_R.scoophill+3,8,'candy_softserve');}}
@@ -138,7 +139,7 @@ function candyPeaksLayout(ctx){
   for(let i=0;i<6;i++)candyPut(ctx,pick(['candy_scooptree','candy_scooptree','candy_softserve','candy_fudgepop','candy_snowcone']),rand(ctx.x0+6,ctx.x1-6),rand(ctx.z0+6,ctx.z1-6),0);
   if(Math.random()<.5)candyPut(ctx,'candy_iglu',rand(ctx.x0+10,ctx.x1-10),rand(ctx.z0+10,ctx.z1-10),Math.random()*4|0);
   candySprinkle(ctx,5,['candy_parfait','candy_snowcone','candy_popsicle','candy_tipcone']);
-  ctx.herd('chick',rand(ctx.x0+12,ctx.x1-12),rand(ctx.z0+12,ctx.z1-12),4);
+  ctx.herd(Math.random()<.7?CANDY_SHEEP:'chick',rand(ctx.x0+12,ctx.x1-12),rand(ctx.z0+12,ctx.z1-12),4);
 }
 
 registerZone({
@@ -162,8 +163,10 @@ registerZone({
     mega:['candy_scoophill','candy_parlor']    // the volcano only stands once per map
   },
   spots:{mint_slope:CANDY_SLOPE,berry_slope:CANDY_SLOPE,melt:{micro:['candy_sprinkles','candy_cherry'],mini:['candy_scoopmini'],tiny:['candy_tipcone'],small:['candy_snowcone']},
-    patio:{micro:['candy_sprinkles'],mini:['candy_scoopmini'],tiny:['candy_popsicle'],small:['candy_snowcone']}},
-  spotLook:{mint_slope:'#c7f9cc',berry_slope:'#ffd6e0',melt:'#ffc8dd',patio:'#ffffff'},
-  herds:[['chick',4],['bunny',3]],
+    patio:{micro:['candy_sprinkles'],mini:['candy_scoopmini'],tiny:['candy_popsicle'],small:['candy_snowcone']},
+    cloud:{micro:['candy_sprinkles'],mini:['candy_scoopmini'],tiny:['candy_cupcake'],small:['candy_marsh'],medium:['candy_cottontree']}},
+  // cloud / cloud_blue: Puff's cotton-candy cloud meadow in the land (Z6 part 2)
+  spotLook:{mint_slope:'#c7f9cc',berry_slope:'#ffd6e0',melt:'#ffc8dd',patio:'#ffffff',cloud:'#ffd6f0',cloud_blue:'#d6ebff'},
+  herds:[[CANDY_SHEEP,5],['chick',3]],    // A5b: marshmallow sheep
   layout:candyPeaksLayout
 });
