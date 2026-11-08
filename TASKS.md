@@ -97,8 +97,9 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Big bouncy launch pads (rainbow / trampoline style) placed near clusters of smashables, scaled to the players' size so they matter at every size. Driving over one launches the car high with a boing and a slow-motion-ish arc; landing on things smashes them (slam). Design can provide the pad look; logic handles placement, launch and landing.
   - Done: up to 3 rainbow pads near clusters of smashable stuff, placed between the car and the cluster, sized ~2× a car at every size; rebuilt after LEVEL UP. Driving over one: boing (new `pad` sfx), floaty 1.8s arc up to ~⅓ of the view height, voice ("Super bounce!"), and a big landing slam that smashes everything around the car (20 things at huge size in tests). Design can replace the look with `buildLaunchPad()` (see CLAUDE.md). Also: the normal hard-landing slam radius now scales with car size (was a fixed 3 units).
 
-- [ ] **L10: Rooster hookup** `NEEDS LOGIC` (from world-animals, PR #3)
+- [x] **L14: Rooster hookup** `NEEDS LOGIC` (from world-animals, PR #3; was numbered L10, which is the combos task)
   - `ANIMAL.rooster` exists in `src/world/animals.js`, but it's not a known kind yet. Add a `rooster` sound to `tools/sfx-lines.json` (generate it), and add roosters to the farm herds (`ZONE_HERDS` / the coop) so they appear.
+  - Done (v0.19.1): recorded `rooster` sfx (cock-a-doodle-doo) and "You found a golden rooster!"; every chicken flock (coop, farm, home) now has one rooster. Also recorded the 16 new Kenney car names.
 
 - [ ] **L11: Zone plug-ins** (unblocks the `zone-<name>` agents; see `agents/zone.md`)
   - New zones live in their own files: `src/world/zones/<name>.js`, loaded by `boot.mjs` from a list (e.g. `src/world/zones/index.json`), each registering `{id, letter, ground, sky?, props, layout(ctx), sizes}` via a `registerZone()` helper in core.js.

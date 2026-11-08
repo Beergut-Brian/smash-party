@@ -313,5 +313,90 @@
   "text": "Big jump!",
   "speak": "Big jump!",
   "hash": "c665c1c5d8e8"
+ },
+ "you_found_a_golden_rooster": {
+  "text": "You found a golden rooster!",
+  "speak": "You found a golden rooster!",
+  "hash": "cbf6b347274b"
+ },
+ "yellow_cab": {
+  "text": "Yellow Cab!",
+  "speak": "Yellow Cab!",
+  "hash": "7e37e9078a5e"
+ },
+ "hose_hero": {
+  "text": "Hose Hero!",
+  "speak": "Hose Hero!",
+  "hash": "f4124737834c"
+ },
+ "dash_racer": {
+  "text": "Dash Racer!",
+  "speak": "Dash Racer!",
+  "hash": "4f768c1d247b"
+ },
+ "honk_bus": {
+  "text": "Honk Bus!",
+  "speak": "Honk Bus!",
+  "hash": "7644f58c0f80"
+ },
+ "snow_pusher": {
+  "text": "Snow Pusher!",
+  "speak": "Snow Pusher!",
+  "hash": "7d3e5a19e6c3"
+ },
+ "spinny_mixer": {
+  "text": "Spinny Mixer!",
+  "speak": "Spinny Mixer!",
+  "hash": "48cb5cc8cc65"
+ },
+ "sunny_cruiser": {
+  "text": "Sunny Cruiser!",
+  "speak": "Sunny Cruiser!",
+  "hash": "a845a3cb9356"
+ },
+ "zip_hatch": {
+  "text": "Zip Hatch!",
+  "speak": "Zip Hatch!",
+  "hash": "063923d689f6"
+ },
+ "buddy_wagon": {
+  "text": "Buddy Wagon!",
+  "speak": "Buddy Wagon!",
+  "hash": "528c27a9f10d"
+ },
+ "parcel_pal": {
+  "text": "Parcel Pal!",
+  "speak": "Parcel Pal!",
+  "hash": "baa71e687686"
+ },
+ "goofy_kart": {
+  "text": "Goofy Kart!",
+  "speak": "Goofy Kart!",
+  "hash": "7ae4b185ca6c"
+ },
+ "farm_tug": {
+  "text": "Farm Tug!",
+  "speak": "Farm Tug!",
+  "hash": "a9ad0b864668"
+ },
+ "haul_buddy": {
+  "text": "Haul Buddy!",
+  "speak": "Haul Buddy!",
+  "hash": "a41bb75a01cf"
+ },
+ "bin_buggy": {
+  "text": "Bin Buggy!",
+  "speak": "Bin Buggy!",
+  "hash": "fc57269f04ce"
+ },
+ "patch_wagon": {
+  "text": "Patch Wagon!",
+  "speak": "Patch Wagon!",
+  "hash": "51b5be58b144"
+ },
+ "comet_cruiser": {
+  "text": "Comet Cruiser!",
+  "speak": "Comet Cruiser!",
+  "hash": "ee8a1a9c9e06"
  }
 }

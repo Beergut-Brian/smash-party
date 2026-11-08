@@ -955,15 +955,17 @@ function animalModel(kind,def){
       const mesh=new THREE.Mesh(g,mat);mesh.castShadow=mesh.receiveShadow=true;t.add(mesh);}
     animalTemplates[kind]=ok?t:src;}
   return animalTemplates[kind].clone();}
-function spawnAnimal(h,x,z){
-  const def=animalDef(h.kind),g=animalModel(h.kind,def);_bx.setFromObject(g);
+function spawnAnimal(h,x,z,kind=h.kind){
+  const def=animalDef(kind),g=animalModel(kind,def);_bx.setFromObject(g);
   const r=Math.max(_bx.max.z-_bx.min.z,_bx.max.x-_bx.min.x)/2*0.85,hgt=_bx.max.y;
-  const a={kind:h.kind,def,g,herd:h,x,z,y:0,vx:0,vz:0,vy:0,heading:rand(0,Math.PI*2),state:'idle',t:rand(0,2),r,h:hgt,fr:r*1.2,
+  const a={kind,def,g,herd:h,x,z,y:0,vx:0,vz:0,vy:0,heading:rand(0,Math.PI*2),state:'idle',t:rand(0,2),r,h:hgt,fr:r*1.2,
     alive:true,falling:false,ph:rand(0,9),spin:[0,0,0]};
   a.sz=clamp(Math.round(4+Math.log(Math.max(r,hgt/3)/1.1)/Math.log(SIZE_STEP)),0,SIZES.length-1);
   a.speed=clamp(1.2+r*1.6,1,5);g.position.set(x,groundH(x,z),z);g.rotation.y=a.heading;scene.add(g);animals.push(a);h.list.push(a);return a;}
 function herdOn(h){h.on=true;if(h.goldIdx===undefined)h.goldIdx=Math.random()<0.15?0:-1;
-  for(let i=0;i<h.n;i++){const a=spawnAnimal(h,h.x+rand(-3,3),h.z+rand(-3,3));if(i===h.goldIdx)goldify(a,30);}}
+  // every chicken flock gets a rooster (when design has made one)
+  for(let i=0;i<h.n;i++){const k=h.kind==='chicken'&&i===h.n-1&&animalDef('rooster')?'rooster':h.kind;
+    const a=spawnAnimal(h,h.x+rand(-3,3),h.z+rand(-3,3),k);if(i===h.goldIdx)goldify(a,30);}}
 function herdOff(h){h.on=false;for(const a of h.list){scene.remove(a.g);const i=animals.indexOf(a);if(i>=0)animals.splice(i,1);}h.list.length=0;}
 function launchAnimal(a,vx,vz,power){
   if(a.state==='fly')return;if(a.gold){goldFound(a,true);ungold(a);a.herd.goldIdx=-1;}const d=Math.hypot(vx,vz)||1,H=rand(3,6)*Math.max(S,0.25)+a.r*2;

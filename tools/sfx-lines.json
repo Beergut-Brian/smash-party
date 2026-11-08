@@ -178,6 +178,10 @@
       "prompt": "Giant trampoline boing launch, springy and bouncy with a rising whoosh",
       "dur": 1.0,
       "style": "8-bit retro video game sound effect, chiptune, NES style, punchy, clean, no music"
+    },
+    "rooster": {
+      "prompt": "Cartoon rooster loud surprised cock-a-doodle-doo, funny",
+      "dur": 1.4
     }
   }
 }
