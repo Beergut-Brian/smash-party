@@ -38,5 +38,15 @@
   "prompt": "Clumsy giant dinosaur boss showdown, silly never scary: big boomy timpani stomps, a low brass riff that trips over itself, rumbling volcano bass, slide whistle and kazoo stabs, rising excitement, seamless loop, no ending",
   "seconds": 90,
   "hash": "972ddfaa04f9"
+ },
+ "bedroom_drive": {
+  "prompt": "Cozy playful toy-box driving tune, a bedroom full of toys come to life: music-box and toy-piano melody over a bouncy ukulele and glockenspiel groove, light toy drums, cheeky kazoo hooks, upbeat and happy, seamless loop, no intro and no ending",
+  "seconds": 90,
+  "hash": "1cfe5d6d560f"
+ },
+ "bedroom_boss": {
+  "prompt": "Goofy toy-soldier boss march, a lullaby turned into a showdown: music box and toy xylophone runs over a bouncy oompah tuba beat, marching toy drums, tin trumpets, wind-up whirs, big and silly, never scary, seamless loop, no ending",
+  "seconds": 90,
+  "hash": "5d6ffe97e166"
  }
 }

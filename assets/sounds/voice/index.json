@@ -558,5 +558,100 @@
   "text": "BUUURP! Ahh, much better. Bye bye!",
   "speak": "BUUURP! Ahh, much better. Bye bye!",
   "hash": "6d36ddcc73a0"
+ },
+ "here_comes_sir_sprinkles": {
+  "text": "Here comes Sir Sprinkles!",
+  "speak": "Here comes Sir Sprinkles!",
+  "hash": "ca10382fae26"
+ },
+ "happy_birthday_to_me": {
+  "text": "Happy birthday to ME!",
+  "speak": "Happy birthday to ME!",
+  "hash": "45a37e6e877c"
+ },
+ "want_a_slice_come_and_get_it": {
+  "text": "Want a slice? Come and get it!",
+  "speak": "Want a slice? Come and get it!",
+  "hash": "2ac4896c4358"
+ },
+ "i_m_the_sweetest_cake_in_town": {
+  "text": "I'm the sweetest cake in town!",
+  "speak": "I'm the sweetest cake in town!",
+  "hash": "f945f9419518"
+ },
+ "make_a_wish_pop_pop_pop_thanks_for_the_party": {
+  "text": "Make a wish! Pop pop pop! Thanks for the party!",
+  "speak": "Make a wish! Pop pop pop! Thanks for the party!",
+  "hash": "e3ae96178e8b"
+ },
+ "here_comes_mama_stegosaurus": {
+  "text": "Here comes Mama Stegosaurus!",
+  "speak": "Here comes Mama Stegosaurus!",
+  "hash": "f4a04c8a00ad"
+ },
+ "careful_kiddos_mama_s_coming_through": {
+  "text": "Careful, kiddos! Mama's coming through!",
+  "speak": "Careful, kiddos! Mama's coming through!",
+  "hash": "a6232a8ae0da"
+ },
+ "look_at_my_pretty_plates": {
+  "text": "Look at my pretty plates!",
+  "speak": "Look at my pretty plates!",
+  "hash": "aeb373126986"
+ },
+ "shh_don_t_wake_my_egg": {
+  "text": "Shh! Don't wake my egg!",
+  "speak": "Shh! Don't wake my egg!",
+  "hash": "fb29f62e0c8e"
+ },
+ "oh_my_time_to_go_keep_my_egg_warm_bye_bye_sweeties": {
+  "text": "Oh my! Time to go keep my egg warm. Bye bye, sweeties!",
+  "speak": "Oh my! Time to go keep my egg warm. Bye bye, sweeties!",
+  "hash": "f4a84fb03de6"
+ },
+ "here_comes_captain_cuddles": {
+  "text": "Here comes Captain Cuddles!",
+  "speak": "Here comes Captain Cuddles!",
+  "hash": "f83c9f037092"
+ },
+ "yaaawn_is_it_bedtime_yet": {
+  "text": "Yaaawn! Is it bedtime yet?",
+  "speak": "Yaaawn! Is it bedtime yet?",
+  "hash": "707156c86d57"
+ },
+ "no_pillow_fights_allowed_hee_hee": {
+  "text": "No pillow fights allowed! Hee hee!",
+  "speak": "No pillow fights allowed! Hee hee!",
+  "hash": "d248eb4245cb"
+ },
+ "you_can_t_catch_the_captain": {
+  "text": "You can't catch the Captain!",
+  "speak": "You can't catch the Captain!",
+  "hash": "145d973707f3"
+ },
+ "okay_okay_nap_time_night_night_friends": {
+  "text": "Okay, okay! Nap time. Night night, friends!",
+  "speak": "Okay, okay! Nap time. Night night, friends!",
+  "hash": "128f5aff2486"
+ },
+ "rocket_sled": {
+  "text": "Rocket Sled!",
+  "speak": "Rocket Sled!",
+  "hash": "26f691f279f7"
+ },
+ "robo_walker": {
+  "text": "Robo Walker!",
+  "speak": "Robo Walker!",
+  "hash": "b39c92eb0c51"
+ },
+ "spike_o_saurus": {
+  "text": "Spike-o-saurus!",
+  "speak": "Spike-o-saurus!",
+  "hash": "6acf984dad6e"
+ },
+ "hover_zoomer": {
+  "text": "Hover Zoomer!",
+  "speak": "Hover Zoomer!",
+  "hash": "caf60cc0aa1e"
  }
 }

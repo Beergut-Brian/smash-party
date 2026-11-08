@@ -424,6 +424,155 @@
     "bronto": {
       "prompt": "Cartoon brontosaurus long low friendly foghorn hoooonk",
       "dur": 1.5
+    },
+    "bedroom_clatter_1": {
+      "prompt": "Wooden toy blocks tumbling down and clattering on a wooden floor",
+      "dur": 0.7
+    },
+    "bedroom_clatter_2": {
+      "prompt": "Tower of wooden building blocks toppling over, clacky clatter",
+      "dur": 0.7
+    },
+    "bedroom_clatter_3": {
+      "prompt": "Handful of wooden toy blocks spilling and knocking together",
+      "dur": 0.7
+    },
+    "bedroom_boom_1": {
+      "prompt": "Toy box crashing open: a big bonk, a springy boing and a pile of toys clattering everywhere",
+      "dur": 1.3
+    },
+    "bedroom_boom_2": {
+      "prompt": "Giant toy chest bursting open with a boing, toys tumbling out, squeaks and rattles",
+      "dur": 1.3
+    },
+    "bedroom_thump_1": {
+      "prompt": "Clear cartoon thud landing on wooden floorboards, punchy bump",
+      "dur": 0.5
+    },
+    "bedroom_thump_2": {
+      "prompt": "Toy car landing with a solid bonk on a wooden floor and a little rattle",
+      "dur": 0.5
+    },
+    "bedroom_thump_3": {
+      "prompt": "Light plonk landing on floorboards",
+      "dur": 0.5
+    },
+    "bedroom_ambient": {
+      "prompt": "Quiet cozy bedroom: a slow clock ticking, a faint music box playing far away, birds chirping softly outside the window, quiet background ambience, soft, gentle, kids video game, no music",
+      "dur": 20,
+      "style": ""
+    },
+    "bedroom_crunch_1": {
+      "prompt": "Crunchy breakfast cereal crunch",
+      "dur": 0.6
+    },
+    "bedroom_crunch_2": {
+      "prompt": "Cookie snapping into crumbs, crunchy",
+      "dur": 0.6
+    },
+    "bedroom_crunch_3": {
+      "prompt": "Crispy cereal bits scattering, crunch and crackle",
+      "dur": 0.6
+    },
+    "bedroom_squish_1": {
+      "prompt": "Squishy gummy candy squish, springy",
+      "dur": 0.5
+    },
+    "bedroom_squish_2": {
+      "prompt": "Rubbery gummy bear squash with a jiggly wobble",
+      "dur": 0.5
+    },
+    "bedroom_snap_1": {
+      "prompt": "Crayon snapping in half, crisp little snap",
+      "dur": 0.5
+    },
+    "bedroom_snap_2": {
+      "prompt": "Wax crayon breaking, quick snap and clatter",
+      "dur": 0.5
+    },
+    "bedroom_clink_1": {
+      "prompt": "Glass marbles clinking and rolling away",
+      "dur": 0.7
+    },
+    "bedroom_clink_2": {
+      "prompt": "Handful of glass marbles clattering and tinkling on a floor",
+      "dur": 0.7
+    },
+    "bedroom_squeak_1": {
+      "prompt": "Rubber duck squeak, funny",
+      "dur": 0.5
+    },
+    "bedroom_squeak_2": {
+      "prompt": "Squeaky rubber toy squeezed, double squeak",
+      "dur": 0.5
+    },
+    "bedroom_squeak_3": {
+      "prompt": "Rubber ducky squeak with a little honk",
+      "dur": 0.5
+    },
+    "bedroom_plush_1": {
+      "prompt": "Soft plush toy flump with a tiny squeaker",
+      "dur": 0.6
+    },
+    "bedroom_plush_2": {
+      "prompt": "Stuffed animal flopping down, soft fluffy thump and a squeak",
+      "dur": 0.6
+    },
+    "bedroom_plush_3": {
+      "prompt": "Pillow-soft plush bump with a cute little squeak",
+      "dur": 0.6
+    },
+    "bedroom_toy_1": {
+      "prompt": "Plastic toy crashing apart with a little electronic beep boop",
+      "dur": 0.7
+    },
+    "bedroom_toy_2": {
+      "prompt": "Toy robot breaking, plastic clatter and silly electronic bleeps",
+      "dur": 0.7
+    },
+    "bedroom_toy_3": {
+      "prompt": "Plastic toy car crash with a tiny beep and rattle",
+      "dur": 0.7
+    },
+    "bedroom_boing_1": {
+      "prompt": "Bouncy rubber ball BOING",
+      "dur": 0.6
+    },
+    "bedroom_boing_2": {
+      "prompt": "Big bouncy ball boing boing boing",
+      "dur": 0.6
+    },
+    "bedroom_drum_1": {
+      "prompt": "Loud toy drum hit BA-DUM, punchy snare and tom",
+      "dur": 0.6
+    },
+    "bedroom_drum_2": {
+      "prompt": "Toy drum smashed, loud ba-dum-tss with a cymbal crash",
+      "dur": 0.6
+    },
+    "bedroom_cardboard_1": {
+      "prompt": "Cardboard box crumpling and squashing",
+      "dur": 0.6
+    },
+    "bedroom_cardboard_2": {
+      "prompt": "Cardboard castle crushed, crinkly crumple",
+      "dur": 0.6
+    },
+    "bedroom_wood_1": {
+      "prompt": "Wooden furniture crash, chunky and cartoony, planks clonking",
+      "dur": 0.8
+    },
+    "bedroom_wood_2": {
+      "prompt": "Wooden toy dresser smashing apart, cartoon clonk and clatter",
+      "dur": 0.8
+    },
+    "bedroom_wood_3": {
+      "prompt": "Chunky wooden crash with bouncy cartoon bonks",
+      "dur": 0.8
+    },
+    "bedroom_door": {
+      "prompt": "Big wooden door bursting open with a creak, a loud bang and a whoosh of fresh air",
+      "dur": 1.5
     }
   }
 }
