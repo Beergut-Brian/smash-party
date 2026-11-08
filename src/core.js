@@ -28,11 +28,12 @@ renderer.shadowMap.type=THREE.PCFShadowMap; // PCFSoftShadowMap is gone in curre
 document.body.prepend(renderer.domElement);
 const scene=new THREE.Scene();
 const SKY_TOP='#3d9cf0',SKY_HORIZON='#bfe6ff'; // TODO(design): tune sky colors
+const skyU={top:{value:new THREE.Color(SKY_TOP)},bot:{value:new THREE.Color(SKY_HORIZON)}}; // zones tint these (game.js)
 scene.fog=new THREE.Fog(SKY_HORIZON,160,300);
 const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.5,700);
 // sky: a gradient dome that rides along with the camera
 {const sky=new THREE.Mesh(new THREE.SphereGeometry(600,32,16),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,
-  uniforms:{top:{value:new THREE.Color(SKY_TOP)},bot:{value:new THREE.Color(SKY_HORIZON)}},
+  uniforms:skyU,
   vertexShader:'varying vec3 vP;void main(){vP=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
   fragmentShader:'uniform vec3 top;uniform vec3 bot;varying vec3 vP;void main(){float h=clamp(normalize(vP).y*1.6+0.15,0.0,1.0);gl_FragColor=vec4(mix(bot,top,h),1.0);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'}));
   sky.renderOrder=-1;sky.frustumCulled=false;sky.onBeforeRender=(r,s,cam)=>sky.position.copy(cam.position);scene.add(sky);}
@@ -86,6 +87,15 @@ const ZONE_MAP=[
 const ZONE_GROUND={H:'#86d863',T:'#86b878',F:'#a8c94f',P:'#6fcf55'}; // TODO(design): tune zone ground colors
 const chunkIdx=v=>clamp(Math.round(v/CHUNK),-CHUNKS_HALF,CHUNKS_HALF);
 let zoneRows=ZONE_MAP; // the live map; setZoneMap swaps it for a new world
+/* Zone plug-ins (L15): a themed zone file in src/world/zones/<name>.js calls registerZone({...}) — see CLAUDE.md.
+   It gets a map letter, a ground color, an optional sky tint, its own props/layout/size lists, and NEW WORLD mixes it in. */
+const ZONES={};
+function registerZone(z){
+  if(!z||!z.id){console.warn('registerZone: needs an id');return;}
+  let L=z.letter;if(!L||ZONE_NAMES[L]){L=[...'ABCDEGIJKLMNOQRSUVWXYZ'].find(c=>!ZONE_NAMES[c]);if(z.letter)console.warn('zone letter taken, using',L);}
+  z.letter=L;ZONE_NAMES[L]=z.id;ZONE_GROUND[L]=z.ground||'#86d863';z.weight=z.weight??1;ZONES[z.id]=z;
+  if(z.props&&typeof OBJ!=='undefined')Object.assign(OBJ,z.props);
+  return z;}
 function zoneAt(ci,cj){const row=zoneRows[cj+CHUNKS_HALF];return ZONE_NAMES[(row&&row[ci+CHUNKS_HALF])||'P']||'park';}
 function onRoad(x,z,pad=0){const lim=ROAD_W/2+pad;return Math.abs(x-Math.round(x/ROAD_EVERY)*ROAD_EVERY)<lim||Math.abs(z-Math.round(z/ROAD_EVERY)*ROAD_EVERY)<lim;}
 
@@ -99,8 +109,9 @@ function setZoneMap(rows){zoneRows=rows;const n=zoneCanvas.width,cx=zoneCanvas.g
   zoneTex.needsUpdate=true;}
 /* Procedural zone map: a few random zone "seeds" grow into blobs (Voronoi), home stays in the middle.
    rnd is a 0..1 random function. Add new zone letters to `letters` as design builds them. */
-function randomZoneMap(rnd,letters='TFP'){
+function randomZoneMap(rnd,letters='TFP',extra=''){ // extra: themed zone letters, one or two blobs each
   const n=CHUNKS_HALF*2+1,sites=[];for(let k=0;k<7+rnd()*4;k++)sites.push([rnd()*n,rnd()*n,letters[(k+(rnd()*letters.length|0))%letters.length]]);
+  for(const l of extra)for(let k=0;k<1+(rnd()<0.5?1:0);k++){let x,y;do{x=rnd()*n;y=rnd()*n;}while(Math.abs(x-CHUNKS_HALF-0.5)<2.5&&Math.abs(y-CHUNKS_HALF-0.5)<2.5);sites.push([x,y,l]);}
   const rows=[];for(let j=0;j<n;j++){let r='';for(let i=0;i<n;i++){
     if(Math.abs(i-CHUNKS_HALF)<=1&&Math.abs(j-CHUNKS_HALF)<=1){r+='H';continue;}
     let best=1e9,z='P';for(const [x,y,l] of sites){const d=(x-i)**2+(y-j)**2;if(d<best){best=d;z=l;}}r+=z;}rows.push(r);}

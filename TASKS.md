@@ -101,16 +101,23 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - `ANIMAL.rooster` exists in `src/world/animals.js`, but it's not a known kind yet. Add a `rooster` sound to `tools/sfx-lines.json` (generate it), and add roosters to the farm herds (`ZONE_HERDS` / the coop) so they appear.
   - Done (v0.19.1): recorded `rooster` sfx (cock-a-doodle-doo) and "You found a golden rooster!"; every chicken flock (coop, farm, home) now has one rooster. Also recorded the 16 new Kenney car names.
 
-- [ ] **L15: Draw sleeping pack buildings from their proxy** `NEEDS LOGIC` (from world-props, D8b)
+- [ ] **L16: Draw sleeping pack buildings from their proxy** `NEEDS LOGIC` (from world-props, D8b; filed as L15, which is zone plug-ins)
   - What exists: every Kenney building (`o.proxy`, set in `objects.js` by `kitBuilding`/`kitProxy`) carries its intact look as 2 meshes in the object's local space, not added to `o.g`: one vertex-colored mesh (material `userData.plainVC`) + the roof cap (a plain `M()` color). Geometry is shared by every copy of a model.
   - Needed in `game.js`: while a building is asleep and has lost no parts (`!rec.gone`), batch `o.proxy` instead of its parts (`loadChunk` + `poolAdopt`/`sleepObj`/`wakeObj`); wake swaps back to the parts. Also batch `userData.plainVC` materials like `PLAIN_INST`: key by geometry only, one shared `vertexColors:true` instance material, per-instance color = `material.color`.
   - Why: today every slice of a building is its own instanced batch while it sleeps (~6–10 per building type per chunk), so a town chunk is ~1.4–2× the block town's draw calls. With this, a sleeping building is 2 batches per model whatever its slicing, and world-props can switch to 8 walls per storey (`KIT_GRID=3`) and per-house wall colors.
   - Check: `__sp.stats().calls` standing in town (`__sp.tp(240,-160)`) at medium and huge, before/after.
 
-- [ ] **L11: Zone plug-ins** (unblocks the `zone-<name>` agents; see `agents/zone.md`)
+- [x] **L15: Zone plug-ins** (unblocks the `zone-<name>` agents; see `agents/zone.md`; was numbered L11, which is golden surprises)
   - New zones live in their own files: `src/world/zones/<name>.js`, loaded by `boot.mjs` from a list (e.g. `src/world/zones/index.json`), each registering `{id, letter, ground, sky?, props, layout(ctx), sizes}` via a `registerZone()` helper in core.js.
   - The zone map / NEW WORLD mixes registered zones in (town/farm/park stay common; themed zones show up some worlds), so each new world feels different.
   - Add a test helper (`__sp.zone('candy')` teleports into one). Document the contract in CLAUDE.md, ship an empty example zone, and add `NEEDS DESIGN` tasks for the first two zones (candy, dino).
+  - Done (v0.20.0): `registerZone({id, letter, ground, sky, weight, props, sizes, herds, layout})` in core.js; `src/world/zones/index.json` lists zone files for boot.mjs; NEW WORLD mixes in up to two themed zones (one or two blobs each; the first world stays the hand-made map); the sky fades to a zone's tint while you're in it; `__sp.zone('<id>')` paints a 3×3 block of that zone next to the car and drives you in. Template: `src/world/zones/_example.js`. Contract in CLAUDE.md.
+
+- [ ] **Z1: Candy Land zone** `NEEDS DESIGN` (zone-candy agent, see `agents/zone.md`; needs L15 ✅)
+  - `src/world/zones/candy.js` from the template: pink/pastel ground and sky, lollipop trees, gumdrops, candy canes, cupcake houses (BP contract), a giant cake mega set piece, 15+ props across micro…mega, bunnies. No real candy brands.
+
+- [ ] **Z2: Dino Valley zone** `NEEDS DESIGN` (zone-dino agent, see `agents/zone.md`; needs L15 ✅)
+  - `src/world/zones/dino.js` from the template: warm jungle ground, ferns, palm trees, boulders, volcano mega set piece, giant eggs and bones, 15+ props across micro…mega. Goofy, never scary. Dino animals → `NEEDS DESIGN` for world-animals (+ `NEEDS LOGIC` for their sounds/herds).
 
 - [ ] **L5: Tune and test pass**
   - Round 1 (Kaden's first play-test) ✅: slower when small; car tiers (cooler cars unlock every 2 sizes, Y switches within the tier); big cars shoot (X: cannon / rocket, also hits boss weak spots); LEVEL UP button instead of auto-growing; new `micro` bottom size, scatter mostly at your size with bigger things rarer; stuck detection → jump becomes 💥 BOOM.
