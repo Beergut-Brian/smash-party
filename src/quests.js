@@ -148,13 +148,18 @@ function questStepStart(){
     case 'boss':if(!boss)summonBoss(s.boss);break;
     default:console.warn('quest step?',s.do);st.done=true;}
   if(say0)questSpeak([say0],voice,gv);
+  const mus=s.music||(s.do!=='talk'&&QUEST_MUSIC[q.id]); // L41: a step can carry its own track (the parade march)
+  if(mus&&typeof music==='function'){st.music=mus;music(mus);}
   questHudSet();}
+// tracks for steps whose pack doesn't set `music` yet (step `music:'parade'` in the pack wins)
+const QUEST_MUSIC={wheelie_parade:'parade'};
 function questStepEnd(advance){
   const A=questA;if(!A||!A.st)return;const st=A.st,s=st.s;
   for(const t of st.things)questThingOff(t,false);if((s.do==='find'||s.reveal)&&advance&&!questNextIs('bring'))questRoofClear(true);
   if(st.reveal)questThingOff(st.reveal,false);questUnclear(st);
   if(st.flock)questFlockOff(st.flock);if(st.goal)questThingOff(st.goal);
   if(!advance)questRoofClear(false);
+  if(st.music&&musicWant&&musicWant.id===st.music)music('drive'); // back to the zone's drive track (unless a boss took over)
   A.st=null;}
 const questNextIs=v=>{const A=questA,nx=A&&A.q.steps[A.si+1];return !!(nx&&nx.do===v);};
 function questProgress(k=1){

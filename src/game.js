@@ -847,7 +847,7 @@ class Player{
       blending:THREE.AdditiveBlending,side:THREE.DoubleSide,fog:false}));this.beam.visible=false;scene.add(this.beam);
     this.markT=4;this.idleT=0;this.markTop=0;
     const s=spawnSpot(idx);this.x=s[0];this.z=s[1];this.y=groundH(s[0],s[1]);this.vy=0;this.heading=Math.PI;this.speed=0;this.kx=0;this.kz=0;
-    this.air=false;this.pitch=0;this.wasBoost=false;this.flameT=0;this.nameT=0;this.wallT=0;
+    this.air=false;this.pitch=0;this.wasBoost=false;this.kazooT=3;this.flameT=0;this.nameT=0;this.wallT=0;
     this.tag=document.createElement('div');this.tag.className='tag';this.tag.style.background=this.color;$('tags').appendChild(this.tag);
     const l=carsInTier(carTierNow());this.setCar(l[idx%l.length],true);this.trail=[];this.trailT=0;this.lastBump=-9;this.stuck=false;
   }
@@ -873,7 +873,8 @@ class Player{
       if(inp.boost)target=st.speed*sm*1.65*Math.max(0.3,(1+Math.cos(d))/2);}
     else if(inp.boost)target=st.speed*sm*1.65;
     const boosting=inp.boost&&this.speed>5;
-    if(inp.boost&&!this.wasBoost)sfx.turbo();this.wasBoost=inp.boost;
+    if(inp.boost&&!this.wasBoost){sfx.turbo();if(kazooOn())kazooToot(this,0.75);}this.wasBoost=inp.boost;
+    if(kazooOn()&&Math.abs(this.speed)>8*this.sm&&(this.kazooT-=dt)<=0)kazooToot(this,0.45); // 🎺 a toot now and then while driving
     if(!this.air){const a=(target>this.speed?30:18)*sm*(0.85+0.05*this.handling);this.speed+=clamp(target-this.speed,-a*dt,a*dt);}
     const fx=Math.sin(this.heading),fz=Math.cos(this.heading);
     this.x+=(fx*this.speed+this.kx)*dt;this.z+=(fz*this.speed+this.kz)*dt;
@@ -1287,11 +1288,18 @@ function collisions(){
         if(o.sz<=tier-3&&!o.gold){squish(o);continue;}
         if(o.bld){hitBuilding(p,o,dx,dz,rr,spd,vx,vz);continue;}
         if(o.sz>tier){bump(p,o,dx,dz,rr,spd);continue;}
-        if(spd>4*p.sm||p.air){p.bonkT=0.3;abilUse('hammer');smash(o,vx||dx,vz||dz,Math.max(spd,10)*Math.sqrt(Math.max(1,S)));p.speed*=o.big&&o.sz>=tier?0.8:0.96;}
+        if(spd>4*p.sm||p.air){p.bonkT=0.3;abilUse('hammer');hammerBonk(p);smash(o,vx||dx,vz||dz,Math.max(spd,10)*Math.sqrt(Math.max(1,S)));p.speed*=o.big&&o.sz>=tier?0.8:0.96;}
         else{const d=Math.hypot(dx,dz)||1;p.x-=dx/d*(rr-d);p.z-=dz/d*(rr-d);p.lastBump=T;}}}
     animalHits(p,vx,vz,spd);}
 }
 
+/* L41 (AU13 clips): the hammer bonks on top of the crash when a car wearing the Bonk Hammer smashes something, and
+   the kazoo cosmetic toots on turbo and every so often while driving (the square-wave engine hums underneath). */
+let hammerBonkT=0;
+function hammerBonk(p){if(!(p.partMap&&p.partMap.hammer))return;const n=performance.now();if(n-hammerBonkT<140)return;hammerBonkT=n;
+  sfxClip('hammer_bonk',0.6,rand(0.92,1.1));}
+const kazooOn=()=>questOn&&questCos.has('kazoo');
+function kazooToot(p,vol){p.kazooT=rand(7,12);sfxClip('kazoo_honk',vol,rand(0.9,1.12));}
 // too big to smash (yet): wobble it and boing the car back. Never a fail, just "grow more!"
 function bump(p,o,dx,dz,rr,spd){
   const d=Math.hypot(dx,dz)||1,nx=dx/d,nz=dz/d;p.x-=nx*(rr-d);p.z-=nz*(rr-d);p.lastBump=T;
