@@ -31,6 +31,7 @@ If a design change needs new logic (or the other way around), make the part in y
 Check `TASKS.md` before starting. Take the top unchecked task in your section, check it off in the same commit as the work, and add follow-up tasks for the other tool when needed.
 
 ## Git workflow
+- **Version:** bump `version.json` with every push to `main` (patch `0.12.1` for fixes, minor `0.13.0` for features). The start screen and pause menu show it, and the loader in `index.html` loads the game files with `?v=<version>` so the TV picks up new code. If two pushes collide on it, keep the higher number and bump once more.
 - **Pull before you start. Commit small. Push when done.** Never force-push `main`.
 - `main` is live on the TV (GitHub Pages: https://beergut-brian.github.io/smash-party/), so only push working code. Use a branch for big experiments.
 - Commit messages start with the area: `cars: add Comet Crusher`, `logic: bigger barrel explosions`.
@@ -64,4 +65,4 @@ Check `TASKS.md` before starting. Take the top unchecked task in your section, c
 ## Testing
 - Serve locally (`python3 -m http.server`) — model cars only load over http, not `file://`.
 - `window.__sp.mega()`, `__sp.explode(x,z)`, `__sp.addScore(n)`, `__sp.grow(n)` (1800 = GIANT), `__sp.newWorld()`, `__sp.tp(x,z)` and `__sp.stats()` in the console help with testing. Press N (or START) when giant for a new world.
-- Keyboard: P1 WASD/Space/E/Q/F, P2 Arrows/Enter/RShift///. (drive/turbo/jump/switch car or LEVEL UP/shoot). `__sp.level(n)` jumps ahead n sizes. Check both players, a ramp jump, a barrel chain, and a MEGA SMASH before pushing.
+- Keyboard: P1 WASD/Space/E/Q/R, P2 Arrows/Enter/RShift///. Esc / START / ⏸ pauses (the pause menu also shows what each controller button reports). (drive/turbo/jump/switch car/shoot; switch or shoot keys LEVEL UP when ready). `__sp.level(n)` jumps ahead n sizes. Check both players, a ramp jump, a barrel chain, and a MEGA SMASH before pushing.

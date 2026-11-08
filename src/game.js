@@ -616,7 +616,7 @@ function addPlayer(src){
 }
 function updatePanels(){
   for(let i=0;i<2;i++){const el=$('p'+i);const p=players.find(q=>q.idx===i);
-    if(p){el.className='pPanel';el.innerHTML=`P${i+1} ${p.stats.emoji} ${p.stats.name}<small>${(p.src==='touch'?'🔄 = switch car · 🎯 = shoot':(p.src.startsWith('gp')?'LB/RB = switch car · X/Y = shoot':(i==0?'Q = switch car · F = shoot':'/ = switch car · . = shoot')))}</small>`;}
+    if(p){el.className='pPanel';el.innerHTML=`P${i+1} ${p.stats.emoji} ${p.stats.name}<small>${(p.src==='touch'?'🔄 = switch car · 🎯 = shoot':(p.src.startsWith('gp')?'LB/RB = switch car · X/Y = shoot':(i==0?'Q = switch car · R = shoot':'/ = switch car · . = shoot')))}</small>`;}
     else{el.className='pPanel empty';el.innerHTML=`Player ${i+1}: press A<small>or ${i==0?'Space':'Enter'} to join!</small>`;}}
 }
 
@@ -628,21 +628,26 @@ addEventListener('keydown',e=>{
   if(!keys.has(e.code))pressed.add(e.code);keys.add(e.code);
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Slash','Enter'].includes(e.code))e.preventDefault();
   if(state==='start'&&(e.code==='Space'||e.code==='Enter'))startGame();
+  if(e.code==='Escape'){if(state==='play')pause();else if(state==='pause')resume();}
   if(e.code==='KeyN'&&state==='play')newWorld();if(e.code==='KeyM')toggleMute();if(e.code==='KeyF')toggleFS();
 });
 addEventListener('keyup',e=>keys.delete(e.code));
 addEventListener('blur',()=>keys.clear());
-const KB={kb1:{u:'KeyW',d:'KeyS',l:'KeyA',r:'KeyD',b:'Space',j:'KeyE',s:'KeyQ',f:'KeyF'},kb2:{u:'ArrowUp',d:'ArrowDown',l:'ArrowLeft',r:'ArrowRight',b:'Enter',j:'ShiftRight',s:'Slash',f:'Period'}};
+const KB={kb1:{u:'KeyW',d:'KeyS',l:'KeyA',r:'KeyD',b:'Space',j:'KeyE',s:'KeyQ',f:'KeyR'},kb2:{u:'ArrowUp',d:'ArrowDown',l:'ArrowLeft',r:'ArrowRight',b:'Enter',j:'ShiftRight',s:'Slash',f:'Period'}};
 function readKB(m){return {x:(keys.has(m.r)?1:0)-(keys.has(m.l)?1:0),z:(keys.has(m.d)?1:0)-(keys.has(m.u)?1:0),boost:keys.has(m.b),jumpP:pressed.has(m.j),swapP:pressed.has(m.s),fire:keys.has(m.f),levelP:pressed.has(m.s)||pressed.has(m.f),joinP:pressed.has(m.b)||pressed.has(m.j)};}
-const gpPrev={};
+const gpPrev={},padInfo=[];
 function readGP(){
   const res={};let gps=[];try{gps=navigator.getGamepads?navigator.getGamepads():[];}catch(e){}
+  padInfo.length=0;
   for(const gp of gps){if(!gp)continue;const prev=gpPrev[gp.index]||[];
     const b=gp.buttons.map(x=>x&&(x.pressed||x.value>0.5));const P=i=>b[i]&&!prev[i];
     let x=gp.axes[0]||0,z=gp.axes[1]||0;if(Math.hypot(x,z)<0.22){x=0;z=0;}
     if(b[14])x=-1;if(b[15])x=1;if(b[12])z=-1;if(b[13])z=1;
     // X and Y both shoot: 8BitDo / Nintendo-style pads swap the X and Y labels, so either one works.
-    res['gp'+gp.index]={x,z,boost:!!(b[0]||b[7]),jumpP:P(1),swapP:P(4)||P(5),fire:!!(b[2]||b[3]),levelP:P(2)||P(3)||P(4)||P(5),joinP:P(0)||P(1)||P(9),newP:P(9)};gpPrev[gp.index]=b;
+    const ay=gp.axes[1]||0,pay=prev.ay||0,up=P(12)||(ay<-0.6&&pay>=-0.6),down=P(13)||(ay>0.6&&pay<=0.6);
+    res['gp'+gp.index]={x,z,boost:!!(b[0]||b[7]),jumpP:P(1),swapP:P(4)||P(5),fire:!!(b[2]||b[3]),levelP:P(2)||P(3)||P(4)||P(5),joinP:P(0)||P(1)||P(9),
+      startP:P(9),upP:up,downP:down,okP:P(0),backP:P(1)};b.ay=ay;gpPrev[gp.index]=b;
+    padInfo.push({id:gp.id,mapping:gp.mapping,pressed:b.map((v,i)=>v?i:-1).filter(i=>i>=0),axes:[...gp.axes].map(a=>+a.toFixed(1))});
     if(b.some(Boolean)&&AC&&AC.state!=='running')AC.resume().catch(()=>{});}
   return res;
 }
@@ -667,6 +672,44 @@ function startGame(){
   if(touchUsed){$('touch').style.display='block';addPlayer('touch');}
 }
 $('play').onclick=e=>{e.stopPropagation();startGame();};
+
+/* ---------- pause menu (Esc / START / ⏸) + version ---------- */
+const VERSION=window.GAME_VERSION||'dev';
+{const v=document.createElement('div');v.id='version';v.textContent='v'+VERSION;$('startInner').appendChild(v);}
+const pauseMenu=document.createElement('div');pauseMenu.id='pauseMenu';
+pauseMenu.innerHTML='<div class="pm"><h2>⏸ PAUSED</h2><div id="pmBtns"></div><div id="pmVer"></div><div id="pmPad"></div></div>';document.body.appendChild(pauseMenu);
+const pauseBtn=document.createElement('button');pauseBtn.id='pauseBtn';pauseBtn.title='Pause (Esc / START)';pauseBtn.textContent='⏸';$('corner').prepend(pauseBtn);
+pauseBtn.onclick=e=>{e.stopPropagation();if(state==='play')pause();else if(state==='pause')resume();};
+let pmSel=0,pmItems=[];
+function pmBuild(){pmItems=[['▶ RESUME',resume]];if(nwBtn.style.display==='block')pmItems.push(['🌍 NEW WORLD',()=>{resume();newWorld();}]);pmItems.push(['🏠 MAIN MENU',mainMenu]);
+  const box=$('pmBtns');box.innerHTML='';pmItems.forEach(([t,f],i)=>{const b=document.createElement('button');b.textContent=t;b.onclick=e=>{e.stopPropagation();f();};
+    b.onmouseenter=()=>{pmSel=i;pmMark();};box.appendChild(b);});pmSel=0;pmMark();}
+function pmMark(){[...$('pmBtns').children].forEach((b,i)=>b.classList.toggle('sel',i===pmSel));}
+function pause(){if(state!=='play')return;state='pause';pmBuild();pauseMenu.style.display='flex';sfx.pop();
+  if(AC)for(const p of players)if(p.eng)p.eng.g.gain.setTargetAtTime(0,AC.currentTime,0.05);
+  $('pmVer').textContent='v'+VERSION;
+  fetch('version.json',{cache:'no-store'}).then(r=>r.json()).then(j=>{if(j.version&&j.version!==VERSION)$('pmVer').textContent=`v${VERSION} · 🆕 v${j.version} is ready: pick MAIN MENU to load it`;}).catch(()=>{});}
+function resume(){if(state!=='pause')return;state='play';pauseMenu.style.display='none';}
+function mainMenu(){location.reload();} // a fresh start (and it picks up any new version)
+function pauseInput(gpIn){
+  for(const g of Object.values(gpIn)){if(g.upP)pmSel=(pmSel+pmItems.length-1)%pmItems.length;if(g.downP)pmSel=(pmSel+1)%pmItems.length;
+    if(g.okP){pmItems[pmSel][1]();return;}if(g.backP||g.startP){resume();return;}}
+  if(pressed.has('ArrowUp')||pressed.has('KeyW'))pmSel=(pmSel+pmItems.length-1)%pmItems.length;
+  if(pressed.has('ArrowDown')||pressed.has('KeyS'))pmSel=(pmSel+1)%pmItems.length;
+  if(pressed.has('Enter')||pressed.has('Space')){pmItems[pmSel][1]();return;}
+  pmMark();
+  // controller tester: press buttons while paused to see what the browser reports
+  $('pmPad').innerHTML=padInfo.length?padInfo.map((p,i)=>`🎮 ${i+1}: ${p.id.slice(0,46)}<br>mapping: <b>${p.mapping||'NOT standard'}</b> · pressed: <b>${p.pressed.join(', ')||'–'}</b>`).join('<br>')
+    :'🎮 No controller seen yet: press any button on it';}
+{const st=document.createElement('style');st.textContent=`
+:where(#version){margin-top:14px;font:14px Nunito,sans-serif;font-weight:900;opacity:.75}
+:where(#pauseMenu){display:none;position:fixed;inset:0;z-index:30;align-items:center;justify-content:center;background:rgba(10,20,40,.55)}
+:where(#pauseMenu .pm){background:#fff;border-radius:28px;padding:22px 34px;text-align:center;font-family:Nunito,sans-serif;max-width:90vw;box-shadow:0 10px 0 rgba(0,0,0,.2)}
+:where(#pauseMenu h2){font:44px 'Lilita One',sans-serif;margin:0 0 12px;color:#3a86ff}
+:where(#pmBtns button){display:block;width:100%;margin:10px 0;font:28px 'Lilita One',sans-serif;color:#fff;background:#8338ec;border:5px solid transparent;border-radius:20px;padding:10px 26px;cursor:pointer}
+:where(#pmBtns button.sel){background:#ff006e;border-color:#ffd60a;transform:scale(1.05)}
+:where(#pmVer){margin-top:10px;font-weight:900;color:#555}
+:where(#pmPad){margin-top:10px;font-size:13px;color:#777;line-height:1.5}`;document.head.appendChild(st);}
 
 /* ---------- collisions ---------- */
 let lastBoing=0;
@@ -1064,14 +1107,17 @@ music('title'); // starts on the first tap/key (browsers need a gesture before a
 buildWorld();captureHome();updateStreaming(0,true);
 function loop(now){
   requestAnimationFrame(loop);
-  const dt=Math.min(0.05,(now-last)/1000);last=now;T+=dt;
+  const dt=Math.min(0.05,(now-last)/1000);last=now;
   const gpIn=readGP();
   const src=Object.assign({kb1:readKB(KB.kb1),kb2:readKB(KB.kb2)},gpIn);
   if(touchUsed)src.touch={x:touch.x,z:touch.z,boost:touch.boost,jumpP:touch.jumpP,swapP:touch.swapP,fire:touch.fire,joinP:touch.boost||touch.jumpP};
   if(state==='start'){for(const k in gpIn)if(gpIn[k].joinP){startGame();break;}}
+  if(state==='pause'){pauseInput(gpIn);updateMusic();renderer.render(scene,camera);pressed.clear();touch.jumpP=false;touch.swapP=false;return;}
+  if(state==='play'&&Object.values(gpIn).some(g=>g.startP)){pause();pressed.clear();return;}
+  T+=dt; // game time stands still while paused
   if(state==='play'){
     for(const k in src){const s=src[k];if(s.joinP&&players.length<2&&!players.some(p=>p.src===k)){addPlayer(k);s.jumpP=false;}}
-    for(const p of players){const s=src[p.src]||{x:0,z:0};if(levelReady&&(s.levelP||s.swapP))levelUp();else{if(s.swapP){const l=carsInTier(carTierNow());p.setCar(l[(l.indexOf(p.carIdx)+1)%l.length],true);}if(s.fire)shoot(p);}if(s.newP&&giant){newWorld();break;}p.update(dt,s);}
+    for(const p of players){const s=src[p.src]||{x:0,z:0};if(levelReady&&(s.levelP||s.swapP))levelUp();else{if(s.swapP){const l=carsInTier(carTierNow());p.setCar(l[(l.indexOf(p.carIdx)+1)%l.length],true);}if(s.fire)shoot(p);}p.update(dt,s);}
   }
   updateGrowth(dt);updateStreaming(dt);
   if(state==='play'){collisions();updateBoss(dt);}
