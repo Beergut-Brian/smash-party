@@ -250,11 +250,12 @@ const KIT={
 };
 /* merge a group of mk() blocks into one geometry with their colors as vertex colors (cached: every wheel is the same) */
 let ferrisCache=null;
-function ferrisGeo(grp){
-  if(ferrisCache)return ferrisCache;const list=[];grp.updateMatrixWorld(true);
+function ferrisGeo(grp){return ferrisCache||(ferrisCache=blocksGeo(grp));}
+function blocksGeo(grp){
+  const list=[];grp.updateMatrixWorld(true);
   grp.traverse(m=>{if(!m.isMesh)return;const g=m.geometry.clone().toNonIndexed().applyMatrix4(m.matrixWorld),n=g.attributes.position.count,c=new Float32Array(n*3),col=m.material.color;
     for(let i=0;i<n;i++){c[i*3]=col.r;c[i*3+1]=col.g;c[i*3+2]=col.b;}g.setAttribute('color',new THREE.BufferAttribute(c,3));g.deleteAttribute('uv');list.push(g);});
-  return ferrisCache=THREE.mergeGeometries(list);
+  return THREE.mergeGeometries(list);
 }
 const LEAVES=['#3fb950','#2d8f4e','#52b788','#3fb950','#74c69d','#f7a325','#ff70a6','#9b5de5']; // mostly green, a few candy trees
 /* Chickens and ducks are herds (ctx.herd), not smashables, so L4 launches them. */
@@ -626,7 +627,43 @@ const OBJ={
     return sized(x,z,RAD.ship,H,36,'mega',(P,g)=>{kitPieces('ship-large',{mode:'y',cuts:[.3,.62],s}).forEach(pc=>{const hull=pc.cen[1]<H*.3;
       P(kitMesh(pc,null),hull?8:2,!hull,Math.max(.5,Math.min(pc.sz[0],pc.sz[2])/2));});face(g,arg);});};
 }
-const START_SPOTS=[[-6,48],[6,48]];
+/* ---------- start street (D13) ----------
+   Both cars start at micro size in the right lane of the home road (x 0…5), facing up the screen (−Z). At that size
+   a curb is a wall, a mailbox a tower and a soda can a boulder. */
+const START_STREET=[[2.6,48],[3.8,48.6]];
+const MICRO_T=new Set(['flowers','pebble','mushroom','acorn','toyblock','can','toyduck','snail']);
+// keep the lane in front of the cars clear of anything that would boing a micro car (micro clutter is fine: it smashes)
+const startLane=(x,z)=>x>0.3&&x<5.2&&z>START_STREET[0][1]-18&&z<START_STREET[0][1]+4;
+let streetDecor=null;
+/* Flat set dressing (curbs, sidewalk, cracks, drain, puddle, leaves): not smashable, drivable, built once (it survives
+   NEW WORLD, like the home arena) and merged into one vertex-colored mesh, so it costs one draw call. */
+function startStreetDecor(){
+  if(streetDecor)return;const g=new THREE.Group(),Z0=START_STREET[0][1],add=(...a)=>{const m=mk(...a);g.add(m);return m;};
+  for(const sx of [1,-1]){
+    add('box',.24,.17,64,'#e2e2e2',sx*5.12,.085,Z0-6);                                   // curb
+    add('box',3.4,.1,64,'#cfd2d6',sx*6.95,.05,Z0-6);                                     // sidewalk
+    for(let z=Z0-37;z<Z0+26;z+=1.7)add('box',3.4,.104,.05,'#a9adb3',sx*6.95,.05,z);      // slab seams
+  }
+  // cracks: little zigzags in the slabs near the start
+  [[6.2,Z0-2.4],[7.6,Z0+1.8],[6.6,Z0-7.1],[7.2,Z0+5.2]].forEach(([x,z],i)=>{for(let k=0;k<3;k++){
+    const c=add('box',.035,.106,.42,'#80858c',x+(k%2?.09:-.02),.05,z+k*.36);c.rotation.y=(k%2?.6:-.5)+i*.2;}});
+  // storm drain on the road edge, puddle in the lane ahead (flat: cars drive right over them)
+  add('box',.5,.07,1.1,'#5c636b',4.62,.04,Z0-3.2);for(let k=0;k<4;k++)add('box',.32,.072,.07,'#262a2f',4.62,.04,Z0-3.6+k*.26);
+  add('cyl',1.9,.06,1.2,'#7cc4f0',3.4,.04,Z0-6.4);add('cyl',.9,.064,.5,'#b5e2fa',3.1,.04,Z0-6.6);
+  // fallen leaves
+  const LV=['#e76f51','#f4a261','#e9c46a','#bc6c25'];
+  for(let i=0;i<22;i++){const x=i<14?rand(5.4,8.4):rand(3.2,4.9),z=Z0+rand(-12,6),l=add('box',.16,.012,.1,pick(LV),x,i<14?.106:.056,z);l.rotation.y=rand(0,3.14);}
+  streetDecor=new THREE.Mesh(blocksGeo(g),kitVCMat('#ffffff'));streetDecor.receiveShadow=true;scene.add(streetDecor);
+}
+function startStreet(){
+  startStreetDecor();const Z0=START_STREET[0][1];
+  // giants on the sidewalk: mailbox (door to the road), hydrant, lamp
+  place('mailbox',6.4,Z0+1.4,3);place('hydrant',6.1,Z0-4.2);place('lamp',7.9,Z0-9);
+  // toy-sized clutter: car-sized to a micro car, so the first smashes are right there
+  [['can',5.8,Z0-.9],['pebble',4.55,Z0-1.8],['pebble',4.5,Z0+2.4],['pebble',7.3,Z0-2.2],['flowers',7.9,Z0+.6],['flowers',8.1,Z0-2.6],
+   ['acorn',6.9,Z0+3.5],['toyblock',5.9,Z0+4.3],['toyduck',7.6,Z0+2.9],['snail',8,Z0-5.4],['mushroom',8.2,Z0-7.4],
+   ['can',3.3,Z0-4.2],['pebble',2.1,Z0-7.6],['toyblock',1.4,Z0-11],['acorn',4.3,Z0-12.5],['can',2.6,Z0-15]].forEach(([t,x,z])=>place(t,x,z,Math.random()*4|0));
+}
 function spotOK(x,z,r){
   if(Math.abs(x)>ARENA-r-1||Math.abs(z)>ARENA-r-1)return false;
   for(const [a,b] of [[0,0],[r+1,0],[-r-1,0],[0,r+1],[0,-r-1]])if(groundH(x+a,z+b)>0)return false;
@@ -635,11 +672,14 @@ function spotOK(x,z,r){
 function place(type,x,z,arg){
   const tmpR=RAD[type]||1.1;
   if(!spotOK(x,z,tmpR))return null;
-  for(const [a,b] of START_SPOTS)if(Math.hypot(x-a,z-b)<7)return null;
+  for(const [a,b] of START_STREET)if(Math.hypot(x-a,z-b)<tmpR+.9)return null;
+  if(!MICRO_T.has(type)&&startLane(x,z))return null;
+  for(const o of objects)if(Math.abs(o.x-x)<o.r+tmpR&&Math.hypot(o.x-x,o.z-z)<(o.r+tmpR)*.8)return null; // no stacking
   return OBJ[type](x,z,arg);
 }
 
 function buildWorld(){
+  startStreet(); // first, so the start spot gets its props before the arena's random scatter
   for(let i=0;i<3;i++)for(let j=0;j<3;j++)place('house',22+i*15+rand(-1,1),-60+j*14+rand(-1,1));
   addRamp(30,8,Math.PI);
   addRamp(-38,2,Math.PI);
