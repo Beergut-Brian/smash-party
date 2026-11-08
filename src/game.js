@@ -954,6 +954,7 @@ function spawnScatter(p,fill){
     const a=fill||!moving?rand(0,Math.PI*2):p.heading+rand(-1.4,1.4),d=fill?rand(0.2,1)*Rs:rand(1.0,1.4)*Rs;
     const x=p.x+Math.sin(a)*d,z=p.z+Math.cos(a)*d,k=scatterSize(),r=GROW_S[k]*2.5+0.1;
     if(Math.abs(x)>ARENA-r-2||Math.abs(z)>ARENA-r-2||groundH(x,z)>0||groundH(x+r,z)>0||groundH(x-r,z)>0||groundH(x,z+r)>0||groundH(x,z-r)>0)continue;
+    if(k>tier&&(onRoad(x,z,r)||(typeof startLane==='function'&&startLane(x,z))))continue; // L26: nothing too big to smash lands on the road or in the start lane
     if(objects.some(o=>o.alive&&Math.abs(o.x-x)<o.r+r+0.3&&Math.abs(o.z-z)<o.r+r+0.3&&Math.hypot(o.x-x,o.z-z)<o.r+r+0.3))continue;
     if(players.some(q=>Math.hypot(q.x-x,q.z-z)<q.r+r+1))continue;
     const [t,f]=scatterProp(zoneAt(chunkIdx(x),chunkIdx(z)),k);
