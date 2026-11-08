@@ -231,7 +231,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 
 - [ ] **D11: Real neighborhoods** `NEEDS DESIGN` (world-props; needs L19)
   - Town: houses lined up along streets with yards, fences, driveways and mailboxes; shops on a main street; a park block. Farm: fenced fields with crops in rows, animals in pens, the barn yard. Park: paths, a playground area, the pond.
-  - Mark spots with `ctx.spot()` so the filler lands where it belongs.
+  - Mark spots with `ctx.spot()` so the filler lands where it belongs. Now live (L19 ✅): `ctx.spot(kind,x,z,w,d,th)` + `const SPOT_PROPS={yard:{mini:[…],…},sidewalk:{…},field:{…},…}` in objects.js (contract in CLAUDE.md). Check with `__sp.spots()`.
 
 - [x] **L21: Camera follows your size + "where's my car?"** (play-test round 2; do before L17)
   - The start feels zoomed out and you lose your car. **Keep each car about the same size on screen at every size:** the camera distance scales with the players' size (close at micro, pulling back as you grow), with gentle easing on size-ups (a little "whoosh" pull-back is a nice size-up moment). Let the **world** make you feel small (giant curbs, flowers, mailboxes towering over you), not the camera.
@@ -294,9 +294,10 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 
 - [ ] **L28: Cheap bosses** `NEEDS LOGIC` (logic-systems; found reviewing PRs #21/#22). After L25 most fights are ~600–800 calls, but **Gumbo-Tron 3000** still measures ~1,600 (lots of separate gumball parts). Draw each boss's untouched parts merged per material (like the cars), splitting a part out only when it's hit or flies off, so any boss design stays cheap. Re-measure all 7 bosses on the real GPU.
 
-- [ ] **L19: Placement that makes sense (neighborhoods, not confetti)**
+- [x] **L19: Placement that makes sense (neighborhoods, not confetti)**
   - Today the size-matched filler scatters props anywhere in a chunk, so things look random. Let layouts declare **spots**: `ctx.spot(kind,x,z,w,d)` for yards, sidewalks, fields, playground sand, parking, porches. Filler then only goes into matching spots (garden gnomes in yards, cones on roads, hay in fields), with a little leftover scatter.
   - Hand-off: `NEEDS DESIGN` world-props to lay out real neighborhoods with spots (D11).
+  - Done (logic-systems/L19): `ctx.spot(kind,x,z,w,d,th)` (rotated rectangles, clipped to the chunk). `spawnScatter` puts ~85% (`SPOT_LEFTOVER`=0.15) of the filler inside a spot in reach (same ring around the car as before; no spot in reach = old behavior) and picks props from `registerZone({spots})` → `SPOT_PROPS[kind][size]` (objects.js) → the zone's size list. Until design defines `SPOT_PROPS`, logic's `DEFAULT_SPOT_PROPS` uses today's types shrunk/grown. `__sp.spots()` debug overlay. Tested with test spots in every chunk: small 28/86 and mega 68/116 scatter inside spots, micro unchanged (no spot in reach); no errors; draw calls unchanged apart from the overlay.
 
 - [ ] **L20: "Inside the House" opening world**
   - A new world type: the game can **start inside a giant kid's bedroom**. You're micro-sized among snacks and small toys, grow into bigger toys, then furniture, then **break out** (smash the door or window). That transition launches you into the outdoor world at a matching size.
