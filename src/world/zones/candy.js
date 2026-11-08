@@ -27,7 +27,9 @@ function candyStory(P,w,d,h,y,floor,cols,segs=3){const t=.6;
       P(BP(s<2?mk('box',len,h,t,c,a,y+h/2,s?e:-e):mk('box',t,h,len,c,s==2?e:-e,y+h/2,a),floor,'wall'),2);}}
   P(BP(mk('box',w-.3,.3,d-.3,CANDY_ICING,0,y+.15,0),floor,'slab'),2);}
 const CANDY_R={wrap:.25,beans:.3,mint:.24,gumdrop:.45,popmini:.32,cookie:.5,cane:.4,cupcake:.5,lollipop:.9,donut:1.1,marsh:.6,
-  icecream:.85,choco:1.2,gingerman:1.1,swirl:1.6,cupcakehouse:3.1,arch:2.4,gingerhouse:4.4,gumball:2.4,sundae:5.8,cake:8.9};
+  icecream:.85,choco:1.2,gingerman:1.1,swirl:1.6,cupcakehouse:3.1,arch:2.4,gingerhouse:4.4,gumball:2.4,sundae:5.8,cake:8.9,stand:1.3};
+// deterministic 0..1 hash for scenes (a scene crossing a chunk line is built once per chunk and must come out the same)
+const candyH=(i,k)=>{const s=Math.sin(i*127.1+k*311.7)*43758.5453;return s-Math.floor(s);};
 
 const CANDY_PROPS={
   /* ---- micro ---- */
@@ -67,6 +69,13 @@ const CANDY_PROPS={
     g.rotation.y=rand(0,6.28);},{roll:true}),
   candy_marsh:(x,z)=>sized(x,z,CANDY_R.marsh,1.8,2,'small',(P,g)=>{
     for(let i=0;i<3;i++){const m=mk('cyl',.95-i*.08,.55,.95-i*.08,pick(['#ffffff','#ffc6ff','#caffbf','#fdffb6']),rand(-.06,.06),.28+i*.58,rand(-.06,.06));m.rotation.y=rand(0,1);P(m,1,true,.4);}}),
+  // a little sweet-shop stall: counter, cane posts, striped awning, jars of candy
+  candy_stand:(x,z,arg)=>sized(x,z,CANDY_R.stand,2.7,3,'small',(P,g)=>{const c=pick(CANDY_PASTEL);
+    P(mk('box',2,1,1,c,0,.5,0),3);P(mk('box',2.1,.12,1.1,CANDY_ICING,0,1.06,0),1);
+    for(const sx of [-1,1])candyShaft(P,.14,1.6,sx*.9,1.1,-.4,3,[CANDY_RED,'#ffffff']);
+    for(let i=0;i<4;i++)P(candyRot(mk('box',.55,.08,1.3,i%2?'#ffffff':pick(CANDY_BRIGHT),-.82+i*.55,2.6,-.05),.25),1,true,.3);
+    for(let i=0;i<3;i++){P(mk('cyl',.32,.42,.32,'#caf0f8',-.6+i*.6,1.33,.15),1,true,.15);P(mk('sph',.22,.22,.22,pick(CANDY_BRIGHT),-.6+i*.6,1.3,.15),1);}
+    candyFace(g,arg);}),
   /* ---- medium ---- */
   candy_icecream:(x,z)=>sized(x,z,CANDY_R.icecream,4,5,'medium',(P,g)=>{
     P(candyRot(mk('cone',1.3,2.2,1.3,'#e9b872',0,1.1,0),Math.PI),4);
@@ -156,10 +165,43 @@ const CANDY_PROPS={
 const CANDY_SFX={
   candy_marsh:'candy_boing',candy_gumdrop:'candy_boing',candy_donut:'candy_boing',
   candy_gumball:'candy_gumballs',
-  candy_choco:'candy_snap',candy_cookie:'candy_snap',candy_cane:'candy_snap',candy_gingerman:'candy_snap',candy_gingerhouse:'candy_snap',
+  candy_choco:'candy_snap',candy_stand:'candy_crunch',candy_cookie:'candy_snap',candy_cane:'candy_snap',candy_gingerman:'candy_snap',candy_gingerhouse:'candy_snap',
   candy_cake:'candy_splat',candy_cupcakehouse:'candy_splat',candy_cupcake:'candy_splat',candy_icecream:'candy_splat',candy_sundae:'candy_splat'
 };
-for(const k in CANDY_SFX){const f=CANDY_PROPS[k];CANDY_PROPS[k]=(x,z,arg)=>{const o=f(x,z,arg);o.sfx=CANDY_SFX[k];return o;};}
+// wraps each listed prop so it carries its own crash sound (the sub-zones use it too)
+function candySfx(props,map){for(const k in map){const f=props[k];if(f)props[k]=(...a)=>{const o=f(...a);o.sfx=map[k];return o;};}}
+candySfx(CANDY_PROPS,CANDY_SFX);
+
+/* ---------- scenes (Z6, L31 contract): local coords, +Z is the front; positions never use rand ---------- */
+const CANDY_SCENES={
+  // a bunny tea party on a frosting patch: a cookie table, gumdrop seats, mint and wrapper plates
+  candy_bunny_tea:{size:'mini',r:5,sizes:['micro','mini','tiny'],build(s){
+    s.spot('frosting',0,0,7,6,.1);s.place('candy_cookie',0,0,null,0);
+    for(let i=0;i<4;i++){const a=i/4*Math.PI*2+.4;s.place('candy_gumdrop',Math.sin(a)*2,Math.cos(a)*2);}
+    for(let i=0;i<6;i++){const a=i/6*Math.PI*2;s.place(i%2?'candy_mint':'candy_wrap',Math.sin(a)*1.05,Math.cos(a)*1.05);}
+    s.place('candy_popmini',-2.6,-2.2);s.place('candy_popmini',2.7,-2);s.place('candy_beans',2.9,2.4);s.place('candy_beans',-3,2.3);}},
+  // the sweet-shop stall: lollipops either side, a queue of cupcakes, a donut that got away
+  candy_sweet_stand:{size:'small',r:7,sizes:['tiny','small','medium'],build(s){
+    s.spot('frosting',0,1.6,9,6,0);s.place('candy_stand',0,-1,0);
+    s.place('candy_lollipop',-3.4,-1.2);s.place('candy_lollipop',3.4,-1.2);s.place('candy_marsh',-4.6,1.6);
+    for(let i=0;i<3;i++)s.place('candy_cupcake',-.4+i*.3,2.2+i*1.2);
+    s.place('candy_cane',-2.6,3.8,0);s.place('candy_cane',2.6,3.8,0);s.place('candy_donut',5,4.6);s.herd('chick',-2,6,3);}},
+  // a cupcake house with its whole yard: cane fence, lollipop corners, a gumdrop garden, a swirl tree out back
+  candy_cupcake_lot:{size:'large',r:11,sizes:['large','huge'],weight:.8,build(s){
+    s.spot('frosting',0,0,21,17,0);s.place('candy_cupcakehouse',0,-2,0);
+    for(const x of [-9,-6.6,-4.2,4.2,6.6,9])s.place('candy_cane',x,7.6,0);
+    s.place('candy_lollipop',-9,-7);s.place('candy_lollipop',9,-7);s.place('candy_swirl',6.5,-5);
+    for(let i=0;i<6;i++)s.place('candy_gumdrop',-7.4+(i%3)*1.3,2.4+(i/3|0)*1.3);
+    s.place('candy_donut',6,3.4);s.place('candy_marsh',-2.6,5.4);s.herd('bunny',4,5,3);}},
+  // a gingerbread house behind a cane arch gate, gingerbread folks at the door
+  candy_gingerbread_lot:{size:'huge',r:12,sizes:['huge','mega'],build(s){
+    s.spot('frosting',0,0,24,20,0);s.place('candy_gingerhouse',0,-2.5,0);s.place('candy_arch',0,8,0);
+    s.place('candy_gingerman',-3,4,0);s.place('candy_gingerman',3,4,0);
+    for(const x of [-10,-7.5,-5,5,7.5,10])s.place('candy_cane',x,8.4,0);
+    s.place('candy_swirl',-8.5,-6);s.place('candy_swirl',8.5,-6);s.place('candy_icecream',-8.6,3);s.place('candy_choco',8.6,3,3);}}
+};
+const CANDY_FROSTING={micro:['candy_wrap','candy_mint','candy_beans'],mini:['candy_gumdrop','candy_popmini','candy_cookie'],
+  tiny:['candy_cupcake','candy_cane'],small:['candy_donut','candy_marsh','candy_lollipop']};
 
 /* ---------- layout ---------- */
 // one cake, one gumball machine and one sundae per map: picked from the candy chunks of the live zone map
@@ -169,6 +211,14 @@ function candyLandmarks(){
   const L=ZONES.candy&&ZONES.candy.letter,list=[];
   zoneRows.forEach((row,j)=>[...row].forEach((c,i)=>{if(c===L)list.push([i-CHUNKS_HALF,j-CHUNKS_HALF]);}));
   const n=list.length;candyLM={cake:list[0],gumball:n>1?list[Math.floor(n/2)]:null,sundae:n>2?list[n-1]:null};return candyLM;}
+// the sub-zones' one-per-map landmarks: the chunks of zone `id` on the live map (top row first);
+// slot 'first' | 'mid' | 'last' or a fraction 0…1 of the way down the list
+let candyZRows=null,candyZList={};
+function candyChunksOf(id){if(zoneRows!==candyZRows){candyZRows=zoneRows;candyZList={};}
+  if(!candyZList[id]){const L=ZONES[id]&&ZONES[id].letter,l=[];zoneRows.forEach((row,j)=>[...row].forEach((c,i)=>{if(c===L)l.push([i-CHUNKS_HALF,j-CHUNKS_HALF]);}));candyZList[id]=l;}
+  return candyZList[id];}
+function candyIsSlot(ctx,id,slot,min=1){const l=candyChunksOf(id);if(l.length<min)return false;
+  const f=slot==='first'?0:slot==='last'?1:slot==='mid'?.5:slot,p=l[Math.round(f*(l.length-1))];return p[0]===ctx.ci&&p[1]===ctx.cj;}
 const candyAt=(p,ctx)=>!!(p&&p[0]===ctx.ci&&p[1]===ctx.cj);
 const candyPut=(ctx,type,x,z,arg)=>ctx.place(type,x,z,arg,CANDY_R[type.slice(6)]||1.2);
 // big things try spots off the chunk center first (roads run through some chunk centers, and __sp.zone drops the car there)
@@ -176,6 +226,9 @@ function candyDrop(ctx,type,arg){
   for(const [dx,dz] of [[18,18],[-18,18],[18,-18],[-18,-18],[0,18],[18,0],[0,-18],[-18,0],[0,0]])
     if(candyPut(ctx,type,ctx.cx+dx,ctx.cz+dz,arg))return {x:ctx.cx+dx,z:ctx.cz+dz};
   return null;}
+// a layout scene at the first offset where it lands (off the chunk center, clear of the center roads)
+function candySceneDrop(ctx,id,th=0,offs=[[18,18],[-18,18],[18,-18],[-18,-18]]){
+  for(const [dx,dz] of offs)if(ctx.free(ctx.cx+dx,ctx.cz+dz,4)&&ctx.scene(id,ctx.cx+dx,ctx.cz+dz,th))return {x:ctx.cx+dx,z:ctx.cz+dz};return null;}
 function candyRingOf(ctx,x,z,rad,n,type){for(let i=0;i<n;i++){const a=i/n*Math.PI*2+.3;candyPut(ctx,type,x+Math.sin(a)*rad,z+Math.cos(a)*rad,i%4);}}
 function candySprinkle(ctx,n,types){for(let i=0;i<n;i++)candyPut(ctx,pick(types),rand(ctx.x0+6,ctx.x1-6),rand(ctx.z0+6,ctx.z1-6),Math.random()*4|0);}
 function candyRamps(ctx,n){for(let i=0,t=0;i<n&&t<8;t++)if(ctx.ramp(rand(ctx.x0+14,ctx.x1-14),rand(ctx.z0+14,ctx.z1-14),(Math.random()*4|0)*Math.PI/2))i++;}
@@ -199,13 +252,15 @@ function candyLayout(ctx){
           candyPut(ctx,'candy_cane',x+4.6,z+(f?-4:4),f);candyPut(ctx,'candy_lollipop',x-4.4,z+(f?-3.6:3.6),0);}}}
     for(let k=0;k<3;k++){const x=ctx.x0+20+k*20;candyPut(ctx,pick(['candy_icecream','candy_choco','candy_gingerman']),x,ctx.cz-9,k);candyPut(ctx,'candy_donut',x+6,ctx.cz+9,0);}
     candyPut(ctx,'candy_arch',ctx.x0+8,ctx.cz,1);candyPut(ctx,'candy_arch',ctx.x1-8,ctx.cz,1);
-  }else if(r<.8){ // lollipop grove with gumdrop hills and a bunny warren
+  }else if(r<.8){ // lollipop grove with gumdrop hills and a bunny warren (and a sweet stand or a bunny tea party)
+    candySceneDrop(ctx,Math.random()<.5?'candy_sweet_stand':'candy_bunny_tea',0,[[rand(-20,20),24],[rand(-20,20),-24]]);
     for(let i=0;i<4;i++)for(let j=0;j<4;j++){const x=ctx.x0+10+i*20+rand(-4,4),z=ctx.z0+10+j*20+rand(-4,4);
       candyPut(ctx,Math.random()<.45?'candy_swirl':'candy_lollipop',x,z,0);}
     for(let i=0;i<3;i++){const x=rand(ctx.x0+12,ctx.x1-12),z=rand(ctx.z0+12,ctx.z1-12);for(let k=0;k<4;k++)candyPut(ctx,'candy_gumdrop',x+rand(-3,3),z+rand(-3,3),0);}
     candySprinkle(ctx,6,['candy_donut','candy_marsh','candy_gingerman','candy_icecream']);
     ctx.herd('bunny',rand(ctx.x0+12,ctx.x1-12),rand(ctx.z0+12,ctx.z1-12),5);
-  }else{ // gingerbread lane: a couple of gingerbread houses, gingerbread folks, cane arches
+  }else{ // gingerbread lane: a gingerbread lot or houses, gingerbread folks, cane arches
+    if(Math.random()<.4)candySceneDrop(ctx,Math.random()<.5?'candy_gingerbread_lot':'candy_cupcake_lot',0);
     const a=candyDrop(ctx,'candy_gingerhouse',0);if(a){candyPut(ctx,'candy_gingerman',a.x+6,a.z+5,0);candyPut(ctx,'candy_cane',a.x-5.5,a.z+5,0);candyPut(ctx,'candy_cane',a.x+2,a.z+6.5,0);}
     const b=candyDrop(ctx,'candy_gingerhouse',2);if(b)candyPut(ctx,'candy_arch',b.x,b.z+8.5,0);
     candySprinkle(ctx,6,['candy_cupcakehouse','candy_swirl','candy_marsh','candy_choco','candy_gingerman']);
@@ -226,12 +281,15 @@ registerZone({
     micro:['candy_wrap','candy_beans','candy_mint'],
     mini:['candy_gumdrop','candy_popmini','candy_cookie'],
     tiny:['candy_cane','candy_cupcake'],
-    small:['candy_lollipop','candy_donut','candy_marsh'],
+    small:['candy_lollipop','candy_donut','candy_marsh','candy_stand'],
     medium:['candy_icecream','candy_choco','candy_gingerman'],
     large:['candy_swirl','candy_cupcakehouse','candy_arch'],
     huge:['candy_gingerhouse','candy_gumball'],
     mega:['candy_cake','candy_sundae']
   },
   herds:[['bunny',5],['chick',4]],
+  scenes:CANDY_SCENES,
+  spots:{frosting:CANDY_FROSTING},
+  spotLook:{frosting:'#ffe5ec'},
   layout:candyLayout
 });
