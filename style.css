@@ -12,9 +12,14 @@ canvas{display:block}
 #p1{right:14px;background:#2ec4f6}
 .pPanel.empty{background:#0005}
 .tag{position:absolute;transform:translate(-50%,-100%);font-family:'Lilita One';color:#fff;font-size:clamp(14px,1.7vw,24px);padding:1px 10px;border-radius:12px;border:3px solid #fff;white-space:nowrap;text-shadow:0 2px 0 #0005}
-#big{position:absolute;top:38%;left:50%;transform:translate(-50%,-50%) scale(0);font-family:'Lilita One';font-size:clamp(48px,10vw,150px);color:#ffbe0b;-webkit-text-stroke:3px #fff;text-shadow:0 8px 0 #e63946;white-space:nowrap}
-#big.show{animation:pop 2.4s ease-out forwards}
-@keyframes pop{0%{transform:translate(-50%,-50%) scale(0) rotate(-12deg)}15%{transform:translate(-50%,-50%) scale(1.25) rotate(4deg)}25%{transform:translate(-50%,-50%) scale(1) rotate(0)}80%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.4)}}
+/* QA3: keep shout banners in the top band so bosses/cars stay readable; combo floats higher above the cars */
+#big{position:absolute;top:clamp(92px,14vh,150px);left:50%;transform:translate(-50%,0) scale(0);z-index:6;font-family:'Lilita One';font-size:clamp(36px,7vw,96px);color:#ffbe0b;-webkit-text-stroke:2px #fff;text-shadow:0 6px 0 #e63946;white-space:nowrap;pointer-events:none;max-width:92vw;overflow:hidden;text-overflow:clip}
+#big.show{animation:pop 2.1s ease-out forwards}
+@keyframes pop{0%{transform:translate(-50%,0) scale(0) rotate(-10deg);opacity:0}12%{transform:translate(-50%,0) scale(1.18) rotate(3deg);opacity:1}22%{transform:translate(-50%,0) scale(1) rotate(0);opacity:1}65%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,0) scale(1.12)}}
+#combo{position:absolute;transform:translate(-50%,calc(-100% - clamp(88px,14vh,180px)));z-index:5;font-family:'Lilita One',sans-serif;font-size:clamp(22px,3vw,52px)!important;font-weight:400;white-space:nowrap;pointer-events:none;opacity:0;text-shadow:0 3px 0 rgba(0,0,0,.35),0 0 14px rgba(255,214,10,.7);transition:opacity .25s}
+#combo.on{opacity:1}
+#combo.pop{animation:comboPop .25s ease-out}
+@keyframes comboPop{0%{scale:1.35}100%{scale:1}}
 #corner{position:fixed;top:12px;right:12px;display:flex;gap:8px;z-index:20}
 #corner button{font-size:22px;width:48px;height:48px;border-radius:14px;border:3px solid #fff;background:#0004;color:#fff;cursor:pointer}
 #start{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 30%,#ffd166ee,#ef476fe6 60%,#7b2cbfee);z-index:10;overflow:auto}
