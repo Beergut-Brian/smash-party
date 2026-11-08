@@ -918,7 +918,7 @@ class Player{
     else if(inp.boost)target=st.speed*sm*1.65;
     if(sugarRush(this,dt,inp))target*=SUGAR_K; // L42: held turbo turns into a sugar rush
     const boosting=inp.boost&&this.speed>5;
-    if(inp.boost&&!this.wasBoost){sfx.turbo();if(kazooOn())kazooToot(this,0.75);}this.wasBoost=inp.boost;
+    if(inp.boost&&!this.wasBoost){sfx.turbo();const en=cosEngine();if(en==='kazoo')kazooToot(this,0.75);else if(en)engineToot(en);}this.wasBoost=inp.boost;
     if(kazooOn()&&Math.abs(this.speed)>8*this.sm&&(this.kazooT-=dt)<=0)kazooToot(this,0.45); // 🎺 a toot now and then while driving
     if(!this.air){const a=(target>this.speed?30:18)*sm*(0.85+0.05*this.handling);this.speed+=clamp(target-this.speed,-a*dt,a*dt);}
     const fx=Math.sin(this.heading),fz=Math.cos(this.heading);
@@ -967,7 +967,7 @@ class Player{
         const n=performance.now();if(n-lastStuckSay>10000){lastStuckSay=n;say('Stuck? Press jump to go BOOM!');}}}
     else if(Math.hypot(this.x-this.stuck[0],this.z-this.stuck[1])>this.r*4+0.5||T-this.lastBump>2.5)this.stuck=false;
     this.ensureEngine();
-    if(this.eng){const t=AC.currentTime,kz=questOn&&questCos.has('kazoo');if(this.eng.o.type!==(kz?'square':'sawtooth'))this.eng.o.type=kz?'square':'sawtooth'; // 🎺 kazoo engine
+    if(this.eng){const t=AC.currentTime,kz=kazooOn();if(this.eng.o.type!==(kz?'square':'sawtooth'))this.eng.o.type=kz?'square':'sawtooth'; // 🎺 kazoo engine
       this.eng.o.frequency.setTargetAtTime((kz?2.4+0.2*Math.sin(T*28):1)*(42+Math.abs(this.speed)/sm*3.2+(boosting?25:0))/Math.sqrt(Math.max(S,0.3)),t,0.06);this.eng.g.gain.setTargetAtTime(0.025+Math.min(1,Math.abs(this.speed)/30)*0.03,t,0.1);}
   }
 }
@@ -1111,7 +1111,10 @@ $('play').onclick=e=>{e.stopPropagation();startGame();};
      (about 3 car lengths across, up to ~1.6× after a high jump or a hover), by the usual size rules.
    - sugarrush (L42, 🍭 Candy Land): hold turbo ~1 s: rainbow glow, ~1.5× turbo speed, a trail of bouncing sweets,
      farther ramp jumps. Let go and it fizzles out. Land abilities stay off in Adventure until a quest hands them out.
-   Cosmetics (Adventure rewards only): hat, crown (parts on the roof), bubbles / sprinkles / confetti (trails), kazoo (engine).
+   Cosmetics (Adventure rewards only): hats on the roof (hat, crown; L44 lands: eggshell, cherry, bandhat), the dino tail
+   (dinotail, wags on the back), trails (bubbles, sprinkles, confetti; L44: footprints, gumballs, rainbow) and engines
+   (kazoo; L44: roar, siren, burp: a clip on each turbo start). One hat, one engine and up to two trails show at a time:
+   the newest earned wins (questCos keeps the order they were earned in).
    Each new ability: a ceremony (the car spins up, the part pops on) and a pulsing button glyph with a picture until first use.
    Design hook (D19): `function buildCarPart(id){…}` in cars.js returns a THREE.Group at car scale 1 for 'hammer', 'shoot',
    'hover', 'glide', 'dozer', 'hat', 'crown', and (L42, D22) 'stomp' (optional, e.g. dusty feet; origin at the car's ground
@@ -1120,9 +1123,17 @@ $('play').onclick=e=>{e.stopPropagation();startGame();};
    at z=0; logic moves it to the car's nose) have their origin at the car's ground center. Placeholders until then. */
 const ABIL_ICON={hammer:'🔨',shoot:'🥚',hover:'🛸',glide:'🪁',dozer:'🚜',stomp:'👣',sugarrush:'🍭'};
 const ABIL_BTN={shoot:'X',hover:'B',glide:'B',stomp:'B',sugarrush:'A'}; // the button you press (shown as a colored pad button, not a word)
-const COS_ICON={hat:'🎉',crown:'👑',bubbles:'🫧',sprinkles:'🍭',confetti:'🎊',kazoo:'🎺'};
-const COS_TRAIL={bubbles:['#cdf7ff','#9bf6ff'],sprinkles:['#ff006e','#ffbe0b','#3a86ff','#06d6a0','#ffffff'],confetti:['#ff595e','#ffca3a','#8ac926','#1982c4','#6a4c93']};
-const ROOF_PARTS=['hammer','shoot','hat','crown'];
+const COS_ICON={hat:'🎉',crown:'👑',bubbles:'🫧',sprinkles:'🍭',confetti:'🎊',kazoo:'🎺',
+  dinotail:'🦕',footprints:'🐾',eggshell:'🥚',roar:'🦖',cherry:'🍒',gumballs:'🔵',bandhat:'💂',siren:'🚨',burp:'🫧',rainbow:'🌈'};
+const COS_TRAIL={bubbles:['#cdf7ff','#9bf6ff'],sprinkles:['#ff006e','#ffbe0b','#3a86ff','#06d6a0','#ffffff'],confetti:['#ff595e','#ffca3a','#8ac926','#1982c4','#6a4c93'],
+  footprints:['#6b4f2a'],gumballs:['#ff006e','#3a86ff','#ffbe0b','#06d6a0','#ffffff','#9b5de5'],rainbow:['#ff595e','#ff924c','#ffca3a','#8ac926','#1982c4','#6a4c93']};
+const COS_HAT=['hat','crown','eggshell','cherry','bandhat'];
+// engine cosmetics (L44): the clip played on each turbo start; kazoo also toots now and then and hums a square-wave engine
+const COS_ENGINE={kazoo:'kazoo_honk',roar:'dino_roar',siren:'siren_woo',burp:'burp_horn'};
+const ROOF_PARTS=['hammer','shoot',...COS_HAT];
+// the newest earned of a kind (Sets keep insertion order)
+function cosNewest(list,n=1){if(!questOn)return [];return [...questCos].filter(id=>list.includes(id)).slice(-n);}
+const cosHat=()=>cosNewest(COS_HAT)[0],cosEngine=()=>cosNewest(Object.keys(COS_ENGINE))[0],cosTrails=()=>cosNewest(Object.keys(COS_TRAIL),2);
 let gameMode='adventure';try{gameMode=localStorage.getItem('sp_mode')||'adventure';}catch(e){}
 if(/[?&]arcade\b/.test(location.search))gameMode='arcade';if(questOn)gameMode='adventure';
 const abilUsed=new Set();let eggShots=0;
@@ -1150,6 +1161,12 @@ function carPartLook(id){
   if(id==='hammer'){const h=new THREE.Group();h.add(mk('box',0.22,1.3,0.22,'#8d5524',0,0.65,0),mk('box',0.9,0.5,0.5,'#adb5bd',0,1.35,0));h.rotation.x=-0.5;h.position.set(0.55,0,-0.6);h.userData.swing=true;g.add(h);}
   else if(id==='shoot'){const n=mk('cyl',0.5,0.9,0.5,'#ffffff',0,0.35,0.6);n.rotation.x=Math.PI/2.4;g.add(n,mk('sph',0.42,0.55,0.42,'#fff3e0',-0.6,0.28,-0.4));}
   else if(id==='hat'){g.add(mk('cone',0.9,1.2,0.9,'#ff006e',0,0.6,0),mk('sph',0.3,0.3,0.3,'#ffd60a',0,1.25,0));}
+  else if(id==='eggshell'){g.add(mk('sph',1.0,0.55,1.0,'#fff8e7',0,0.2,0));for(let i=0;i<6;i++){const a=i/6*Math.PI*2;g.add(mk('cone',0.28,0.4,0.28,'#fff8e7',Math.sin(a)*0.38,0.6,Math.cos(a)*0.38));}}
+  else if(id==='cherry'){g.add(mk('sph',0.8,0.8,0.8,'#d00000',0,0.4,0),mk('cyl',0.08,0.7,0.08,'#2d6a4f',0.1,1.05,0),mk('box',0.35,0.08,0.18,'#52b788',0.3,1.3,0));}
+  else if(id==='bandhat'){g.add(mk('cyl',0.8,1.3,0.8,'#d00000',0,0.65,0),mk('cyl',0.85,0.12,0.85,'#ffd60a',0,0.08,0),mk('sph',0.3,0.45,0.3,'#ffffff',0,1.45,0));}
+  else if(id==='dinotail'){const t=new THREE.Group();t.userData.wag=true;
+    const a=mk('cone',0.7,1.6,0.7,'#52b788',0,0,-0.8),b=mk('cone',0.35,0.9,0.35,'#40916c',0,0,-1.9);a.rotation.x=b.rotation.x=-Math.PI/2;t.add(a,b);
+    for(let i=0;i<3;i++)t.add(mk('cone',0.25,0.35,0.25,'#ffbe0b',0,0.3-i*0.06,-0.5-i*0.5));t.position.y=0.8;g.add(t);}
   else if(id==='crown'){g.add(mk('cyl',1.1,0.45,1.1,'#ffd60a',0,0.22,0));for(let i=0;i<5;i++){const a=i/5*Math.PI*2;g.add(mk('cone',0.25,0.45,0.25,'#ffd60a',Math.sin(a)*0.45,0.6,Math.cos(a)*0.45));}}
   else if(id==='hover'){const r=new THREE.Mesh(new THREE.TorusGeometry(1.8,0.2,6,28),new THREE.MeshBasicMaterial({color:'#9bf6ff',transparent:true,opacity:0.8}));r.rotation.x=Math.PI/2;r.position.y=0.2;g.add(r);}
   else if(id==='glide'){for(const s of [-1,1]){const w=mk('box',2.6,0.12,1.2,'#ffffff',s*2.4,1.3,-0.2);w.rotation.z=s*0.15;g.add(w);}}
@@ -1159,10 +1176,11 @@ function carPartLook(id){
   return g;}
 function carParts(p){
   if(p.parts){p.root.remove(p.parts);}p.parts=new THREE.Group();p.partMap={};p.root.add(p.parts);if(!questOn)return; // Arcade cars look as they always did
-  const ids=[...questAbil,...questCos].filter(id=>!COS_TRAIL[id]&&id!=='kazoo');
+  const hat=cosHat(),ids=[...questAbil,...questCos].filter(id=>!COS_TRAIL[id]&&!COS_ENGINE[id]&&(!COS_HAT.includes(id)||id===hat));
   for(const id of ids){const g=carPartLook(id);
-    if(ROOF_PARTS.includes(id))g.position.set(id==='crown'?-0.3:0,p.model.h,id==='hat'||id==='crown'?-0.2:0);
+    if(ROOF_PARTS.includes(id))g.position.set(0,p.model.h,COS_HAT.includes(id)?-0.2:0);
     if(id==='dozer')g.position.z=p.stats.r*1.05;
+    if(id==='dinotail')g.position.z=-p.stats.r*0.95; // origin at the car's ground center → its back bumper
     if(id==='hover'||id==='glide'||id==='sugarrush')g.visible=false; // only while hovering / gliding / rushing
     p.parts.add(g);p.partMap[id]=g;}}
 // held-B in the air: hover first (fuel), then glide
@@ -1219,9 +1237,17 @@ function sugarRush(p,dt,inp){
 function updateCarExtras(dt){
   for(const p of players){
     if(p.bonkT>0){p.bonkT-=dt;const h=p.partMap&&p.partMap.hammer;if(h)h.traverse(m=>{if(m.userData.swing)m.rotation.x=-0.5+Math.sin((1-p.bonkT/0.3)*Math.PI)*1.6;});}
+    const tl=p.partMap&&p.partMap.dinotail;if(tl){const sp=Math.min(1,Math.abs(p.speed)/(p.stats.speed*p.sm));tl.traverse(m=>{if(m.userData.wag)m.rotation.y=Math.sin(T*(4+8*sp))*(0.25+0.35*sp);});}
     if(!questOn||Math.abs(p.speed)<p.stats.speed*p.sm*0.3||(p.trailK=(p.trailK||0)-dt)>0)continue;p.trailK=0.05;
-    for(const id of questCos){const cols=COS_TRAIL[id];if(!cols)continue;const k=Math.max(S,0.12),bx=p.x-Math.sin(p.heading)*p.r,bz=p.z-Math.cos(p.heading)*p.r;
+    for(const id of cosTrails()){const cols=COS_TRAIL[id];const k=Math.max(S,0.12),bx=p.x-Math.sin(p.heading)*p.r,bz=p.z-Math.cos(p.heading)*p.r;
       if(id==='bubbles'){const m=mk('sph',0.5*k,0.5*k,0.5*k,null,bx,p.y+0.6*k,bz,BUBBLE_MAT);m.castShadow=false;addPart(m,1.2,rand(-1,1)*k,2*k,rand(-1,1)*k);}
+      else if(id==='footprints'){if(p.air||(p.stepT=(p.stepT||0)+1)%3)continue; // a 3-toed print, left / right in turn, flat on the ground
+        const side=(p.stepN=(p.stepN||0)+1)%2?1:-1,c=Math.cos(p.heading),s=Math.sin(p.heading),fx=bx+c*side*0.5*p.r,fz=bz-s*side*0.5*p.r,g=groundH(fx,fz)+0.03*k;
+        for(const [ox,oz,w] of [[0,0,1],[-0.42,0.63,0.35],[0,0.77,0.35],[0.42,0.63,0.35]]){const m=mk('box',w*k,0.04*k,(w===1?0.85:0.5)*k,null,fx+(ox*c+oz*s)*k,g,fz+(oz*c-ox*s)*k,E(cols[0]));
+          m.rotation.y=p.heading;m.castShadow=false;addPart(m,2.5);}}
+      else if(id==='gumballs'){const m=mk('sph',0.45*k,0.45*k,0.45*k,null,bx+rand(-0.4,0.4)*k,p.y+0.4*k,bz,E(pick(cols)));m.castShadow=false;addPart(m,1,rand(-2.5,2.5)*k,rand(3,5)*k,rand(-2.5,2.5)*k);}
+      else if(id==='rainbow'){const c=Math.cos(p.heading),s=Math.sin(p.heading); // a stripe of every color across the back, fading out
+        cols.forEach((col,i)=>{const o=(i-2.5)*0.28*k,m=mk('box',0.28*k,0.06*k,0.5*k,null,bx+c*o,p.y+0.15*k,bz-s*o,E(col));m.rotation.y=p.heading;m.castShadow=false;addPart(m,0.8,0,0.4*k,0);});}
       else{const m=mk('box',0.25*k,0.08*k,0.25*k,null,bx+rand(-0.4,0.4)*k,p.y+0.5*k,bz,E(pick(cols)));m.castShadow=false;addPart(m,0.9,rand(-2,2)*k,rand(2,4)*k,rand(-2,2)*k);}}}}
 // pulsing glyphs for abilities you haven't tried yet: the button (a colored pad button) and a picture of what it does
 const abilHud=document.createElement('div');abilHud.id='abilGlyphs';$('hud').appendChild(abilHud);
@@ -1398,7 +1424,14 @@ function collisions(){
 let hammerBonkT=0;
 function hammerBonk(p){if(!(p.partMap&&p.partMap.hammer))return;const n=performance.now();if(n-hammerBonkT<140)return;hammerBonkT=n;
   sfxClip('hammer_bonk',0.6,rand(0.92,1.1));}
-const kazooOn=()=>questOn&&questCos.has('kazoo');
+const kazooOn=()=>questOn&&cosEngine()==='kazoo';
+// L44 engine cosmetics: 🦖 roar, 🚨 siren, 🫧 burp play their clip on turbo start (synth stand-ins until AU14 makes them)
+let engineTootT=0;
+function engineToot(id){const n=performance.now();if(n-engineTootT<400)return;engineTootT=n;
+  if(sfxClip(COS_ENGINE[id],0.8,rand(0.92,1.08)))return;
+  if(id==='roar'){tone('sawtooth',160,70,0.6,0.12);noise(0.5,900,1,0.1,'lowpass');}
+  else if(id==='siren'){tone('square',700,1100,0.25,0.06);tone('square',1100,700,0.25,0.06,0.26);}
+  else if(id==='burp'){tone('sawtooth',110,60,0.45,0.14);noise(0.35,600,1,0.08,'lowpass');}}
 function kazooToot(p,vol){p.kazooT=rand(7,12);sfxClip('kazoo_honk',vol,rand(0.9,1.12));}
 // too big to smash (yet): wobble it and boing the car back. Never a fail, just "grow more!"
 function bump(p,o,dx,dz,rr,spd){

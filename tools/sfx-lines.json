@@ -687,6 +687,36 @@
       "dur": 0.6,
       "style": ""
     },
+    "dino_roar_1": {
+      "prompt": "A cute little cartoon dinosaur roar, rawwr, playful not scary, for kids",
+      "dur": 0.9,
+      "style": ""
+    },
+    "dino_roar_2": {
+      "prompt": "A goofy toy dinosaur roar with a squeaky end, rawr-eek, funny",
+      "dur": 0.9,
+      "style": ""
+    },
+    "siren_woo_1": {
+      "prompt": "A goofy cartoon toy siren, woo-woo, silly and bouncy, for kids",
+      "dur": 0.9,
+      "style": ""
+    },
+    "siren_woo_2": {
+      "prompt": "A silly slide-whistle style police siren, wee-ooo wee-ooo, cartoon",
+      "dur": 1.0,
+      "style": ""
+    },
+    "burp_horn_1": {
+      "prompt": "A big fizzy cartoon soda burp, funny, bubbly, for kids",
+      "dur": 0.8,
+      "style": ""
+    },
+    "burp_horn_2": {
+      "prompt": "A long silly bubbly burp that ends in a fizz pop, cartoon",
+      "dur": 0.9,
+      "style": ""
+    },
     "portal_whoosh": {
       "prompt": "Magical swirling portal opening: a deep spinning whoosh rising into a bright sparkly shimmer, exciting and wondrous",
       "dur": 2.5
