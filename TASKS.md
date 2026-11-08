@@ -456,11 +456,12 @@ Full spec and contracts: **`docs/ADVENTURE.md`** (read it before any task below)
 ### Round 1 (v0.35.1, Nov 8): Chrome on Mac GPU (`--use-angle=metal`), 1920×1080, quality BEST, P1 + P2 on keyboard
 Passed: boot with no script errors, version on the start screen, both players join/drive/turbo/jump/shoot, garage at tiny (drive into a car → picked within ~1 s, GO shows, Space = GO → fresh world with the new cars), every size up to GIANT, home/town/farm/park, `__sp.zone` candy/dino/bedroom, `__sp.room()`, all 10 bosses spawn by id, NEW WORLD after a beaten boss, pause menu.
 
-- [ ] **QA1: M (mute) and F (fullscreen) keys do nothing** `NEEDS LOGIC` (logic-gameplay, `src/game.js`)
+- [x] **QA1: M (mute) and F (fullscreen) keys do nothing** `NEEDS LOGIC` (logic-gameplay, `src/game.js`)
   - Cause: in the `keydown` handler (game.js:928) the line ends with `// debug: cycle cars (play uses the garage)if(e.code==='KeyM')toggleMute();if(e.code==='KeyF')toggleFS();`, so the M and F checks sit inside the comment. The start screen tells players "F = fullscreen · M = sound".
   - Repro: start, join, press M → the 🔊 button stays 🔊 and the sound stays on.
   - Expected: M toggles 🔊/🔇, F toggles fullscreen. Fix: move the two checks onto their own line.
   - Reviewer: a two-minute fix; logic-gameplay can fold it into its L32 PR.
+  - Done (logic-gameplay/QA1): the M/F checks are on their own line in the keydown handler; headless check: M flips 🔊→🔇 on the start screen and 🔇→🔊 in play, no script errors.
 - [ ] **QA2: Draw calls go over budget at GIANT and in some boss fights** `NEEDS LOGIC` (logic-systems)
   - Repro (P1 + P2 joined): `__sp.level(7)` (pick cars in each garage or `__sp.garageGo()`), then `__sp.stats()` at home, `__sp.tp(240,-80)` (town), `__sp.tp(-400,-400)` (farm). Bosses: `__sp.room(false); __sp.boss('<id>')`, wait 6 s, `__sp.stats()`.
   - Measured `calls` / `tris`: GIANT home **1161–1257** / 5.2–7.1M, GIANT town **1029** / 5.1M, GIANT farm **1078** / 2.5M. Boss fights: clankzilla **1037** / 9.1M, sirsprinkles **905** / 8.1M, kingwobbles 806, shelldozer 795, rexy 784, gumbotron 765 / 8.1M, cuddles 758 / 8.6M, the rest 612–683. Budget: ~700 (~900 in a boss fight). For comparison: micro home 339, micro town 308, `__sp.zone('candy')` at GIANT 771.

@@ -977,7 +977,8 @@ addEventListener('keydown',e=>{
   if(state==='start'&&/^(ArrowUp|KeyW)$/.test(e.code))pickMove(0,-1);if(state==='start'&&/^(ArrowDown|KeyS)$/.test(e.code))pickMove(0,1);
   if(e.code==='Escape'){if(state==='play')pause();else if(state==='pause')resume();}
   if(e.code==='KeyN'&&state==='play')newWorld();
-  if(e.code==='Backquote'&&state==='play'&&!garage)for(const p of players){const l=carsInTier(carTierNow());p.setCar(l[(l.indexOf(p.carIdx)+1)%l.length],true);} // debug: cycle cars (play uses the garage)if(e.code==='KeyM')toggleMute();if(e.code==='KeyF')toggleFS();
+  if(e.code==='Backquote'&&state==='play'&&!garage)for(const p of players){const l=carsInTier(carTierNow());p.setCar(l[(l.indexOf(p.carIdx)+1)%l.length],true);} // debug: cycle cars (play uses the garage)
+  if(e.code==='KeyM')toggleMute();if(e.code==='KeyF')toggleFS();
 });
 addEventListener('keyup',e=>keys.delete(e.code));
 addEventListener('blur',()=>keys.clear());
