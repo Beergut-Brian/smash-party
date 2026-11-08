@@ -108,8 +108,15 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Check: `__sp.stats().calls` standing in town (`__sp.tp(240,-160)`) at medium and huge, before/after.
   - Done (v0.21.1): sleeping undamaged buildings batch `o.proxy` (chunk batches and scatter pools); `userData.plainVC` materials batch by geometry with one shared vertex-color instance material + per-instance color. A proxied building that loses parts stays awake as real parts (never pops back intact); reloads with remembered damage build from parts. Town draw calls: medium 393 → 301, huge 938 → 575 (same look, compared side by side).
 
-- [ ] **D8c: Finer building slices + per-house wall colors** `NEEDS DESIGN` (world-props; unblocked by L16)
+- [x] **D8c: Finer building slices + per-house wall colors** `NEEDS DESIGN` (world-props; unblocked by L16)
   - L16 is done, so sleeping buildings cost the same however they're sliced: switch `KIT_GRID` to 3 (8 walls + a slab per storey, closer to the L3 contract) and pick wall colors per house instead of per chunk. Check `__sp.stats().calls` in town (`__sp.tp(240,-160)`) at medium and huge stays near 300 / 575.
+  - Done (world-props/D8c): `KIT_GRID=3`, so pack buildings have 8 walls + a slab per storey, and each house, villa, shop, farmhouse and skyscraper picks its own wall color (seeded per chunk). A model can override the grid with cut `{grid}`; the skyscraper keeps 2 (see L22). Town `calls` before → after (two runs each): medium 280–314 → 308–309, huge 588–634 → 630–641; skyscraper chunk (-240,240) huge ~600 → 652–699. The 575 target was already beaten by main's own huge numbers (more mega scatter since it was set). Follow-up: L22.
+
+- [ ] **L22: Draw awake-but-untouched buildings from their proxy** `NEEDS LOGIC` (from world-props, D8c)
+  - What exists: pack buildings carry `o.proxy` (L16), now sliced 3×3 (8 walls + slab per storey, so a 2-storey house is ~20 parts).
+  - Problem: once a building wakes near a car, every part is its own mesh and draw call. At huge size the houses around the car are awake: ~76 meshes for 4 houses, 55 for one 6-storey skyscraper at 3×3. That's why the skyscraper keeps 2×2 slicing.
+  - Needed in `game.js`: keep drawing `o.proxy` while a building is awake but has lost no parts, and swap to the parts on the first hit (`damageBuilding`/`collapse`/a blast). Then the skyscraper can go to `grid:3` as well.
+  - Check: `__sp.stats().calls` at huge in town (`__sp.tp(240,-160)`) and at the skyscraper landmark should drop by ~50–100.
 
 - [x] **L15: Zone plug-ins** (unblocks the `zone-<name>` agents; see `agents/zone.md`; was numbered L11, which is golden surprises)
   - New zones live in their own files: `src/world/zones/<name>.js`, loaded by `boot.mjs` from a list (e.g. `src/world/zones/index.json`), each registering `{id, letter, ground, sky?, props, layout(ctx), sizes}` via a `registerZone()` helper in core.js.

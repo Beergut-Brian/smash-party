@@ -52,15 +52,14 @@ const RAD={
    Single-color parts use M(color) and batch for free; multi-color parts use a vertex-color material. */
 const KIT_STOREY=0.4;   // Kenney city kits: one storey = 0.4 model units
 /* Walls per storey = KIT_GRID² minus the middle: 2 → 4 corner walls, 3 → 8 walls + a slab (the contract's 8–12).
-   Every piece is its own instanced batch while a building sleeps, so 2 for now to stay near the draw-call budget.
-   Switch to 3 once logic draws sleeping buildings from o.proxy (NEEDS LOGIC task "L15" in TASKS.md). */
-const KIT_GRID=2;
+   Since L16 a sleeping building draws from o.proxy (2 batches per model per chunk), so slicing finer costs nothing
+   until it wakes. */
+const KIT_GRID=3;
 const kitSrc={},kitCut={},kitMats={};
 const kitHas=name=>!!(typeof propModels!=='undefined'&&propModels[name]);
-/* Per-chunk street style: every copy of a building type in one chunk shares its model and wall color, so sleeping
-   copies draw as one instanced batch per part instead of one per house (the next chunk over gets a different look).
-   Roof caps are plain M() colors, so each house still gets its own roof color for free. Once logic batches
-   userData.plainVC materials with a per-instance color (L15), wall colors can go per house too. */
+/* Per-chunk street style: every copy of a building type in one chunk shares its model, so sleeping copies draw as one
+   instanced batch per model (the next chunk over gets a different look). Colors are per house and free: roof caps
+   are plain M() colors and walls are userData.plainVC, both batched with a per-instance color (L16). */
 function kitHash(x,z,salt){const ci=Math.round(x/CHUNK),cj=Math.round(z/CHUNK);let h=Math.imul((ci+97)*73856093^(cj+89)*19349663,0x9e3779b1)^Math.imul(salt+1,0x85ebca6b);
   h^=h>>>15;h=Math.imul(h,0x2c1b3c6d);h^=h>>>12;h=Math.imul(h,0x297a2d39);h^=h>>>15;return (h>>>0)/4294967296;}
 const kitAt=(list,x,z,salt)=>{const ok=(list||[]).filter(kitHas);return ok.length?ok[Math.floor(kitHash(x,z,salt)*ok.length)]:null;};
@@ -120,7 +119,7 @@ function kitPiece(T,key){
   if(C)geo.setAttribute('color',new THREE.BufferAttribute(C,3));geo.computeBoundingSphere();geo.userData.kit=key;
   return {geo,key,cen,sz,D,flat,area:T.reduce((s,t)=>s+kitArea(t),0)};
 }
-/* o: {mode, s (scale), ry (quarter turns), cuts (mode 'y': heights as fractions of the model), floors, eave, noCap (mode 'bld')} */
+/* o: {mode, s (scale), ry (quarter turns), cuts (mode 'y': heights as fractions of the model), floors, eave, noCap, grid (mode 'bld')} */
 function kitPieces(name,o={}){
   // the cut is the same at every scale (parts are unit boxes), so geometry is shared by every size of a model
   const s=o.s||1,id=name+'|'+JSON.stringify(Object.assign({},o,{s:1}));
@@ -149,7 +148,7 @@ function kitCutUp(name,o){
       const [lo,hi]=kitClip([acc?white(t):t],1,eave);walls.push(...lo);roof.push(...hi);});
     for(const t of cap)add('roof|'+fl+'|cap',t);
     // KIT_GRID×KIT_GRID cells per storey: the outer ones are walls, a middle one (3×3 only) is the slab
-    const b=kitBox(walls.length?walls:T),G=KIT_GRID,xc=[],zc=[];for(let i=1;i<G;i++){xc.push(b[0]+(b[3]-b[0])*i/G);zc.push(b[2]+(b[5]-b[2])*i/G);}
+    const b=kitBox(walls.length?walls:T),G=o.grid||KIT_GRID,xc=[],zc=[];for(let i=1;i<G;i++){xc.push(b[0]+(b[3]-b[0])*i/G);zc.push(b[2]+(b[5]-b[2])*i/G);}
     const cell=(v,cs)=>{let i=0;while(i<cs.length&&v>=cs[i])i++;return i;};
     for(let f=1;f<fl;f++)walls=kitClip(walls,1,f*st+base).flat();
     for(const c of xc)walls=kitClip(walls,0,c).flat();for(const c of zc)walls=kitClip(walls,2,c).flat();
@@ -506,7 +505,7 @@ const OBJ={
   // `like`: share another type's model and colors in the chunk (a villa is a bigger copy of the street's house)
   const bld=(type,size,pts,floorsOf,walls,roofs,big,like)=>{const key=like||type,k=[...key].reduce((h,c)=>h*31+c.charCodeAt(0),7)%9973;return (x,z,arg)=>{
     const name=kitAt(KIT[key],x,z,k);if(!name)return B[type](x,z,arg);
-    const s=kitFit(name,RAD[type]),wall=walls[Math.floor(kitHash(x,z,k+1)*walls.length)],roof=pick(roofs); // walls: per chunk, roof: per house
+    const s=kitFit(name,RAD[type]),wall=pick(walls),roof=pick(roofs); // both per house (seeded by the layout, so a chunk rebuilds the same)
     let proxy;const o=sized(x,z,RAD[type],kitH(name,s),pts,size,(P,g)=>{proxy=kitBuilding(P,name,s,wall,roof,floorsOf&&floorsOf(name));
       if(arg===undefined)g.rotation.y=(Math.random()*4|0)*Math.PI/2;else face(g,arg);},{building:true,big});
     o.proxy=proxy;return o;};};
@@ -576,7 +575,8 @@ const OBJ={
   OBJ.firestation=kitBld('firestation','huge',20,{noCap:true,eave:.86},()=>'#ff8f8f',(P,H,fl)=>{
     story(P,2.8,2.8,2.6,H,fl,'#d62828',2);slab(P,2.6,2.6,H+2.6,fl,'#fff');
     P(BP(mk('box',.55,.38,.55,null,0,H+2.95,0,glow('#ff1e1e')),fl,'extra'),1);});
-  OBJ.skyscraper=kitBld('skyscraper','mega',50,{noCap:true,eave:.93},(x,z)=>['#ffffff','#cfe8ff','#ffd6e7','#d8f3dc'][Math.floor(kitHash(x,z,23)*4)],null,
+  // grid 2: 4 walls a storey. Six storeys at 3×3 would be ~55 parts, and an awake building draws every part on its own
+  OBJ.skyscraper=kitBld('skyscraper','mega',50,{noCap:true,eave:.93,grid:2},()=>pick(['#ffffff','#cfe8ff','#ffd6e7','#d8f3dc']),null,
     name=>({'tower-a':4,'tower-c':5,'tower-d':6})[name]||4);
   OBJ.watertower=(x,z,arg)=>{if(!kitHas('watertower'))return B.watertower(x,z,arg);const s=kitFit('watertower',RAD.watertower);
     return sized(x,z,RAD.watertower,kitH('watertower',s),16,'huge',(P,g)=>{kitProp(P,'watertower',s,{cut:{mode:'y',cuts:[.42,.78]},n:5,whole:false});face(g,arg);});};
