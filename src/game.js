@@ -47,6 +47,7 @@ function flash(x,y,z,color,size,life){const m=new THREE.Mesh(GEO.sph,new THREE.M
 let score=0,levelScore=0,level=1,goal=100,smashCount=0,shake=0;
 const queue=[];
 const _wp=new THREE.Vector3(),_q=new THREE.Quaternion(),_ws=new THREE.Vector3();
+function partMat(m){if(m.material&&!Array.isArray(m.material))return m.material;let f=null;m.traverse(x=>{if(!f&&x.isMesh)f=Array.isArray(x.material)?x.material[0]:x.material;});return f||M('#cccccc');}
 // send one part flying: whole parts fly off intact, others shatter into `n` boxes. vyK scales the upward kick.
 function breakPart(o,part,nx,nz,power,vyK=1){
   if(part.gone)return;part.gone=true;const m=part.mesh,k=sizeK(o);power*=k;vyK*=k;
@@ -60,7 +61,7 @@ function breakPart(o,part,nx,nz,power,vyK=1){
   }else{
     m.getWorldScale(_ws);const s=_ws,vol=s.x*s.y*s.z/part.n;const cs0=clamp(Math.cbrt(vol),0.3*k*k,2.0);
     for(let i=0;i<part.n;i++){const cs=cs0*rand(.7,1.15);
-      const c=new THREE.Mesh(GEO.box,m.material);c.castShadow=true;c.scale.set(cs*rand(.8,1.2),cs*rand(.6,1.1),cs*rand(.8,1.2));
+      const c=new THREE.Mesh(GEO.box,partMat(m));c.castShadow=true;c.scale.set(cs*rand(.8,1.2),cs*rand(.6,1.1),cs*rand(.8,1.2));
       c.position.set(_wp.x+rand(-s.x/2,s.x/2)*.8,_wp.y+rand(-s.y/2,s.y/2)*.8,_wp.z+rand(-s.z/2,s.z/2)*.8);c.rotation.set(rand(0,3),rand(0,3),rand(0,3));
       const f=power*rand(.3,.85),oa=Math.atan2(c.position.x-o.x,c.position.z-o.z);
       addDebris(c,cs*0.4,nx*f+Math.sin(oa)*rand(2,7)*k,rand(5,13)*(0.6+power/45)*vyK,nz*f+Math.cos(oa)*rand(2,7)*k);}
@@ -460,11 +461,12 @@ function loadChunk(c){
   for(const rec of c.recs){
     if(rec.dead){if(T<rec.back)continue;rec.dead=false;}
     const o=buildRec(rec);scene.remove(o.g);o.g.updateMatrixWorld(true);o.inst=[];o.sleep=true;sleepers.push(o);
+    let multi=false;o.g.traverse(m=>{if(m.isMesh&&Array.isArray(m.material))multi=true;});if(multi){scene.add(o.g);o.inst=null;o.sleep=false;continue;}
     o.g.traverse(m=>{if(!m.isMesh)return;const k=m.geometry.id+'_'+m.material.id;let b=batches.get(k);
       if(!b)batches.set(k,b={geo:m.geometry,mat:m.material,list:[]});o.inst.push([b,b.list.length,m]);b.list.push(m.matrixWorld.clone());});}
   for(const b of batches.values()){const im=new THREE.InstancedMesh(b.geo,instMat(b.mat),b.list.length);
     b.list.forEach((m,i)=>im.setMatrixAt(i,m));im.castShadow=im.receiveShadow=true;im.frustumCulled=false;c.group.add(im);b.im=im;}
-  for(const o of sleepers)o.inst=o.inst.map(([b,i,mesh])=>[b.im,i,b.list[i],mesh]);
+  for(const o of sleepers)if(o.inst)o.inst=o.inst.map(([b,i,mesh])=>[b.im,i,b.list[i],mesh]);
 }
 function unloadChunk(c){
   c.loaded=false;for(const h of c.herds)if(h.on)herdOff(h);
@@ -681,7 +683,7 @@ pauseMenu.innerHTML='<div class="pm"><h2>⏸ PAUSED</h2><div id="pmBtns"></div><
 const pauseBtn=document.createElement('button');pauseBtn.id='pauseBtn';pauseBtn.title='Pause (Esc / START)';pauseBtn.textContent='⏸';$('corner').prepend(pauseBtn);
 pauseBtn.onclick=e=>{e.stopPropagation();if(state==='play')pause();else if(state==='pause')resume();};
 let pmSel=0,pmItems=[];
-function pmBuild(){pmItems=[['▶ RESUME',resume]];if(nwBtn.style.display==='block')pmItems.push(['🌍 NEW WORLD',()=>{resume();newWorld();}]);pmItems.push(['🏠 MAIN MENU',mainMenu]);
+function pmBuild(){pmItems=[['▶ RESUME',resume]];if(nwBtn.style.display==='block')pmItems.push(['🌍 NEW WORLD',()=>{resume();newWorld();}]);pmItems.push([HIGH?'✨ LOOKS: BEST (switch to FAST)':'⚡ LOOKS: FAST (switch to BEST)',()=>setQuality(HIGH?'phone':'high')]);pmItems.push(['🏠 MAIN MENU',mainMenu]);
   const box=$('pmBtns');box.innerHTML='';pmItems.forEach(([t,f],i)=>{const b=document.createElement('button');b.textContent=t;b.onclick=e=>{e.stopPropagation();f();};
     b.onmouseenter=()=>{pmSel=i;pmMark();};box.appendChild(b);});pmSel=0;pmMark();}
 function pmMark(){[...$('pmBtns').children].forEach((b,i)=>b.classList.toggle('sel',i===pmSel));}
@@ -944,7 +946,7 @@ let boss=null,lastBossSay=0;
 const _c1=new THREE.Color(),_c2=new THREE.Color('#ffd60a'),_c3=new THREE.Color('#ff006e'),_wpB=new THREE.Vector3();
 const bossArrowTex=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');
   x.fillStyle='#ffd60a';x.strokeStyle='#ffffff';x.lineWidth=8;x.beginPath();x.moveTo(64,118);x.lineTo(112,58);x.lineTo(82,58);x.lineTo(82,10);x.lineTo(46,10);x.lineTo(46,58);x.lineTo(16,58);x.closePath();x.fill();x.stroke();
-  return new THREE.CanvasTexture(c);})();
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;})();
 const bossArrows=[0,1,2,3].map(()=>{const s=new THREE.Sprite(new THREE.SpriteMaterial({map:bossArrowTex,depthTest:false,transparent:true}));s.renderOrder=3;s.visible=false;scene.add(s);return s;});
 const bossHud=document.createElement('div');bossHud.id='bossHud';$('hud').appendChild(bossHud);
 {const st=document.createElement('style');st.textContent=`
@@ -1039,7 +1041,7 @@ const redRings=ringLayer(SIGNAL_COL.no),greenRings=ringLayer(SIGNAL_COL.yes);
 const badgeTex=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');
   x.fillStyle=SIGNAL_COL.no;x.beginPath();x.arc(64,64,60,0,Math.PI*2);x.fill();x.lineWidth=8;x.strokeStyle='#fff';x.stroke();
   x.fillStyle='#fff';x.beginPath();x.moveTo(64,14);x.lineTo(98,52);x.lineTo(76,52);x.lineTo(76,70);x.lineTo(52,70);x.lineTo(52,52);x.lineTo(30,52);x.closePath();x.fill();
-  x.font='44px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('🚙',64,96);return new THREE.CanvasTexture(c);})();
+  x.font='44px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('🚙',64,96);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;})();
 const badges=[0,1,2,3].map(()=>{const s=new THREE.Sprite(new THREE.SpriteMaterial({map:badgeTex,depthTest:false,transparent:true}));s.renderOrder=3;s.visible=false;scene.add(s);return s;});
 let greenT=0,lastHint=0,lastHintSay=0;
 const _m4=new THREE.Matrix4(),_v=new THREE.Vector3(),_s=new THREE.Vector3(),_qi=new THREE.Quaternion();
@@ -1104,7 +1106,6 @@ function updateHUD(){
 /* ---------- loop ---------- */
 let last=performance.now(),T=0;
 music('title'); // starts on the first tap/key (browsers need a gesture before audio)
-buildWorld();captureHome();updateStreaming(0,true);
 function loop(now){
   requestAnimationFrame(loop);
   const dt=Math.min(0.05,(now-last)/1000);last=now;
@@ -1127,7 +1128,7 @@ function loop(now){
   renderer.render(scene,camera);
   pressed.clear();touch.jumpP=false;touch.swapP=false;
 }
-requestAnimationFrame(loop);
+propsReady.then(()=>{buildWorld();captureHome();updateStreaming(0,true);last=performance.now();requestAnimationFrame(loop);});
 window.__sp={mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,
   boss(id){if(!giant){tier=SIZES.length-1;growth=MAX_GROW;levelReady=true;levelUp();newCars(true);}if(!boss)summonBoss(id);return boss&&boss.def.name;}, // __sp.boss('shelldozer')
   level(n=1){for(let i=0;i<n&&!giant;i++){growth=GROW_AT[tier+1];levelReady=true;levelUp();}return giant?'GIANT':SIZES[tier];}, // jump ahead n sizes

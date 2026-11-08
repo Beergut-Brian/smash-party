@@ -73,12 +73,13 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Chiptune / 8-bit background music: a calm "driving around" loop, a hype loop for MEGA/size-ups, a boss theme, and a giant/victory fanfare. Loop seamlessly and duck under voice lines.
   - Replace the synth sfx (crash, boom, boing, jump, thud, turbo, pop, fanfare) with generated ones in the same toy/8-bit style, keeping the synth versions as fallback. Keep total audio download small for phones (lazy-load music).
 
-- [ ] **L9: Rendering upgrade: look like a real game** (next up, before L5)
+- [x] **L9: Rendering upgrade: look like a real game** (next up, before L5)
   - Upgrade three.js r128 → current. Current three ships only as ES modules (no `three.min.js`, no `examples/js`), so add an import map plus a tiny `src/boot.mjs` that imports `three` + `GLTFLoader`, sets `window.THREE` / `THREE.GLTFLoader`, then loads the classic scripts in order. That keeps the plain-script layout and file ownership unchanged. Fix any r128-only APIs it trips on.
   - Look: `MeshStandardMaterial` (or toon) instead of Lambert, sRGB output + ACES tone mapping, a warm hemisphere + sun setup with softer shadows, a sky gradient, light fog, and optional outlines or SSAO only if a GTX 1060 holds 60fps.
   - Make `mk()` / `M()` produce the new materials so every existing prop upgrades at once.
   - A shared **GLB prop loader** for design: `loadProp(name)` returns a cached clone from `assets/props/`, with an optional fallback to the old block-built version until the model exists. Document it in CLAUDE.md.
   - Keep a quality toggle (high / phone) and test on phone.
+  - ✅ Done (v0.13.0): three r186 via import map + `src/boot.mjs`; `M()`/`mk()` make toy-plastic `MeshStandardMaterial` (Lambert on phone); Neutral tone mapping (ACES washed out the toy colors), sky gradient dome, warm sun + bounce light, soft PCF shadows, studio environment light on high; `prop(name, fallback)` GLB loader with `assets/props/props.json`; LOOKS: BEST / FAST toggle in the pause menu (`?q=phone`). Same draw calls as r128 and 60 fps on a real GPU in tests. Follow-up: the town can hit ~1,000+ draw calls (most of it the shadow pass), worth trimming before phone tuning.
 
 - [ ] **L5: Tune and test pass**
   - Round 1 (Kaden's first play-test) ✅: slower when small; car tiers (cooler cars unlock every 2 sizes, Y switches within the tier); big cars shoot (X: cannon / rocket, also hits boss weak spots); LEVEL UP button instead of auto-growing; new `micro` bottom size, scatter mostly at your size with bigger things rarer; stuck detection → jump becomes 💥 BOOM.

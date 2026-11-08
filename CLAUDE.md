@@ -1,6 +1,6 @@
 # Smash Party — guide for AI collaborators
 
-A co-op driving-and-smashing game for a dad and his 5-year-old, played on a TV with two controllers. Plain HTML + three.js (r128, global `THREE`), no build step, no frameworks. GitHub Pages serves `main` as-is.
+A co-op driving-and-smashing game for a dad and his 5-year-old, played on a TV with two controllers. Plain HTML + three.js (r186 via an import map; `src/boot.mjs` exposes it as the global `THREE`), no build step, no frameworks. GitHub Pages serves `main` as-is.
 
 ## Design rules (do not break these)
 - **Co-op only.** No losing, no timers that end the game, no player-vs-player scoring. Everything feeds one shared smash meter.
@@ -21,9 +21,10 @@ Two tools work on this repo at the same time. Stay in your lane to avoid merge c
 | `tools/`, `assets/sounds/voice/`, `sfx/`, `music/` | **Claude Code** (logic) | ElevenLabs generators (`make-voices.mjs`, `make-sfx.mjs`, `make-music.mjs`), their lists (`*-lines.json`), and the generated mp3s + `index.json` |
 | `src/core.js` | **Claude Code** (logic) | Helpers (`mk`, `M`, `E`, `rand`…), renderer, scene, ground/roads/walls, ramps + `groundH`, audio |
 | `src/game.js` | **Claude Code** (logic) | Debris, smashing, scoring, respawn, celebration, players/driving, input, collisions, camera, HUD, main loop |
+| `src/boot.mjs` | **Claude Code** (logic) | Imports three.js + addons, sets `window.THREE`, loads the plain scripts in order |
 | `index.html`, `CLAUDE.md` | Shared | Change rarely; mention it in the commit message |
 
-Scripts are plain (no modules) and load in order: `core.js` → `cars.js` → `objects.js` → `game.js`. Top-level `const`/`function` names are shared across files, so never reuse a name.
+Scripts are plain (no modules); `src/boot.mjs` loads them in order: `core.js` → `cars.js` → `objects.js` → `game.js`. Materials: use `M(color)` / `mk()` (toy-plastic `MeshStandardMaterial` on high quality, Lambert on phone) or `litMat({...})` for custom ones, so the quality toggle covers them. Top-level `const`/`function` names are shared across files, so never reuse a name.
 
 If a design change needs new logic (or the other way around), make the part in your own file and leave a `// TODO(logic):` or `// TODO(design):` note for the other tool instead of editing their file.
 
@@ -48,6 +49,7 @@ Check `TASKS.md` before starting. Take the top unchecked task in your section, c
   `{"name":"Comet Crusher","emoji":"☄️","file":"comet.glb","speed":27,"r":2.3,"scale":1,"y":0,"rotateY":0,"height":3,"exhaust":[0,1,-2.5]}`
   Model faces +Z, about 4–5 units long, under ~20k triangles. Meshes named `*wheel*` spin.
 - **Zone layout:** define `const ZONE_LAYOUT={town(ctx){…},farm(ctx){…},park(ctx){…},home(ctx){…}}` in `objects.js`. Each function fills one 80×80 chunk. `ctx` has `zone, ci, cj, x0, z0, x1, z1, cx, cz, size` plus `place(type,x,z,arg,r)`, `ramp(x,z,th,L,W,H)` and `free(x,z,r)`. `place` and `ramp` return false (and do nothing) if the spot is off the chunk, on a road, on a ramp or overlapping. `Math.random`/`rand`/`pick` are seeded while a layout runs, so the same chunk always comes out the same. Which zone each chunk is in lives in `ZONE_MAP` (`core.js`).
+- **GLB prop (art pack models):** drop `name.glb` in `assets/props/` and list it in `assets/props/props.json`: `{"oak_tree":{"file":"oak_tree.glb","scale":1,"y":0,"rotateY":0}}` (model faces +Z, feet at y=0, under ~5k triangles). In a builder, use `prop('oak_tree', () => blockBuiltFallback())`: it returns a cheap copy of the model, or the fallback if the model isn't there. The world waits for listed models to load before it builds. A model used as one part (`P(prop('oak_tree'),5)`) shatters into chunks colored like its first material.
 - **Smashable object:** add to `OBJ` using `makeObj(x,z,radius,height,points,build)`. In `build`, register parts with `P(mesh, chunks, whole, half)` — `whole:true` flies off intact, otherwise it shatters into `chunks` boxes. Add it to `SPAWN_W` to respawn. Give it a size class with opts `{size:'micro'|'mini'|'tiny'|'small'|'medium'|'large'|'huge'|'mega'}` (each size is ~1.65× the last; a `small` thing is about the size of a car at scale 0.2, a cone is `small`… see `TYPE_SIZE` in game.js: cone = small, house = huge). Players can only smash things at or below their size; bigger things get a red ring and boing them back; things 3+ sizes below get squished without counting. Any `OBJ` type can also be built shrunk or grown: `OBJ.cone(x,z,arg,scale)`.
 - **Size-matched props:** define `const ZONE_PROPS={town:{mini:['flower',…],tiny:[…],small:[…],…},farm:{…},park:{…},home:{…}}` in `objects.js` (OBJ type names per zone per size). Logic keeps the area around the cars stocked from it: mostly the players' size, some a size or two bigger, a few smaller. Missing entries fall back to today's props shrunk or grown.
 - **Building (staged destruction):** make it with `makeObj(x,z,r,h,points,build,{building:true,size:'huge'})` and tag every part with `BP(mesh, floor, kind)` (from `core.js`): `P(BP(mk(...), 0, 'wall'), 3)`.
@@ -63,6 +65,7 @@ Check `TASKS.md` before starting. Take the top unchecked task in your section, c
 - **Boss:** define `const BOSSES=[{id,name,emoji,sway,build(P,g){…}},…]` in `objects.js` to replace logic's placeholders (`BOSS_DEFAULT`: Clankzilla, Shelldozer, King Wobbles). A random one drops in each world once the players are GIANT. `build` works like a building: `P(BP(mesh,floor,kind),chunks,whole,half)` at 1x scale (about 11 tall, radius ~3.6; logic scales it ×`BOSS_SCALE`). Weak spots: `P(bossWeak(mesh,floor,phase),3)` with phase 1, 2, 3… (2 per phase works well), placed low (under ~3.5 at 1x) and on the outside. Add `Here comes <Name>!` to `tools/voice-lines.json`. Test with `__sp.boss('id')`.
 
 ## Testing
-- Serve locally (`python3 -m http.server`) — model cars only load over http, not `file://`.
+- Serve locally (`python3 -m http.server`) — the game (ES module boot) and models only load over http, not `file://`. `?q=phone` / `?q=high` forces a quality (also in the pause menu).
+- Headless SwiftShader can't render the new shadows reliably; for visual checks run Chromium on the real GPU (`--use-angle=metal --enable-gpu` on a Mac).
 - `window.__sp.mega()`, `__sp.explode(x,z)`, `__sp.addScore(n)`, `__sp.grow(n)` (1800 = GIANT), `__sp.newWorld()`, `__sp.tp(x,z)` and `__sp.stats()` in the console help with testing. Press N (or START) when giant for a new world.
 - Keyboard: P1 WASD/Space/E/Q/R, P2 Arrows/Enter/RShift///. Esc / START / ⏸ pauses (the pause menu also shows what each controller button reports). (drive/turbo/jump/switch car/shoot; switch or shoot keys LEVEL UP when ready). `__sp.level(n)` jumps ahead n sizes. Check both players, a ramp jump, a barrel chain, and a MEGA SMASH before pushing.

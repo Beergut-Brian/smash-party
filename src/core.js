@@ -10,27 +10,46 @@ const HOME=72;  // the original hand-built arena (buildWorld) lives inside ±HOM
 const ROAD_EVERY=160,ROAD_W=10;
 const IS_PHONE=!!(window.matchMedia&&matchMedia('(pointer:coarse)').matches);
 
+/* ---------- quality ---------- */
+// 'high' = toy-plastic materials, soft shadows, environment light, antialiasing. 'phone' = lighter everything.
+// Pick with ?q=high / ?q=phone, or the pause menu (remembered on this device).
+const QUALITY=(()=>{try{const q=new URLSearchParams(location.search).get('q')||localStorage.getItem('sp_quality');if(q==='high'||q==='phone')return q;}catch(e){}return IS_PHONE?'phone':'high';})();
+const HIGH=QUALITY==='high';
+function setQuality(q){try{localStorage.setItem('sp_quality',q);}catch(e){}location.reload();}
+
 /* ---------- renderer / scene ---------- */
-const renderer=new THREE.WebGLRenderer({antialias:true});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+const renderer=new THREE.WebGLRenderer({antialias:HIGH,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,HIGH?2:1.5));
 renderer.setSize(innerWidth,innerHeight);
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.NeutralToneMapping;renderer.toneMappingExposure=1.0; // Neutral keeps the toy colors bright (ACES washed them out)
 renderer.shadowMap.enabled=true;
-renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.shadowMap.type=THREE.PCFShadowMap; // PCFSoftShadowMap is gone in current three; shadow.radius softens instead
 document.body.prepend(renderer.domElement);
 const scene=new THREE.Scene();
-scene.background=new THREE.Color('#8fd3ff');
-scene.fog=new THREE.Fog('#8fd3ff',160,300);
+const SKY_TOP='#3d9cf0',SKY_HORIZON='#bfe6ff'; // TODO(design): tune sky colors
+scene.fog=new THREE.Fog(SKY_HORIZON,160,300);
 const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.5,700);
-scene.add(new THREE.HemisphereLight('#ffffff','#5a8f3c',0.8));
-const sun=new THREE.DirectionalLight('#fff4dd',0.85);
-sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-0.0006;
+// sky: a gradient dome that rides along with the camera
+{const sky=new THREE.Mesh(new THREE.SphereGeometry(600,32,16),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,
+  uniforms:{top:{value:new THREE.Color(SKY_TOP)},bot:{value:new THREE.Color(SKY_HORIZON)}},
+  vertexShader:'varying vec3 vP;void main(){vP=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+  fragmentShader:'uniform vec3 top;uniform vec3 bot;varying vec3 vP;void main(){float h=clamp(normalize(vP).y*1.6+0.15,0.0,1.0);gl_FragColor=vec4(mix(bot,top,h),1.0);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'}));
+  sky.renderOrder=-1;sky.frustumCulled=false;sky.onBeforeRender=(r,s,cam)=>sky.position.copy(cam.position);scene.add(sky);}
+// warm sun + sky/ground bounce light (+ a soft studio environment on high for that toy-plastic shine)
+scene.add(new THREE.HemisphereLight('#d6ecff','#7a9a52',HIGH?1.4:1.9));
+const sun=new THREE.DirectionalLight('#fff0d4',HIGH?2.4:2.3);
+sun.castShadow=true;sun.shadow.mapSize.set(HIGH?2048:1024,HIGH?2048:1024);sun.shadow.bias=-0.0004;sun.shadow.normalBias=0.02;sun.shadow.radius=HIGH?3:1;
 const sc=sun.shadow.camera;sc.near=1;sc.far=260;
 scene.add(sun);scene.add(sun.target);
+if(HIGH){const pm=new THREE.PMREMGenerator(renderer);scene.environment=pm.fromScene(new THREE.RoomEnvironment(),0.04).texture;scene.environmentIntensity=0.3;pm.dispose();}
 addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();});
 
 /* ---------- geometry helpers ---------- */
 const matCache={};
-const M=c=>matCache[c]||(matCache[c]=new THREE.MeshLambertMaterial({color:c}));
+// lit material: toy plastic on high, cheaper Lambert on phone. Every mk()/M() prop picks this up.
+const litMat=o=>{if(HIGH)return new THREE.MeshStandardMaterial(Object.assign({roughness:0.62,metalness:0.04},o));const l=Object.assign({},o);delete l.roughness;delete l.metalness;return new THREE.MeshLambertMaterial(l);};
+const M=c=>matCache[c]||(matCache[c]=litMat({color:c}));
 const E=c=>matCache['e'+c]||(matCache['e'+c]=new THREE.MeshBasicMaterial({color:c}));
 const GEO={
   box:new THREE.BoxGeometry(1,1,1),
@@ -74,7 +93,7 @@ function onRoad(x,z,pad=0){const lim=ROAD_W/2+pad;return Math.abs(x-Math.round(x
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(ARENA*2+700,ARENA*2+700),M('#7ccf5a'));
 ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
 const zoneCanvas=document.createElement('canvas');zoneCanvas.width=zoneCanvas.height=CHUNKS_HALF*2+1;
-const zoneTex=new THREE.CanvasTexture(zoneCanvas);
+const zoneTex=new THREE.CanvasTexture(zoneCanvas);zoneTex.colorSpace=THREE.SRGBColorSpace;
 function setZoneMap(rows){zoneRows=rows;const n=zoneCanvas.width,cx=zoneCanvas.getContext('2d');
   for(let j=0;j<n;j++)for(let i=0;i<n;i++){cx.fillStyle=ZONE_GROUND[rows[j][i]]||'#86d863';cx.fillRect(i,j,1,1);}
   zoneTex.needsUpdate=true;}
@@ -87,11 +106,11 @@ function randomZoneMap(rnd,letters='TFP'){
     let best=1e9,z='P';for(const [x,y,l] of sites){const d=(x-i)**2+(y-j)**2;if(d<best){best=d;z=l;}}r+=z;}rows.push(r);}
   return rows;}
 {setZoneMap(ZONE_MAP);const tex=zoneTex;tex.magFilter=THREE.NearestFilter;tex.minFilter=THREE.NearestFilter;
-  const inner=new THREE.Mesh(new THREE.PlaneGeometry(ARENA*2,ARENA*2),new THREE.MeshLambertMaterial({map:tex}));
+  const inner=new THREE.Mesh(new THREE.PlaneGeometry(ARENA*2,ARENA*2),litMat({map:tex,roughness:0.95}));
   inner.rotation.x=-Math.PI/2;inner.position.y=0.01;inner.receiveShadow=true;scene.add(inner);}
 // instanced helper for static repeated scenery (frustum culling off: r128 can't bound instances)
 function instBoxes(list,color,shadow){
-  const im=new THREE.InstancedMesh(GEO.box,new THREE.MeshLambertMaterial({color:'#ffffff'}),list.length);
+  const im=new THREE.InstancedMesh(GEO.box,litMat({color:'#ffffff'}),list.length);
   const m4=new THREE.Matrix4(),q=new THREE.Quaternion(),p=new THREE.Vector3(),s=new THREE.Vector3(),c=new THREE.Color();
   list.forEach((b,i)=>{p.set(b[0],b[1],b[2]);s.set(b[3],b[4],b[5]);im.setMatrixAt(i,m4.compose(p,q,s));im.setColorAt(i,c.set(b[6]||color));});
   im.frustumCulled=false;im.castShadow=!!shadow;im.receiveShadow=true;scene.add(im);return im;
@@ -110,6 +129,21 @@ function instBoxes(list,color,shadow){
   instBoxes(w,'#ffffff',true);}
 // distant hills in a ring around the square world
 for(let i=0;i<26;i++){const a=i/26*Math.PI*2,r=(ARENA+rand(90,150))/Math.max(Math.abs(Math.cos(a)),Math.abs(Math.sin(a)));const h=mk('sph',rand(70,120),rand(30,60),rand(70,120),pick(['#6abf4b','#5fae45','#78c95a']),Math.cos(a)*r,0,Math.sin(a)*r);h.castShadow=false;scene.add(h);}
+
+/* ---------- GLB props (assets/props/) ---------- */
+/* Design lists models in assets/props/props.json: {"oak_tree":{"file":"oak_tree.glb","scale":1,"y":0,"rotateY":0}}.
+   prop(name, fallback) returns a fresh copy of that model (geometry and materials shared, so it's cheap) or, if the
+   model isn't there, whatever fallback() builds (the old block version). The world waits for propsReady (all listed
+   models loaded or failed, max 8s) before it builds, so props appear as models from the first frame. */
+const propModels={};
+const propsReady=Promise.race([new Promise(r=>setTimeout(r,8000)),
+  (THREE.GLTFLoader&&location.protocol!=='file:'?fetch('assets/props/props.json',{cache:'no-cache'}).then(r=>r.ok?r.json():{}):Promise.resolve({})).then(list=>{
+    const L=new THREE.GLTFLoader();
+    return Promise.all(Object.entries(list).map(([name,d])=>L.loadAsync('assets/props/'+d.file).then(g=>{
+      const root=new THREE.Group(),m=g.scene;m.scale.setScalar(d.scale||1);m.position.y=d.y||0;m.rotation.y=d.rotateY||0;
+      m.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});root.add(m);propModels[name]=root;}).catch(e=>console.warn('prop',name,e))));
+  }).catch(()=>{})]);
+function prop(name,fallback){const m=propModels[name];return m?m.clone(true):fallback?fallback():new THREE.Group();}
 
 /* ramps: `ramps` holds only the ramps in loaded chunks (keeps groundH cheap). makeRamp builds one without
    adding it; addRamp builds + adds (used by buildWorld). game.js streams them in and out with their chunk. */
