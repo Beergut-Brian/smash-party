@@ -468,6 +468,12 @@ function spawnFalling(cx,cz,spread,type){
     const o=OBJ[type](x,z);o.falling=true;o.fy=rand(28,60);o.vy=0;o.g.position.y=o.fy;return o;}
   return null;
 }
+/* QA2: things dropping in (filler rain, filler scenes, regrowth) go into the shared pools before they fall and slide
+   down there, instead of drawing every part as its own mesh until they land: a GIANT-size refill after a boss landing
+   rained ~600 building parts (~1,900 draw calls). Undamaged pack buildings fall as their proxy. A hit wakes it as usual. */
+function dropIn(o,fy){o.falling=true;o.fy=fy;o.vy=0;o.g.position.y=0;if(o.scat||o.rec)poolAdopt(o);o.g.position.y=fy;fallPose(o);}
+function fallPose(o){if(!o.sleep||!o.inst)return;
+  for(const [im,i,m,mesh] of o.inst){if(mesh.userData.dead)continue;_pm.copy(m);_pm.elements[13]+=o.fy;im.setMatrixAt(i,_pm);im.instanceMatrix.needsUpdate=true;}}
 function updateObjects(dt){
   for(const o of objects){if(!o.wob)continue;if(o.sleep)wakeObj(o);o.wob=Math.max(0,o.wob-dt*1.6);const w=o.wob;
     o.g.rotation.x=Math.sin(T*23)*0.07*w;o.g.rotation.z=Math.cos(T*19)*0.09*w;const f=o.s0||1;o.g.scale.set(f*(1+0.05*w*Math.sin(T*31)),f*(1-0.08*w*Math.sin(T*31)),f*(1+0.05*w*Math.sin(T*31)));}
@@ -475,7 +481,7 @@ function updateObjects(dt){
     o.vy-=40*dt;o.fy+=o.vy*dt;
     if(o.fy<=0){o.fy=0;o.falling=false;if(o.scat||o.rec)queue.push({t:0,fn:()=>poolAdopt(o)});const k=sizeK(o);if(o.sz>=tier-1)sfxIn(zoneXZ(o.x,o.z),'thud');puff(o.x,0.4*k,o.z,4,1.4*k);
       if(o.sz>=tier)for(const p of players)if(Math.hypot(p.x-o.x,p.z-o.z)<p.r+o.r){p.air=true;p.vy=10*p.sm;}}
-    o.g.position.y=o.fy;}
+    o.g.position.y=o.fy;fallPose(o);}
   if(Math.random()<0.02){for(const o of objects)if(!o.alive)poolRelease(o);objects=objects.filter(o=>o.alive);}
 }
 
@@ -779,7 +785,7 @@ function updateStreaming(dt,all){
     for(const rec of c.recs){if(!rec.dead||T<rec.back||lodSkip(rec))continue;
       if(players.some(p=>Math.hypot(p.x-rec.x,p.z-rec.z)<14))continue;
       if(objects.some(o=>o.alive&&Math.hypot(o.x-rec.x,o.z-rec.z)<o.r+rec.r))continue;
-      rec.dead=false;const o=buildRec(rec);o.falling=true;o.fy=rand(28,50);o.vy=0;o.g.position.y=o.fy;
+      rec.dead=false;const o=buildRec(rec);dropIn(o,rand(28,50));
       if(++n>=3)return;}}
 }
 const frustum=new THREE.Frustum(),projM=new THREE.Matrix4();
@@ -1314,7 +1320,7 @@ function spawnScatter(p,fill){
     if(garageOn(x,z,r))continue; // L32: not inside the garage
     const zn=zoneAt(chunkIdx(x),chunkIdx(z)),[t,f]=(sp&&spotProp(zn,sp.kind,k))||scatterProp(zn,k);
     const o=OBJ[t](x,z,t==='fence'?rand(0,Math.PI):undefined,f);o.scat=true;
-    if(fill){o.falling=true;o.fy=rand(6,16)*Math.max(S,0.4);o.vy=0;o.g.position.y=o.fy;}else poolAdopt(o);
+    if(fill)dropIn(o,rand(6,16)*Math.max(S,0.4));else poolAdopt(o);
     return o;}
   return null;}
 let scatT=0;
@@ -1456,7 +1462,7 @@ function scenePlant(sid,x,z,R,k,f,it,ok,near,fill,extra){
     for(const o of objects)if(o.alive&&o.scat&&!o.gold&&Math.hypot(o.x-q.x,o.z-q.z)<o.r+r){o.alive=false;poolRelease(o);scene.remove(o.g);} // filler makes room
     const c=chunkOf(q.x,q.z),rec={type:q.type,x:q.x,z:q.z,arg:q.arg,r,seed:(Math.random()*1e9)|0,dead:false,back:0,f:f*q.sc,th:q.th,scene:tag};c.recs.push(rec);keys.add(c.k);
     if(!c.loaded)continue;const o=buildRec(rec);
-    if(fill){o.falling=true;o.fy=rand(6,16)*Math.max(S,0.4)+rand(0,4)*S;o.vy=0;o.g.position.y=o.fy;}
+    if(fill)dropIn(o,rand(6,16)*Math.max(S,0.4)+rand(0,4)*S);
     else{scene.remove(o.g);if(!o.spin&&!o.gold)poolAdopt(o);if(!o.pooled){o.inst=null;o.sleep=false;scene.add(o.g);}}}
   for(const h of it.herd)if(chunkHerd(home,...h))home.herds[home.herds.length-1].scene=tag;
   for(const q of it.spot){const c=chunkOf(q[1],q[2]);if(chunkSpot(c,...q)){c.spots[c.spots.length-1].scene=tag;keys.add(c.k);refreshSpotTiles(c);}}
