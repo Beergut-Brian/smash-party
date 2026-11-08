@@ -501,22 +501,32 @@ const instMat=m=>instMats[m.id]||(instMats[m.id]=m.clone()); // own material so 
 // Plain M() colors batch by shape alone: one InstancedMesh per shape with the color per instance (instead of one
 // per shape+color), which cuts sleeping-object draw calls several times over.
 const PLAIN_INST=litMat({color:'#ffffff'});
-const batchKey=m=>m.material.userData.plain?'g'+m.geometry.id:m.geometry.id+'_'+m.material.id;
+// vertex-colored materials that differ only by color (design's kit buildings: userData.plainVC) batch the same way
+const VC_INST=litMat({color:'#ffffff',vertexColors:true});
+const batchKey=m=>m.material.userData.plain?'g'+m.geometry.id:m.material.userData.plainVC?'vc'+m.geometry.id:m.geometry.id+'_'+m.material.id;
+const batchMat=m=>m.material.userData.plain?PLAIN_INST:m.material.userData.plainVC?VC_INST:instMat(m.material);
+const colorBatched=m=>!!(m.material.userData.plain||m.material.userData.plainVC);
+/* What a sleeping object looks like in a batch: its meshes, or, for an undamaged building with a design-made sleep
+   proxy (o.proxy: a couple of meshes in the object's local space, see kitProxy in objects.js), just the proxy, so a
+   building costs ~2 batches per model however finely it's sliced. Returns [[mesh, worldMatrix], …]. */
+function sleepLook(o){o.g.updateMatrixWorld(true);const out=[];
+  if(o.proxy&&o.proxy.length&&!o.parts.some(p=>p.gone)){o.proxied=true;for(const pm of o.proxy){pm.updateMatrix();out.push([pm,o.g.matrixWorld.clone().multiply(pm.matrix)]);}return out;}
+  o.proxied=false;o.g.traverse(m=>{if(m.isMesh)out.push([m,m.matrixWorld.clone()]);});return out;}
 /* Shared pools for objects that come and go (size-matched scatter): same shape batching, but long-lived and with
    free slots, so a sleeping scatter prop costs nothing extra to draw. */
 const pools=new Map();
 // Slots stay packed (a freed slot takes the last one in), and im.count only draws the slots in use.
 function poolFor(m){const k=batchKey(m);let p=pools.get(k);
-  if(!p){const plain=!!m.material.userData.plain,cap=plain?2048:256,im=new THREE.InstancedMesh(m.geometry,plain?PLAIN_INST:instMat(m.material),cap);
+  if(!p){const plain=colorBatched(m),cap=plain?2048:256,im=new THREE.InstancedMesh(m.geometry,batchMat(m),cap);
     if(plain)im.setColorAt(0,new THREE.Color('#ffffff'));im.count=0;
     im.castShadow=im.receiveShadow=true;im.frustumCulled=false;scene.add(im);p={im,plain,cap,owner:[]};pools.set(k,p);}
   return p;}
 const _pm=new THREE.Matrix4(),_pc=new THREE.Color();
 function poolAdopt(o){ // move an awake object into the pools and let it sleep (it wakes again when a car gets close)
-  if(o.inst||!o.alive||o.spin||o.rolling||o.gold)return;const ent=[];let ok=true;o.g.updateMatrixWorld(true);
-  o.g.traverse(m=>{if(!ok||!m.isMesh)return;if(Array.isArray(m.material)){ok=false;return;}const p=poolFor(m);if(p.im.count>=p.cap){ok=false;return;}
-    const i=p.im.count++;const e=[p.im,i,m.matrixWorld.clone(),m,p];p.owner[i]=e;p.im.setMatrixAt(i,HIDE);
-    if(p.plain){p.im.setColorAt(i,m.material.color);p.im.instanceColor.needsUpdate=true;}ent.push(e);});
+  if(o.inst||!o.alive||o.spin||o.rolling||o.gold)return;const ent=[];let ok=true;
+  for(const [m,mat] of sleepLook(o)){if(!ok)break;if(Array.isArray(m.material)){ok=false;break;}const p=poolFor(m);if(p.im.count>=p.cap){ok=false;break;}
+    const i=p.im.count++;const e=[p.im,i,mat,m,p];p.owner[i]=e;p.im.setMatrixAt(i,HIDE);
+    if(p.plain){p.im.setColorAt(i,m.material.color);p.im.instanceColor.needsUpdate=true;}ent.push(e);}
   o.inst=ent;o.pooled=true;
   if(!ok){poolRelease(o);return;}
   o.sleep=false;sleepObj(o);}
@@ -537,10 +547,10 @@ function loadChunk(c){
     const o=buildRec(rec);scene.remove(o.g);o.g.updateMatrixWorld(true);o.inst=[];o.sleep=true;sleepers.push(o);
     if(rec.gold&&!o.bld)goldify(o,60);
     let multi=!!o.spin||!!o.gold;o.g.traverse(m=>{if(m.isMesh&&Array.isArray(m.material))multi=true;});if(multi){scene.add(o.g);o.inst=null;o.sleep=false;continue;}
-    o.g.traverse(m=>{if(!m.isMesh)return;const k=batchKey(m);let b=batches.get(k);
-      if(!b)batches.set(k,b={geo:m.geometry,mat:m.material,plain:!!m.material.userData.plain,list:[],cols:[]});
-      o.inst.push([b,b.list.length,m]);b.list.push(m.matrixWorld.clone());b.cols.push(m.material.color);});}
-  for(const b of batches.values()){const im=new THREE.InstancedMesh(b.geo,b.plain?PLAIN_INST:instMat(b.mat),b.list.length);
+    for(const [m,mat] of sleepLook(o)){const k=batchKey(m);let b=batches.get(k);
+      if(!b)batches.set(k,b={geo:m.geometry,src:m,plain:colorBatched(m),list:[],cols:[]});
+      o.inst.push([b,b.list.length,m]);b.list.push(mat);b.cols.push(m.material.color);}}
+  for(const b of batches.values()){const im=new THREE.InstancedMesh(b.geo,batchMat(b.src),b.list.length);
     b.list.forEach((m,i)=>{im.setMatrixAt(i,m);if(b.plain)im.setColorAt(i,b.cols[i]);});im.castShadow=im.receiveShadow=true;im.frustumCulled=false;c.group.add(im);b.im=im;}
   for(const o of sleepers)if(o.inst)o.inst=o.inst.map(([b,i,mesh])=>[b.im,i,b.list[i],mesh]);
 }
@@ -551,7 +561,8 @@ function unloadChunk(c){
   c.group.traverse(m=>{if(m.isInstancedMesh)m.dispose();});scene.remove(c.group);c.group=null;
 }
 function wakeObj(o){if(!o.sleep)return;o.sleep=false;for(const [im,i] of o.inst){im.setMatrixAt(i,HIDE);im.instanceMatrix.needsUpdate=true;}scene.add(o.g);}
-function sleepObj(o){o.sleep=true;for(const [im,i,m,mesh] of o.inst){im.setMatrixAt(i,mesh.userData.dead?HIDE:m);im.instanceMatrix.needsUpdate=true;}scene.remove(o.g);}
+function sleepObj(o){if(o.proxied&&o.parts.some(p=>p.gone)){if(o.pooled)poolRelease(o);else o.inst=null;return;} // damaged: stays awake as real parts
+  o.sleep=true;for(const [im,i,m,mesh] of o.inst){im.setMatrixAt(i,mesh.userData.dead?HIDE:m);im.instanceMatrix.needsUpdate=true;}scene.remove(o.g);}
 function streamR(){return (IS_PHONE?0.7:1)*(110+camDist*1.1);} // camDist already grows with car size
 function rectDist(c,x,z){return Math.hypot(Math.max(c.x0-x,0,x-c.x0-CHUNK),Math.max(c.z0-z,0,z-c.z0-CHUNK));}
 let regrowT=0;

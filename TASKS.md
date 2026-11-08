@@ -101,11 +101,15 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - `ANIMAL.rooster` exists in `src/world/animals.js`, but it's not a known kind yet. Add a `rooster` sound to `tools/sfx-lines.json` (generate it), and add roosters to the farm herds (`ZONE_HERDS` / the coop) so they appear.
   - Done (v0.19.1): recorded `rooster` sfx (cock-a-doodle-doo) and "You found a golden rooster!"; every chicken flock (coop, farm, home) now has one rooster. Also recorded the 16 new Kenney car names.
 
-- [ ] **L16: Draw sleeping pack buildings from their proxy** `NEEDS LOGIC` (from world-props, D8b; filed as L15, which is zone plug-ins)
+- [x] **L16: Draw sleeping pack buildings from their proxy** `NEEDS LOGIC` (from world-props, D8b; filed as L15, which is zone plug-ins)
   - What exists: every Kenney building (`o.proxy`, set in `objects.js` by `kitBuilding`/`kitProxy`) carries its intact look as 2 meshes in the object's local space, not added to `o.g`: one vertex-colored mesh (material `userData.plainVC`) + the roof cap (a plain `M()` color). Geometry is shared by every copy of a model.
   - Needed in `game.js`: while a building is asleep and has lost no parts (`!rec.gone`), batch `o.proxy` instead of its parts (`loadChunk` + `poolAdopt`/`sleepObj`/`wakeObj`); wake swaps back to the parts. Also batch `userData.plainVC` materials like `PLAIN_INST`: key by geometry only, one shared `vertexColors:true` instance material, per-instance color = `material.color`.
   - Why: today every slice of a building is its own instanced batch while it sleeps (~6–10 per building type per chunk), so a town chunk is ~1.4–2× the block town's draw calls. With this, a sleeping building is 2 batches per model whatever its slicing, and world-props can switch to 8 walls per storey (`KIT_GRID=3`) and per-house wall colors.
   - Check: `__sp.stats().calls` standing in town (`__sp.tp(240,-160)`) at medium and huge, before/after.
+  - Done (v0.21.1): sleeping undamaged buildings batch `o.proxy` (chunk batches and scatter pools); `userData.plainVC` materials batch by geometry with one shared vertex-color instance material + per-instance color. A proxied building that loses parts stays awake as real parts (never pops back intact); reloads with remembered damage build from parts. Town draw calls: medium 393 → 301, huge 938 → 575 (same look, compared side by side).
+
+- [ ] **D8c: Finer building slices + per-house wall colors** `NEEDS DESIGN` (world-props; unblocked by L16)
+  - L16 is done, so sleeping buildings cost the same however they're sliced: switch `KIT_GRID` to 3 (8 walls + a slab per storey, closer to the L3 contract) and pick wall colors per house instead of per chunk. Check `__sp.stats().calls` in town (`__sp.tp(240,-160)`) at medium and huge stays near 300 / 575.
 
 - [x] **L15: Zone plug-ins** (unblocks the `zone-<name>` agents; see `agents/zone.md`; was numbered L11, which is golden surprises)
   - New zones live in their own files: `src/world/zones/<name>.js`, loaded by `boot.mjs` from a list (e.g. `src/world/zones/index.json`), each registering `{id, letter, ground, sky?, props, layout(ctx), sizes}` via a `registerZone()` helper in core.js.
