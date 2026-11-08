@@ -132,9 +132,9 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Rex Rammer, Taco Tornado and Stomp King have no voice clips yet (robot voice for now). Run `make-voices.mjs --dry`, then generate.
   - Done: rex_rammer, taco_tornado, stomp_king clips (~35 ElevenLabs characters).
 
-- [ ] **D12: More cars for the garage** `NEEDS DESIGN` (cars-ui; L17 shipped with placeholders)
-  - The garage shows 4 cars per player from the new tier, different for each player once a tier has 6+. Counts now: tier 0: 6 ✅ (starters, not shown in a garage), tier 1: 8 ✅, tier 2: 11 ✅, **tier 3: 5** (Rocket Racer, Shark Attack, Rex Rammer, Stomp King, Comet Cruiser).
-  - **Still needed (tier 3, the coolest cars, shown today as blocky ❓ placeholders):** Rocket Sled 🛷, Robo Walker 🤖 (robot legs), Spike-o-saurus 🦕 (stegosaurus spike car), Hover Zoomer 🛸. Use exactly these names in cars.js / cars.json with `tier:3` and the placeholder disappears by itself (or rename: then update `GARAGE_WANTED` in game.js via a `TODO(logic)`). More tier-3 ideas welcome; 8+ gives both players 4 different real cars.
+- [x] **D12: More cars for the garage** `NEEDS DESIGN` (cars-ui; L17 shipped with placeholders)
+  - The garage shows 4 cars per player from the new tier, different for each player once a tier has 6+. Counts now: tier 0: 6 ✅ (starters, not shown in a garage), tier 1: 8 ✅, tier 2: 11 ✅, **tier 3: 9** (Rocket Racer, Shark Attack, Rex Rammer, Stomp King, Comet Cruiser + D12 batch).
+  - ✅ Done (`cars/D12`): **Rocket Sled** 🛷 (long race sled + runners + rockets), **Robo Walker** 🤖 (truck on robot legs), **Spike-o-saurus** 🦕 (stego spike plates + plow snout), **Hover Zoomer** 🛸 (future racer under a glow saucer). All `tier:3` / `weapon:'rocket'` with visible `PARTS.rockets`. Exact `GARAGE_WANTED` names so the ❓ placeholders go away. New parts: `sledRunners`, `roboLegs`, `stegoSpikes`, `hoverDisc`.
 
 - [ ] **B1+B2 order (Kaden + son picked, Nov 7): build ALL three bosses for each zone, in this order** (world-bosses; set `zone:'candy'` / `zone:'dino'` on each so L23 can pick them)
   1. **Gummo the Gummy Giant** 🐻 (candy), then **Rexy Rumbleton** 🦖 (dino): first, they're the favorites ✅ (world-bosses/B1-B2)
