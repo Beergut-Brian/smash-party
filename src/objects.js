@@ -793,31 +793,10 @@ function place(type,x,z,arg){
 }
 
 function buildWorld(){
-  startStreet(); // first, so the start spot gets its props before the arena's random scatter
-  for(let i=0;i<3;i++)for(let j=0;j<3;j++)place('house',22+i*15+rand(-1,1),-60+j*14+rand(-1,1));
-  addRamp(30,8,Math.PI);
-  addRamp(-38,2,Math.PI);
-  for(let row=0;row<4;row++)for(let k=0;k<=row;k++)place('pin',-38+(k-row/2)*3.4,-24-row*3.2);
-  addRamp(-14,40,-Math.PI/2);
-  for(let i=0;i<10;i++)place('tower',rand(-62,-32),rand(24,62));
-  addRamp(0,-20,Math.PI);
-  [[0,-52],[-3,-55],[3,-55],[0,-58],[-5,-50],[5,-50],[-2,-61],[2,-61]].forEach(([x,z])=>place('barrel',x,z));
-  for(let i=0;i<6;i++)place('crates',rand(-12,12),rand(-66,-44));
-  place('barrel',0,0);
-  for(let i=0;i<8;i++){const a=i/8*Math.PI*2+0.4;place('crates',Math.cos(a)*9,Math.sin(a)*9);}
-  for(let i=0;i<6;i++)place('snowman',rand(20,62),rand(20,62));
-  for(let i=0;i<10;i++)place('melon',rand(18,62),rand(18,62));
-  [[44,44],[41,47],[47,41],[44,50]].forEach(([x,z])=>place('barrel',x,z));
-  for(let x=-62;x<=62;x+=5){if(Math.abs(x)<14)continue;if(Math.random()<.75)place('cone',x,6.8);if(Math.random()<.75)place('cone',x,-6.8);}
-  for(let z=-62;z<=62;z+=5){if(Math.abs(z)<14)continue;if(Math.random()<.6)place('cone',6.8,z);if(Math.random()<.6)place('cone',-6.8,z);}
-  for(let x=-30;x<=30;x+=4.2)place('fence',x,63);
-  for(let i=0;i<14;i++)place('tree',rand(-66,66)*(Math.random()<.5?1:-1)*0+rand(-66,66),pick([-66,66,rand(-66,66)]));
-  for(let i=0;i<10;i++)place('crates',rand(-60,60),rand(-60,60));
-  const mini=['flowers','pebble','mushroom','acorn','toyblock','can','toyduck','gnome','snail'];
-  for(let i=0;i<26;i++)place(pick(mini),rand(-20,20),rand(14,44));
-  for(let i=0;i<10;i++)place(pick(mini),rand(-58,58),rand(-58,58));
-  for(let i=0;i<8;i++)place('bush',rand(-58,58),rand(-58,58));
-  for(let i=0;i<6;i++)place('hydrant',rand(-50,50),rand(-50,50));
+  startStreet(); // first, so the start spot gets its props before anything else
+  // D18: the jumps stay (across the cross street, up the north road, into the bowling pins)
+  addRamp(30,8,Math.PI);addRamp(-38,2,Math.PI);addRamp(0,-20,Math.PI);addRamp(-55,70,Math.PI);
+  homeArena(); // Hank's Street: lots on every street, a play lot in each block (D18 part 2, below)
 }
 
 /* respawn mix: [type, weight]. Kept small so celebration drops stay easy to smash. */
@@ -930,7 +909,6 @@ const HOOD_PARK={
   fountain(ctx,q){hoodSpot(ctx,'plaza',q,6);put(ctx,'fountain',q.cx,q.cz,0);ring(ctx,q.cx,q.cz,RAD.fountain+2.4,4,'bench');ring(ctx,q.cx,q.cz,RAD.fountain+5.2,8,'flowers');}
 };
 // is this chunk one of the zone landmarks? (they keep their own layouts and just get sidewalks)
-function hoodLandmark(ctx){const LM=landmarks();for(const k in LM)if(at(LM[k],ctx))return true;return false;}
 function hoodShuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
 // a park block: paths along the middle (where no road runs), sidewalks along roads, one activity per corner, trees round the edge
 function hoodPark(ctx,R,acts){
@@ -954,70 +932,91 @@ const HOOD_FARM={
     if(Math.random()<.6)put(ctx,'tractor',q.cx,q.cz,Math.random()*4|0);else put(ctx,'farmhouse',q.cx,q.cz,q.qz<0?0:2);
     if(Math.random()<.6)ctx.herd('chicken',q.cx+6,q.cz+6,4);}
 };
-function hoodFarm(ctx,R){
+// farm roadsides: a narrow verge, a fence with a gap and a mailbox at the gate
+function farmRoadside(ctx,R){
   for(const [ax,on] of [['v',R.v],['h',R.h]])if(on)for(const sd of [-1,1]){const S=hoodSide(ctx,ax,sd);S.spot('sidewalk',-40,40,5.4,7.6);
-    if(Math.random()<.75){const g=rand(-28,28);for(let u=-37;u<=37;u+=4.2)if(Math.abs(u-g)>4&&(!R.v||!R.h||Math.abs(u)>8))S.put('fence',u,8.2,S.V?Math.PI/2:0,1);S.put('mailbox',g,8.6,S.face);}}
+    if(Math.random()<.75){const g=rand(-28,28);for(let u=-37;u<=37;u+=4.2)if(Math.abs(u-g)>4&&(!R.v||!R.h||Math.abs(u)>8))S.put('fence',u,8.2,S.V?Math.PI/2:0,1);S.put('mailbox',g,8.6,S.face);}}}
+function hoodFarm(ctx,R){
+  farmRoadside(ctx,R);
   const qs=hoodQuads(ctx,R,1.5),list=hoodShuffle(['field','field','patch','pen','hayyard']);qs.forEach((q,i)=>HOOD_FARM[list[i]](ctx,q));}
 /* Ground tint per spot kind, for logic to paint spots as flat tiles (NEEDS LOGIC, see TASKS L30). */
 const SPOT_LOOK={sidewalk:'#d9d9d9',path:'#e9d8a6',parking:'#9aa0a6',plaza:'#e5e0d8',yard:'#7ccf5a',backyard:'#6fc04e',lawn:'#86d16a',
   sand:'#f4e3b0',field:'#a47148',patch:'#8d6748',pen:'#c9a46c'};
 
+/* Landmark set pieces (one chunk each). Random worlds put them where pickLandmarks() says; the Home World plan
+   (HOME_PLAN below) puts them at fixed chunks so the quests know where they are. */
+const LMK={
+  // town
+  boss(ctx){const p=drop(ctx,'boss',0);if(p){ring(ctx,p.x,p.z,RAD.boss+2.6,6,'lamp');ring(ctx,p.x,p.z,RAD.boss+5.4,4,'hydrant');}crumbs(ctx,4,['parked','mailbox','bush']);},
+  school(ctx){const p=drop(ctx,'school',0);if(p){put(ctx,'bench',p.x-4,p.z+RAD.school+2.6,0);put(ctx,'bench',p.x+4,p.z+RAD.school+2.6,0);put(ctx,'flowers',p.x,p.z+RAD.school+2.2,0);}crumbs(ctx,5,['tree','bush','lamp']);},
+  fire(ctx){const p=drop(ctx,'firestation',0);if(p){ring(ctx,p.x,p.z,RAD.firestation+2.2,4,'hydrant');put(ctx,'parked',p.x+RAD.firestation+4,p.z,1);}crumbs(ctx,3,['cone','lamp']);},
+  sky(ctx){const p=drop(ctx,'skyscraper',0);if(p){ring(ctx,p.x,p.z,RAD.skyscraper+2.6,6,'lamp');put(ctx,'parked',p.x+RAD.skyscraper+5,p.z+4,1);put(ctx,'parked',p.x-RAD.skyscraper-5,p.z-4,3);}crumbs(ctx,4,['hydrant','mailbox','bush','cone']);},
+  tower(ctx){const p=drop(ctx,'watertower',0);if(p)ring(ctx,p.x,p.z,RAD.watertower+4.2,5,'cottage');crumbs(ctx,4,['tree','mailbox']);},
+  // farm: the barn yard has hay round the barn and a fenced paddock with animals in the corner farthest from it
+  barn(ctx){const R=hoodRoads(ctx),p=drop(ctx,'barn',0);if(p){ring(ctx,p.x,p.z,RAD.barn+3,6,'hay');put(ctx,'tractor',p.x+RAD.barn+4.2,p.z+4,0);
+    ctx.spot('field',p.x,p.z,RAD.barn*2+12,RAD.barn*2+12,0);
+    const q=hoodQuads(ctx,R,1.5).sort((a,b)=>Math.hypot(b.cx-p.x,b.cz-p.z)-Math.hypot(a.cx-p.x,a.cz-p.z))[0];HOOD_FARM.pen(ctx,q);}
+    crumbs(ctx,4,['crops','scarecrow','pumpkin']);},
+  mill(ctx){const p=drop(ctx,'windmill',0);if(p){ring(ctx,p.x,p.z,RAD.windmill+4.2,5,'crops');ctx.herd('chicken',p.x+8,p.z+6,4);}crumbs(ctx,4,['hay','flowers','bush']);},
+  silo(ctx){const a=drop(ctx,'silo',0);if(a){put(ctx,'silo',a.x+7,a.z-6,0);put(ctx,'farmhouse',a.x-12,a.z+8,1);ring(ctx,a.x,a.z,8,4,'hay');}},
+  farmpond(ctx){const p=drop(ctx,'pond',0);if(p){ring(ctx,p.x,p.z,RAD.pond+2.2,5,'flowers');put(ctx,'tractor',p.x+RAD.pond+4.2,p.z,1);put(ctx,'hay',p.x,p.z+RAD.pond+3,0);}crumbs(ctx,3,['tree','bush']);},
+  coop(ctx){const p=drop(ctx,'coop',0);if(p){ctx.herd('chicken',p.x,p.z+RAD.coop+3.2,6);put(ctx,'scarecrow',p.x+6,p.z+5,0);}for(let z=ctx.z0+10;z<ctx.z1-10;z+=8)put(ctx,'fence',ctx.x0+8,z,Math.PI/2);crumbs(ctx,3,['hay','crops']);},
+  // park
+  fountain(ctx){const p=drop(ctx,'fountain',0);if(p){ring(ctx,p.x,p.z,RAD.fountain+2.2,4,'bench');ring(ctx,p.x,p.z,RAD.fountain+4.4,6,'flowers');}crumbs(ctx,5,['tree','bush']);},
+  play(ctx){const p=drop(ctx,'gym',0);if(p){put(ctx,'swing',p.x+7,p.z+1,1);put(ctx,'slide',p.x-7,p.z+1,0);put(ctx,'bench',p.x+6,p.z-5,0);put(ctx,'bench',p.x-5,p.z-5,2);put(ctx,'flowers',p.x,p.z+6,0);ring(ctx,p.x,p.z,14,6,'tree');}},
+  gazebo(ctx){const p=drop(ctx,'gazebo',0);if(p){ring(ctx,p.x,p.z,RAD.gazebo+2.4,4,'picnic');ring(ctx,p.x,p.z,RAD.gazebo+4.2,6,'flowers');}crumbs(ctx,4,['tree','bench']);},
+  bounce(ctx){const p=drop(ctx,'bounce',0);if(p)ring(ctx,p.x,p.z,RAD.bounce+2,8,'cone');ctx.ramp(ctx.cx+18,ctx.cz,Math.PI/2);crumbs(ctx,3,['bench','flowers']);},
+  stadium(ctx){const p=drop(ctx,'stadium',0);if(p)ring(ctx,p.x,p.z,RAD.stadium+3,8,'lamp');crumbs(ctx,4,['cone','bench','flowers']);},
+  ferris(ctx){const p=drop(ctx,'ferris',0);if(p){ring(ctx,p.x,p.z,RAD.ferris+3,6,'flowers');put(ctx,'picnic',p.x+RAD.ferris+5,p.z+3,1);put(ctx,'bench',p.x-RAD.ferris-4,p.z+3,3);}crumbs(ctx,4,['tree','bush','cone']);},
+  ship(ctx){const p=drop(ctx,'ship',0);if(p){ring(ctx,p.x,p.z,RAD.ship+3,6,'barrel');ring(ctx,p.x,p.z,RAD.ship+6,5,'crates');}crumbs(ctx,3,['tree','pebble']);},
+  ducks(ctx){const p=drop(ctx,'pond',0);if(p){ctx.herd('duck',p.x+RAD.pond+3,p.z,6);put(ctx,'bench',p.x+RAD.pond+2.6,p.z+2,1);put(ctx,'bench',p.x-RAD.pond-2.6,p.z-2,3);}crumbs(ctx,4,['tree','flowers','bush']);}
+};
+const LMK_ZONE={town:['boss','school','fire','sky','tower'],farm:['barn','mill','silo','farmpond','coop'],park:['fountain','play','gazebo','bounce','stadium','ferris','ship','ducks']};
+// random worlds: is this chunk one of the zone's landmarks? then build it (with sidewalks along its roads) and say so
+function lmkHere(ctx,zone,w=3.2){const LM=landmarks();for(const k of LMK_ZONE[zone])if(at(LM[k],ctx)){hoodSidewalks(ctx,hoodRoads(ctx),w);LMK[k](ctx);return true;}return false;}
+// a houses or shops street chunk (one road through it); shops:true/false, or leave it out for today's 28% shops
+function townStreet(ctx,R,shops){const ax=R.v?'v':'h';
+  if(shops??Math.random()<.28){for(const sd of [-1,1])hoodShops(hoodSide(ctx,ax,sd),[-30,-20,-10,0,10,20,30],-40,40);return;}
+  for(const sd of [-1,1])hoodHouses(hoodSide(ctx,ax,sd),[-32,-16,0,16,32]);
+  propsRamp(ctx);}
+// a crossing: main street on all four arms, a little plaza at each corner
+function townCross(ctx){
+  for(const [ax,us] of [['h',[[16,25.5,35],[-16,-25.5,-35]]],['v',[[25.5,35],[-25.5,-35]]]])for(const sd of [-1,1]){const S=hoodSide(ctx,ax,sd);
+    hoodShops(S,us[0],12,40);hoodShops(S,us[1],-40,-12);}
+  for(const qx of [-1,1])for(const qz of [-1,1]){ctx.spot('plaza',ctx.cx+qx*8.5,ctx.cz+qz*8.5,6,6,0);put(ctx,pick(['bench','trashcan','hydrant']),ctx.cx+qx*9,ctx.cz+qz*9,0);}}
+
 const ZONE_LAYOUT={
   town(ctx){
-    const LM=landmarks(),R=hoodRoads(ctx);if(hoodLandmark(ctx))hoodSidewalks(ctx,R);
-    if(at(LM.boss,ctx)){const p=drop(ctx,'boss',0);if(p){ring(ctx,p.x,p.z,RAD.boss+2.6,6,'lamp');ring(ctx,p.x,p.z,RAD.boss+5.4,4,'hydrant');}crumbs(ctx,4,['parked','mailbox','bush']);return;}
-    if(at(LM.school,ctx)){const p=drop(ctx,'school',0);if(p){put(ctx,'bench',p.x-4,p.z+RAD.school+2.6,0);put(ctx,'bench',p.x+4,p.z+RAD.school+2.6,0);put(ctx,'flowers',p.x,p.z+RAD.school+2.2,0);}crumbs(ctx,5,['tree','bush','lamp']);return;}
-    if(at(LM.fire,ctx)){const p=drop(ctx,'firestation',0);if(p){ring(ctx,p.x,p.z,RAD.firestation+2.2,4,'hydrant');put(ctx,'parked',p.x+RAD.firestation+4,p.z,1);}crumbs(ctx,3,['cone','lamp']);return;}
-    if(at(LM.sky,ctx)){const p=drop(ctx,'skyscraper',0);if(p){ring(ctx,p.x,p.z,RAD.skyscraper+2.6,6,'lamp');put(ctx,'parked',p.x+RAD.skyscraper+5,p.z+4,1);put(ctx,'parked',p.x-RAD.skyscraper-5,p.z-4,3);}crumbs(ctx,4,['hydrant','mailbox','bush','cone']);return;}
-    if(at(LM.tower,ctx)){const p=drop(ctx,'watertower',0);if(p)ring(ctx,p.x,p.z,RAD.watertower+4.2,5,'cottage');crumbs(ctx,4,['tree','mailbox']);return;}
+    if(homePlan(ctx)||lmkHere(ctx,'town'))return;
+    const R=hoodRoads(ctx);
     if(!R.v&&!R.h){hoodPark(ctx,R,['play','picnic','woods','fountain']);return;} // the middle of a block: a pocket park
-    if(R.v&&R.h){ // a crossing: main street on all four arms, a little plaza at each corner
-      for(const [ax,us] of [['h',[[16,25.5,35],[-16,-25.5,-35]]],['v',[[25.5,35],[-25.5,-35]]]])for(const sd of [-1,1]){const S=hoodSide(ctx,ax,sd);
-        hoodShops(S,us[0],12,40);hoodShops(S,us[1],-40,-12);}
-      for(const qx of [-1,1])for(const qz of [-1,1]){ctx.spot('plaza',ctx.cx+qx*8.5,ctx.cz+qz*8.5,6,6,0);put(ctx,pick(['bench','trashcan','hydrant']),ctx.cx+qx*9,ctx.cz+qz*9,0);}
-      return;}
-    const ax=R.v?'v':'h';
-    if(Math.random()<.28){for(const sd of [-1,1])hoodShops(hoodSide(ctx,ax,sd),[-30,-20,-10,0,10,20,30],-40,40);return;}
-    for(const sd of [-1,1])hoodHouses(hoodSide(ctx,ax,sd),[-32,-16,0,16,32]);
-    propsRamp(ctx);
+    if(R.v&&R.h){townCross(ctx);return;}
+    townStreet(ctx,R);
   },
   farm(ctx){
-    const LM=landmarks(),R=hoodRoads(ctx);if(hoodLandmark(ctx))hoodSidewalks(ctx,R,2.2);
-    // the barn yard: hay round the barn, a fenced paddock with animals in the corner farthest from it
-    if(at(LM.barn,ctx)){const p=drop(ctx,'barn',0);if(p){ring(ctx,p.x,p.z,RAD.barn+3,6,'hay');put(ctx,'tractor',p.x+RAD.barn+4.2,p.z+4,0);
-      ctx.spot('field',p.x,p.z,RAD.barn*2+12,RAD.barn*2+12,0);
-      const q=hoodQuads(ctx,R,1.5).sort((a,b)=>Math.hypot(b.cx-p.x,b.cz-p.z)-Math.hypot(a.cx-p.x,a.cz-p.z))[0];HOOD_FARM.pen(ctx,q);}
-      crumbs(ctx,4,['crops','scarecrow','pumpkin']);return;}
-    if(at(LM.mill,ctx)){const p=drop(ctx,'windmill',0);if(p){ring(ctx,p.x,p.z,RAD.windmill+4.2,5,'crops');ctx.herd('chicken',p.x+8,p.z+6,4);}crumbs(ctx,4,['hay','flowers','bush']);return;}
-    if(at(LM.silo,ctx)){const a=drop(ctx,'silo',0);if(a){put(ctx,'silo',a.x+7,a.z-6,0);put(ctx,'farmhouse',a.x-12,a.z+8,1);ring(ctx,a.x,a.z,8,4,'hay');}return;}
-    if(at(LM.farmpond,ctx)){const p=drop(ctx,'pond',0);if(p){ring(ctx,p.x,p.z,RAD.pond+2.2,5,'flowers');put(ctx,'tractor',p.x+RAD.pond+4.2,p.z,1);put(ctx,'hay',p.x,p.z+RAD.pond+3,0);}crumbs(ctx,3,['tree','bush']);return;}
-    if(at(LM.coop,ctx)){const p=drop(ctx,'coop',0);if(p){ctx.herd('chicken',p.x,p.z+RAD.coop+3.2,6);put(ctx,'scarecrow',p.x+6,p.z+5,0);}for(let z=ctx.z0+10;z<ctx.z1-10;z+=8)put(ctx,'fence',ctx.x0+8,z,Math.PI/2);crumbs(ctx,3,['hay','crops']);return;}
+    if(homePlan(ctx)||lmkHere(ctx,'farm',2.2))return;
     hoodFarm(ctx,hoodRoads(ctx));
     propsRamp(ctx);
   },
   park(ctx){
-    const LM=landmarks();if(hoodLandmark(ctx))hoodSidewalks(ctx,hoodRoads(ctx));
-    if(at(LM.fountain,ctx)){const p=drop(ctx,'fountain',0);if(p){ring(ctx,p.x,p.z,RAD.fountain+2.2,4,'bench');ring(ctx,p.x,p.z,RAD.fountain+4.4,6,'flowers');}crumbs(ctx,5,['tree','bush']);return;}
-    if(at(LM.play,ctx)){const p=drop(ctx,'gym',0);if(p){put(ctx,'swing',p.x+7,p.z+1,1);put(ctx,'slide',p.x-7,p.z+1,0);put(ctx,'bench',p.x+6,p.z-5,0);put(ctx,'bench',p.x-5,p.z-5,2);put(ctx,'flowers',p.x,p.z+6,0);ring(ctx,p.x,p.z,14,6,'tree');}return;}
-    if(at(LM.gazebo,ctx)){const p=drop(ctx,'gazebo',0);if(p){ring(ctx,p.x,p.z,RAD.gazebo+2.4,4,'picnic');ring(ctx,p.x,p.z,RAD.gazebo+4.2,6,'flowers');}crumbs(ctx,4,['tree','bench']);return;}
-    if(at(LM.bounce,ctx)){const p=drop(ctx,'bounce',0);if(p)ring(ctx,p.x,p.z,RAD.bounce+2,8,'cone');ctx.ramp(ctx.cx+18,ctx.cz,Math.PI/2);crumbs(ctx,3,['bench','flowers']);return;}
-    if(at(LM.stadium,ctx)){const p=drop(ctx,'stadium',0);if(p)ring(ctx,p.x,p.z,RAD.stadium+3,8,'lamp');crumbs(ctx,4,['cone','bench','flowers']);return;}
-    if(at(LM.ferris,ctx)){const p=drop(ctx,'ferris',0);if(p){ring(ctx,p.x,p.z,RAD.ferris+3,6,'flowers');put(ctx,'picnic',p.x+RAD.ferris+5,p.z+3,1);put(ctx,'bench',p.x-RAD.ferris-4,p.z+3,3);}crumbs(ctx,4,['tree','bush','cone']);return;}
-    if(at(LM.ship,ctx)){const p=drop(ctx,'ship',0);if(p){ring(ctx,p.x,p.z,RAD.ship+3,6,'barrel');ring(ctx,p.x,p.z,RAD.ship+6,5,'crates');}crumbs(ctx,3,['tree','pebble']);return;}
-    if(at(LM.ducks,ctx)){const p=drop(ctx,'pond',0);if(p){ctx.herd('duck',p.x+RAD.pond+3,p.z,6);put(ctx,'bench',p.x+RAD.pond+2.6,p.z+2,1);put(ctx,'bench',p.x-RAD.pond-2.6,p.z-2,3);}crumbs(ctx,4,['tree','flowers','bush']);return;}
-    hoodPark(ctx,hoodRoads(ctx),['play','pond','picnic','woods']);
-    if(Math.random()<.3){const px=rand(ctx.x0+16,ctx.x1-16),pz=rand(ctx.z0+18,ctx.z1-16);
-      for(let row=0;row<4;row++)for(let k=0;k<=row;k++)put(ctx,'pin',px+(k-row/2)*3.2,pz-row*3,0);}
-    propsRamp(ctx);
+    if(homePlan(ctx)||lmkHere(ctx,'park'))return;
+    parkBlock(ctx);
   },
-  /* Dress the margin of the home chunks. The hand-built arena (inside ±HOME) rejects placement. */
+  /* Dress the margin of the home chunks (random worlds). The hand-built arena (inside ±HOME) rejects placement. */
   home(ctx){
+    if(homePlan(ctx))return;
     const edge=[[ctx.x0+8,ctx.cz],[ctx.x1-8,ctx.cz],[ctx.cx,ctx.z0+8],[ctx.cx,ctx.z1-8],[ctx.x0+12,ctx.z0+12],[ctx.x1-12,ctx.z0+12],[ctx.x0+12,ctx.z1-12],[ctx.x1-12,ctx.z1-12]];
     const kit=['lamp','tree','bench','mailbox','flowers','bush','hydrant','cone'];
     edge.forEach((p,i)=>put(ctx,kit[i%kit.length],p[0],p[1],i%4));
     crumbs(ctx,4,['tree','bush','flowers','hay','cone']);
   }
 };
+// an ordinary park chunk: an activity per corner, sometimes a pin bowling lawn, maybe a ramp
+function parkBlock(ctx,acts){
+  hoodPark(ctx,hoodRoads(ctx),acts||['play','pond','picnic','woods']);
+  if(Math.random()<.3){const px=rand(ctx.x0+16,ctx.x1-16),pz=rand(ctx.z0+18,ctx.z1-16);
+    for(let row=0;row<4;row++)for(let k=0;k<=row;k++)put(ctx,'pin',px+(k-row/2)*3.2,pz-row*3,0);}
+  propsRamp(ctx);}
 /* Scatter lists for L2c. One entry per size the zone should rain in. Landmarks stay in the layouts. */
 const MICRO=['flowers','pebble','mushroom','acorn','toyblock','can','toyduck','snail'];
 const ZONE_PROPS={
@@ -1215,6 +1214,268 @@ const SCENES={
     s.place('slide',X(-5),-10,0);s.place('swing',X(3),-10.4,0);s.place('flowers',X(-1.8),4.4);s.place('flowers',X(-.6),4.4);}},
 };
 const LOTS=['lot_family','lot_family','lot_garden','lot_party','lot_kids'];
+
+/* ---------- D18 part 2: quest stage scenes (built into the Home World at fixed spots, see HOME_QUEST_AT) ----------
+   filler:false, so the random filler never drops them. Local coordinates, +Z = front. They're scenes, so a quest can
+   also spawn one at the players' size (`stage:'crop_circle'`), but the Home World already has them standing. */
+Object.assign(SPOT_LOOK,{water:'#4cc9f0',water_deep:'#3a9fd6',island:'#f4e3b0'});
+{const W=['toyduck','paperboat'];SPOT_PROPS.water={micro:W,mini:W,tiny:W,small:W,medium:W,large:W,huge:W,mega:W}; // giant rubber ducks, never trees in the pond
+  SPOT_PROPS.island={micro:['pebble','flowers','mushroom'],mini:['bush'],tiny:['chest'],small:['pin']};}
+Object.assign(SCENES,{
+  /* Hank's yard (chapter 1, right of the start): a lot with a little dig site in the front yard, where his lunchbox
+     is lost. Laid out like lot_family; the dig is at local (−4, 11.1), Hank waits on the sidewalk at (−4, 15.4). */
+  hank_yard:{zones:TOWNISH,size:'huge',r:16,filler:false,build(s){
+    s.spot('yard',0,7.6,16,14);s.spot('backyard',0,-9.6,16,10);s.spot('parking',5.7,6,3.4,17.2);s.spot('path',1.2,9,1.4,10);
+    s.spot('dirt',-4,11.1,6,4.6);s.spot('dirt',-4.6,10,2.6,1.8);s.spot('flowerbed',-6.2,2.6,3,1.2);
+    s.place('house',.8,-1.6,0);s.place('parked',5.7,8.6,0);s.place('mailbox',2.8,13.6,0);
+    // the dig: toy trucks, a pail and blocks, pebble piles, an ant trail to his half-eaten sandwich
+    s.place('toycar',-5.6,12.2,0,.6);s.place('toycar',-2.6,9.8,0,-1.1);s.place('pail',-4.4,13);s.place('toyblock',-3,12.4,0,.3);
+    s.place('toyblock',-3.4,12.8,0,1);s.place('toyblock',-5.9,10.2,0,.2);s.place('wheelbarrow',-6.6,8,0,.8);
+    for(const [x,z] of [[-4.8,9.6],[-4.2,9.3],[-5.2,9.1],[-2,11.8],[-6.6,12.2]])s.place('pebble',x,z);
+    s.place('sandwich',-1.4,5.8,0,.5);const th=Math.atan2(.3,.32);for(let i=0;i<5;i++)s.place('ant',-1.1+i*.3,6.2+i*.32,0,th);
+    s.place('can',-6.8,12.6);s.place('popsicle',-.6,12.2);
+    for(const x of [4.4,5.4,6.6,7.4])s.place('flowers',x,12.6);for(const x of [-7.2,-6.2,-5.2])s.place('flowers',x,2.6);
+    s.place('gnome',2.4,4.6,0,-.5);s.place('snail',3.6,11);s.place('acorn',-7.2,4.6);s.place('mushroom',-7.4,5.4);
+    // the back yard: Hank's tools and a cone stack
+    s.place('crates',-4.6,-9,null,0,.6);s.place('crates',-6.4,-11.4,null,0,.6);s.place('barrel',-2.6,-12,0,0,.7);s.place('cone',2,-8.6);s.place('cone',3,-8.4);
+    s.place('tree',5.6,-11.6);s.place('doghouse',2.6,-12.2,0);for(const x of [-5.85,-1.95,1.95,5.85])s.place('fence',x,-14.2,0);}},
+  /* Garry's garden (chapter 1, across the street): flowerbeds round a big round bed in front (the goal for his rolled-
+     away gnomes, local (0, 10)), a cottage behind. Garry waits on the sidewalk at local (2, 15.4). */
+  garry_garden:{zones:TOWNISH,size:'huge',r:16,filler:false,build(s){
+    s.spot('yard',0,7.6,16,14);s.spot('backyard',0,-9.6,16,10);s.spot('path',-4.6,9,1.4,10);
+    s.spot('flowerbed',0,10,5,4);s.spot('flowerbed',0,10,4,5);s.spot('flowerbed',-6.2,4,3,6);s.spot('flowerbed',6.2,4.6,3,5);s.spot('patch',4,-9.6,7,7);
+    s.place('cottage',-.6,-2,0);s.place('mailbox',-2.6,13.6,0);s.place('fence',-6,14,0);s.place('fence',6.4,14,0);
+    for(let i=0;i<8;i++){const a=i/8*Math.PI*2;s.place('flowers',Math.sin(a)*2.2,10+Math.cos(a)*1.8);}
+    s.place('gnome',.5,9.5,0,.4);s.place('gnome',-.7,10.6,0,-.3); // two gnomes who stayed home
+    for(const z of [1.8,3.2,4.6,6])s.place('flowers',-6.2,z);for(const z of [2.8,4.2,5.6])s.place('flowers',6.2,z);
+    s.place('mushroom',-5.4,7.4);s.place('mushroom',-6.8,7.6);s.place('snail',-5.8,6.6,0,.8);s.place('birdbath',5.8,8.6);
+    s.place('toyduck',5.6,11.4,0,1);s.place('pebble',-3.4,12.6);s.place('pebble',-3,6.4);s.place('acorn',1.4,4);
+    for(let i=0;i<3;i++)for(let j=0;j<2;j++)s.place('pumpkin',2.4+i*1.7,-11+j*2.6);s.place('wheelbarrow',-1,-8.4,0,.5);
+    s.place('laundry',-4.4,-10,0);s.place('tree',-6.6,-12.4);s.place('bench',-6,-6.6,0);}},
+  /* the crop circle (chapter 3, Zorp & Blip): a cornfield with a flattened ring and their crashed saucer in the middle;
+     the big haystack at local (−18, 16) hides a crystal piece */
+  crop_circle:{zones:['farm'],size:'huge',r:30,filler:false,build(s){
+    s.spot('field',0,0,64,64);s.spot('crop_circle',0,0,26,26);s.spot('crop_circle',0,0,26,26,Math.PI/4);s.spot('dirt',0,0,9,9,Math.PI/8);
+    for(let x=-28;x<=28.1;x+=6.2)for(let z=-28;z<=28.1;z+=6.2){if(Math.hypot(x,z)<17.5||Math.hypot(x+18,z-16)<5)continue;s.place('crops',x,z,0);}
+    s.place('saucer',0,0,0);s.place('hay',-18,16);for(let i=0;i<5;i++){const a=i/5*Math.PI*2;s.place('hay',-18+Math.sin(a)*2.6,16+Math.cos(a)*2.6);}
+    s.place('scarecrow',-12,-12,0);s.place('pebble',4,6,null,0,4);s.place('pebble',-5,-4,null,0,4);s.place('cone',6,-6);s.place('cone',-6.6,5);}},
+  /* the duck pond (chapter 3): a big pond with an island and a treasure chest on it (needs hover), paddle boats,
+     ducks, reeds and benches round the shore; a crystal piece lies on the bottom at local (10, −6) */
+  duck_pond:{zones:PARKISH,size:'huge',r:30,filler:false,build(s){
+    s.spot('lawn',0,0,76,76);s.spot('water',0,0,52,36);s.spot('water',-20,10,18,20);s.spot('water',18,-8,22,26);s.spot('water_deep',10,-6,10,8);
+    s.spot('island',0,0,12,9);s.spot('island',1,0,9,11);
+    s.place('chest',1.6,.6,0,-.4,4);s.place('tree',-3,-2);s.place('flowers',3.4,-2.4,null,0,2);s.place('pebble',-2.6,2.6,null,0,3);
+    for(const [x,z,t] of [[-14,6,.6],[12,10,-.8],[-6,-12,2.2]])s.place('paperboat',x,z,0,t,9);
+    s.herd('duck',-18,-6,5);s.herd('goose',16,12,3);
+    for(const [x,z] of [[-27,-8],[-26,4],[-24,16],[27,-14],[28,0],[24,8],[-10,-19],[8,19],[-2,19.5]])s.place('bush',x,z);
+    for(const [x,z,t] of [[0,24,Math.PI],[-20,23,Math.PI],[30,14,-Math.PI/2],[-31,-14,Math.PI/2]])s.place('bench',x,z,0,t);
+    for(const [x,z] of [[-34,-34],[-34,0],[-34,32],[34,-34],[34,30],[0,-34],[-18,-34],[18,34],[34,0]])s.place('tree',x,z);
+    s.place('trashcan',4,25);s.place('lamp',-10,24);s.place('lamp',12,24);}},
+  /* Dozer Dot's crate yard (chapter 3): a fenced construction yard full of crates and barrels (barrel chains!),
+     scaffold towers, the gate at the front (+Z); Dot waits outside the gate */
+  crate_site:{zones:TOWNISH,size:'huge',r:24,filler:false,build(s){
+    s.spot('dirt',0,-4,46,34);s.spot('mud',-12,-12,8,6);s.spot('mud',13,2,6,5);
+    for(let x=-21;x<=21.1;x+=4.2){s.place('fence',x,-21,0);if(Math.abs(x)>5)s.place('fence',x,13,0);}
+    for(let z=-16.8;z<=8.9;z+=4.2){s.place('fence',-23,z,Math.PI/2);s.place('fence',23,z,Math.PI/2);}
+    for(let i=0;i<5;i++)for(let j=0;j<2;j++)s.place('crates',-14+i*7,-14+j*5.4);
+    for(const [cx,cz] of [[-15,1],[15,-2]])for(let i=0;i<6;i++){const a=i/6*Math.PI*2;s.place('barrel',cx+Math.sin(a)*2.4,cz+Math.cos(a)*2.4);}
+    s.place('tower',-6,-1);s.place('tower',6,-2);s.place('wheelbarrow',-1,6,0,.4,2.5);s.place('wheelbarrow',9,7,0,-.6,2.5);
+    for(const [x,z] of [[-6,15.6],[6,15.6],[-8,18],[8,18]])s.place('cone',x,z);for(const [x,z] of [[-21,-19],[21,-19],[-21,11],[21,11]])s.place('lamp',x,z);
+    for(const [x,z] of [[0,-8],[1.2,-7],[-1,-6.6]])s.place('pebble',x,z,null,0,5);}},
+  /* Woolly's sheep pen (chapter 4): a big fenced pen (gate at the front, +Z) on a meadow, hay in the corners */
+  sheep_pen:{zones:['farm'],size:'huge',r:22,filler:false,build(s){
+    s.spot('lawn',0,0,50,50);s.spot('pen',0,-4,32,32);
+    for(let x=-14.7;x<=14.8;x+=4.2){s.place('fence',x,-20,0);if(Math.abs(x)>4.5)s.place('fence',x,12,0);}
+    for(let z=-17.9;z<=10;z+=4.2){s.place('fence',-16,z,Math.PI/2);s.place('fence',16,z,Math.PI/2);}
+    for(const [x,z] of [[-12,-16],[12,-16],[-12,8]])s.place('hay',x,z);s.place('barrel',12,8,0,0,.8);
+    for(const [x,z] of [[-21,-21],[21,-21],[22,16],[-23,6]])s.place('tree',x,z);for(const [x,z] of [[6,16],[-6,17],[9,18]])s.place('flowers',x,z,null,0,3);}},
+});
+
+/* ---------- D18 part 2: the Home World plan ----------
+   The Home World (Adventure, and Arcade's first world) is the same hand-made map every time. HOME_PLAN gives every
+   chunk outside the start a design (letters below, one per chunk, laid out like ZONE_MAP: rows −Z → +Z, columns
+   −X → +X), landmarks sit at fixed chunks instead of hashed ones, and the start (buildWorld, inside ±HOME) is a
+   planned suburb: Hank's Street. Random worlds (NEW WORLD in Arcade) keep the random zone map and layouts.
+   Quests: HOME_QUEST_AT has every quest's world spot; the layouts mark each as a `quest_<id>` spot (and the giver's
+   place as `giver_<id>`), and keep props off the giver spots. */
+const HOME_PLAN=[
+  'fMcfpjpsksk', // cj −5   F farm (NW) · P the big park · T downtown (NE)
+  'Occfyptxhxh', // cj −4
+  'fcRwPpSsQsC', // cj −3   R crop circle · w farm water tower · P duck pond · S school · Q skyscraper · C city hall
+  'AfcZppExsxs', // cj −2   E fire station · x downtown crossings
+  'Kfup...hDhk', // cj −1   D Dozer Dot's construction site
+  'ppNp...xhxh', // cj  0   . = home (Hank's Street + the ring around it)
+  'pjpp...pUpp', // cj  1
+  'hxhpjpppfMf', // cj  2   SW: Maple Hill houses · j kite meadow · SE farm
+  'khkhVNIuLfO', // cj  3   V N I the fair (ferris wheel, bounce castle, pirate ship) · L Woolly's sheep pen
+  'hxhkppfcAcK', // cj  4
+  'khkhppufBfc', // cj  5
+];
+/* Where each Home World quest happens (world x,z). stage = [x,z,w,d] of its `quest_<id>` spot; giver = where its giver
+   stands (kept clear of props for radius r); drops / rings / roofs / pieces are ready-made point lists for steps. */
+const HOME_QUEST_AT={
+  // chapter 1, Hank's Street (micro–mini): all within a few car lengths of the start
+  hank_lunchbox:{giver:[8,45],r:.8,stage:[12,45,4.6,6]},                       // Hank's yard, right of the start
+  garry_gnomes:{giver:[-8,31],r:.8,stage:[-13.4,33,4,5]},                        // Garry's garden, across the street (the goal bed)
+  zippy_mail:{giver:[-7,44],r:.8,stage:[0,38,18,48],drops:[[7.2,58],[-7.2,36],[7.2,26],[-7.2,16]]}, // mailboxes up the street
+  // chapter 2, the ring round the start (tiny–small)
+  fern_chickens:{giver:[-88,10.5],r:1.5,stage:[-97,38,36,48]},                      // Fern's fenced pasture, west
+  bubbles_soap:{giver:[-9.8,-84],r:1.5,stage:[-22,-96,26,26]},                     // the bubble fountain plaza, north
+  pip_icecream:{giver:[9.8,84],r:1.5,stage:[0,96,70,40],drops:[[-24,84],[-14,106],[18,84],[16,104],[-32,100]]}, // picnic blankets, south
+  // chapter 3 (medium–large)
+  zorp_crystal:{giver:[-230,-232],r:3,stage:[-240,-240,30,30],pieces:{hay:[-258,-224],tower:[-140,-236],pond:[-70,-246]}}, // crop circle; haystack, water tower (ramp at its foot), duck pond
+  pond_island:{stage:[-80,-240,12,9]},                                              // the duck pond's island with the treasure chest
+  dot_demolition:{giver:[228,-64],r:3,stage:[240,-84,40,28]},                       // Dot's fenced crate yard
+  wheelie_parade:{giver:[372,-206],r:3,stage:[240,-200,170,170],                    // by city hall; arches along downtown's main streets
+    rings:[[300,-160],[260,-160],[220,-160],[180,-160],[160,-200],[160,-240],[160,-280],[200,-320],[250,-320],[300,-320]]},
+  // chapter 4 (huge–GIANT)
+  kite_kites:{giver:[-80,176],r:6,stage:[-80,160,60,60],roofs:[[80,-240],[240,-240],[400,-240],[-96,-62],[-80,240]]}, // school, skyscraper, city hall, Fern's barn, ferris wheel
+  woolly_sheep:{giver:[232,262],r:6,stage:[240,236,30,30]},                         // the sheep pen (gate faces +Z)
+  big_stomp:{giver:[24,212],r:6,stage:[0,240,140,60]}                               // the fair
+};
+const isHomeWorld=()=>typeof zoneRows!=='undefined'&&zoneRows===ZONE_MAP&&!(typeof roomZ!=='undefined'&&roomZ);
+function homeClear(x,z,r){for(const id in HOME_QUEST_AT){const g=HOME_QUEST_AT[id].giver;if(g&&Math.hypot(x-g[0],z-g[1])<r+HOME_QUEST_AT[id].r)return false;}return true;}
+const inChunk=(ctx,x,z)=>chunkIdx(x)===ctx.ci&&chunkIdx(z)===ctx.cj;
+function homeQuestSpots(ctx){for(const id in HOME_QUEST_AT){const q=HOME_QUEST_AT[id];
+  if(q.stage&&inChunk(ctx,q.stage[0],q.stage[1]))ctx.spot('quest_'+id,q.stage[0],q.stage[1],q.stage[2],q.stage[3],0);
+  if(q.giver&&inChunk(ctx,q.giver[0],q.giver[1]))ctx.spot('giver_'+id,q.giver[0],q.giver[1],q.r*2,q.r*2,0);}}
+// a scene whose middle is in this chunk (layouts run per chunk, so a scene is only built by the chunk it's centered in)
+function homeSc(ctx,id,x,z,th,size){return inChunk(ctx,x,z)&&ctx.scene(id,x,z,th||0,size);}
+// the Home World chunk design, if there is one: true when it built this chunk
+function homePlan(ctx){
+  if(!isHomeWorld())return false;
+  const row=HOME_PLAN[ctx.cj+CHUNKS_HALF],code=row&&row[ctx.ci+CHUNKS_HALF],fn=code&&HOME_DESIGN[code];if(!fn)return false;
+  const p0=ctx.place;ctx.place=(t,x,z,a,r)=>homeClear(x,z,r||RAD[t]||1.2)&&p0(t,x,z,a,r);
+  fn(ctx,hoodRoads(ctx));homeQuestSpots(ctx);ctx.planned=true;return true;}
+const lmkAt=(k,w)=>(ctx,R)=>{hoodSidewalks(ctx,R,w);LMK[k](ctx);};
+// the fair (ferris wheel / bounce castle / pirate ship chunks): the ride plus an ice-cream line and balloons
+const fairAt=k=>(ctx,R)=>{lmkAt(k)(ctx,R);const q=hoodQuads(ctx,R,3).find(q=>q.qz>0&&q.qx<0);if(q)homeSc(ctx,'icecream_line',q.cx,q.cz,0);
+  for(const [x,z] of [[-30,30],[30,30],[30,-30],[-30,-30]])put(ctx,'balloons',ctx.cx+x,ctx.cz+z,0);};
+const HOME_DESIGN={
+  '.':(ctx)=>homeMargin(ctx),
+  // town
+  h:(ctx,R)=>townStreet(ctx,R,false), s:(ctx,R)=>townStreet(ctx,R,true), x:ctx=>townCross(ctx),
+  k:(ctx,R)=>hoodPark(ctx,R,['play','picnic','woods','fountain']),
+  Q:lmkAt('sky'), C:lmkAt('boss'), E:lmkAt('fire'), S:lmkAt('school'),
+  D(ctx){homeSc(ctx,'crate_site',240,-84,0);
+    for(const [x,z] of [[206,-112],[274,-52],[208,-48]])put(ctx,'parked',x,z,1);ctx.ramp(268,-112,0,14,8,4.4);ctx.ramp(206,-60,Math.PI,14,8,4.4);
+    homeSc(ctx,'road_works',268,-50,0,'medium');},
+  // farm
+  f:(ctx,R)=>{hoodFarm(ctx,R);propsRamp(ctx);},
+  c(ctx,R){farmRoadside(ctx,R);hoodQuads(ctx,R,1.5).forEach((q,i)=>{HOOD_FARM.field(ctx,q);if(i===1)put(ctx,'scarecrow',q.cx,q.cz,0);});},
+  u(ctx,R){farmRoadside(ctx,R);const qs=hoodQuads(ctx,R,1.5);
+    homeSc(ctx,'hay_maze',qs[0].cx,qs[0].cz,0);homeSc(ctx,'pumpkin_patch',qs[1].cx,qs[1].cz,0,'small');
+    homeSc(ctx,'veggie_stand',qs[2].cx,qs[2].cz,qs[2].qz<0?0:Math.PI);homeSc(ctx,'laundry_day',qs[2].cx+(qs[2].qx>0?9:-9),qs[2].cz,0,'medium');HOOD_FARM.patch(ctx,qs[3]);},
+  R(ctx){homeSc(ctx,'crop_circle',-240,-240,0);},
+  w(ctx,R){farmRoadside(ctx,R);const W=-140,Z=-236; // the farm's water tower (Zorp's crystal is on top) and a big ramp aimed at it
+    put(ctx,'watertower',W,Z,0);ctx.ramp(W,-206,Math.PI,14,8,5);for(const [x,z] of [[-124,-252],[-128,-222],[-152,-252]])put(ctx,'hay',x,z,0);
+    put(ctx,'tractor',-128,-212,1);ctx.spot('field',W,Z,34,40,0);
+    hoodQuads(ctx,R,1.5).filter(q=>q.qx<0).forEach(q=>HOOD_FARM.field(ctx,q));},
+  L(ctx){homeSc(ctx,'sheep_pen',240,240,0);ctx.herd('cow',266,210,3);put(ctx,'farmhouse',212,208,0);put(ctx,'tractor',270,262,0);},
+  M:lmkAt('mill',2.2), O:lmkAt('silo',2.2), A:lmkAt('farmpond',2.2), K:lmkAt('coop',2.2), B:lmkAt('barn',2.2),
+  // park
+  p:ctx=>parkBlock(ctx), y:lmkAt('play'), U:lmkAt('fountain'), Z:lmkAt('gazebo'), N:fairAt('bounce'), T:lmkAt('stadium'),
+  V:fairAt('ferris'), I:fairAt('ship'),
+  P(ctx){homeSc(ctx,'duck_pond',-80,-240,0);},
+  j(ctx,R){hoodSidewalks(ctx,R);const qs=hoodQuads(ctx,R,3.5);ctx.spot('lawn',ctx.cx,ctx.cz,78,78,0);
+    homeSc(ctx,'kite_field',qs[0].cx,qs[0].cz,0,'medium');homeSc(ctx,'soccer_game',qs[1].cx,qs[1].cz,0);
+    homeSc(ctx,'picnic_blanket',qs[2].cx,qs[2].cz,0);homeSc(ctx,'kite_field',qs[3].cx,qs[3].cz,Math.PI);
+    for(let i=0;i<10;i++){const e=i%4,t=rand(-36,36);put(ctx,'tree',ctx.cx+(e<2?(e?37:-37):t),ctx.cz+(e<2?t:(e>2?37:-37)),0);}}
+};
+
+/* The ring round the start (the home chunks outside ±HOME): Fern's farm to the west, the bubble fountain to the
+   north, corner shops to the east, Pip's picnic meadow to the south. Everything is in world coordinates and every
+   home chunk runs all of it; ctx.place keeps only what's inside the chunk. */
+function homeMargin(ctx){
+  const P=(t,x,z,a,r)=>ctx.place(t,x,z,a,r||RAD[t]||1.2),fenceX=(x0,x1,z,gap)=>{for(let x=x0;x<=x1+.01;x+=4.2)if(!gap||Math.abs(x-gap)>3)P('fence',x,z,0,1);},
+    fenceZ=(x,z0,z1,gap)=>{for(let z=z0;z<=z1+.01;z+=4.2)if(!gap||Math.abs(z-gap)>3)P('fence',x,z,Math.PI/2,1);},
+    sp=(k,x,z,w,d)=>inChunk(ctx,x,z)&&ctx.spot(k,x,z,w,d,0);
+  // sidewalks along both roads
+  for(const s of [-1,1]){sp('sidewalk',s*7,-96,3.6,48);sp('sidewalk',s*7,96,3.6,48);sp('sidewalk',-96,s*7,48,3.6);sp('sidewalk',96,s*7.6,48,4.8);}
+  for(const z of [-112,-88,88,112])for(const s of [-1,1])P('lamp',s*8.2,z,0);
+  /* north: the bubble fountain plaza (Bubbles) and a kite lawn */
+  sp('plaza',-22,-96,28,28);P('fountain',-22,-96,0);ring(ctx,-22,-96,6.4,4,'bench');ring(ctx,-22,-96,9.6,10,'flowers');
+  P('trashcan',-34,-84,0);P('trashcan',-10,-109,0);for(const [x,z] of [[-35,-83],[-35,-109],[-9,-109]])P('lamp',x,z,0);
+  sp('lawn',24,-96,30,46);homeSc(ctx,'kite_field',24,-98,0);P('tree',36,-80,0);P('tree',36,-114,0);P('tree',13,-114,0);
+  /* north-west: Fern's barnyard */
+  sp('field',-96,-90,46,56);P('barn',-96,-62,0);ring(ctx,-96,-62,RAD.barn+3,5,'hay');P('silo',-114,-86,0);P('silo',-106,-96,0);
+  homeSc(ctx,'chicken_yard',-56,-96,0);P('tractor',-80,-104,1);P('scarecrow',-62,-80,0);
+  for(let x=-116;x<=-44;x+=8.4)if(x<-75||x>-58)P('crops',x,-116,0);
+  /* west, north of the road: Fern's farmhouse */
+  sp('yard',-96,-24,46,30);P('farmhouse',-100,-26,0);P('mailbox',-91,-11,0);P('hay',-80,-30,0);P('hay',-82,-35,0);
+  P('scarecrow',-114,-14,0);for(const x of [-108,-104,-96,-92])P('flowers',x,-17,0);homeSc(ctx,'laundry_day',-112,-34,0,'small');
+  /* west, south of the road: Fern's chicken pasture (the chickens' quest), with the coop inside */
+  sp('pen',-97,27,40,26);sp('pen',-97,53,40,26);
+  fenceX(-116,-78,14,-86);fenceX(-116,-78,66);fenceZ(-117.5,15.5,64.5);fenceZ(-76.5,15.5,64.5);
+  P('coop',-108,56,0);P('hay',-84,58,0);P('hay',-112,22,0);P('hay',-90,26,0);P('barrel',-80,20,0);P('wheelbarrow',-100,62,0);
+  /* south-west: the orchard and pumpkins */
+  sp('field',-96,96,46,46);homeSc(ctx,'pumpkin_patch',-104,100,0,'tiny');
+  for(let i=0;i<5;i++)for(let j=0;j<3;j++)P('tree',-66+i*6,82+j*12,0);P('wheelbarrow',-82,84,0);P('scarecrow',-86,108,0);
+  /* south: Pip's picnic meadow (the blankets are her drop spots) */
+  sp('lawn',-22,96,32,46);sp('lawn',22,96,32,46);
+  for(const [x,z] of HOME_QUEST_AT.pip_icecream.drops)homeSc(ctx,'picnic_blanket',x,z,0);
+  homeSc(ctx,'icecream_line',30,110,0);P('bench',-36,116,0);P('trashcan',36,80,0);
+  /* south-east: the soccer pitch and a birthday party, the car wash below the shops */
+  sp('lawn',80,96,76,46);homeSc(ctx,'soccer_game',92,96,0);homeSc(ctx,'birthday_party',54,100,0);
+  homeSc(ctx,'car_wash',96,56,Math.PI);
+  /* east: corner shops on the cross street, parking behind */
+  for(const x of [84,100,116]){P('shop',x,-13.6,0);P('shop',x,13.6,2);}
+  for(const [x,z] of [[92,-9.4],[108,9.4]])P('bench',x,z,0);for(const [x,z] of [[76,-9.6],[92,9.6]])P('trashcan',x,z,0);
+  sp('parking',96,-28,46,14);sp('parking',96,28,46,14);for(const x of [80,92,104,116]){P('parked',x,-28,1);if(x<110)P('parked',x+3,29,3);}
+  /* north-east: the community garden and the veggie stand */
+  sp('patch',56,-96,28,40);homeSc(ctx,'pumpkin_patch',56,-104,0,'tiny');homeSc(ctx,'veggie_stand',96,-58,0);
+  homeSc(ctx,'yard_sale',96,-96,0,'medium');P('tree',112,-116,0);P('tree',76,-116,0);
+}
+
+/* Hank's Street: the start (inside ±HOME), built by buildWorld. Lots line both roads (a street of houses, front
+   yards on the sidewalk, back fences meeting in the middle of each block) and each block's middle is a play lot.
+   Hank's yard is right of the start, Garry's garden across the street. These are records in the chunks, like the
+   layouts make (scenes with turned and scaled props), so smashed stays smashed and regrows in place. */
+let homeTag=0,homeRecs=[];
+function homeRec(type,x,z,arg,th,f,tag){
+  if(!OBJ[type]||typeof chunkOf!=='function')return false;f=f||1;const r=(RAD[type]||1.2)*f;
+  if(Math.abs(x)>HOME+3||Math.abs(z)>HOME+3||onRoad(x,z,r)||!homeClear(x,z,r))return false;
+  for(const [a,b] of START_STREET)if(Math.hypot(x-a,z-b)<r+.9)return false;
+  if(!MICRO_T.has(type)&&(startLane(x,z)||(z>8&&Math.abs(x)<ROAD_W/2+r)))return false;
+  for(const [a,b] of [[0,0],[r+1,0],[-r-1,0],[0,r+1],[0,-r-1]])if(groundH(x+a,z+b)>0)return false;
+  for(const o of objects)if(Math.hypot(o.x-x,o.z-z)<(o.r+r)*.8)return false;
+  for(const q of homeRecs)if(q.scene!==tag&&Math.hypot(q.x-x,q.z-z)<q.r+r+.4)return false;
+  const rec={type,x,z,arg,r,seed:(Math.random()*1e9)|0,dead:false,back:0,f,scene:tag};if(th)rec.th=th;
+  chunkOf(x,z).recs.push(rec);homeRecs.push(rec);return true;}
+function homeScene(id,x,z,th=0,size){
+  if(typeof sceneItems!=='function')return false;const def=SCENES[id];if(!def)return false;
+  const k=sizeIdx(size!=null?size:def.size),f=sceneF(def,k),tag='h'+(++homeTag),it=sceneItems(def,x,z,th,f,(Math.random()*1e9)|0,'home',k);
+  let n=0;for(const q of it.place)n+=homeRec(q.type,q.x,q.z,q.arg,q.th,f*q.sc,tag);
+  for(const q of it.spot)chunkSpot(chunkOf(q[1],q[2]),...q);for(const h of it.herd)chunkHerd(chunkOf(h[1],h[2]),...h);
+  const c=chunkOf(x,z);c.scenes.push({id,tag,x,z,r:(def.r||8)*f,k,fixed:true,home:c.k,keys:[c.k]});return n>0;}
+function homeArena(){
+  homeRecs=[];const c0=(x,z)=>chunkOf(x,z);
+  // plain props first (place() only checks other objects): lamps, micro clutter on the sidewalks, the play-lot toys
+  for(const s of [-1,1])for(const t of [-60,-20,20,60]){place('lamp',s*8.2,t,0);place('lamp',t,s*8.2,0);}
+  const MIC=['can','pebble','acorn','toyblock','pebble','flowers','popsicle'];
+  for(let i=0;i<40;i++){const s=Math.random()<.5?1:-1,t=rand(10,70)*(Math.random()<.75?1:-1);
+    if(Math.random()<.6)place(pick(MIC),s*rand(5.6,8.4),t,Math.random()*4|0);else place(pick(MIC),t,s*rand(5.6,8.4),Math.random()*4|0);}
+  // the first few car lengths: toy-sized clutter on the road shoulders (micro things may sit in the lane)
+  for(let i=0;i<26;i++){const s=Math.random()<.6?1:-1;place(pick(MIC),s*rand(1,4.7),rand(14,62),Math.random()*4|0);}
+  for(let row=0;row<4;row++)for(let k=0;k<=row;k++)place('pin',-55+(k-row/2)*3.4,52-row*3.2); // bowling, at the foot of a ramp
+  [[48,-64],[51,-67],[45,-67],[48,-70],[43,-62],[53,-62]].forEach(([x,z])=>place('barrel',x,z));for(const [x,z] of [[62,-62],[64,-46]])place('crates',x,z);
+  for(let i=0;i<6;i++){const a=i/6*Math.PI*2;place('tower',-55+Math.cos(a)*10,-55+Math.sin(a)*10);}
+  // sidewalks on all four arms
+  for(const s of [-1,1]){for(const z of [-40,40])chunkSpot(c0(s*6.9,z),'sidewalk',s*6.9,z,3.4,63);for(const x of [-40,40])chunkSpot(c0(x,s*6.9),'sidewalk',x,s*6.9,63,3.4);}
+  // lots along the north–south road (x = ±23.4, front on the sidewalk) and the east–west road (z = ±23.4)
+  const NS={1:{17:'lot_kids',33:'lot_family',49:'hank_yard',65:'lot_garden',[-17]:'lot_garden',[-33]:'lot_party',[-49]:'lot_family',[-65]:'lot_kids'},
+            [-1]:{17:'lot_party',33:'garry_garden',49:'lot_family',65:'lot_kids',[-17]:'lot_family',[-33]:'lot_kids',[-49]:'lot_garden',[-65]:'lot_party'}};
+  for(const sx of [1,-1])for(const z in NS[sx])homeScene(NS[sx][z],sx*23.4,+z,sx>0?-Math.PI/2:Math.PI/2);
+  const EW={1:{49:'lot_family',65:'lot_garden',[-49]:'lot_kids',[-65]:'lot_family'},[-1]:{49:'lot_party',65:'lot_family',[-49]:'lot_garden',[-65]:'lot_kids'}};
+  for(const sz of [1,-1])for(const x in EW[sz])homeScene(EW[sz][x],+x,sz*23.4,sz>0?Math.PI:0);
+  // little stories on the sidewalks near the start
+  homeScene('hopscotch',-7,52,Math.PI/2);homeScene('snail_race',7.2,32,-Math.PI/2);homeScene('ant_picnic',-7,22,Math.PI/2);
+  // the middle of each block: a play lot
+  chunkSpot(c0(55,55),'lawn',55,55,32,32);homeScene('playground_corner',55,50,Math.PI/2);homeScene('birthday_party',56,64,0,'small');
+  chunkSpot(c0(-55,55),'lawn',-55,55,32,32);
+  chunkSpot(c0(55,-55),'dirt',55,-55,30,30);homeScene('road_works',58,-48,0,'medium');
+  chunkSpot(c0(-55,-55),'lawn',-55,-55,32,32);homeScene('lemonade_stand',-55,-55,0,'small');
+}
 
 /* ---------- D18: the Grow-Up Garage, outside (L32 hook) ----------
    Car scale 1, centered on the origin (logic scales, places and lifts it). Walls just outside ±GARAGE_HW (43), 14 tall,
