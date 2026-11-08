@@ -985,26 +985,152 @@ function townCross(ctx){
     hoodShops(S,us[0],12,40);hoodShops(S,us[1],-40,-12);}
   for(const qx of [-1,1])for(const qz of [-1,1]){ctx.spot('plaza',ctx.cx+qx*8.5,ctx.cz+qz*8.5,6,6,0);put(ctx,pick(['bench','trashcan','hydrant']),ctx.cx+qx*9,ctx.cz+qz*9,0);}}
 
+/* ---------- D18 part 3: Arcade blocks (L31 ctx.block) ----------
+   Hand-made chunk designs for the random worlds (Arcade's NEW WORLD). Local coordinates: the chunk center is 0,0
+   (−40…40), +Z is local "south"; an 'ns' block has its road along z through x=0 (road edge |x|=5, sidewalk to 8.6),
+   a 'cross' block has roads both ways, 'none' is the middle of a block. ctx.block turns and mirrors them, so a few
+   designs make a varied world. Lots face the road (th = ±π/2 on an 'ns' road). The zone layouts use a block for
+   about half their plain chunks and the D11 street generator for the rest. */
+const blkP=(b,t,x,z,th)=>b.place(t,x,z,0,RAD[t]||1.2,th||0);
+const blkFenceX=(b,x0,x1,z,gap)=>{for(let x=x0;x<=x1+.01;x+=4.2)if(gap==null||Math.abs(x-gap)>3)b.place('fence',x,z,0,1,0);};
+const blkFenceZ=(b,x,z0,z1,gap)=>{for(let z=z0;z<=z1+.01;z+=4.2)if(gap==null||Math.abs(z-gap)>3)b.place('fence',x,z,0,1,Math.PI/2);};
+const blkFace=sd=>sd<0?Math.PI/2:-Math.PI/2; // a prop on side sd of an 'ns' road, front toward the road
+// sidewalks along the 'ns' road (and the cross road too for 'cross'), lamps every 24
+function blkWalks(b,cross,w=3.2){for(const sd of [-1,1]){b.spot('sidewalk',sd*(5.4+w/2),0,w,80);if(cross)b.spot('sidewalk',0,sd*(5.4+w/2),80,w);
+  for(const z of [-28,4,28])if(!cross||Math.abs(z)>10)blkP(b,'lamp',sd*(5.2+w),z*sd);}}
+function blkTrees(b,n,pad=37){for(let i=0;i<n;i++){const e=Math.random()*4|0,t=rand(-pad,pad);blkP(b,'tree',e<2?(e?pad:-pad):t,e<2?t:(e>2?pad:-pad));}}
+// a row of lots along one side of an 'ns' road (zs = lot centers along the road)
+function blkLots(b,sd,zs){for(const z of zs)b.scene(pick(LOTS),sd*23.4,z,blkFace(sd));}
+// shops on one side of an 'ns' road with parking behind
+function blkShops(b,sd,zs){for(const z of zs){blkP(b,'shop',sd*13.6,z,blkFace(sd));if(Math.random()<.5)blkP(b,pick(['bench','trashcan']),sd*9,z+4.9,blkFace(sd));}
+  const z0=Math.min(...zs)-5,z1=Math.max(...zs)+5;b.spot('parking',sd*28,(z0+z1)/2,18,z1-z0);
+  for(let z=z0+3;z<z1-2;z+=6.2){if(Math.random()<.55)blkP(b,'parked',sd*23,z,0);if(Math.random()<.45)blkP(b,'parked',sd*32,z,Math.PI);}}
+// home blocks share their chunk with the hand-built start arena: only build what's outside it
+function blkOut(b,x,z,r){if(b.mirror)x=-x;const ca=Math.round(Math.cos(b.turn)),sa=Math.round(Math.sin(b.turn)),wx=b.cx+x*ca+z*sa,wz=b.cz-x*sa+z*ca;
+  return !(Math.abs(wx)<HOME+r&&Math.abs(wz)<HOME+r);}
+const blkSc=(b,id,x,z,th,size,r)=>blkOut(b,x,z,r||6)&&b.scene(id,x,z,th,size);
+const blkSpot=(b,k,x,z,w,d)=>blkOut(b,x,z,Math.max(w,d)/2)&&b.spot(k,x,z,w,d);
+
+const ZONE_BLOCKS={
+  town:[
+    // a mixed street: houses on one side, the corner store, lemonade stand, car wash and ice-cream truck on the other
+    {roads:'ns',weight:2,build(b){blkWalks(b);blkLots(b,-1,[-32,-16,0,16,32]);
+      blkShops(b,1,[-31,-21]);b.scene('lemonade_stand',13,-7,blkFace(1));b.scene('car_wash',20,9,blkFace(1));
+      b.scene('icecream_line',14,28,blkFace(1));b.scene('garbage_day',7,18,blkFace(1),'mini');
+      b.spot('lawn',30,24,16,28);blkP(b,'tree',34,14);blkP(b,'tree',35,36);blkP(b,'hydrant',8.2,-12);}},
+    // main street: shops both sides, a fountain nook on one side and the ice-cream truck across from it
+    {roads:'ns',build(b){blkWalks(b,false,4.4);blkShops(b,-1,[-33,-23,-13,15,25,35]);blkShops(b,1,[-33,-23,-13,15,25,35]);
+      b.spot('plaza',-15,1,12,12);blkP(b,'fountain',-15,1);for(const z of [-4,6])blkP(b,'bench',-10,z,Math.PI/2);
+      for(let i=0;i<6;i++){const a=i/6*Math.PI*2;blkP(b,'flowers',-15+Math.sin(a)*4.4,1+Math.cos(a)*4.4);}
+      b.scene('icecream_line',15,1,blkFace(1));b.scene('garbage_day',-7.6,-18,blkFace(-1),'mini');b.scene('hopscotch',7.6,9,blkFace(1),'tiny');}},
+    // a crossing with a different story on each corner: fountain plaza, corner shops, car wash, yard sale
+    {roads:'cross',build(b){blkWalks(b,true);
+      b.spot('plaza',23,23,30,30);blkP(b,'fountain',23,23);for(let i=0;i<4;i++){const a=i/4*Math.PI*2+.8;blkP(b,'bench',23+Math.sin(a)*6.2,23+Math.cos(a)*6.2,a+Math.PI);}
+      for(let i=0;i<8;i++){const a=i/8*Math.PI*2;blkP(b,'flowers',23+Math.sin(a)*9.4,23+Math.cos(a)*9.4);}
+      for(const z of [16,26,36])blkP(b,'shop',-13.6,z,Math.PI/2);for(const x of [-26,-36])blkP(b,'shop',x,13.6,Math.PI);
+      b.spot('parking',-28,28,16,16);blkP(b,'parked',-27,26,0);blkP(b,'parked',-33,32,Math.PI);
+      b.spot('parking',24,-24,28,26);b.scene('car_wash',24,-26,Math.PI/2);for(const x of [16,32])blkP(b,'parked',x,-13,Math.PI/2);
+      b.spot('lawn',-23,-23,28,28);b.scene('yard_sale',-22,-16,Math.PI,'medium');b.scene('birthday_party',-24,-30,Math.PI);
+      for(const [x,z] of [[-36,-12],[-12,-36],[-36,-36]])blkP(b,'tree',x,z);
+      for(const sx of [-1,1])for(const sz of [-1,1])blkP(b,pick(['hydrant','trashcan','mailbox']),sx*9,sz*9);}},
+    // the middle of a block (backs of the lots all round): the neighborhood pool, a playground, a garden and a party
+    {roads:'none',build(b){b.spot('lawn',0,0,78,78);b.spot('path',0,0,4,78);b.spot('path',0,0,78,4);
+      b.spot('plaza',-18,-18,30,24);b.spot('pool',-18,-18,20,12);b.spot('pool',-24,-18,6,16);
+      for(const [x,z,t] of [[-22,-20,1],[-14,-16,2.5],[-18,-21,4]])b.place('toyduck',x,z,0,null,t);
+      for(const [x,z] of [[-12,-14],[-25,-15]])blkP(b,'beachball',x,z);for(const x of [-28,-18,-8])blkP(b,'bench',x,-6.6,Math.PI);
+      blkP(b,'lamp',-6,-30);blkP(b,'lamp',-30,-6);blkP(b,'trashcan',-6,-8);
+      b.scene('playground_corner',18,-20,0,'medium');b.scene('sandcastle_day',26,-6,0,'small');
+      for(const z of [11,17,23])b.spot('flowerbed',-18,z,24,2.2);for(let x=-28;x<=-8;x+=4)for(const z of [11,17,23])blkP(b,Math.random()<.7?'flowers':'mushroom',x,z);
+      for(const x of [-27,-17,-9])blkP(b,'gnome',x,14);blkP(b,'birdbath',-18,29);blkP(b,'wheelbarrow',-8,28,.5);
+      b.scene('birthday_party',18,20,Math.PI);b.scene('snail_race',-4,10,0,'mini');b.scene('hopscotch',3,-10,0,'mini');b.scene('ant_picnic',10,4,0,'mini');
+      blkP(b,'fountain',0,0);blkTrees(b,10);}}
+  ],
+  farm:[
+    // a farm road: the farmhouse yard with a veggie stand on one side, a cornfield behind the fence on the other
+    {roads:'ns',weight:2,build(b){for(const sd of [-1,1])b.spot('sidewalk',sd*6.5,0,2.2,80);
+      b.spot('yard',-23,-14,30,40);blkP(b,'farmhouse',-24,-18,Math.PI/2);blkP(b,'mailbox',-8.6,-8,Math.PI/2);b.spot('path',-14,-8,10,2.4);
+      b.scene('veggie_stand',-14,8,Math.PI/2);b.scene('laundry_day',-30,-34,Math.PI/2,'medium');b.scene('pig_pen',-24,24,Math.PI/2,'medium');
+      blkFenceZ(b,-8.6,-37,37,-8);blkFenceZ(b,8.6,-37,37,4);blkP(b,'tree',-36,0);blkP(b,'tree',-36,8);
+      b.spot('field',24,0,30,76);for(let x=14;x<=34;x+=6)for(let z=-34;z<=34.1;z+=6.2)if(Math.hypot(x-24,z-4)>5)blkP(b,'crops',x,z);
+      blkP(b,'scarecrow',24,4);blkP(b,'tractor',12,4,0);b.herd('chicken',-14,-28,4);}},
+    // an orchard road: rows of trees on one side, pumpkins, a hay maze and a tractor parade on the other
+    {roads:'ns',build(b){for(const sd of [-1,1])b.spot('sidewalk',sd*6.5,0,2.2,80);
+      b.spot('lawn',-23,0,30,78);for(let x=-34;x<=-12;x+=7.4)for(let z=-34;z<=34;z+=8.6)blkP(b,'tree',x+(Math.abs(z)%2),z);
+      blkP(b,'wheelbarrow',-16,-4,.4);for(const [x,z] of [[-20,-8],[-27,4],[-19,13]])blkP(b,'pumpkin',x,z);
+      b.scene('pumpkin_patch',21,-26,0,'small');b.scene('hay_maze',23,0,0);b.scene('tractor_parade',22,26,-Math.PI/2,'medium');
+      blkFenceZ(b,8.6,-37,37,12);b.scene('veggie_stand',-13,24,Math.PI/2,'small');}},
+    // a farm crossing: a story on every corner (pumpkin patch, hay maze, chicken yard, pig pen) behind gated fences
+    {roads:'cross',build(b){for(const sd of [-1,1]){b.spot('sidewalk',sd*6.5,0,2.2,80);b.spot('sidewalk',0,sd*6.5,80,2.2);}
+      b.scene('pumpkin_patch',-23,-23,0,'small');b.scene('hay_maze',23,-23,0);b.scene('chicken_yard',-23,23,Math.PI);b.scene('pig_pen',23,23,Math.PI,'medium');
+      for(const sd of [-1,1]){blkFenceX(b,10,38,sd*9,24);blkFenceX(b,-38,-10,sd*9,-24);blkFenceZ(b,sd*9,10,38,24);blkFenceZ(b,sd*9,-38,-10,-24);}
+      blkP(b,'mailbox',-10,-11);blkP(b,'tractor',32,-8,Math.PI/2);blkP(b,'hay',-34,-10);blkP(b,'hay',-36,-12);b.spot('field',23,-23,30,30);}},
+    // the open fields: corn and wheat stripes, a duck pond, haystacks and a ramp over the tractor track
+    {roads:'none',build(b){b.spot('field',0,0,78,78);b.spot('dirt',0,0,78,6);
+      for(let x=-34;x<=34;x+=6)for(const z of [-34,-27.8,-21.6,-15.4,15.4,21.6,27.8,34])if(!(x>8&&z<-10))blkP(b,'crops',x,z);
+      b.scene('tractor_parade',-10,0,0);b.spot('lawn',24,-24,26,24);blkP(b,'pond',24,-24);b.herd('duck',30,-18,5);
+      for(const [x,z] of [[16,-14],[33,-31]])blkP(b,'bush',x,z);for(const [x,z] of [[18,6],[24,8],[30,5]])blkP(b,'hay',x,z);
+      blkP(b,'scarecrow',0,24);b.herd('cow',-20,-12,3);b.ramp(24,-3,Math.PI/2,11,7,3.2);}}
+  ],
+  park:[
+    // the big pond: water in the middle, ducks, picnic blankets round the shore, a kite lawn and trees
+    {roads:'none',weight:2,build(b){b.spot('lawn',0,0,78,78);b.spot('water',0,-2,30,20);b.spot('water',-6,4,16,14);blkP(b,'pond',0,-2);
+      b.herd('duck',8,-6,6);b.herd('goose',-10,4,3);for(const [x,z,t] of [[-8,-6,.4],[6,4,-1]])b.place('paperboat',x,z,0,null,t);
+      for(const [x,z] of [[-17,-10],[16,6],[14,-12],[-14,12]])blkP(b,'bush',x,z);
+      for(const [x,z,t] of [[0,11,Math.PI],[19,-2,-Math.PI/2],[-20,-4,Math.PI/2]])blkP(b,'bench',x,z,t);
+      b.spot('path',0,24,78,3);b.scene('picnic_blanket',-24,24,0);b.scene('picnic_blanket',4,30,0);b.scene('icecream_line',26,28,0);
+      b.scene('kite_field',-4,-28,0,'medium');b.scene('ant_picnic',-12,18,0,'mini');b.scene('puddle_boats',12,16,0,'mini');blkTrees(b,12);}},
+    // a park along a road: the soccer pitch and the band on one side, the playground, sandpit and ice-cream on the other
+    {roads:'ns',build(b){blkWalks(b);b.spot('lawn',-23,0,30,78);b.spot('lawn',23,0,30,78);
+      b.scene('soccer_game',-23,-14,Math.PI/2);b.scene('concert',-23,23,Math.PI/2,'medium');
+      b.scene('playground_corner',23,-18,-Math.PI/2,'medium');b.scene('sandcastle_day',23,6,-Math.PI/2,'small');b.scene('icecream_line',16,28,-Math.PI/2);
+      for(const z of [-36,-8,36])for(const sd of [-1,1])blkP(b,'tree',sd*36,z);blkP(b,'trashcan',9.4,-2);blkP(b,'trashcan',-9.4,8);}},
+    // a park crossing: fountain plaza, picnic, playground and kite lawn on the four corners
+    {roads:'cross',build(b){blkWalks(b,true);for(const sx of [-1,1])for(const sz of [-1,1])b.spot('lawn',sx*23,sz*23,30,30);
+      b.spot('plaza',23,23,22,22);blkP(b,'fountain',23,23);for(let i=0;i<8;i++){const a=i/8*Math.PI*2;blkP(b,'flowers',23+Math.sin(a)*6,23+Math.cos(a)*6);}
+      b.scene('picnic_blanket',-23,20,0);b.scene('picnic_blanket',-28,32,0,'tiny');b.scene('playground_corner',23,-23,0,'medium');b.scene('kite_field',-23,-23,0);
+      for(const [x,z] of [[-36,10],[-10,36],[36,-10],[10,-36],[-36,-36],[36,36]])blkP(b,'tree',x,z);}},
+    // a sports lawn: a big soccer pitch, lawn bowling with pins, two jump ramps and the band stand
+    {roads:'none',build(b){b.spot('lawn',0,0,78,78);b.scene('soccer_game',0,-14,0,'large');
+      for(let row=0;row<4;row++)for(let k=0;k<=row;k++)blkP(b,'pin',-22+(k-row/2)*3.2,22-row*3);b.spot('path',-22,30,4,14);
+      b.ramp(16,30,Math.PI,11,7,3.4);b.ramp(30,20,-Math.PI/2,11,7,3.4);b.scene('concert',4,26,Math.PI);
+      for(const x of [-30,-14,14,30])blkP(b,'bench',x,4,Math.PI);blkTrees(b,8);}}
+  ],
+  // the chunks round the start arena: the arena sits in one end or corner (which one depends on the turn), so these
+  // build everything they can and skip whatever lands in the arena
+  home:[
+    {roads:'ns',build(b){for(const sd of [-1,1])for(const z of [-32,-16,0,16,32])blkSpot(b,'sidewalk',sd*6.9,z,3.4,16);
+      for(const sd of [-1,1])for(const z of [-32,-16,16,32])if(blkOut(b,sd*23.4,z,8))b.scene(pick(LOTS),sd*23.4,z,blkFace(sd));
+      for(const z of [-30,-10,10,30])for(const sd of [-1,1])blkP(b,'lamp',sd*8.2,z);blkSc(b,'garbage_day',7.4,0,-Math.PI/2,'mini',3);}},
+    {roads:'none',build(b){
+      const Q=[[-22,-22,'playground_corner','medium'],[22,-22,'lemonade_stand',null],[-22,22,'birthday_party','medium'],[22,22,'picnic_blanket','medium']];
+      for(const [x,z,id,sz] of Q)if(blkOut(b,x,z,14)){blkSpot(b,'lawn',x,z,30,30);b.scene(id,x,z,0,sz);blkP(b,'tree',x+(x>0?13:-13),z+(z>0?13:-13));}
+      for(let i=0;i<10;i++){const e=i%4,t=rand(-36,36);blkP(b,pick(['tree','bush','flowers']),e<2?(e?37:-37):t,e<2?t:(e>2?37:-37));}}}
+  ]
+};
+// random worlds: about half the plain chunks get a hand-made block, the rest the D11 generator
+const blkTry=(ctx,zone,ch=.5)=>Math.random()<ch&&ctx.block(ZONE_BLOCKS[zone]);
+
 const ZONE_LAYOUT={
   town(ctx){
     if(homePlan(ctx)||lmkHere(ctx,'town'))return;
+    if(blkTry(ctx,'town'))return;
     const R=hoodRoads(ctx);
     if(!R.v&&!R.h){hoodPark(ctx,R,['play','picnic','woods','fountain']);return;} // the middle of a block: a pocket park
     if(R.v&&R.h){townCross(ctx);return;}
     townStreet(ctx,R);
   },
   farm(ctx){
-    if(homePlan(ctx)||lmkHere(ctx,'farm',2.2))return;
+    if(homePlan(ctx)||lmkHere(ctx,'farm',2.2)||blkTry(ctx,'farm'))return;
     hoodFarm(ctx,hoodRoads(ctx));
     propsRamp(ctx);
   },
   park(ctx){
-    if(homePlan(ctx)||lmkHere(ctx,'park'))return;
+    if(homePlan(ctx)||lmkHere(ctx,'park')||blkTry(ctx,'park'))return;
     parkBlock(ctx);
   },
   /* Dress the margin of the home chunks (random worlds). The hand-built arena (inside ±HOME) rejects placement. */
   home(ctx){
-    if(homePlan(ctx))return;
+    if(homePlan(ctx)||blkTry(ctx,'home',.75))return;
     const edge=[[ctx.x0+8,ctx.cz],[ctx.x1-8,ctx.cz],[ctx.cx,ctx.z0+8],[ctx.cx,ctx.z1-8],[ctx.x0+12,ctx.z0+12],[ctx.x1-12,ctx.z0+12],[ctx.x0+12,ctx.z1-12],[ctx.x1-12,ctx.z1-12]];
     const kit=['lamp','tree','bench','mailbox','flowers','bush','hydrant','cone'];
     edge.forEach((p,i)=>put(ctx,kit[i%kit.length],p[0],p[1],i%4));
