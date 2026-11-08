@@ -158,7 +158,7 @@ function questStepEnd(advance){
   const A=questA;if(!A||!A.st)return;const st=A.st,s=st.s;
   for(const t of st.things)questThingOff(t,false);if((s.do==='find'||s.reveal)&&advance&&!questNextIs('bring'))questRoofClear(true);
   if(st.reveal)questThingOff(st.reveal,false);questUnclear(st);
-  if(st.flock)questFlockOff(st.flock);if(st.goal)questThingOff(st.goal);
+  if(st.flock)questFlockOff(st.flock);if(st.goal)questThingOff(st.goal);if(st.aside){animalsBack();st.aside=null;}questMarkRings.count=0;
   if(!advance)questRoofClear(false);
   if(st.music&&musicWant&&musicWant.id===st.music)music('drive'); // back to the zone's drive track (unless a boss took over)
   A.st=null;}
@@ -376,7 +376,34 @@ function updateQuests(dt){
   updateGivers(dt);if(!garageAll())updateQuestStep(dt);updateQuestFly(dt);
   if(questSpinT>0){questSpinT-=dt;for(const p of players)p.heading+=dt*14;}
   for(const p of players)for(const m of p.qRoof||[])m.rotation.y+=dt*1.5;
-  questArrowSet(questTarget());questHudSet(true);}
+  questMarks(dt);questArrowSet(questTarget());questHudSet(true);}
+/* L48: what to catch, push, find or smash wears a pulsing gold ring on the ground and gives off sparkles (all rings
+   are one InstancedMesh: one draw call), and while a catch / push step runs the world's own animals of that kind
+   near the stage step aside (animalsAside in game.js) so the quest's critters are the only ones there. */
+const QUEST_MARK_N=64,QUEST_ASIDE_R=2.5; // rings at most; animals step aside within this many stage radii (+ the giver's spot)
+const questMarkRings=new THREE.InstancedMesh(new THREE.RingGeometry(0.66,1,40).rotateX(-Math.PI/2),
+  new THREE.MeshBasicMaterial({color:'#ffd60a',transparent:true,opacity:0.85,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-4}),QUEST_MARK_N);
+questMarkRings.count=0;questMarkRings.frustumCulled=false;questMarkRings.renderOrder=2;scene.add(questMarkRings);
+const _qm=new THREE.Matrix4(),_qmq=new THREE.Quaternion(),_qmp=new THREE.Vector3(),_qms=new THREE.Vector3();
+let questMarkSparkT=0;
+function questMarkList(){const A=questA;if(!A||!A.st||(typeof talkS!=='undefined'&&talkS))return [];const st=A.st,s=st.s,l=[],q=qS();
+  switch(s.do){
+    case 'catch':for(const a of st.flock.list)if(a.alive)l.push([a.x,a.z,st.flock.r*1.35]);break;
+    case 'push':for(const t of st.things)if(!t.inG)l.push([t.x,t.z,t.r*1.35]);break;
+    case 'find':for(const t of st.things)if(t.g.parent&&!t.on&&!(t.y>0))l.push([t.x,t.z,0.5*QUEST_CAR_L*q]);break; // (an item up on a prop or in the air has its beam)
+    case 'smash':if(st.reveal&&st.reveal.g.parent)l.push([st.reveal.x,st.reveal.z,0.5*QUEST_CAR_L*q]);
+      else for(const t of st.things)if(t.o.alive)l.push([t.o.x,t.o.z,t.o.r*1.3+0.3*q]);break;}
+  return l;}
+function questMarks(dt){
+  const A=questA,st=A&&A.st,s=st&&st.s;
+  if(st&&(s.do==='catch'||s.do==='push')&&s.kind){ // the world's animals of the quest's kind step aside
+    const R=st.R*QUEST_ASIDE_R+8*qS();animalsAside(s.kind,st.cx,st.cz,R);const gv=questGv();if(gv&&gv.shown)animalsAside(s.kind,gv.x,gv.z,st.R+8*qS());st.aside=true;}
+  const l=questMarkList(),n=Math.min(l.length,QUEST_MARK_N),pulse=1+0.1*Math.sin(T*6);
+  for(let i=0;i<n;i++){const [x,z,r]=l[i];_qm.compose(_qmp.set(x,groundH(x,z)+0.04*Math.max(qS(),0.2),z),_qmq.identity(),_qms.set(r*pulse,1,r*pulse));questMarkRings.setMatrixAt(i,_qm);}
+  questMarkRings.count=n;questMarkRings.instanceMatrix.needsUpdate=true;
+  if(n&&(questMarkSparkT-=dt)<=0){questMarkSparkT=0.09;const [x,z,r]=l[(Math.random()*n)|0],a=rand(0,Math.PI*2);
+    const m=new THREE.Mesh(GEO.box,SPARK_MAT);m.scale.setScalar(0.35*Math.max(qS(),0.05));m.position.set(x+Math.sin(a)*r,groundH(x,z)+0.2*qS(),z+Math.cos(a)*r);m.rotation.set(rand(0,3),rand(0,3),0);
+    addPart(m,0.8,0,2.2*qS(),0);}}
 // where the gold arrow points: the next thing to do, else the main giver you need to see
 function questTarget(){
   if(roomZ||state!=='play'||garageAll())return null;

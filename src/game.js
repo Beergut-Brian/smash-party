@@ -412,7 +412,7 @@ function rollWorld(keepSize,kind,opt={}){ // kind: 'bedroom' | 'outside' | 'home
   for(const c of chunks.values())for(const r of c.rampList)r.mesh.geometry.dispose();
   chunks.clear();for(const o of objects){poolRelease(o);scene.remove(o.g);}objects=[];queue.length=0;
   for(const o of collapsing)scene.remove(o.g);collapsing.length=0;
-  for(const a of animals)animalHide(a);animals.length=0;
+  for(const a of animals)animalHide(a);animals.length=0;animalAway.length=0;
   for(const d of debris)if(!d.confetti){scene.remove(d.m);d.life=0;}
   if(kind!==undefined){landW=land;worldId=land?land.id:'home';}
   worldSeed=kind==='home'?0:land&&questOn&&land.plan?worldSeedOf(land.id):(Math.random()*1e9)|0;setRoom(kind==='bedroom'?ZONES.bedroom:kind==='outside'||kind==='home'||land?null:roomZ);
@@ -1775,6 +1775,16 @@ function herdOn(h){h.on=true;if(h.goldIdx===undefined)h.goldIdx=Math.random()<0.
   for(let i=0;i<h.n;i++){const k=h.kind==='chicken'&&i===h.n-1&&animalDef('rooster')?'rooster':h.kind;
     const a=spawnAnimal(h,h.x+rand(-3,3),h.z+rand(-3,3),k);if(i===h.goldIdx)goldify(a,30);animalShow(a);}}
 function herdOff(h){h.on=false;for(const a of h.list){animalHide(a);const i=animals.indexOf(a);if(i>=0)animals.splice(i,1);}h.list.length=0;}
+/* L48: while a quest's catch / push step runs, the world's own animals of that kind near the stage step aside (they
+   leave `animals`, so nothing hits, launches or draws them) and come back when the step ends, so only the quest's
+   critters read as "these ones!". Herds that wake up nearby meanwhile are sent aside too (called every frame). */
+const animalAway=[];
+function animalsAside(kind,x,z,R){
+  for(let i=animals.length-1;i>=0;i--){const a=animals[i];if(a.kind!==kind&&!(kind==='chicken'&&a.kind==='rooster'))continue;
+    if((a.x-x)**2+(a.z-z)**2>R*R)continue;if(a.gold){ungold(a);a.herd.goldIdx=-1;}
+    animalHide(a);animals.splice(i,1);animalAway.push(a);}}
+function animalsBack(){for(const a of animalAway){const h=a.herd;if(!h.on||!h.list.includes(a))continue;
+  animals.push(a);animalShow(a);a.state='idle';a.t=rand(0.5,2);}animalAway.length=0;}
 function launchAnimal(a,vx,vz,power){
   if(a.state==='fly')return;if(a.gold){goldFound(a,true);ungold(a);a.herd.goldIdx=-1;animalShow(a);}const d=Math.hypot(vx,vz)||1,H=rand(3,6)*Math.max(S,0.25)+a.r*2;
   a.state='fly';a.bounced=false;a.vy=Math.sqrt(64*H);a.vx=vx/d*power*0.5+rand(-2,2)*S;a.vz=vz/d*power*0.5+rand(-2,2)*S;
