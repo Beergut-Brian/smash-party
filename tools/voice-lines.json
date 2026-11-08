@@ -135,6 +135,46 @@
     },
     "Break out!",
     "We're outside!",
-    "Smash the door!"
+    "Smash the door!",
+    {
+      "text": "Here comes Gumbo-Tron 3000!",
+      "prefix": "[shouting] "
+    },
+    {
+      "text": "Insert coin to play! Just kidding!",
+      "prefix": "[robotic, cheerful] "
+    },
+    {
+      "text": "Beep boop! Gumball attack!",
+      "prefix": "[robotic, excited] "
+    },
+    {
+      "text": "My gumballs are extra bouncy!",
+      "prefix": "[robotic, giggles] "
+    },
+    {
+      "text": "Out of order! Out of order! Free gumballs for everyone!",
+      "prefix": "[robotic, glitching, happy] "
+    },
+    {
+      "text": "Here comes Lava Larry!",
+      "prefix": "[shouting] "
+    },
+    {
+      "text": "Rumble rumble! Hee hee!",
+      "prefix": "[deep voice, giggles] "
+    },
+    {
+      "text": "I feel a big burp coming!",
+      "prefix": "[deep voice, playfully] "
+    },
+    {
+      "text": "Hot lava hugs for everyone!",
+      "prefix": "[deep voice, warm, laughing] "
+    },
+    {
+      "text": "BUUURP! Ahh, much better. Bye bye!",
+      "prefix": "[burps loudly] [sighs happily] "
+    }
   ]
 }

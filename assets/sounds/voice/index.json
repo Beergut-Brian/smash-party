@@ -493,5 +493,70 @@
   "text": "Oof! Rexy needs a nap. You did it!",
   "speak": "Oof! Rexy needs a nap. You did it!",
   "hash": "4e9995cb402a"
+ },
+ "break_out": {
+  "text": "Break out!",
+  "speak": "Break out!",
+  "hash": "6e181325457d"
+ },
+ "we_re_outside": {
+  "text": "We're outside!",
+  "speak": "We're outside!",
+  "hash": "4266fb24cdf1"
+ },
+ "smash_the_door": {
+  "text": "Smash the door!",
+  "speak": "Smash the door!",
+  "hash": "14faeb15f5ef"
+ },
+ "here_comes_gumbo_tron_3000": {
+  "text": "Here comes Gumbo-Tron 3000!",
+  "speak": "Here comes Gumbo-Tron 3000!",
+  "hash": "af4f84fb2855"
+ },
+ "insert_coin_to_play_just_kidding": {
+  "text": "Insert coin to play! Just kidding!",
+  "speak": "Insert coin to play! Just kidding!",
+  "hash": "16967d89d47f"
+ },
+ "beep_boop_gumball_attack": {
+  "text": "Beep boop! Gumball attack!",
+  "speak": "Beep boop! Gumball attack!",
+  "hash": "44bb1a2fa61b"
+ },
+ "my_gumballs_are_extra_bouncy": {
+  "text": "My gumballs are extra bouncy!",
+  "speak": "My gumballs are extra bouncy!",
+  "hash": "1cee9148c29a"
+ },
+ "out_of_order_out_of_order_free_gumballs_for_everyone": {
+  "text": "Out of order! Out of order! Free gumballs for everyone!",
+  "speak": "Out of order! Out of order! Free gumballs for everyone!",
+  "hash": "9f0faec06845"
+ },
+ "here_comes_lava_larry": {
+  "text": "Here comes Lava Larry!",
+  "speak": "Here comes Lava Larry!",
+  "hash": "be5f923b9735"
+ },
+ "rumble_rumble_hee_hee": {
+  "text": "Rumble rumble! Hee hee!",
+  "speak": "Rumble rumble! Hee hee!",
+  "hash": "c5399dfe75ba"
+ },
+ "i_feel_a_big_burp_coming": {
+  "text": "I feel a big burp coming!",
+  "speak": "I feel a big burp coming!",
+  "hash": "82fce0680727"
+ },
+ "hot_lava_hugs_for_everyone": {
+  "text": "Hot lava hugs for everyone!",
+  "speak": "Hot lava hugs for everyone!",
+  "hash": "62512c5c43a9"
+ },
+ "buuurp_ahh_much_better_bye_bye": {
+  "text": "BUUURP! Ahh, much better. Bye bye!",
+  "speak": "BUUURP! Ahh, much better. Bye bye!",
+  "hash": "6d36ddcc73a0"
  }
 }
