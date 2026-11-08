@@ -109,13 +109,13 @@ function smash(o,vx,vz,power){
   for(const part of o.parts)breakPart(o,part,nx,nz,power);
   scene.remove(o.g);
   const k=sizeK(o);puff(o.x,0.5*k,o.z,o.big?7:3,(o.big?2.2:1.2)*k);
-  sfx.crash(o.big);shake=Math.min(1.5,shake+(o.big?0.6:0.2));
+  sfxIn(zoneXZ(o.x,o.z),'crash',o.sfx,o.big);shake=Math.min(1.5,shake+(o.big?0.6:0.2));
   smashCount++;addScore(o.points);grow(GROW_VAL[o.sz]);comboHit();
   if(o.explosive)queue.push({t:0.07,fn:()=>explode(o.x,o.z,GROW_S[o.sz]/GROW_S[TYPE_SIZE.barrel])});
   if(o.gold)goldFound(o);
 }
 function explode(x,z,e=1){ // e = blast size (1 = a normal barrel); shrunken barrels make little pops
-  const q=Math.sqrt(e);sfx.boom();shake=Math.min(2,shake+1.2*Math.min(1,e));
+  const q=Math.sqrt(e);sfxIn(zoneXZ(x,z),'boom');shake=Math.min(2,shake+1.2*Math.min(1,e));
   flash(x,2*e,z,'#ffd166',3*e,0.4);flash(x,2*e,z,'#ff5400',2*e,0.55);puff(x,e,z,8,2.5*e,'#666666');
   for(let i=0;i<16;i++){const c=debrisBox(M(pick(['#ff7b00','#ffd60a','#333333','#e63946'])).color);const s=rand(.4,1.1)*e;c.scale.set(s,s,s);
     c.position.set(x,1.5*e,z);const a=rand(0,Math.PI*2),f=rand(12,24)*q;addDebris(c,s*.4,Math.sin(a)*f,rand(8,18)*q,Math.cos(a)*f);}
@@ -129,7 +129,7 @@ function explode(x,z,e=1){ // e = blast size (1 = a normal barrel); shrunken bar
 }
 function slam(p,big){ // landing hard (or from a launch pad: big) smashes what's around the car
   const R=big?p.r*3.2:p.r+Math.max(3*S,1);
-  shake=Math.min(2,shake+(big?1.1:0.7));sfx.thud();if(big){sfx.boom();flash(p.x,S,p.z,'#ffffff',R*0.6,0.35);}
+  shake=Math.min(2,shake+(big?1.1:0.7));const zn=zoneXZ(p.x,p.z);sfxIn(zn,'thud');if(big){sfxIn(zn,'boom');flash(p.x,S,p.z,'#ffffff',R*0.6,0.35);}
   puff(p.x,0.3,p.z,big?14:8,(big?R*0.35:1.8*Math.max(S,.3)));
   for(const o of objects){if(!o.alive||o.falling||o.boss)continue;const dx=o.x-p.x,dz=o.z-p.z;
     if(o.sz<=tier&&Math.hypot(dx,dz)<R+o.r)smash(o,dx,dz,18*Math.sqrt(Math.max(S,0.3)));}
@@ -167,7 +167,7 @@ function damageBuilding(o,x,z,rad,max,y0,y1,nx,nz,power){
   if(!hit.length)return 0;
   for(const [p] of hit){breakPart(o,p,nx,nz,power);if(o.rec)(o.rec.gone||(o.rec.gone=[])).push(o.parts.indexOf(p));}
   const fr=hit.length/o.parts.length;o.paid+=fr;addScore(o.points*fr);grow((GROW_VAL[o.sz]||0)*fr);
-  sfx.crash(hit.length>2);puff(x,1,z,2+hit.length,1.2,'#e8dcc8');shake=Math.min(1.5,shake+0.1*hit.length);
+  sfxIn(zoneXZ(o.x,o.z),'crash',o.sfx,hit.length>2);puff(x,1,z,2+hit.length,1.2,'#e8dcc8');shake=Math.min(1.5,shake+0.1*hit.length);
   if(o.parts.every(p=>p.gone)){killBld(o);scene.remove(o.g);return hit.length;}
   // lost too many walls on a floor? everything above it comes down
   for(const f of Object.keys(o.bld.fl).map(Number).sort((a,b)=>a-b)){const F=o.bld.fl[f];
@@ -185,7 +185,7 @@ function collapse(o,k,vx,vz,power,fast){
   o.col={up,upper:fs.filter(f=>f>=k),lower:fs.filter(f=>f<k).reverse(),need:0,fallen:0,vy:0,tilt:0,t:0,
     lx:nx*Math.cos(ry)-nz*Math.sin(ry),lz:nx*Math.sin(ry)+nz*Math.cos(ry),g:fast?70:34,nx,nz,power:Math.max(8,power)};
   crumbleFloor(o,o.col.upper.shift()); // the floor that gave way goes first
-  collapsing.push(o);sfx.rumble();sfx.crash(true);shake=Math.min(2,shake+(fast?1.3:0.8));dust(o,fast?6:3);
+  collapsing.push(o);sfx.rumble();sfxIn(zoneXZ(o.x,o.z),'crash',o.sfx,true);shake=Math.min(2,shake+(fast?1.3:0.8));dust(o,fast?6:3);
 }
 function crumbleFloor(o,f){const c=o.col;
   for(const p of o.parts)if(!p.gone&&p.floor===f)breakPart(o,p,c.nx,c.nz,c.power*0.5,0.4);
@@ -430,7 +430,7 @@ function updateObjects(dt){
     o.g.rotation.x=Math.sin(T*23)*0.07*w;o.g.rotation.z=Math.cos(T*19)*0.09*w;const f=o.s0||1;o.g.scale.set(f*(1+0.05*w*Math.sin(T*31)),f*(1-0.08*w*Math.sin(T*31)),f*(1+0.05*w*Math.sin(T*31)));}
   for(const o of objects){if(!o.alive||!o.falling)continue;
     o.vy-=40*dt;o.fy+=o.vy*dt;
-    if(o.fy<=0){o.fy=0;o.falling=false;if(o.scat)queue.push({t:0,fn:()=>poolAdopt(o)});const k=sizeK(o);if(o.sz>=tier-1)sfx.thud();puff(o.x,0.4*k,o.z,4,1.4*k);
+    if(o.fy<=0){o.fy=0;o.falling=false;if(o.scat)queue.push({t:0,fn:()=>poolAdopt(o)});const k=sizeK(o);if(o.sz>=tier-1)sfxIn(zoneXZ(o.x,o.z),'thud');puff(o.x,0.4*k,o.z,4,1.4*k);
       if(o.sz>=tier)for(const p of players)if(Math.hypot(p.x-o.x,p.z-o.z)<p.r+o.r){p.air=true;p.vy=10*p.sm;}}
     o.g.position.y=o.fy;}
   if(Math.random()<0.02){for(const o of objects)if(!o.alive)poolRelease(o);objects=objects.filter(o=>o.alive);}
@@ -450,6 +450,7 @@ function getChunk(ci,cj){const k=chunkKey(ci,cj);let c=chunks.get(k);
   if(!c){c={k,ci,cj,zone:zoneAt(ci,cj),x0:ci*CHUNK-CHUNK/2,z0:cj*CHUNK-CHUNK/2,recs:[],rampList:[],herds:[],gen:false,loaded:false,group:null,box:null};chunks.set(k,c);}
   return c;}
 const chunkOf=(x,z)=>getChunk(chunkIdx(x),chunkIdx(z));
+const zoneXZ=(x,z)=>zoneAt(chunkIdx(x),chunkIdx(z)); // L22: which zone a sound happens in
 // tag every object with its type/arg/chunk so it can be rebuilt and streamed
 for(const t in OBJ){const f=OBJ[t];OBJ[t]=(x,z,arg,sc)=>{const o=f(x,z,arg);o.type=t;o.arg=arg;o.chunk=chunkOf(x,z).k;o.sz=sizeClass(o);initBld(o);scaleObj(o,sc);o.fr=footprint(o);setupSpin(o);return o;};}
 // deterministic randomness, so a chunk (and each house in it) looks the same every time it's rebuilt
@@ -727,7 +728,7 @@ class Player{
       this.vy-=(this.padG||32)*dt;this.y+=this.vy*dt;
       if(this.y<=gh){const imp=-this.vy;this.y=gh;this.air=false;this.vy=0;
         if(this.padG){this.padG=0;slam(this,true);}
-        else if(imp>15)slam(this);else if(imp>6){sfx.thud();puff(this.x,0.3,this.z,3,1.2*Math.max(S,.3));}}
+        else if(imp>15)slam(this);else if(imp>6){sfxIn(zoneXZ(this.x,this.z),'thud');puff(this.x,0.3,this.z,3,1.2*Math.max(S,.3));}}
     }
     let pitch;
     if(!this.air){pitch=Math.atan2(groundH(this.x+fx*1.6,this.z+fz*1.6)-groundH(this.x-fx*1.6,this.z-fz*1.6),3.2);}
@@ -1579,7 +1580,8 @@ function updateCamera(dt,t){
   const el=0.95,shK=clamp(camDist/38,0.06,1);shake*=Math.pow(0.02,dt);const sx=rand(-1,1)*shake*shK,sy=rand(-1,1)*shake*shK;
   camera.position.set(camT.x+sx,camDist*Math.sin(el)+sy,camT.z+camDist*Math.cos(el));camera.lookAt(camT.x+sx*0.5,0,camT.z-camDist*0.05);
   {const nr=clamp(camDist*0.04,0.04,0.5);if(Math.abs(camera.near-nr)>nr*0.15){camera.near=nr;camera.updateProjectionMatrix();}} // close-up at micro
-  {const z=ZONES[zoneAt(chunkIdx(camT.x),chunkIdx(camT.z))],sk=z&&z.sky,k=Math.min(1,dt*1.2);   // themed zones tint the sky
+  {const zid=zoneXZ(camT.x,camT.z),z=ZONES[zid],sk=z&&z.sky,k=Math.min(1,dt*1.2);   // themed zones tint the sky
+    zoneAudio(garage?null:zid,dt,!!garage);                                    // …and pick its music + ambient (L22)
     skyU.top.value.lerp(_skyT.set(sk&&sk.top||SKY_TOP),k);skyU.bot.value.lerp(_skyB.set(sk&&sk.horizon||SKY_HORIZON),k);scene.fog.color.copy(skyU.bot.value);}
   sun.position.set(camT.x+30,80+camDist,camT.z+30);sun.target.position.set(camT.x,0,camT.z);sc.far=260+camDist*2;setShadow(camDist*1.1+3);
   scene.fog.near=camDist*1.8+100;scene.fog.far=scene.fog.near+160;
