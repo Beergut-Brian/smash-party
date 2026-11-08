@@ -147,7 +147,7 @@ registerZone({
   ground:'#fff4e0',                          // vanilla snow
   sky:{top:'#a9def9',horizon:'#fffaf0'},
   weight:0,                                  // only part of Candy Land (L33)
-  music:{drive:'candy_drive',boss:'candy_boss'},
+  music:{drive:'candy_peaks_drive',boss:'candy_boss'},
   sfx:{crash:'candy_crunch',boom:'candy_pop',land:'candy_squish',ambient:'candy_peaks_ambient'},
   props:CANDY_PEAKS_PROPS,
   scenes:CANDY_PEAKS_SCENES,

@@ -188,7 +188,7 @@ registerZone({
   ground:'#e8c39e',                          // caramel
   sky:{top:'#f4a988',horizon:'#ffe8d6'},
   weight:0,                                  // only part of Candy Land (L33)
-  music:{drive:'candy_drive',boss:'candy_boss'},
+  music:{drive:'candy_river_drive',boss:'candy_boss'},
   sfx:{crash:'candy_crunch',boom:'candy_pop',land:'candy_squish',ambient:'candy_river_ambient'},
   props:CANDY_RIVER_PROPS,
   scenes:CANDY_RIVER_SCENES,

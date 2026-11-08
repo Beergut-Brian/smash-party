@@ -22,31 +22,33 @@ function candyLandPlan(){return CANDY_LAND_PLAN.map(r=>r.replace(/[CGRI]/g,c=>(Z
 
 /* ---------- where each quest happens (world x,z; Q3a's checklist) ----------
    giver = where its giver stands (props keep r clear), stage = [x,z,w,d] of its `quest_<id>` spot (marked on the map,
-   so the engine finds the stage there). Point lists are ready for the steps. Heights (fallsY, summitY) are world units:
-   a `find` item's y is at car scale 1, so the pack divides by the car scale; a `reach` step's y is world units. */
+   so the engine finds the stage there). Point lists are ready for the steps (Z6c: checked against the pack's reads).
+   Push goals sit at the stage center, so those stages are centered on their goal. `lift` points sit inside a prop's
+   footprint (cupcake house, Falls) so the item rides on top and touching the prop grabs it; the summit has no prop, so
+   its third number is the float height at car scale 1 (keep ≤3: a jump only reaches ~2.4 at huge). */
 const candyRX=z=>candyRiverX(z,0); // the river in column 0
 const CANDY_QUEST_AT={
   // chapter 1, Frosting Lane (micro–mini): the start's street, all within a few car lengths
   bun_cherries:{giver:[-153.6,343.4],r:.8,stage:[-156,336,12,20],cake:[-152.4,340.6],       // outside the bakery, the birthday cake beside Bun
     cherries:{street:[-158.6,333],roof:[-146,331]},                                          // in the lane · on the cupcake house's roof (lift)
     piles:[[-164.6,339.5],[-167.6,343.6],[-164.4,347.6]]},                                   // the 3 gumdrop piles (frosting patches) across the lane
-  minty_gumballs:{giver:[-165.8,330.6],r:.8,stage:[-169,335,14,14],goal:[-170.4,335.2],goalR:2}, // the gumball machine's bowl
+  minty_gumballs:{giver:[-165.8,330.6],r:.8,stage:[-170.4,335.2,14,14],goal:[-170.4,335.2],goalR:2}, // the gumball machine's bowl (goal = stage center)
   snap_march:{giver:[-153.6,327.4],r:.8,stage:[-176,330,40,30],                             // the end of Frosting Lane; up the lane, then west
     rings:[[-158.4,344],[-158.4,336],[-158.4,328],[-166,317.6],[-174,317.6],[-182,317.6],[-190,317.6],[-198,317.6]]},
   // chapter 2, Gumdrop Forest west of Cake Town (tiny–small)
   lolly_cubs:{giver:[-283,311],r:1.5,stage:[-300,292,40,40]},                               // the forest edge on the road west; the clearing
   cocoa_cups:{giver:[-326.6,206],r:1.5,stage:[-320,166,70,50],                              // the forest road; gingerbread doorsteps
     drops:[[-326.6,146],[-313.4,134],[-326.6,182],[-313.4,176],[-313.4,191]]},
-  glaze_donuts:{giver:[-287,252],r:1.5,stage:[-300,240,40,40],goal:[-300,244],goalR:6},     // the donut shop's lot
+  glaze_donuts:{giver:[-287,252],r:1.5,stage:[-300,244,40,40],goal:[-300,244],goalR:6},     // the donut shop's lot (goal = stage center)
   // chapter 3, the Chocolate River (medium–large)
   wafer_rings:{giver:[35,-70],r:3,stage:[24,-76,60,80],                                    // the wafer pier below the Chocolate Falls
-    rings_at:{river:[candyRX(-13),-13],bridge:[candyRX(-56),-56],island:[candyRX(-45),-45],falls:[candyRX(-108.6),-110.6]},fallsY:15.5},
+    rings_at:{river:[candyRX(-13),-13],bridge:[candyRX(-56),-56],island:[candyRX(-45),-45],falls:[candyRX(-108.6),-110.6]}}, // falls: on the Falls prop (lift)
   jo_quarry:{giver:[88,-55],r:3,stage:[88,-86,52,40]},                                      // the gate of the rock-candy quarry, east bank
   fizzy_hoops:{giver:[50,-34],r:3,stage:[24,-70,70,200],                                    // the east bank; hoops down the river, over the Falls
     rings:[-172,-146,-126,-92,-66,-36,-13,16].map(z=>[candyRX(z),z]),ramps:[[64,-12],[64,14]]},
   // chapter 4 (huge–GIANT)
   bun_sprinkles:{giver:[-80,-112],r:6,stage:[-80,-150,140,100]},                            // the birthday cake plaza
-  sundae_summit:{giver:[-110,-224],r:6,stage:[-80,-240,120,120],summit:[-67,-240],summitY:10}, // the slope's top beside the volcano's cherry
+  sundae_summit:{giver:[-110,-224],r:6,stage:[-80,-240,120,120],summit:[-67,-240,1.4]}, // the slope's top beside the volcano: floats just over the ramp, driving up grabs it
   puff_sheep:{giver:[-214,-300],r:6,stage:[-245,-330,110,80]}                               // the cotton-candy cloud meadow
 };
 // more places the random props keep clear of: [x,z,r]
