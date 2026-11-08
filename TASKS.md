@@ -140,10 +140,9 @@ Claude Code's *logic* sessions still own `core.js`, `game.js` and `tools/`. A de
   - One original boss for max size, built from L3-contract parts plus `BP(mesh, floor, 'weak')` glowing weak spots. Chunky, funny, not scary. Kaden and son to pick the concept (and maybe name it).
   - Needs: L6 spec. ✅ L6 is done. The format is in `CLAUDE.md` under "Boss". Logic has three blocky placeholders to replace or polish (Kaden picked all three ideas, one random per world): **Clankzilla** (junk robot), **Shelldozer** (crab carrying a sandcastle), **King Wobbles** (wobbly block king). New bosses welcome; Kaden and son will invent more.
 
-- [ ] **D6: Car upgrade path** (Cars: Cursor) (from play-test round 1)
-  - Set `tier` on every car: 0 = humble starter cars for the tiniest sizes (toy-ish: pedal car, scooter, shopping cart…), up to 3 = the super cool ones (rocket racer, monster machines). About 2–3 cars per tier so Y has something to switch to. Logic's guess today: `CAR_TIER` in game.js.
-  - Tier 2–3 cars can shoot: set `weapon:'cannon'` or `'rocket'` (logic handles the shots). Make the weapon visible on the model (a cannon barrel, rocket pods).
-  - New car names get a recorded voice once someone runs `tools/make-voices.mjs`.
+- [x] **D6: Car upgrade path** (Cars: Cursor) (from play-test round 1)
+  - Done on `cars/D6`: every car has `tier` 0–3 (block-built + `cars.json` + `RECIPES`). Tier 2 cars set `weapon:'cannon'`, tier 3 set `weapon:'rocket'`, with visible `PARTS.cannon` / `PARTS.rockets` on the model (block builds mount them too). Logic still falls back to `CAR_TIER` / `WEAPON_BY_TIER` for any car missing a field.
+  - New car names (Rex Rammer, Taco Tornado, Stomp King) need a recorded voice once someone runs `tools/make-voices.mjs`.
 
 - [x] **D1: Zone layouts**
   - Done in `ZONE_LAYOUT`: town streets (cottage / house / shop / villa rows, mailboxes, lamps, hydrants, parked toy cars) plus one clock-tower, school, fire station, and water tower. Farm has a barn, two silos, a farmhouse, hay, fences, crops, a pond, a windmill, a coop with chickens, scarecrows, and a tractor. Park has a clustered playground, fountain, benches, picnic tables, a gazebo, a duck pond, and a bounce house. Home dresses the ring around the original arena.
@@ -176,7 +175,7 @@ Claude Code's *logic* sessions still own `core.js`, `game.js` and `tools/`. A de
   - **Wacky toy racers:** car with giant rear wheels and exposed engine, flame-painted hot rod, loop-track speedster, twin-engine dragster, shark car (done), dino cars (T-rex truck, triceratops ram-car, stegosaurus with spike plates, pterodactyl wing-glider), sneaker car, hot dog (done), ice cream (done), birthday cake car, rubber-duck boat car, pickle car, taco truck shaped like a taco, toaster car, bathtub racer, shopping cart racer, rocket skateboard
   - **Son-designed car:** reserved spot. Ask him for a name, color and silly feature.
   - Each car: 4–5 units long, faces +Z, `speed` 20–32, `r` 2–2.8. Scales automatically once L2 lands.
-  - Started: `PARTS` + `RECIPES` in `src/cars.js`. Yellow Cab, Hose Hero, and Dash Racer are Kenney bases with paint and parts. New from this list: Honk Bus (school bus), Snow Pusher (snowplow), Spinny Mixer (cement mixer).
+  - Started: `PARTS` + `RECIPES` in `src/cars.js`. Yellow Cab, Hose Hero, and Dash Racer are Kenney bases with paint and parts. New from this list: Honk Bus (school bus), Snow Pusher (snowplow), Spinny Mixer (cement mixer). Also (D6 pass): Rex Rammer (T-rex truck), Taco Tornado (taco truck), Stomp King (monster truck).
 
 - [ ] **D7: More mega set pieces** (world lane)
   - Still just ideas: stadium, skyscraper, cargo ship, ferris wheel. Build them with `BP` when a zone has room. The mountain-sized boss is D5.

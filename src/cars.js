@@ -10,76 +10,6 @@ function W(c,d,w,x,y,z,hub){const wh=wheel(d,w,x,y,z,hub);c.g.add(wh);c.wheels.p
 function add(c,...ms){ms.forEach(m=>c.g.add(m));}
 const glow=c=>E(c);
 
-function buildMonster(){const c=base();
-  [[-1.9,1.6],[1.9,1.6],[-1.9,-1.6],[1.9,-1.6]].forEach(([x,z])=>W(c,2.6,1.1,x,1.3,z,'#ffd60a'));
-  add(c,mk('box',2.2,0.5,4.2,'#444',0,1.6,0),mk('box',3.4,1.1,4.8,'#e63946',0,2.6,0),mk('box',3.45,0.3,2.6,'#ffbe0b',0,2.6,0.9),
-    mk('box',2.8,1.1,2.2,'#e63946',0,3.7,-0.5),mk('box',2.9,0.7,1.9,'#1d3557',0,3.75,-0.5),mk('box',2.7,0.2,2.1,'#e63946',0,4.3,-0.5),
-    mk('box',0.6,0.4,0.15,null,-1.1,2.75,2.42,glow('#fff6a0')),mk('box',0.6,0.4,0.15,null,1.1,2.75,2.42,glow('#fff6a0')));
-  c.ex.set(0,2.4,-2.7);c.h=4.5;return c;}
-function buildRocket(){const c=base();
-  [[-1.15,1.5],[1.15,1.5],[-1.15,-1.5],[1.15,-1.5]].forEach(([x,z])=>W(c,1.1,0.6,x,0.55,z));
-  const nose=mk('cone',2.0,1.8,0.7,'#3a86ff',0,0.85,3.1);nose.rotation.x=Math.PI/2;
-  const ex=mk('cyl',0.9,0.6,0.9,'#555',0,0.9,-2.4);ex.rotation.x=Math.PI/2;
-  const fl=mk('cyl',0.6,0.1,0.6,null,0,0.9,-2.72,glow('#ff7b00'));fl.rotation.x=Math.PI/2;
-  add(c,mk('box',2.0,0.7,4.4,'#3a86ff',0,0.85,0),mk('box',2.05,0.2,4.45,'#ffffff',0,0.95,0),nose,mk('sph',1.1,0.8,1.6,'#9be7ff',0,1.35,0.2),
-    mk('box',0.15,1.2,1.0,'#ff006e',-0.8,1.4,-1.8),mk('box',0.15,1.2,1.0,'#ff006e',0.8,1.4,-1.8),mk('box',0.15,1.0,1.0,'#ff006e',0,1.6,-1.9),ex,fl);
-  c.ex.set(0,0.9,-3);c.h=2.2;return c;}
-function buildShark(){const c=base();
-  [[-1.15,1.6],[1.15,1.6],[-1.15,-1.6],[1.15,-1.6]].forEach(([x,z])=>W(c,1.0,0.5,x,0.5,z));
-  const fin=mk('cone',0.25,1.6,1.4,'#6c7a89',0,2.75,-0.3);fin.rotation.x=-0.35;
-  const t1=mk('box',0.2,1.4,0.6,'#6c7a89',0,2.0,-2.8);t1.rotation.x=0.6;const t2=mk('box',0.2,1.1,0.6,'#6c7a89',0,1.05,-2.8);t2.rotation.x=-0.6;
-  add(c,mk('sph',2.4,1.7,5.2,'#7d8da1',0,1.4,0),mk('sph',2.0,1.0,4.6,'#f1f1f1',0,1.0,0.1),fin,t1,t2,
-    mk('sph',0.55,0.55,0.55,'#fff',-0.8,1.85,1.6),mk('sph',0.55,0.55,0.55,'#fff',0.8,1.85,1.6),
-    mk('sph',0.28,0.28,0.28,'#111',-0.92,1.9,1.8),mk('sph',0.28,0.28,0.28,'#111',0.92,1.9,1.8),mk('box',1.4,0.14,0.12,'#8b0000',0,1.05,2.45));
-  for(let i=0;i<5;i++){const t=mk('cone',0.2,0.32,0.2,'#fff',-0.56+i*0.28,1.15,2.47);t.rotation.x=Math.PI;c.g.add(t);}
-  c.ex.set(0,1.2,-3);c.h=3.5;return c;}
-function buildDino(){const c=base();
-  [-1.4,0,1.4].forEach(z=>{W(c,0.85,1.0,-1.5,0.55,z,'#888');W(c,0.85,1.0,1.5,0.55,z,'#888');});
-  const tail=mk('cone',0.9,1.8,0.9,'#52b788',0,1.6,-2.4);tail.rotation.x=-Math.PI/2;
-  add(c,mk('box',0.9,1.1,4.2,'#333',-1.5,0.55,0),mk('box',0.9,1.1,4.2,'#333',1.5,0.55,0),mk('box',2.4,1.4,3.2,'#52b788',0,1.6,0),
-    mk('box',1.8,1.3,1.6,'#52b788',0,2.9,-0.4),mk('box',1.85,0.6,1.2,'#1d3557',0,3.0,-0.4),tail,
-    mk('sph',0.55,0.55,0.55,'#fff',-0.5,3.75,0.2),mk('sph',0.55,0.55,0.55,'#fff',0.5,3.75,0.2),
-    mk('sph',0.26,0.26,0.26,'#111',-0.5,3.8,0.44),mk('sph',0.26,0.26,0.26,'#111',0.5,3.8,0.44),
-    mk('box',3.6,1.3,0.3,'#ffd60a',0,0.9,2.3),mk('box',0.25,0.25,1,'#555',-1,1.3,1.8),mk('box',0.25,0.25,1,'#555',1,1.3,1.8));
-  [[3.65,-0.75],[3.65,-1.15],[2.5,-1.3]].forEach(([y,z])=>c.g.add(mk('cone',0.5,0.8,0.5,'#f77f00',0,y+0.3,z)));
-  for(let i=0;i<4;i++)c.g.add(mk('cone',0.3,0.45,0.3,'#fff',-1.2+i*0.8,1.75,2.3));
-  c.ex.set(0,1.6,-3.2);c.h=4.3;return c;}
-function buildIceCream(){const c=base();
-  [[-1.3,1.6],[1.3,1.6],[-1.3,-1.6],[1.3,-1.6]].forEach(([x,z])=>W(c,1.3,0.6,x,0.65,z));
-  const cone=mk('cone',1.4,2.0,1.4,'#d4a373',0,4.05,0);cone.rotation.x=Math.PI;
-  add(c,mk('box',2.6,2.4,4.6,'#ffafcc',0,1.85,0),mk('box',2.65,0.35,4.65,'#ffffff',0,1.2,0),mk('box',2.4,0.9,0.1,'#1d3557',0,2.4,2.31),
-    mk('box',0.1,0.9,1.8,'#1d3557',1.31,2.2,-0.5),mk('box',0.1,0.9,1.8,'#1d3557',-1.31,2.2,-0.5),cone,
-    mk('sph',1.6,1.6,1.6,'#ff8fab',0,5.3,0),mk('sph',1.3,1.3,1.3,'#b9fbc0',0,6.2,0),mk('sph',0.45,0.45,0.45,'#e63946',0,6.95,0));
-  c.ex.set(0,0.8,-2.5);c.h=7.2;return c;}
-function buildHotdog(){const c=base();
-  [[-1.25,1.7],[1.25,1.7],[-1.25,-1.7],[1.25,-1.7]].forEach(([x,z])=>W(c,1.0,0.5,x,0.5,z));
-  add(c,mk('sph',2.6,1.2,5.4,'#e9c46a',0,1.0,0),mk('sph',1.3,1.1,6.0,'#c1121f',0,1.6,0));
-  for(let i=0;i<6;i++){const m=mk('box',0.9,0.12,0.2,'#ffd60a',0,2.17,-2+i*0.8);m.rotation.y=i%2?0.6:-0.6;c.g.add(m);}
-  c.ex.set(0,1,-3);c.h=2.4;return c;}
-function buildFire(){const c=base();
-  [2.0,-1.0,-2.2].forEach(z=>{W(c,1.3,0.6,-1.3,0.65,z);W(c,1.3,0.6,1.3,0.65,z);});
-  add(c,mk('box',2.6,1.8,6,'#d62828',0,1.6,0),mk('box',2.65,0.22,6.05,'#ffffff',0,1.3,0),mk('box',2.6,1.0,1.6,'#d62828',0,3.0,2.0),
-    mk('box',2.65,0.6,1.3,'#1d3557',0,3.05,2.0),mk('box',0.5,0.3,0.4,null,-0.6,3.65,2.2,glow('#ff1e1e')),mk('box',0.5,0.3,0.4,null,0.6,3.65,2.2,glow('#1e6bff')),
-    mk('box',0.15,0.15,5,'#dddddd',-0.6,2.75,-0.7),mk('box',0.15,0.15,5,'#dddddd',0.6,2.75,-0.7));
-  for(let z=-3;z<=1.7;z+=0.7)c.g.add(mk('box',1.3,0.12,0.12,'#dddddd',0,2.75,z));
-  c.ex.set(0,0.8,-3.2);c.h=3.9;return c;}
-function buildBubble(){const c=base();
-  [[-1.3,1.1],[1.3,1.1],[-1.3,-1.1],[1.3,-1.1]].forEach(([x,z])=>W(c,1.0,0.6,x,0.5,z,'#ffbe0b'));
-  add(c,mk('sph',3.2,2.6,3.6,'#9d4edd',0,1.7,0),mk('sph',2.6,1.8,2.4,'#a0f0ff',0,2.2,0.6),mk('cyl',0.08,1.4,0.08,'#333',0,3.6,-0.6),
-    mk('sph',0.45,0.45,0.45,'#ffbe0b',0,4.35,-0.6),mk('sph',0.5,0.5,0.5,null,-0.8,1.4,1.7,glow('#fff6a0')),mk('sph',0.5,0.5,0.5,null,0.8,1.4,1.7,glow('#fff6a0')));
-  c.ex.set(0,1,-2);c.h=4.7;return c;}
-
-const CARS=[
-  {name:'Big Bouncer',emoji:'🛻',speed:24,r:2.6,build:buildMonster},
-  {name:'Rocket Racer',emoji:'🚀',speed:32,r:2.0,build:buildRocket},
-  {name:'Shark Attack',emoji:'🦈',speed:27,r:2.2,build:buildShark},
-  {name:'Dino Dozer',emoji:'🦖',speed:21,r:2.8,build:buildDino},
-  {name:'Ice Cream Smasher',emoji:'🍦',speed:24,r:2.4,build:buildIceCream},
-  {name:'Hot Dog Hot Rod',emoji:'🌭',speed:28,r:2.3,build:buildHotdog},
-  {name:'Fire Truck',emoji:'🚒',speed:25,r:2.6,build:buildFire},
-  {name:'Bubble Buggy',emoji:'🫧',speed:26,r:2.2,build:buildBubble}
-];
-
 /* ---------- parts library ----------
    Reusable add-ons. A new car just lists part ids. Each part is built in its own
    little space (y up, +Z forward) and the recipe places it with at / rot / scale.
@@ -125,8 +55,143 @@ const PARTS={
   glass(p){const g=new THREE.Group();
     const m=new THREE.Mesh(GEO.box,litMat({color:p.color||'#bde0fe',transparent:true,opacity:.78}));
     m.scale.set(p.w||1.35,p.h||.48,p.d||.08);m.castShadow=false;g.add(m);
+    return g;},
+  /* Visible shooters for tier 2–3. Logic fires from the car; these are just looks. */
+  cannon(p){const g=new THREE.Group(),c=p.color||'#495057',tip=p.tip||'#222';
+    g.add(mk('box',.55,.4,.55,c,0,0,-.15));
+    const barrel=mk('cyl',.18,1.35,.18,c,0,.05,.55);barrel.rotation.x=Math.PI/2;g.add(barrel);
+    const muzzle=mk('cyl',.24,.18,.24,tip,0,.05,1.25);muzzle.rotation.x=Math.PI/2;g.add(muzzle);
+    g.add(mk('box',.22,.22,.22,p.band||'#ffd60a',0,.28,-.05));
+    return g;},
+  rockets(p){const g=new THREE.Group(),c=p.color||'#e63946',fin=p.fin||'#ffd60a';
+    [-.7,.7].forEach(x=>{
+      const pod=new THREE.Group();pod.position.x=x;
+      const body=mk('cyl',.2,1.1,.2,c);body.rotation.x=Math.PI/2;pod.add(body);
+      const nose=mk('cone',.2,.45,.2,fin,0,0,.7);nose.rotation.x=Math.PI/2;pod.add(nose);
+      const flame=mk('cyl',.14,.2,.14,null,0,0,-.65,glow(p.glow||'#ff7b00'));flame.rotation.x=Math.PI/2;pod.add(flame);
+      [[-.18,.12],[.18,.12],[0,-.16]].forEach(([fx,fy])=>{
+        const f=mk('box',.06,.22,.28,fin,fx,fy,-.35);pod.add(f);
+      });
+      g.add(pod);
+    });
+    g.add(mk('box',1.55,.12,.28,'#333',0,-.05,0));
+    return g;},
+  /* D4 wish-list silhouettes */
+  trexHead(p){const g=new THREE.Group(),skin=p.color||'#52b788',jaw=p.jaw||'#40916c';
+    g.add(mk('box',1.5,1.1,1.6,skin,0,.55,.1));
+    g.add(mk('box',1.35,.55,1.3,jaw,0,.05,.35));
+    g.add(mk('sph',.35,.35,.35,'#fff',-.4,.85,.7));g.add(mk('sph',.35,.35,.35,'#fff',.4,.85,.7));
+    g.add(mk('sph',.16,.16,.16,'#111',-.42,.88,.82));g.add(mk('sph',.16,.16,.16,'#111',.42,.88,.82));
+    for(let i=0;i<4;i++){
+      g.add(mk('cone',.12,.28,.12,'#fff',-.45+i*.3,.32,1.05));
+      const t=mk('cone',.1,.22,.1,'#fff',-.4+i*.28,-.05,1.0);t.rotation.x=Math.PI;g.add(t);
+    }
+    const crest=mk('cone',.35,.7,.35,p.crest||'#f77f00',0,1.25,-.15);g.add(crest);
+    return g;},
+  tacoShell(p){const g=new THREE.Group(),shell=p.color||'#e9c46a',fill=p.fill||'#f4a261',top=p.top||'#2a9d8f';
+    const L=mk('box',.22,1.6,2.4,shell,-.55,.1,0);L.rotation.z=.55;g.add(L);
+    const R=mk('box',.22,1.6,2.4,shell,.55,.1,0);R.rotation.z=-.55;g.add(R);
+    g.add(mk('box',1.0,.35,2.1,fill,0,.35,0));
+    g.add(mk('box',.85,.25,1.9,top,0,.55,0));
+    g.add(mk('sph',.22,.22,.22,'#e63946',-.25,.7,.4));
+    g.add(mk('sph',.18,.18,.18,'#ffbe0b',.3,.72,-.2));
+    g.add(mk('sph',.16,.16,.16,'#fff',0,.75,.1));
+    return g;},
+  rollcage(p){const g=new THREE.Group(),c=p.color||'#f8f9fa';
+    g.add(mk('box',.1,1.1,.1,c,-.85,.55,.6));g.add(mk('box',.1,1.1,.1,c,.85,.55,.6));
+    g.add(mk('box',.1,1.1,.1,c,-.85,.55,-.7));g.add(mk('box',.1,1.1,.1,c,.85,.55,-.7));
+    g.add(mk('box',1.8,.1,.1,c,0,1.15,.6));g.add(mk('box',1.8,.1,.1,c,0,1.15,-.7));
+    g.add(mk('box',.1,.1,1.4,c,-.85,1.15,-.05));g.add(mk('box',.1,.1,1.4,c,.85,1.15,-.05));
+    return g;},
+  fatTire(p){const g=new THREE.Group();
+    const tire=mk('cyl',p.r||.95,p.w||.7,p.r||.95,'#222');tire.rotation.z=Math.PI/2;g.add(tire);
+    const hub=mk('cyl',(p.r||.95)*.45,(p.w||.7)*1.05,(p.r||.95)*.45,p.hub||'#ffd60a');hub.rotation.z=Math.PI/2;g.add(hub);
     return g;}
 };
+
+function mountPart(c,id,opts){
+  const fn=PARTS[id];if(!fn){console.warn('Unknown car part',id);return;}
+  const g=fn(opts||{});
+  if(opts&&opts.at)g.position.set(opts.at[0],opts.at[1],opts.at[2]);
+  if(opts&&opts.rot)g.rotation.set(opts.rot[0]||0,opts.rot[1]||0,opts.rot[2]||0);
+  if(opts&&opts.scale)g.scale.setScalar(opts.scale);
+  c.g.add(g);return g;
+}
+
+function buildMonster(){const c=base();
+  [[-1.9,1.6],[1.9,1.6],[-1.9,-1.6],[1.9,-1.6]].forEach(([x,z])=>W(c,2.6,1.1,x,1.3,z,'#ffd60a'));
+  add(c,mk('box',2.2,0.5,4.2,'#444',0,1.6,0),mk('box',3.4,1.1,4.8,'#e63946',0,2.6,0),mk('box',3.45,0.3,2.6,'#ffbe0b',0,2.6,0.9),
+    mk('box',2.8,1.1,2.2,'#e63946',0,3.7,-0.5),mk('box',2.9,0.7,1.9,'#1d3557',0,3.75,-0.5),mk('box',2.7,0.2,2.1,'#e63946',0,4.3,-0.5),
+    mk('box',0.6,0.4,0.15,null,-1.1,2.75,2.42,glow('#fff6a0')),mk('box',0.6,0.4,0.15,null,1.1,2.75,2.42,glow('#fff6a0')));
+  c.ex.set(0,2.4,-2.7);c.h=4.5;return c;}
+function buildRocket(){const c=base();
+  [[-1.15,1.5],[1.15,1.5],[-1.15,-1.5],[1.15,-1.5]].forEach(([x,z])=>W(c,1.1,0.6,x,0.55,z));
+  const nose=mk('cone',2.0,1.8,0.7,'#3a86ff',0,0.85,3.1);nose.rotation.x=Math.PI/2;
+  const ex=mk('cyl',0.9,0.6,0.9,'#555',0,0.9,-2.4);ex.rotation.x=Math.PI/2;
+  const fl=mk('cyl',0.6,0.1,0.6,null,0,0.9,-2.72,glow('#ff7b00'));fl.rotation.x=Math.PI/2;
+  add(c,mk('box',2.0,0.7,4.4,'#3a86ff',0,0.85,0),mk('box',2.05,0.2,4.45,'#ffffff',0,0.95,0),nose,mk('sph',1.1,0.8,1.6,'#9be7ff',0,1.35,0.2),
+    mk('box',0.15,1.2,1.0,'#ff006e',-0.8,1.4,-1.8),mk('box',0.15,1.2,1.0,'#ff006e',0.8,1.4,-1.8),mk('box',0.15,1.0,1.0,'#ff006e',0,1.6,-1.9),ex,fl);
+  mountPart(c,'rockets',{at:[0,1.15,-.2],color:'#ff006e',fin:'#ffd60a'});
+  c.ex.set(0,0.9,-3);c.h=2.2;return c;}
+function buildShark(){const c=base();
+  [[-1.15,1.6],[1.15,1.6],[-1.15,-1.6],[1.15,-1.6]].forEach(([x,z])=>W(c,1.0,0.5,x,0.5,z));
+  const fin=mk('cone',0.25,1.6,1.4,'#6c7a89',0,2.75,-0.3);fin.rotation.x=-0.35;
+  const t1=mk('box',0.2,1.4,0.6,'#6c7a89',0,2.0,-2.8);t1.rotation.x=0.6;const t2=mk('box',0.2,1.1,0.6,'#6c7a89',0,1.05,-2.8);t2.rotation.x=-0.6;
+  add(c,mk('sph',2.4,1.7,5.2,'#7d8da1',0,1.4,0),mk('sph',2.0,1.0,4.6,'#f1f1f1',0,1.0,0.1),fin,t1,t2,
+    mk('sph',0.55,0.55,0.55,'#fff',-0.8,1.85,1.6),mk('sph',0.55,0.55,0.55,'#fff',0.8,1.85,1.6),
+    mk('sph',0.28,0.28,0.28,'#111',-0.92,1.9,1.8),mk('sph',0.28,0.28,0.28,'#111',0.92,1.9,1.8),mk('box',1.4,0.14,0.12,'#8b0000',0,1.05,2.45));
+  for(let i=0;i<5;i++){const t=mk('cone',0.2,0.32,0.2,'#fff',-0.56+i*0.28,1.15,2.47);t.rotation.x=Math.PI;c.g.add(t);}
+  mountPart(c,'rockets',{at:[0,1.55,-.6],color:'#6c7a89',fin:'#e63946',glow:'#48cae4'});
+  c.ex.set(0,1.2,-3);c.h=3.5;return c;}
+function buildDino(){const c=base();
+  [-1.4,0,1.4].forEach(z=>{W(c,0.85,1.0,-1.5,0.55,z,'#888');W(c,0.85,1.0,1.5,0.55,z,'#888');});
+  const tail=mk('cone',0.9,1.8,0.9,'#52b788',0,1.6,-2.4);tail.rotation.x=-Math.PI/2;
+  add(c,mk('box',0.9,1.1,4.2,'#333',-1.5,0.55,0),mk('box',0.9,1.1,4.2,'#333',1.5,0.55,0),mk('box',2.4,1.4,3.2,'#52b788',0,1.6,0),
+    mk('box',1.8,1.3,1.6,'#52b788',0,2.9,-0.4),mk('box',1.85,0.6,1.2,'#1d3557',0,3.0,-0.4),tail,
+    mk('sph',0.55,0.55,0.55,'#fff',-0.5,3.75,0.2),mk('sph',0.55,0.55,0.55,'#fff',0.5,3.75,0.2),
+    mk('sph',0.26,0.26,0.26,'#111',-0.5,3.8,0.44),mk('sph',0.26,0.26,0.26,'#111',0.5,3.8,0.44),
+    mk('box',3.6,1.3,0.3,'#ffd60a',0,0.9,2.3),mk('box',0.25,0.25,1,'#555',-1,1.3,1.8),mk('box',0.25,0.25,1,'#555',1,1.3,1.8));
+  [[3.65,-0.75],[3.65,-1.15],[2.5,-1.3]].forEach(([y,z])=>c.g.add(mk('cone',0.5,0.8,0.5,'#f77f00',0,y+0.3,z)));
+  for(let i=0;i<4;i++)c.g.add(mk('cone',0.3,0.45,0.3,'#fff',-1.2+i*0.8,1.75,2.3));
+  mountPart(c,'cannon',{at:[0,2.55,1.55],color:'#2d6a4f',tip:'#081c15',band:'#ffd60a'});
+  c.ex.set(0,1.6,-3.2);c.h=4.3;return c;}
+function buildIceCream(){const c=base();
+  [[-1.3,1.6],[1.3,1.6],[-1.3,-1.6],[1.3,-1.6]].forEach(([x,z])=>W(c,1.3,0.6,x,0.65,z));
+  const cone=mk('cone',1.4,2.0,1.4,'#d4a373',0,4.05,0);cone.rotation.x=Math.PI;
+  add(c,mk('box',2.6,2.4,4.6,'#ffafcc',0,1.85,0),mk('box',2.65,0.35,4.65,'#ffffff',0,1.2,0),mk('box',2.4,0.9,0.1,'#1d3557',0,2.4,2.31),
+    mk('box',0.1,0.9,1.8,'#1d3557',1.31,2.2,-0.5),mk('box',0.1,0.9,1.8,'#1d3557',-1.31,2.2,-0.5),cone,
+    mk('sph',1.6,1.6,1.6,'#ff8fab',0,5.3,0),mk('sph',1.3,1.3,1.3,'#b9fbc0',0,6.2,0),mk('sph',0.45,0.45,0.45,'#e63946',0,6.95,0));
+  c.ex.set(0,0.8,-2.5);c.h=7.2;return c;}
+function buildHotdog(){const c=base();
+  [[-1.25,1.7],[1.25,1.7],[-1.25,-1.7],[1.25,-1.7]].forEach(([x,z])=>W(c,1.0,0.5,x,0.5,z));
+  add(c,mk('sph',2.6,1.2,5.4,'#e9c46a',0,1.0,0),mk('sph',1.3,1.1,6.0,'#c1121f',0,1.6,0));
+  for(let i=0;i<6;i++){const m=mk('box',0.9,0.12,0.2,'#ffd60a',0,2.17,-2+i*0.8);m.rotation.y=i%2?0.6:-0.6;c.g.add(m);}
+  c.ex.set(0,1,-3);c.h=2.4;return c;}
+function buildFire(){const c=base();
+  [2.0,-1.0,-2.2].forEach(z=>{W(c,1.3,0.6,-1.3,0.65,z);W(c,1.3,0.6,1.3,0.65,z);});
+  add(c,mk('box',2.6,1.8,6,'#d62828',0,1.6,0),mk('box',2.65,0.22,6.05,'#ffffff',0,1.3,0),mk('box',2.6,1.0,1.6,'#d62828',0,3.0,2.0),
+    mk('box',2.65,0.6,1.3,'#1d3557',0,3.05,2.0),mk('box',0.5,0.3,0.4,null,-0.6,3.65,2.2,glow('#ff1e1e')),mk('box',0.5,0.3,0.4,null,0.6,3.65,2.2,glow('#1e6bff')),
+    mk('box',0.15,0.15,5,'#dddddd',-0.6,2.75,-0.7),mk('box',0.15,0.15,5,'#dddddd',0.6,2.75,-0.7));
+  for(let z=-3;z<=1.7;z+=0.7)c.g.add(mk('box',1.3,0.12,0.12,'#dddddd',0,2.75,z));
+  mountPart(c,'cannon',{at:[0,3.55,1.35],color:'#6c757d',tip:'#212529',band:'#ffd60a'});
+  c.ex.set(0,0.8,-3.2);c.h=3.9;return c;}
+function buildBubble(){const c=base();
+  [[-1.3,1.1],[1.3,1.1],[-1.3,-1.1],[1.3,-1.1]].forEach(([x,z])=>W(c,1.0,0.6,x,0.5,z,'#ffbe0b'));
+  add(c,mk('sph',3.2,2.6,3.6,'#9d4edd',0,1.7,0),mk('sph',2.6,1.8,2.4,'#a0f0ff',0,2.2,0.6),mk('cyl',0.08,1.4,0.08,'#333',0,3.6,-0.6),
+    mk('sph',0.45,0.45,0.45,'#ffbe0b',0,4.35,-0.6),mk('sph',0.5,0.5,0.5,null,-0.8,1.4,1.7,glow('#fff6a0')),mk('sph',0.5,0.5,0.5,null,0.8,1.4,1.7,glow('#fff6a0')));
+  c.ex.set(0,1,-2);c.h=4.7;return c;}
+
+/* tier 0 = humble starters, 3 = coolest smash machines. weapon is visible on tier 2–3. */
+const CARS=[
+  {name:'Big Bouncer',emoji:'🛻',speed:24,r:2.6,tier:1,build:buildMonster},
+  {name:'Rocket Racer',emoji:'🚀',speed:32,r:2.0,tier:3,weapon:'rocket',build:buildRocket},
+  {name:'Shark Attack',emoji:'🦈',speed:27,r:2.2,tier:3,weapon:'rocket',build:buildShark},
+  {name:'Dino Dozer',emoji:'🦖',speed:21,r:2.8,tier:2,weapon:'cannon',build:buildDino},
+  {name:'Ice Cream Smasher',emoji:'🍦',speed:24,r:2.4,tier:0,build:buildIceCream},
+  {name:'Hot Dog Hot Rod',emoji:'🌭',speed:28,r:2.3,tier:1,build:buildHotdog},
+  {name:'Fire Truck',emoji:'🚒',speed:25,r:2.6,tier:2,weapon:'cannon',build:buildFire},
+  {name:'Bubble Buggy',emoji:'🫧',speed:26,r:2.2,tier:0,build:buildBubble}
+];
 
 /* ---------- car recipes ----------
    One Kenney base + a paint color + parts from the library above + an optional tweak.
@@ -140,37 +205,68 @@ const RECIPES=[
       {id:'stripe',at:[0,.55,0],color:'#222',w:2.15,h:.16,d:3.9},
       {id:'roofsign',at:[0,2.42,.15],color:'#111'},
       {id:'glass',at:[0,1.85,1.15],w:1.35,h:.42}]},
-  {name:'Hose Hero',emoji:'🚒',base:'firetruck.glb',speed:24,r:2.3,tier:2,scale:1.324,height:2.55,
+  {name:'Hose Hero',emoji:'🚒',base:'firetruck.glb',speed:24,r:2.3,tier:2,weapon:'cannon',scale:1.324,height:2.55,
     paint:'#d62828',exhaust:[0,.8,-2.15],
     parts:[
       {id:'stripe',at:[0,1.15,0],color:'#f8f9fa',w:2.05,h:.14,d:4.15},
       {id:'ladder',at:[0,2.2,-.15],color:'#f8f9fa'},
-      {id:'lightbar',at:[0,2.35,1.15],a:'#ff2d55',b:'#ff2d55'}]},
-  {name:'Dash Racer',emoji:'🏎️',base:'race.glb',speed:30,r:2.15,tier:2,scale:1.758,height:1.7,
+      {id:'lightbar',at:[0,2.35,1.15],a:'#ff2d55',b:'#ff2d55'},
+      {id:'cannon',at:[0,2.05,2.05],color:'#495057',tip:'#212529',band:'#ffd60a'}]},
+  {name:'Dash Racer',emoji:'🏎️',base:'race.glb',speed:30,r:2.15,tier:2,weapon:'cannon',scale:1.758,height:1.7,
     paint:'#3a86ff',exhaust:[0,.45,-2.05],
     parts:[
       {id:'stripe',at:[0,1.22,.15],color:'#fff',w:.22,h:.06,d:3.3},
       {id:'spoiler',at:[0,1.05,-1.55],color:'#ffd60a'},
-      {id:'glass',at:[0,.95,.85],color:'#caf0f8',w:1.05,h:.28}]},
-  {name:'Honk Bus',emoji:'🚌',base:'van.glb',speed:22,r:2.45,tier:2,scale:1.636,tweak:[1,1.08,1.12],height:2.7,
+      {id:'glass',at:[0,.95,.85],color:'#caf0f8',w:1.05,h:.28},
+      {id:'cannon',at:[0,.85,1.85],color:'#1d3557',tip:'#0a1628',band:'#ff006e',scale:.85}]},
+  {name:'Honk Bus',emoji:'🚌',base:'van.glb',speed:22,r:2.45,tier:2,weapon:'cannon',scale:1.636,tweak:[1,1.08,1.12],height:2.7,
     paint:'#ffbe0b',exhaust:[0,.7,-2.3],
     parts:[
       {id:'stripe',at:[0,1.35,0],color:'#222',w:2.35,h:.2,d:4.5},
       {id:'lightbar',at:[0,2.45,.4],a:'#ff2d55',b:'#ffd60a'},
       {id:'stopSign',at:[1.35,1.45,1.55],color:'#e63946'},
-      {id:'glass',at:[0,1.85,1.35],w:1.7,h:.5}]},
-  {name:'Snow Pusher',emoji:'❄️',base:'truck.glb',speed:21,r:2.35,tier:2,scale:1.525,height:2.2,
+      {id:'glass',at:[0,1.85,1.35],w:1.7,h:.5},
+      {id:'cannon',at:[0,2.15,1.95],color:'#6c757d',band:'#ffbe0b'}]},
+  {name:'Snow Pusher',emoji:'❄️',base:'truck.glb',speed:21,r:2.35,tier:2,weapon:'cannon',scale:1.525,height:2.2,
     paint:'#e7f5ff',exhaust:[0,.7,-2.1],
     parts:[
       {id:'stripe',at:[0,1.15,.2],color:'#3a86ff',w:2.1,h:.16,d:2.2},
       {id:'plow',at:[0,.95,2.55],color:'#ff9f1c'},
-      {id:'lightbar',at:[0,1.95,.55],a:'#ffd60a',b:'#ffd60a'}]},
-  {name:'Spinny Mixer',emoji:'🌀',base:'truck.glb',speed:20,r:2.4,tier:2,scale:1.525,height:2.7,
+      {id:'lightbar',at:[0,1.95,.55],a:'#ffd60a',b:'#ffd60a'},
+      {id:'cannon',at:[0,1.85,1.15],color:'#adb5bd',tip:'#343a40',band:'#3a86ff'}]},
+  {name:'Spinny Mixer',emoji:'🌀',base:'truck.glb',speed:20,r:2.4,tier:2,weapon:'cannon',scale:1.525,height:2.7,
     paint:'#f77f00',exhaust:[0,.7,-2.1],
     parts:[
       {id:'drum',at:[0,1.55,-.35],color:'#fff3bf',band:'#f77f00'},
       {id:'chute',at:[.85,1.3,-1.15],rot:[0,.9,0],color:'#dee2e6'},
-      {id:'stripe',at:[0,.7,.4],color:'#fff',w:1.9,h:.12,d:1.6}]}
+      {id:'stripe',at:[0,.7,.4],color:'#fff',w:1.9,h:.12,d:1.6},
+      {id:'cannon',at:[0,1.35,2.05],color:'#495057',band:'#f77f00'}]},
+  /* D4 wish-list: T-rex truck, taco truck, monster truck */
+  {name:'Rex Rammer',emoji:'🦕',base:'truck.glb',speed:22,r:2.55,tier:3,weapon:'rocket',scale:1.525,tweak:[1.05,1.12,1.08],height:3.4,
+    paint:'#52b788',exhaust:[0,.75,-2.15],
+    parts:[
+      {id:'trexHead',at:[0,1.55,2.35],color:'#52b788',jaw:'#2d6a4f',crest:'#f77f00'},
+      {id:'stripe',at:[0,.85,.1],color:'#ffd60a',w:2.05,h:.14,d:2.4},
+      {id:'rockets',at:[0,1.45,-.55],color:'#40916c',fin:'#ffd60a',glow:'#95d5b2'}]},
+  {name:'Taco Tornado',emoji:'🌮',base:'van.glb',speed:24,r:2.4,tier:2,weapon:'cannon',scale:1.636,tweak:[1.02,1.1,1.05],height:3.1,
+    paint:'#f4a261',exhaust:[0,.75,-2.25],
+    parts:[
+      {id:'tacoShell',at:[0,2.35,0],color:'#e9c46a',fill:'#e76f51',top:'#2a9d8f'},
+      {id:'stripe',at:[0,1.15,0],color:'#e63946',w:2.3,h:.16,d:4.2},
+      {id:'roofsign',at:[0,3.15,.2],color:'#e63946'},
+      {id:'cannon',at:[0,1.85,2.05],color:'#2a9d8f',tip:'#264653',band:'#e9c46a'},
+      {id:'glass',at:[0,1.75,1.35],w:1.55,h:.45,color:'#ffe8d6'}]},
+  {name:'Stomp King',emoji:'🛞',base:'suv.glb',speed:23,r:2.7,tier:3,weapon:'rocket',scale:1.667,tweak:[1.12,1.4,1.08],y:.15,height:3.6,
+    paint:'#e63946',exhaust:[0,1.1,-2.2],
+    parts:[
+      {id:'fatTire',at:[-1.55,.95,1.45],r:1.05,w:.85,hub:'#ffd60a'},
+      {id:'fatTire',at:[1.55,.95,1.45],r:1.05,w:.85,hub:'#ffd60a'},
+      {id:'fatTire',at:[-1.55,.95,-1.45],r:1.05,w:.85,hub:'#ffd60a'},
+      {id:'fatTire',at:[1.55,.95,-1.45],r:1.05,w:.85,hub:'#ffd60a'},
+      {id:'rollcage',at:[0,2.15,-.1],color:'#f8f9fa'},
+      {id:'stripe',at:[0,1.55,.2],color:'#ffd60a',w:2.2,h:.18,d:3.4},
+      {id:'rockets',at:[0,1.85,-.35],color:'#9b2226',fin:'#ffd60a',glow:'#ff7b00'},
+      {id:'spoiler',at:[0,2.55,-1.55],color:'#111'}]}
 ];
 
 /* ---------- Kenney cars ----------
