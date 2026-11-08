@@ -2457,6 +2457,96 @@ function updateHUD(){
   const tp=players.find(q=>q.src==='touch');if(tp){$('bJump').textContent=tp.stuck?'💥':'JUMP';$('bSwap').textContent=levelReady?'⬆️':'🔄';bFire.style.display='flex';}
 }
 
+/* ---------- L47: where do we go? quest marker + mini-map ---------- */
+/* The marker: a big bouncing arrow (white outline) over the quest target with a light beam down to the ground, drawn
+   over everything and sized to the camera so it reads at every size. Gold = main quest, blue = side quest. It replaces
+   quests.js's little cone (questArrow3, hidden here each frame); #questArrow (the edge icon) gets .side for blue.
+   The mini-map (#miniMap): a round 2D canvas in a corner, redrawn ~10×/s (no extra 3D render): zone ground, painted
+   spots, roads, givers as their emoji (❗ = has a quest for you), the target pulsing, both cars as dots, north (−Z) up.
+   It zooms with size: ~1 chunk around the cars at micro, the whole world at GIANT. Look: D25 (style.css). */
+const QM_GOLD='#ffd60a',QM_BLUE='#3a86ff';
+const qmMark=(()=>{const g=new THREE.Group(),V=(a,b)=>new THREE.Vector2(a,b);
+  const mat=(c,o)=>new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:o,depthTest:false,depthWrite:false});
+  const out=new THREE.Mesh(new THREE.LatheGeometry([V(0,-0.22),V(1.25,1.06),V(0.64,1.06),V(0.64,2.48),V(0,2.48)],16),mat('#ffffff',1));
+  const arrow=new THREE.Mesh(new THREE.LatheGeometry([V(0,0),V(1,1),V(0.42,1),V(0.42,2.3),V(0,2.3)],16),mat(QM_GOLD,1));
+  out.renderOrder=998;arrow.renderOrder=999;
+  const bg=new THREE.CylinderGeometry(1,1,1,16,1,true).translate(0,0.5,0),n=bg.attributes.position.count,col=new Float32Array(n*3);
+  for(let i=0;i<n;i++){const k=bg.attributes.position.getY(i)>0.5?0:1;col[i*3]=col[i*3+1]=col[i*3+2]=k;} // fades out toward the top
+  bg.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const beam=new THREE.Mesh(bg,new THREE.MeshBasicMaterial({color:QM_GOLD,vertexColors:true,transparent:true,opacity:0.55,blending:THREE.AdditiveBlending,depthWrite:false}));
+  beam.renderOrder=997;
+  const top=new THREE.Group();top.add(out,arrow);g.add(top,beam);g.visible=false;scene.add(g);
+  for(const m of [out,arrow,beam])m.frustumCulled=false;
+  return {g,top,arrow,beam};})();
+let qmTarget=null,qmMain=true;
+// the quest the target belongs to: the running one, else the giver the arrow leads to
+function qmQuest(){if(typeof questA!=='undefined'&&questA&&questA.st)return questA.q;
+  return (typeof questPoint!=='undefined'&&questPoint&&QUESTS[questPoint])||(typeof questMain==='function'?questMain(questChapter()):null);}
+function updateQuestMarker(){
+  let tg=null;try{tg=questOn&&typeof questTarget==='function'?questTarget():null;}catch(e){tg=null;}
+  qmTarget=tg;if(typeof questArrow3!=='undefined')questArrow3.visible=false;
+  const q=tg&&qmQuest();qmMain=!q||!!q.main;const c=qmMain?QM_GOLD:QM_BLUE;
+  if(typeof questArrowEl!=='undefined')questArrowEl.classList.toggle('side',!qmMain);
+  const M=qmMark;M.g.visible=!!tg;if(!tg)return;
+  M.arrow.material.color.set(c);M.beam.material.color.set(c);
+  const s=typeof qS==='function'?qS():S,k=Math.max(0.9*s,camDist*0.042),gy=groundH(tg[0],tg[1]),tip=3.2*s+k*(0.5+0.45*Math.abs(Math.sin(T*4.5)));
+  M.g.position.set(tg[0],gy,tg[1]);M.top.position.y=tip;M.top.scale.setScalar(k);M.top.rotation.y=T*2.2;
+  M.beam.scale.set(k*0.32,tip+k*2.3,k*0.32);M.beam.material.opacity=0.4+0.15*Math.sin(T*6);}
+
+const miniMap=document.createElement('canvas');miniMap.id='miniMap';miniMap.style.display='none';$('hud').appendChild(miniMap);
+const mmCtx=miniMap.getContext('2d');let mmT=0;const mmInfo={R:0,cx:0,cz:0};
+{const st=document.createElement('style');st.textContent=`
+:where(#miniMap){position:absolute;right:14px;top:72px;width:clamp(150px,14vw,230px);height:clamp(150px,14vw,230px);border-radius:50%;
+  border:5px solid #fff;box-shadow:0 5px 0 #0003;background:#0004;pointer-events:none;z-index:4}
+:where(#questArrow.side){background:radial-gradient(#cfe1ff,#3a86ff);box-shadow:0 0 24px #3a86ff}`;document.head.appendChild(st);}
+function mmView(){const n=GROW_S.length-1,idx=giant?n:Math.min(tier,n),f=idx/n;
+  if(roomZ)return {R:WB*1.12,cx:0,cz:0};
+  let px=0,pz=0;for(const p of players){px+=p.x;pz+=p.z;}if(players.length){px/=players.length;pz/=players.length;}
+  let R=60*Math.pow((ARENA+30)/60,f);for(const p of players)R=Math.max(R,Math.hypot(p.x-px,p.z-pz)*1.25+20);
+  const w=f*f;return {R,cx:px*(1-w),cz:pz*(1-w)};}
+function updateMiniMap(dt){
+  const show=questOn&&state==='play'&&!garageAll()&&players.length>0;
+  miniMap.style.display=show?'':'none';if(!show||(mmT-=dt)>0)return;mmT=0.1;
+  const px=Math.round((miniMap.clientWidth||200)*Math.min(2,devicePixelRatio||1));
+  if(miniMap.width!==px){miniMap.width=miniMap.height=px;}
+  const W=px,h=W/2,{R,cx,cz}=mmView(),sc=h/R,X=x=>h+(x-cx)*sc,Z=z=>h+(z-cz)*sc,c=mmCtx;Object.assign(mmInfo,{R,cx,cz});
+  c.save();c.clearRect(0,0,W,W);c.beginPath();c.arc(h,h,h,0,Math.PI*2);c.clip();
+  c.fillStyle='#24452a';c.fillRect(0,0,W,W);
+  // ground: zone colors per chunk (or the room floor)
+  if(roomZ){c.fillStyle=(roomZ.indoor&&roomZ.indoor.floor)||'#c9a27a';c.fillRect(X(-WB),Z(-WB),2*WB*sc,2*WB*sc);}
+  else for(let j=-CHUNKS_HALF;j<=CHUNKS_HALF;j++)for(let i=-CHUNKS_HALF;i<=CHUNKS_HALF;i++){
+    const x0=i*CHUNK-CHUNK/2,z0=j*CHUNK-CHUNK/2;if(x0>cx+R||x0+CHUNK<cx-R||z0>cz+R||z0+CHUNK<cz-R)continue;
+    const row=zoneRows[j+CHUNKS_HALF],L=(row&&row[i+CHUNKS_HALF])||'P';c.fillStyle=ZONE_GROUND[L]||'#86d863';c.fillRect(X(x0)-0.5,Z(z0)-0.5,CHUNK*sc+1,CHUNK*sc+1);}
+  // painted spots of the built chunks (ponds, fields, sidewalks…), big ones first
+  const min=Math.max(1,R/90);
+  for(const ch of chunks.values()){if(!ch.spots||ch.x0>cx+R||ch.x0+CHUNK<cx-R||ch.z0>cz+R||ch.z0+CHUNK<cz-R)continue;
+    for(const q of ch.spots){if(q.hx<min&&q.hz<min)continue;const col=spotLookOf(ch,q.kind);if(!col)continue;
+      c.fillStyle=col;c.setTransform(sc*q.cs,-sc*q.sn,sc*q.sn,sc*q.cs,X(q.x),Z(q.z));c.fillRect(-q.hx,-q.hz,2*q.hx,2*q.hz);c.setTransform(1,0,0,1,0,0);}}
+  // roads
+  if(roadsOn&&!roomZ){c.fillStyle='#4a4f5a';const rw=Math.max(2,ROAD_W*sc);
+    for(let r=-Math.floor(ARENA/ROAD_EVERY)*ROAD_EVERY;r<=ARENA;r+=ROAD_EVERY){c.fillRect(X(r)-rw/2,Z(-ARENA),rw,2*ARENA*sc);c.fillRect(X(-ARENA),Z(r)-rw/2,2*ARENA*sc,rw);}}
+  c.strokeStyle='#ffffffaa';c.lineWidth=Math.max(2,W/90);c.strokeRect(X(-WB),Z(-WB),2*WB*sc,2*WB*sc);
+  // givers: their emoji, ❗ when they have a quest for you
+  const fs=Math.round(W*0.1);c.textAlign='center';c.textBaseline='middle';
+  if(!roomZ&&typeof QUEST_LIST!=='undefined'){const seen=new Set();
+    for(const q0 of QUEST_LIST){const gid=q0.giver.id;if(seen.has(gid))continue;seen.add(gid);
+      let q,at;try{q=questGiverQuest(gid);at=q&&questGiverAt(q);}catch(e){q=null;}if(!q||!at)continue;
+      const gx=X(at[0]),gz=Z(at[1]);if(Math.hypot(gx-h,gz-h)>h)continue;
+      const open=!questDone.has(q.id)&&!(questA&&questA.q===q);
+      c.globalAlpha=open||(questA&&questA.q===q)?1:0.55;c.font=fs+'px sans-serif';c.fillText(q.giver.emoji||'🙂',gx,gz);
+      if(open){c.font='bold '+Math.round(fs*0.7)+'px sans-serif';c.fillStyle='#e63946';c.fillText('❗',gx+fs*0.45,gz-fs*0.45);}c.globalAlpha=1;}}
+  // the target: a pulsing ring + its icon (pinned to the rim when it's off the map)
+  if(qmTarget){let tx=X(qmTarget[0]),tz=Z(qmTarget[1]);const d=Math.hypot(tx-h,tz-h),lim=h-fs*0.6;
+    if(d>lim){tx=h+(tx-h)/d*lim;tz=h+(tz-h)/d*lim;}
+    const pr=fs*(0.55+0.2*Math.abs(Math.sin(T*5)));c.beginPath();c.arc(tx,tz,pr,0,Math.PI*2);c.fillStyle=(qmMain?QM_GOLD:QM_BLUE)+'99';c.fill();
+    c.lineWidth=Math.max(2,W/70);c.strokeStyle='#fff';c.stroke();c.font=Math.round(fs*0.8)+'px sans-serif';c.fillStyle='#000';c.fillText(qmTarget[2]||'⭐',tx,tz);}
+  // the cars: dots in the players' colors with a nose showing which way they face
+  const cr=Math.max(4,W*0.035);
+  for(const p of players){const x=X(p.x),z=Z(p.z),hx=Math.sin(p.heading),hz=Math.cos(p.heading);
+    c.beginPath();c.moveTo(x+hx*cr*1.9,z+hz*cr*1.9);c.lineTo(x-hz*cr,z+hx*cr);c.lineTo(x+hz*cr,z-hx*cr);c.closePath();c.fillStyle='#fff';c.fill();
+    c.beginPath();c.arc(x,z,cr,0,Math.PI*2);c.fillStyle=p.color;c.fill();c.lineWidth=Math.max(2,W/80);c.strokeStyle='#fff';c.stroke();}
+  c.restore();}
+
 /* ---------- loop ---------- */
 let last=performance.now(),T=0;
 music('title'); // starts on the first tap/key (browsers need a gesture before audio)
@@ -2477,7 +2567,7 @@ function loop(now){
     for(const p of players){const s=src[p.src]||{x:0,z:0};if(levelReady&&!garage&&(s.levelP||s.swapP))levelUp();else if(s.fire&&!p.inG&&hasAbility('shoot')){shoot(p);abilUse('shoot');}p.update(dt,s);}
     if(garage)updateGarage(dt,src);
   }
-  updateGrowth(dt);updateStreaming(dt);updateQuests(dt);updateSave(dt);
+  updateGrowth(dt);updateStreaming(dt);updateQuests(dt);updateQuestMarker();updateMiniMap(dt);updateSave(dt);
   if(state==='play'&&!garageAll()){collisions();updateBoss(dt);}
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
   updateRoom(dt);updatePortals(dt);updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateCombo(dt);if(!garage){updateGold(dt);updatePads(dt);}if(!garageAll()){updateScatter(dt);updateScenes(dt);updateAnimals(dt);}updateRollers(dt);updateSpin(dt);updateShots(dt);updatePerks(dt);updateCarExtras(dt);updateDebris(dt);updateParts(dt);updatePuffs(dt);
@@ -2497,7 +2587,8 @@ function showSpots(on){if(spotView){scene.remove(spotView);spotView.traverse(m=>
     const col=cols[q.kind]||(cols[q.kind]=new THREE.MeshBasicMaterial({color:new THREE.Color().setHSL(Object.keys(cols).length*0.17%1,0.9,0.55),transparent:true,opacity:0.35,depthWrite:false}));
     const m=new THREE.Mesh(new THREE.PlaneGeometry(q.hx*2,q.hz*2),col);m.rotation.set(-Math.PI/2,0,Math.atan2(q.sn,q.cs));m.position.set(q.x,groundH(q.x,q.z)+0.06,q.z);g.add(m);}
   scene.add(g);spotView=g;return count;}
-window.__sp={world:id=>id?enterWorld(id):{world:worldId,worlds:Object.keys(WORLDS),lands:landList().map(w=>w.id),unlocked:worldsUnlocked(),adv:[...advLands]}, // L33: __sp.world('dino') jumps there
+window.__sp={map:()=>({shown:miniMap.style.display!=='none',...mmInfo,target:qmTarget,main:qmMain,marker:qmMark.g.visible}), // L47
+  world:id=>id?enterWorld(id):{world:worldId,worlds:Object.keys(WORLDS),lands:landList().map(w=>w.id),unlocked:worldsUnlocked(),adv:[...advLands]}, // L33: __sp.world('dino') jumps there
   portals(){if(!portals.some(p=>!p.start))portalsOpen();return portals.map(p=>p.kind);}, // raise the after-boss portals here
   scene:(id)=>spawnScene(players[0],true,id),sceneAt:(id,dz=-30)=>sceneAt(id,players[0].x,players[0].z+dz*Math.max(S,0.3),0,null,{key:'test'}),sceneClear,scenes:()=>Object.fromEntries(sceneDefs(zoneXZ(players[0].x,players[0].z)).map(([i,d])=>[i,d.size])),sceneStats,room:(on=true)=>{rollWorld(true,on?"bedroom":"outside");return on?"bedroom":"outside";},spots:(on)=>spotView&&on!==true?showSpots(false):showSpots(on),mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,zone:testZone,zones:ZONES,gold:spawnGold,pad:placePad,pads,
   boss(id){if(!giant){tier=SIZES.length-1;growth=MAX_GROW;levelReady=true;levelUp();newCars(true);}if(!boss)summonBoss(id);return boss&&boss.def.name;}, // __sp.boss('shelldozer')
