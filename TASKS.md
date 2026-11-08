@@ -171,9 +171,10 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 - [x] **Z2: Dino Valley zone** `NEEDS DESIGN` (zone-dino agent, see `agents/zone.md`; needs L15 ✅)
   - `src/world/zones/dino.js` from the template: warm jungle ground, ferns, palm trees, boulders, volcano mega set piece, giant eggs and bones, 15+ props across micro…mega. Goofy, never scary. Dino animals → `NEEDS DESIGN` for world-animals (+ `NEEDS LOGIC` for their sounds/herds).
   - Done: `src/world/zones/dino.js` (letter D, jungle ground, teal/warm sky). 28 block-built props, 3–4 per size: eggs, sprouts, bones, amber (micro) · ferns, rocks, shells · nests, stumps, flowers · big eggs, cycads, bones, crystals · boulders, hatchling eggs, logs, toadstools · palms, tree ferns, stone huts (BP), ribcages · a timber lodge (BP), a grinning long-neck skeleton, a giant nest · a stepped temple (BP), a hedge T-rex and a smiling volcano (BP, one per world, at the heart of the dino blob). Landmark chunks: volcano, temple, rex, villages (lodge + huts), skeleton, nest, dig site; the rest is wild jungle with ramps. Draw calls about the same as town/park (tiny ~170, medium ~295, huge ~455).
-- [ ] **D14: Dino animals** `NEEDS DESIGN` (world-animals; from Z2)
+- [x] **D14: Dino animals** `NEEDS DESIGN` (world-animals; from Z2)
   - Dino Valley already asks for herds of `trike`, `stego` and `bronto` (`DINO_HERD_KINDS` and `herds` in `src/world/zones/dino.js`); unknown kinds are skipped, so chicks and ducks stand in today.
   - Add `ANIMAL.trike` (baby triceratops, ~1.6 long), `ANIMAL.stego` (~2 long, rounded back plates) and `ANIMAL.bronto` (long neck, ~3 long) in `src/world/animals.js`. Chubby, big eyes, pastel: goofy, never scary. Each needs a sound (AU5).
+  - ✅ Done in `src/world/animals.js`: **trike** (mint, peach frill with pink bobbles, three soft cream horns; 1.6 long, small), **stego** (lime, alternating coral/lemon round back plates, bobbly tail; 2.2 long, medium), **bronto** (lavender, pale belly, smooth tapered neck and tail; 3.1 long, 2.5 tall, medium). Big googly eyes, smiles and pink cheeks; 6–7 colors and 3.5–4.1k triangles each. Dino Valley herds now spawn them instead of the chick/duck stand-ins (no logic change needed). Sounds still come from AU5 (`trike`, `stego`, `bronto`); until then the launch uses the synth beep.
 - [ ] **AU5: Dino Valley sounds + music** `NEEDS AUDIO` (audio; from zone-dino, Z2 ✅; the dino part of AU2. L22 is needed to play them, but they can be generated now). The ids are already set in `src/world/zones/dino.js` (`music`, `sfx`, `DINO_SFX`). The sound: a sunny, stompy prehistoric jungle, big and boomy but goofy, never scary (no real roars, no growls).
   - **Music** (`tools/music-lines.json`, same chiptune style as the other tracks):
     - `dino_drive` (~90 s loop): a happy jungle stomp: tribal toy drums and log marimba, a bouncy tuba/bass walking line, a whistled or ocarina lead, the odd goofy honk on the beat. Feels like a cartoon dino parade. Seamless loop.
@@ -290,7 +291,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 Design is split by file so both can run at once without conflicts:
 - **Cursor = Cars & UI:** `src/cars.js`, `assets/cars/`, `style.css`. Tasks: D8a, recipe system, D6, D4.
 - **world-props** (Claude Code design): `src/objects.js`, `assets/props/`. Tasks: D8b, then D7.
-- **world-animals** (Claude Code design): `src/world/animals.js`, `assets/props/animals/`. Task: D3.
+- **world-animals** (Claude Code design): `src/world/animals.js`, `assets/props/animals/`. Task: D14 ✅.
 - **world-bosses** (Claude Code design): `src/world/bosses.js`, `assets/props/bosses/`. Task: D5.
 Claude Code's *logic* sessions still own `core.js`, `game.js` and `tools/`. A design session never edits those; it leaves `// TODO(logic):` notes.
 
