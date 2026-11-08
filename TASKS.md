@@ -84,16 +84,15 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 
 > **New car or spoken line?** Car names get a recorded voice automatically, but someone with the ElevenLabs key has to run `node --env-file=.env tools/make-voices.mjs` (see CLAUDE.md). Until then the robot voice reads it.
 
-- [ ] **D0: Size classes + growth HUD styling** (from L2)
-  - Give every smashable a size class: pass `{size:'mini'…'mega'}` in `makeObj`'s opts (see CLAUDE.md). Until then, logic guesses via `TYPE_SIZE` in `game.js`.
-  - Players start tiny, so the home arena (`buildWorld`) and every zone need lots of tiny and small stuff.
-  - Style `#sizeHud` (spans get `.lit` / `.now`, plus `.crown`), `#sizeBar`/`#sizeFill`, `#newWorld` and the `.growPop` bubble in `style.css`. Signal ring colors are `SIGNAL_COL` in game.js. Logic injects plain defaults with zero specificity (`:where()`), so anything in `style.css` wins.
+- [x] **D0: Size classes + growth HUD styling** (from L2)
+  - Done: every prop passes `{size:'micro'…'mega'}`. Flowers and pebbles are micro (the size you start at), bushes are mini, cones are small, houses are huge, and the clock tower, barn, and bounce house are mega.
+  - The home arena puts micro props in front of the start spots (flowers, pebbles, mushrooms, acorns, toy blocks, cans, rubber ducks, snails) plus gnomes, bushes, and hydrants.
+  - `#levelUp` and `#bossHud` use the same chunky style. The size meter glows when a level-up is ready.
+  - `#sizeHud` (`.lit` / `.now` / `.crown`), `#sizeBar`/`#sizeFill`, `#newWorld`, and `.growPop` are styled in `style.css`. `SIGNAL_COL` stays in `game.js` (`#ff2d55` / `#3ddc84`), matching this HUD.
 
-- [ ] **D0 v2: Mini props, size lists, giant stuff** (for L2c)
-  - Sizes are now `mini, tiny, small, medium, large, huge, mega`. Lots of **mini** props: flowers, pebbles, mushrooms, acorns, toy blocks, soda cans, rubber ducks, garden gnomes, snails (original designs only).
-  - ✅ Logic side is done (L2c). Today's props are shrunk or grown as placeholders (e.g. dollhouses at mini size), so real mini props will make a big difference. The size mapping today is in `TYPE_SIZE` (game.js): cone/melon/fence/pin = small, barrel/crates/snowman = medium, tree/tower = large, house = huge.
-  - Fill `const ZONE_PROPS={town:{mini:[...],tiny:[...],...},farm:{...},park:{...}}` with `OBJ` type names per zone per size. Logic scatters from it.
-  - Plan **huge** and **mega** objects using the L3 building contract: apartment tower, water tower, silo, stadium, skyscraper, cargo ship, ferris wheel, mountain-sized "boss" building.
+- [x] **D0 v2: Mini props, size lists, giant stuff** (for L2c)
+  - Done: micro props are flowers, pebbles, mushrooms, acorns, toy blocks, soda cans, rubber ducks, and snails. Gnomes and bushes are mini. `ZONE_PROPS` lists real `OBJ` names for town, farm, park, and home from micro through mega, so scatter no longer shrinks dollhouses.
+  - Huge and mega already in the world: house, villa, school, fire station, farmhouse, silo, windmill, water tower, gazebo (huge); clock tower, barn, bounce house (mega). All of the box ones use the L3 part contract.
 
 - [ ] **D5: Boss model(s)**
   - One original boss for max size, built from L3-contract parts plus `BP(mesh, floor, 'weak')` glowing weak spots. Chunky, funny, not scary. Kaden and son to pick the concept (and maybe name it).
@@ -104,19 +103,22 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Tier 2–3 cars can shoot: set `weapon:'cannon'` or `'rocket'` (logic handles the shots). Make the weapon visible on the model (a cannon barrel, rocket pods).
   - New car names get a recorded voice once someone runs `tools/make-voices.mjs`.
 
-- [ ] **D1: Zone layouts**
+- [x] **D1: Zone layouts**
+  - Done in `ZONE_LAYOUT`: town streets (cottage / house / shop / villa rows, mailboxes, lamps, hydrants, parked toy cars) plus one clock-tower, school, fire station, and water tower. Farm has a barn, two silos, a farmhouse, hay, fences, crops, a pond, a windmill, a coop with chickens, scarecrows, and a tractor. Park has a clustered playground, fountain, benches, picnic tables, a gazebo, a duck pond, and a bounce house. Home dresses the ring around the original arena.
+  - One of each landmark per map, recomputed when `zoneRows` changes so NEW WORLD moves them.
+  - Layouts pass `r` from `RAD` (no `REC_R` update needed). The coop and the duck pond call `ctx.herd` so those animals launch instead of smashing. Other chunks still get the default `ZONE_HERDS` mix. Hay sets `roll:true` for a later tumble. Windmill boards are static until logic spins them.
   - **Town:** streets with houses of different sizes, shops, a school, a fire station, a water tower, mailboxes, street lights, hydrants, parked cars (original designs), and a tall "boss" building to topple when giant.
   - **Farm:** big red barn, silo, farmhouse, hay bales (roll when hit), fences, crop rows, a pond, windmill, chicken coop, scarecrow, parked tractor.
   - **Park:** playground (swings, slide, jungle gym), fountain, benches, picnic tables, trees, a gazebo, a pond with ducks, a giant bounce-house.
   - Ideas for later zones: construction site, beach boardwalk, candy land, dino valley.
-  - Every prop gets a **size class** (tiny / small / medium / large / huge) so small players have plenty to smash early.
+  - Every prop gets a **size class** on the 7-step ladder (`mini` through `mega`) so a starting mini car has plenty to smash.
   - Needs: L1 (zone map + layout hooks). ✅ L1 is done. The zone map is `ZONE_MAP` in `core.js`; the layout contract (`ZONE_LAYOUT` + the `ctx` API) is documented in `CLAUDE.md` under "Adding things". Until `ZONE_LAYOUT` exists, `DEFAULT_LAYOUT` in `game.js` fills zones with placeholders.
   - Also add a `home` layout if you want to dress the ring of chunks around the original arena (the arena itself still comes from `buildWorld`).
   - New prop types need an entry in `REC_R` (game.js) or pass `r` to `ctx.place`. Ask logic to add it, or just pass `r`.
 
-- [ ] **D2: Destructible buildings**
-  - Build every building from separate parts per the L3 part contract (floors, walls, roof, details) so they can crumble in stages. Vary colors and styles. Chunky, toy-like, readable from far away.
-  - Needs: L3 (part contract). ✅ L3 is done. The contract is in `CLAUDE.md` under "Building (staged destruction)", with a working example in `demoBuilding()` (game.js). Convert today's `house` to the contract too, so the home arena's houses crumble.
+- [x] **D2: Destructible buildings**
+  - Done for the box buildings: house, cottage, villa, shop, school, fire station, clock tower, barn, and farmhouse use `BP` walls (about 8–12 per storey), slabs, a roof, and whole extras (doors, windows). They pass `{building:true}`.
+  - Still one-piece (fine to smash, they do not pancake): water tower, silo, gazebo, coop, windmill, and the little smash-tower. A later pass can shell those if they should collapse too.
 
 - [ ] **D3: Farm and park animals**
   - Cute, chunky, low-poly: chicken, rooster, duck, cow, pig, sheep, goat, horse, dog, cat, bunny, goose.
@@ -130,3 +132,6 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - **Wacky toy racers:** car with giant rear wheels and exposed engine, flame-painted hot rod, loop-track speedster, twin-engine dragster, shark car (done), dino cars (T-rex truck, triceratops ram-car, stegosaurus with spike plates, pterodactyl wing-glider), sneaker car, hot dog (done), ice cream (done), birthday cake car, rubber-duck boat car, pickle car, taco truck shaped like a taco, toaster car, bathtub racer, shopping cart racer, rocket skateboard
   - **Son-designed car:** reserved spot. Ask him for a name, color and silly feature.
   - Each car: 4–5 units long, faces +Z, `speed` 20–32, `r` 2–2.8. Scales automatically once L2 lands.
+
+- [ ] **D7: More mega set pieces**
+  - Still just ideas: stadium, skyscraper, cargo ship, ferris wheel. Build them with `BP` when a zone has room. The mountain-sized boss is D5.
