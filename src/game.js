@@ -1,4 +1,5 @@
 /* Smash Party — game logic: debris, smashing, respawn, players, input, collisions, camera, loop. Owner: Claude Code (logic). */
+worldDefaults(); // L33 (worlds.js): a one-zone land for each themed zone that hasn't registered its own world yet
 /* ---------- debris & particles ---------- */
 const debris=[],parts=[],DEBRIS_MAX=IS_PHONE?220:420;
 /* Box debris (shatter chunks, blast bits, confetti) all draw from one InstancedMesh with per-instance colors:
@@ -397,11 +398,13 @@ function goGiant(){
 // NEW WORLD: shrink back to tiny and roll a fresh, procedurally zoned world. Only ever by choice.
 function newWorld(){
   if(!giant||nwBtn.style.display!=='block')return;
-  rollWorld(false,questOn?'home':'outside'); // Adventure: the Home World again, fresh (portals to new lands come with L33)
+  rollWorld(false,landW?worldId:questOn?'home':'outside'); // Adventure: the same world again, fresh (L33: portals lead to the lands)
   music('drive');showBig('NEW WORLD!');sfx.fanfare();say('New world! Smash it!');confetti(150);players.forEach(p=>introCar(p,2.4));
 }
 // a fresh procedurally zoned world; keepSize (after the garage) keeps the players' size and cars
-function rollWorld(keepSize,kind){ // kind: 'bedroom' | 'outside' | undefined = the same kind as now
+function rollWorld(keepSize,kind,opt={}){ // kind: 'bedroom' | 'outside' | 'home' | a land id (L33) | undefined = the same kind as now; opt.keepCars: shrink but keep the cars (portals)
+  if(kind===undefined&&landW)kind=worldId;const land=kind&&kind!=='home'&&WORLDS[kind]&&worldOk(WORLDS[kind])?WORLDS[kind]:null;
+  if(kind&&kind!=='bedroom'&&kind!=='outside'&&kind!=='home'&&!land)kind='outside';clearPortals();
   const reG=garage&&!garage.exiting;if(reG)garageRemove(); // L32: a garage still waiting comes back up in the new world
   if(boss)bossUnmerge(boss.o);boss=null;updateBossHud();bossArrows.forEach(s=>s.visible=false);
   for(const c of chunks.values())if(c.loaded)unloadChunk(c);
@@ -410,16 +413,19 @@ function rollWorld(keepSize,kind){ // kind: 'bedroom' | 'outside' | undefined = 
   for(const o of collapsing)scene.remove(o.g);collapsing.length=0;
   for(const a of animals)animalHide(a);animals.length=0;
   for(const d of debris)if(!d.confetti){scene.remove(d.m);d.life=0;}
-  worldSeed=kind==='home'?0:(Math.random()*1e9)|0;setRoom(kind==='bedroom'?ZONES.bedroom:kind==='outside'||kind==='home'?null:roomZ);
-  if(roomZ){const n=CHUNKS_HALF*2+1;setZoneMap(Array.from({length:n},()=>roomZ.letter.repeat(n)));}
+  if(kind!==undefined){landW=land;worldId=land?land.id:'home';}
+  worldSeed=kind==='home'?0:land&&questOn&&land.plan?worldSeedOf(land.id):(Math.random()*1e9)|0;setRoom(kind==='bedroom'?ZONES.bedroom:kind==='outside'||kind==='home'||land?null:roomZ);
+  if(land){setRoads(land.roads!==false);if(typeof streetDecor!=='undefined'&&streetDecor)streetDecor.visible=false;setZoneMap(landRows(land,questOn,mulberry(worldSeed)));}
+  else if(roomZ){const n=CHUNKS_HALF*2+1;setZoneMap(Array.from({length:n},()=>roomZ.letter.repeat(n)));}
   else if(kind==='home'){setZoneMap(ZONE_MAP);homeWorld();}
   else{setZoneMap(randomZoneMap(mulberry(worldSeed),'TFP',pickThemedZones()));buildWorld();captureHome();}
   if(!keepSize){growth=0;tier=0;giant=false;levelReady=false;popT=1;goldCount=0;goldHud.style.display='none';}
   clearPads();nwBtn.style.display='none';
   players.forEach(p=>{const st=spawnSpot(p.idx);p.x=st[0];p.z=st[1];p.y=groundH(st[0],st[1]);p.vy=0;p.speed=0;p.kx=p.kz=0;p.air=false;p.heading=Math.PI;});
   if(players.length===2&&Math.hypot(players[0].x-players[1].x,players[0].z-players[1].z)<players[0].r*2.5)besideCar(players[1],players[0]); // big cars: room for both
-  {const a=spawnSpot(0);camT.set(a[0],0,a[1]);}updateStreaming(0,true);if(!keepSize)newCars(true);
+  {const a=spawnSpot(0);camT.set(a[0],0,a[1]);}updateStreaming(0,true);if(!keepSize&&!opt.keepCars)newCars(true);
   if(reG&&keepSize)queue.push({t:1.6,fn:openGarage});
+  portalsStart(); // L33: the home portal near a land's start
   questWorldChanged(); // L35: the active quest step rebuilds its things in the new world
 }
 const nwBtn=document.createElement('button');nwBtn.id='newWorld';nwBtn.innerHTML='🌍 NEW WORLD!<small>START / N / tap</small>';
@@ -541,7 +547,7 @@ function updateRoom(dt){
   if(breakT>0){breakT-=dt;breakFly=Math.min(1,breakFly+dt*0.6);if(doorArrow)doorArrow.visible=false;
     if(breakT<=0){breakFly=0;rollWorld(true,'outside');camDist*=4; // the camera swoops back down over town
       music('drive');showBig("WE'RE OUTSIDE!");sfx.fanfare();say("We're outside!");confetti(150);players.forEach(p=>introCar(p,1.6));
-      if(giant){if(bossBeaten)queue.push({t:3,fn:()=>{nwBtn.style.display='block';}});else queue.push({t:5,fn:()=>summonBoss()});}} // L29: still GIANT outside
+      if(giant){if(bossBeaten)queue.push({t:3,fn:()=>{nwBtn.style.display='block';portalsOpen();}});else queue.push({t:5,fn:()=>summonBoss()});}} // L29: still GIANT outside
     return;}
   if(!roomZ){if(doorArrow)doorArrow.visible=false;return;}
   if((doorT-=dt)<=0){doorT=0.5;const d=objects.find(o=>o.alive&&!o.falling&&isBreakout(o)),ok=d&&d.sz<=tier;
@@ -567,7 +573,7 @@ const REC_R={house:3.6,crates:1.5,tower:1.4,pin:1.1,snowman:1.3,fence:1.8,barrel
 function spotFree(c,x,z,r,tag){ // tag: props of the same scene may stand close together
   if(x-r<c.x0||x+r>c.x0+CHUNK||z-r<c.z0||z+r>c.z0+CHUNK)return false;
   if(Math.abs(x)>WB-r-2||Math.abs(z)>WB-r-2)return false;
-  if(!roomZ&&Math.abs(x)<HOME+r&&Math.abs(z)<HOME+r)return false; // hand-built home arena
+  if(arenaOn()&&Math.abs(x)<HOME+r&&Math.abs(z)<HOME+r)return false; // hand-built home arena (not in a land, L33)
   if(onRoad(x,z,r))return false;
   for(const [a,b] of [[0,0],[r+1,0],[-r-1,0],[0,r+1],[0,-r-1]])if(rampsH(c.rampList,x+a,z+b)>0)return false;
   for(const q of c.recs)if((tag==null||q.scene!==tag)&&Math.hypot(q.x-x,q.z-z)<q.r+r+0.6)return false;
@@ -606,7 +612,7 @@ function spotTiles(c){
 function chunkRamp(c,x,z,th,L=11,W=7,H=3.6){
   const m=W+2,sx=Math.sin(th),sz=Math.cos(th);
   for(let k=0;k<=2;k++){const px=x+sx*L*k/2,pz=z+sz*L*k/2;
-    if(px<c.x0+m||px>c.x0+CHUNK-m||pz<c.z0+m||pz>c.z0+CHUNK-m||onRoad(px,pz,W/2)||(!roomZ&&Math.abs(px)<HOME+m&&Math.abs(pz)<HOME+m))return false;}
+    if(px<c.x0+m||px>c.x0+CHUNK-m||pz<c.z0+m||pz>c.z0+CHUNK-m||onRoad(px,pz,W/2)||(arenaOn()&&Math.abs(px)<HOME+m&&Math.abs(pz)<HOME+m))return false;}
   const r=makeRamp(x,z,th,L,W,H);
   for(const q of [...c.recs,...c.rampList.map(o=>({x:o.x,z:o.z,r:o.L}))])
     for(const [a,b] of [[0,0],[q.r+1,0],[-q.r-1,0],[0,q.r+1],[0,-q.r-1]])if(rampsH([r],q.x+a,q.z+b)>0)return false;
@@ -623,7 +629,7 @@ function genChunk(c){
     lay(ctx);if(ctx.planned||c.scenes.length)c.planned=true; // L31: planned chunks get only a small random top-up
     if(Math.random()<0.3&&c.recs.length){const r=pick(c.recs);r.gold=true;}
     if(!c.herds.length)defaultHerds(c);
-    if(!roomZ&&c.ci===0&&c.cj===0){chunkHerd(c,'chicken',16,36,5);chunkHerd(c,'duck',-16,34,4);} // say hi at the start line
+    if(arenaOn()&&c.ci===0&&c.cj===0){chunkHerd(c,'chicken',16,36,5);chunkHerd(c,'duck',-16,34,4);} // say hi at the start line
   });
 }
 // placeholder blocks (TODO(design): D18 writes the real ones per zone); try them with a layout that calls ctx.block(DEFAULT_BLOCKS)
@@ -971,7 +977,7 @@ const MARK_BEAM_GEO=new THREE.CylinderGeometry(0.3,1,1,24,1,true).translate(0,0.
 /* Start on a street (L21): both cars in the right lane of the north–south road by the home arena, facing up the screen.
    Design can move it: define `const START_STREET=[[x,z],[x,z]]` in objects.js (and dress the spot: curb, mailbox, clutter). */
 const SPAWN_DEFAULT=[[2.6,48],[3.8,48.6]];
-const spawnSpot=i=>roomZ?((roomZ.start&&roomZ.start[i])||[[-1.2,WB*0.55],[1.2,WB*0.55]][i]):(typeof START_STREET!=='undefined'&&START_STREET[i])||SPAWN_DEFAULT[i];
+const spawnSpot=i=>roomZ?((roomZ.start&&roomZ.start[i])||[[-1.2,WB*0.55],[1.2,WB*0.55]][i]):landW?((landW.start&&landW.start[i])||SPAWN_DEFAULT[i]):(typeof START_STREET!=='undefined'&&START_STREET[i])||SPAWN_DEFAULT[i];
 // spotlight + "beep beep!" so each player sees which car is theirs
 let lastBeepT=-9;
 function introCar(p,delay=1.4){p.markT=4;queue.push({t:delay,fn:()=>{if(T-lastBeepT<1)return;lastBeepT=T;sfx.beep();say('Beep beep!');}});}
@@ -1076,7 +1082,8 @@ function startGame(){
   const snap=resumeSnap||(questOn&&advSave&&saveSel==='go'?advSave:null);resumeSnap=null; // L37
   if(questOn&&!snap&&advSave)wipeSave();
   if(snap)applySnap(snap);
-  else if(!questOn&&startPick==='bedroom'&&ZONES.bedroom)rollWorld(true,'bedroom');music('drive');
+  else if(!questOn&&startPick==='bedroom'&&ZONES.bedroom)rollWorld(true,'bedroom');
+  else if(!questOn&&worldOk(WORLDS[startPick]))rollWorld(true,startPick);music('drive');
   $('start').style.display='none';$('hud').style.display='block';updatePanels();
   if(touchUsed){$('touch').style.display='block';addPlayer('touch');}
 }
@@ -1185,7 +1192,7 @@ function markMode(){for(const b of modePick.children)b.classList.toggle('sel',b.
   modePick.classList.toggle('focus',pickRow===0&&gameMode==='arcade');worldPick.classList.toggle('focus',pickRow===1);}
 function setMode(m){if(m!==gameMode){gameMode=m;sfx.pop();}try{localStorage.setItem('sp_mode',m);}catch(e){}markMode();}
 function pickMove(dx,dy){if(dy)pickRow=gameMode==='arcade'||advSave?clamp(pickRow+dy,0,1):0;
-  if(dx){if(pickRow===0)setMode(dx<0?'adventure':'arcade');else if(gameMode==='arcade')setPick(dx<0?'bedroom':'outside');else setSave(dx<0?'go':'new');}markMode();}
+  if(dx){if(pickRow===0)setMode(dx<0?'adventure':'arcade');else if(gameMode==='arcade'){const l=[...worldPick.children].map(b=>b.dataset.w);setPick(l[clamp(l.indexOf(startPick)+dx,0,l.length-1)]);}else setSave(dx<0?'go':'new');}markMode();}
 modePick.onclick=e=>e.stopPropagation();for(const b of modePick.children)b.onclick=e=>{e.stopPropagation();initAudio();setMode(b.dataset.m);if(gameMode==='adventure'&&!advSave)startGame();else if(advSave){pickRow=1;markMode();}};
 worldPick.before(modePick);
 
@@ -1205,7 +1212,7 @@ let advSave=(s=>s&&s.v===SAVE_V?s:null)(lsGet(SAVE_KEY)),saveSel='go',newHold=0,
 let resumeSnap=(()=>{try{const s=JSON.parse(sessionStorage.getItem('sp_resume')||'null');sessionStorage.removeItem('sp_resume');return s&&s.v===SAVE_V?s:null;}catch(e){return null;}})();
 function snapshot(){
   const cars={};for(let i=0;i<2;i++){const p=players.find(q=>q.idx===i);const nm=p?p.stats.name:snapCars&&snapCars[i];if(nm)cars[i]=nm;}
-  return {v:SAVE_V,t:Date.now(),mode:questOn?'adventure':'arcade',kind:questOn?'home':roomZ?'bedroom':'outside',
+  return {v:SAVE_V,t:Date.now(),mode:questOn?'adventure':'arcade',kind:landW?worldId:questOn?'home':roomZ?'bedroom':'outside',lands:[...advLands],
     growth,tier,giant,levelReady,score,levelScore,level,goal,smashCount,cars,
     garage:!!(garage&&!garage.exiting)||queue.some(q=>q.fn===openGarage),
     quests:questOn?questState():null,used:[...abilUsed],eggs:eggShots,nw:nwBtn.style.display==='block'};}
@@ -1216,9 +1223,10 @@ function applySnap(s){
   score=s.score||0;levelScore=s.levelScore||0;level=s.level||1;goal=s.goal||100;smashCount=s.smashCount||0;
   (s.used||[]).forEach(i=>abilUsed.add(i));eggShots=s.eggs||0;snapCars=s.cars||null;snapGarage=!!s.garage;
   if(s.quests)questLoad({...s.quests,active:null}); // abilities + cosmetics first, so the world and cars come out right
-  rollWorld(true,s.kind==='bedroom'&&ZONES.bedroom?'bedroom':s.kind==='home'?'home':'outside');
+  (s.lands||[]).forEach(id=>advLands.add(id));
+  rollWorld(true,s.kind==='bedroom'&&ZONES.bedroom?'bedroom':s.kind==='home'?'home':worldOk(WORLDS[s.kind])?s.kind:'outside');
   if(s.quests&&s.quests.active&&QUESTS[s.quests.active])questStart(QUESTS[s.quests.active],true);
-  if(s.nw)nwBtn.style.display='block'; // the boss was already beaten
+  if(s.nw){nwBtn.style.display='block';queue.push({t:2,fn:portalsOpen});} // the boss was already beaten
   else if(giant&&!(questOn&&QUEST_LIST.some(q=>q.world===questWorld()&&!questDone.has(q.id)&&q.steps.some(t=>t.do==='boss'))))queue.push({t:4,fn:()=>summonBoss()});
   abilGlyphs();showBig(s.mode==='adventure'?'▶️':'✨');}
 function updateSave(dt){if(state==='play'&&questOn&&(saveT-=dt)<=0){saveT=20;saveGame();}}
@@ -1226,6 +1234,10 @@ addEventListener('pagehide',saveGame);addEventListener('visibilitychange',()=>{i
 function beforeReload(){if(state!=='play'&&state!=='pause')return;saveGame();try{sessionStorage.setItem('sp_resume',JSON.stringify(snapshot()));}catch(e){}} // core.js setQuality (QA4)
 const worldsUnlocked=()=>lsGet('sp_worlds')||['home'];
 function unlockWorld(id){const l=worldsUnlocked();if(!l.includes(id)){l.push(id);lsSet('sp_worlds',l);}}
+// L33: Arcade's start screen shows every land you've been to (in either mode) next to 🛏️ / 🌳
+for(const id of worldsUnlocked())if(worldOk(WORLDS[id])){const b=document.createElement('button');b.className='wp land';b.dataset.w=id;b.title=WORLDS[id].name;b.textContent=WORLDS[id].emoji;
+  b.onclick=e=>{e.stopPropagation();initAudio();setPick(id);startGame();};worldPick.appendChild(b);}
+if(![...worldPick.children].some(b=>b.dataset.w===startPick))startPick='outside';markPick();
 // start screen: ▶️ Continue / 🆕 New Adventure (Adventure with a save only)
 const savePick=document.createElement('div');savePick.id='savePick';
 savePick.innerHTML='<button class="sv" data-s="go" title="Continue">▶️</button><button class="sv" data-s="new" title="New Adventure">🆕<i class="hold"></i></button>';
@@ -1294,7 +1306,7 @@ function pauseInput(gpIn){
 /* ---------- themed zones (L15) ---------- */
 const _skyT=new THREE.Color(),_skyB=new THREE.Color();
 // a NEW WORLD mixes in up to two registered themed zones (weight = how likely each is to show up)
-function pickThemedZones(){let s='';for(const z of Object.values(ZONES).filter(z=>!z.indoor).sort(()=>Math.random()-0.5)){if(s.length>=2)break;if(Math.random()<Math.min(1,0.6*z.weight))s+=z.letter;}return s;}
+function pickThemedZones(){let s='';for(const z of Object.values(ZONES).filter(z=>!z.indoor&&!landZone(z.id)).sort(()=>Math.random()-0.5)){if(s.length>=2)break;if(Math.random()<Math.min(1,0.6*z.weight))s+=z.letter;}return s;}
 // test helper: paint a 3×3 block of chunks next to the car as that zone, rebuild them and drive the car in
 function testZone(id){const z=ZONES[id];if(!z)return 'unknown zone: '+id+' (registered: '+Object.keys(ZONES).join(', ')+')';
   const p=players[0]||{x:camT.x,z:camT.z};let ci=clamp(chunkIdx(p.x)+3,-CHUNKS_HALF+1,CHUNKS_HALF-1),cj=clamp(chunkIdx(p.z),-CHUNKS_HALF+1,CHUNKS_HALF-1);
@@ -1462,7 +1474,7 @@ function spawnScatter(p,fill){
     if(Math.random()>SPOT_LEFTOVER){sp=spotAt(x,z);  // L19: land in a spot when there's one nearby
       if(!sp){const q=spotPoint(p.x,p.z,fill?0.2*Rs:Rs,1.4*Rs);if(q)[x,z,sp]=q;}}
     if(Math.abs(x)>WB-r-2||Math.abs(z)>WB-r-2||groundH(x,z)>0||groundH(x+r,z)>0||groundH(x-r,z)>0||groundH(x,z+r)>0||groundH(x,z-r)>0)continue;
-    if(k>tier&&(onRoad(x,z,r)||(!roomZ&&typeof startLane==='function'&&startLane(x,z))))continue; // L26: nothing too big to smash lands on the road or in the start lane
+    if(k>tier&&(onRoad(x,z,r)||(arenaOn()&&typeof startLane==='function'&&startLane(x,z))))continue; // L26: nothing too big to smash lands on the road or in the start lane
     if(objects.some(o=>o.alive&&Math.abs(o.x-x)<o.r+r+0.3&&Math.abs(o.z-z)<o.r+r+0.3&&Math.hypot(o.x-x,o.z-z)<o.r+r+0.3))continue;
     if(players.some(q=>Math.hypot(q.x-x,q.z-z)<q.r+r+1))continue;
     if(garageOn(x,z,r))continue; // L32: not inside the garage
@@ -1561,7 +1573,7 @@ function sceneSpotPoint(px,pz,d0,d1,kind){const l=[];
 // can a filler scene prop stand here? (other records, live non-filler objects, roads, ramps, the start lane)
 function scenePropFree(x,z,r,road,skip){ // skip: tags of scenes about to make way (or a test on the record)
   if(Math.abs(x)>WB-r-2||Math.abs(z)>WB-r-2)return false;
-  if(!road&&onRoad(x,z,r))return false;if(!roomZ&&typeof startLane==='function'&&startLane(x,z))return false;
+  if(!road&&onRoad(x,z,r))return false;if(arenaOn()&&typeof startLane==='function'&&startLane(x,z))return false;
   if(groundH(x,z)>0||groundH(x+r,z)>0||groundH(x-r,z)>0||groundH(x,z+r)>0||groundH(x,z-r)>0)return false;
   const c=chunks.get(chunkKey(chunkIdx(x),chunkIdx(z)));if(!c||!c.gen)return false;
   const pad=Math.min(0.6,r*0.6); // tiny props may stand closer
@@ -1956,7 +1968,7 @@ function hitWeak(part,p,nx,nz){const b=boss,o=b.o;b.hitT=T+0.3;
   const dl=b.def.defeat?3.4:0;if(dl){say(b.def.defeat);queue.push({t:dl,fn:()=>say('You beat the boss!')});}else say('You beat the boss!');
   collapse(o,0,nx,nz,60,true);
   queue.push({t:2.6,fn:()=>{showBig('BOSS BEATEN!');sfx.fanfare();confetti(260);
-    const d=roomDoor();if(!d){nwBtn.style.display='block';return;}
+    const d=roomDoor();if(!d){nwBtn.style.display='block';portalsOpen();return;}
     queue.push({t:2.2,fn:()=>{const q=roomDoor();if(!q){if(roomZ)nwBtn.style.display='block';return;}smash(q,0,-1,60);}});}}); // L29: the door bursts open = BREAK OUT
   queue.push({t:4.0+dl,fn:()=>{sfx.fanfare();say('Hooray! You did it together!');}});
 }
@@ -2461,7 +2473,7 @@ function loop(now){
   updateGrowth(dt);updateStreaming(dt);updateQuests(dt);updateSave(dt);
   if(state==='play'&&!garageAll()){collisions();updateBoss(dt);}
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
-  updateRoom(dt);updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateCombo(dt);if(!garage){updateGold(dt);updatePads(dt);}if(!garageAll()){updateScatter(dt);updateScenes(dt);updateAnimals(dt);}updateRollers(dt);updateSpin(dt);updateShots(dt);updatePerks(dt);updateCarExtras(dt);updateDebris(dt);updateParts(dt);updatePuffs(dt);
+  updateRoom(dt);updatePortals(dt);updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateCombo(dt);if(!garage){updateGold(dt);updatePads(dt);}if(!garageAll()){updateScatter(dt);updateScenes(dt);updateAnimals(dt);}updateRollers(dt);updateSpin(dt);updateShots(dt);updatePerks(dt);updateCarExtras(dt);updateDebris(dt);updateParts(dt);updatePuffs(dt);
   updateMusic();updateCamera(dt,T);updateSignals(dt);cullChunks();updateHUD();
   renderer.render(scene,camera);
   pressed.clear();touch.jumpP=false;touch.swapP=false;
@@ -2478,7 +2490,9 @@ function showSpots(on){if(spotView){scene.remove(spotView);spotView.traverse(m=>
     const col=cols[q.kind]||(cols[q.kind]=new THREE.MeshBasicMaterial({color:new THREE.Color().setHSL(Object.keys(cols).length*0.17%1,0.9,0.55),transparent:true,opacity:0.35,depthWrite:false}));
     const m=new THREE.Mesh(new THREE.PlaneGeometry(q.hx*2,q.hz*2),col);m.rotation.set(-Math.PI/2,0,Math.atan2(q.sn,q.cs));m.position.set(q.x,groundH(q.x,q.z)+0.06,q.z);g.add(m);}
   scene.add(g);spotView=g;return count;}
-window.__sp={scene:(id)=>spawnScene(players[0],true,id),sceneAt:(id,dz=-30)=>sceneAt(id,players[0].x,players[0].z+dz*Math.max(S,0.3),0,null,{key:'test'}),sceneClear,scenes:()=>Object.fromEntries(sceneDefs(zoneXZ(players[0].x,players[0].z)).map(([i,d])=>[i,d.size])),sceneStats,room:(on=true)=>{rollWorld(true,on?"bedroom":"outside");return on?"bedroom":"outside";},spots:(on)=>spotView&&on!==true?showSpots(false):showSpots(on),mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,zone:testZone,zones:ZONES,gold:spawnGold,pad:placePad,pads,
+window.__sp={world:id=>id?enterWorld(id):{world:worldId,worlds:Object.keys(WORLDS),lands:landList().map(w=>w.id),unlocked:worldsUnlocked(),adv:[...advLands]}, // L33: __sp.world('dino') jumps there
+  portals(){if(!portals.some(p=>!p.start))portalsOpen();return portals.map(p=>p.kind);}, // raise the after-boss portals here
+  scene:(id)=>spawnScene(players[0],true,id),sceneAt:(id,dz=-30)=>sceneAt(id,players[0].x,players[0].z+dz*Math.max(S,0.3),0,null,{key:'test'}),sceneClear,scenes:()=>Object.fromEntries(sceneDefs(zoneXZ(players[0].x,players[0].z)).map(([i,d])=>[i,d.size])),sceneStats,room:(on=true)=>{rollWorld(true,on?"bedroom":"outside");return on?"bedroom":"outside";},spots:(on)=>spotView&&on!==true?showSpots(false):showSpots(on),mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,zone:testZone,zones:ZONES,gold:spawnGold,pad:placePad,pads,
   boss(id){if(!giant){tier=SIZES.length-1;growth=MAX_GROW;levelReady=true;levelUp();newCars(true);}if(!boss)summonBoss(id);return boss&&boss.def.name;}, // __sp.boss('shelldozer')
   level(n=1,skipGarage){garageSkip=!!skipGarage;let skipped=false;const unG=()=>{for(let i=queue.length-1;i>=0;i--)if(queue[i].fn===openGarage){queue.splice(i,1);skipped=true;}if(garage){garageRemove();skipped=true;}};
     for(let i=0;i<n&&!giant;i++){unG();growth=GROW_AT[tier+1];levelReady=true;levelUp();}
