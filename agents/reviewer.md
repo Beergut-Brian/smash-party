@@ -15,3 +15,15 @@
 7. Report back in plain words: what changed for the player, any follow-ups created.
 
 Never force-push `main`. Several PRs ready? Merge them one at a time, testing after each, and bump the version once at the end.
+
+## How the reviewer works (lessons so far)
+- **Review in a worktree:** `git worktree add -f -B review ../sp-review origin/main`, merge each PR branch into it in order (oldest / dependencies first; stacked PRs: merge the top one), fix conflicts, test, bump `version.json` once, then `git push origin HEAD:main`. GitHub marks the PRs merged on its own. Serve the review worktree on :8766 and `main` on :8765 to compare.
+- **Smoke test:** `tools/review/smoke.py` (setup in its header): Adventure (Hank's quest, hammer, save, garage after chapter 1) and Arcade (garage in/out, GIANT, boss, bedroom), with stats and console errors. Headless is ~20× slow: wait for things with polling, not fixed sleeps, and don't mistake slowness for bugs.
+- **Usual conflicts:** `TASKS.md` (keep both sides, check boxes), the main loop line in game.js (union of the `update…()` calls), `tools/voices.json`, `CLAUDE.md`/`AGENTS.md` (must stay identical: `diff -q`).
+- **Look for contract mismatches between PRs built at the same time** (e.g. a quest pack using old coordinates or stage ids that the map PR renamed; a hook called with another function's signature). Fix trivial ones in the merge; otherwise add a task for the right lane and say so in the report.
+- **Task numbers collide** when two lanes add tasks at once (two L39s): renumber one, update references.
+- After merging, check whether a planned task became unnecessary (close it with a note) and whether the next lane is now unblocked; tell Kaden which agents to start next, with the exact start line.
+- Commits are authored `Kaden Miller <kadenmillerwebdesign@gmail.com>`.
+
+## Where things stand
+Read `TASKS.md` from the top: "Play-test round 3" (spec `docs/ADVENTURE.md`) has Phase A/B done and **Phase C (Dino Land + Candy Land, planned for parallel work)** in progress. Open low-priority items: L43 (dead objects at GIANT), QA5 (favicon), B3a (optional bedroom bosses, Kaden + son decide), A1/A2 (GPU art pipeline, Kaden's server agents).
