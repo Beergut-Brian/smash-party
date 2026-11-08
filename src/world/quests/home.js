@@ -369,7 +369,7 @@ registerQuest({
   remind:['Smash the giant robot!'],
   steps:[
     {do:'talk',icon:'🤖',n:1,say:['Help! Help! Oh dear!','A GIANT ROBOT is coming!','Smash the giant robot, my friends!']},
-    {do:'boss',n:1,icon:'🤖',say:{start:'It is stomping into the fair! Smash it!',hint:'Smash the robot! Hurry!'}},
+    {do:'boss',boss:'clankzilla',n:1,icon:'🤖',say:{start:'It is stomping into the fair! Smash it!',hint:'Smash the robot! Hurry!'}},
     {do:'talk',icon:'👽',say:['You did it! Hooray!','Look! Zorp and Blip!','The robot battery fixed their crystal!']}],
   reward:{stars:4,say:['You saved Smashville!','You are the best heroes ever!']},
   after:['Hooray for the heroes!','My town is saved! Marvelous!']});
