@@ -125,7 +125,7 @@ function dinoDusty(ctx,dense){ // the dig-site filler every chunk gets some of
 
 registerZone({
   id:'dino_dig',
-  letter:'G',
+  letter:'B',
   ground:'#d9b26a',                         // sunny sand
   sky:{top:'#5fb4e6',horizon:'#fff0c2'},    // clear desert blue
   weight:0,                                 // Dino Land only
