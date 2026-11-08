@@ -307,6 +307,8 @@ Full spec and contracts: **`docs/ADVENTURE.md`** (read it before any task below)
   - Each new ability: ceremony (car spins up, the part pops onto the car) and a pulsing button glyph with a picture until first use.
   - Hand-off: `NEEDS DESIGN` cars-ui (D19) for the hammer, wings, hover glow and cosmetic parts on the cars + the mode picker look.
 
+- [ ] **L38: Quest stages don't spawn yet** `NEEDS LOGIC` (logic-systems, before L37; found reviewing #46). `quests.js` calls `spawnScene(q.stage,x,z,0)` (the L35 hook), but L31's `spawnScene` is `(p,fill,id)`, so a quest's `stage` scene is silently never built (no error, the try/catch hides it). Add a scene-at-a-point helper in the scene code (e.g. `sceneAt(id,x,z,th,size)`: builds the scene at the players' size, clears filler off the spot, returns a handle so the quest can clear it when it ends or the players grow) and point the L35 hook at it (one-line change in quests.js; say so in the PR). Test with a quest that has `stage:'<a DEFAULT_SCENES id>'`. Q1 needs this for every stage.
+
 - [ ] **L37: Save + Continue** `NEEDS LOGIC` (logic-systems; needs L35; spec §6)
   - Adventure auto-saves to localStorage after each quest step and garage visit (quests, abilities, cosmetics, cars, size, unlocked worlds). Start screen: ▶️ Continue and 🆕 New Adventure (2-second hold). Arcade only remembers unlocked worlds.
 
