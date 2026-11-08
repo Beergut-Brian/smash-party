@@ -1016,7 +1016,7 @@ function addPlayer(src){
 }
 function updatePanels(){
   for(let i=0;i<2;i++){const el=$('p'+i);const p=players.find(q=>q.idx===i);
-    if(p){el.className='pPanel';el.innerHTML=`P${i+1} ${p.stats.emoji} ${p.stats.name}<small>${(p.src==='touch'?'🎯 = shoot':(p.src.startsWith('gp')?'X/Y = shoot':(i==0?'R = shoot':'. = shoot')))}</small>`;}
+    if(p){el.className='pPanel';el.innerHTML=`P${i+1} ${p.stats.emoji} ${p.stats.name}<small>${!hasAbility('shoot')?'':(p.src==='touch'?'🎯 = shoot':(p.src.startsWith('gp')?'X/Y = shoot':(i==0?'R = shoot':'. = shoot')))}</small>`;} // QA14: no shoot hint before the Egg Blaster
     else{el.className='pPanel empty';el.innerHTML=`Player ${i+1}: press A<small>or ${i==0?'Space':'Enter'} to join!</small>`;}}
 }
 
@@ -1132,7 +1132,7 @@ function grantAbility(id){
   showBig(ABIL_ICON[id]||'⭐');sfxClip('ability',1)||sfx.fanfare();confetti(160);
   for(const p of players){puff(p.x,p.y+p.model.h*S,p.z,14,1.2*Math.max(S,.2),'#ffd60a');flash(p.x,p.y+p.model.h*S,p.z,'#ffffff',2.5*Math.max(S,.2),0.4);}
   if(id==='shoot')eggShots=12;
-  abilUsed.delete(id);abilGlyphs();}
+  abilUsed.delete(id);abilGlyphs();updatePanels();}
 function grantCosmetic(id){if(!COS_ICON[id])console.warn('unknown cosmetic',id);for(const p of players)carParts(p);showBig(COS_ICON[id]||'✨');sfx.fanfare();confetti(100);}
 function abilUse(id){if(!questOn||abilUsed.has(id))return;abilUsed.add(id);abilGlyphs();}
 // parts on the car: rebuilt when an ability/cosmetic arrives or the car changes
