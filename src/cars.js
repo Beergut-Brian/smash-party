@@ -145,6 +145,47 @@ const PARTS={
       g.add(mk('sph',s,s,s,'#fff',x,0,0));
       g.add(mk('sph',s*.45,s*.45,s*.45,'#111',x+s*.08,0,s*.35));
     });
+    return g;},
+  /* D12 tier-3 wish-list silhouettes */
+  sledRunners(p){const g=new THREE.Group(),c=p.color||'#adb5bd',tip=p.tip||'#ff595e';
+    [-1.05,1.05].forEach(x=>{
+      g.add(mk('box',.18,.16,4.4,c,x,0,0));
+      const nose=mk('box',.22,.18,.9,tip,x,.05,2.35);nose.rotation.x=-.45;g.add(nose);
+      g.add(mk('box',.14,.35,.14,c,x,.2,-1.8));g.add(mk('box',.14,.35,.14,c,x,.2,1.2));
+    });
+    g.add(mk('box',2.1,.1,.2,c,0,.15,-.2));
+    return g;},
+  roboLegs(p){const g=new THREE.Group(),c=p.color||'#8d99ae',joint=p.joint||'#ffd60a',boot=p.boot||'#212529';
+    [[-1.15,1.15],[-1.15,-1.15],[1.15,1.15],[1.15,-1.15]].forEach(([x,z])=>{
+      const leg=new THREE.Group();leg.position.set(x,0,z);
+      g.add(mk('box',.55,.22,.55,joint,x,1.55,z));
+      leg.add(mk('box',.32,1.0,.32,c,0,.95,0));
+      leg.add(mk('box',.42,.28,.42,joint,0,.4,0));
+      leg.add(mk('box',.28,.7,.28,c,0,-.05,0));
+      leg.add(mk('box',.55,.22,.7,boot,0,-.45,.1));
+      g.add(leg);
+    });
+    g.add(mk('box',2.5,.18,2.5,c,0,1.7,0));
+    return g;},
+  stegoSpikes(p){const g=new THREE.Group(),a=p.color||'#57cc99',b=p.b||'#ffbe0b';
+    for(let i=0;i<6;i++){
+      const z=1.4-i*.55,h=.55+((i%2)?.35:.15),col=i%2?a:b;
+      const plate=mk('box',.12,h,.55,col,0,h/2,z);plate.rotation.x=.15;g.add(plate);
+      g.add(mk('box',.12,h*.7,.4,col,.35,h*.35,z-.05));
+      g.add(mk('box',.12,h*.7,.4,col,-.35,h*.35,z-.05));
+    }
+    // stubby spiked tail tip
+    const tip=mk('cone',.35,.9,.35,a,0,.25,-1.85);tip.rotation.x=-Math.PI/2+.2;g.add(tip);
+    g.add(mk('cone',.18,.35,.18,b,-.25,.35,-2.2));g.add(mk('cone',.18,.35,.18,b,.25,.35,-2.2));
+    return g;},
+  hoverDisc(p){const g=new THREE.Group(),ring=p.color||'#9b5de5',glowC=p.glow||'#48cae4',dome=p.dome||'#caf0f8';
+    const disc=mk('cyl',1.9,.22,1.9,ring);g.add(disc);
+    const rim=mk('cyl',2.15,.12,2.15,p.rim||'#222');g.add(rim);
+    const bubble=mk('sph',1.5,1.1,1.5,dome,0,.55,0);g.add(bubble);
+    const light=mk('cyl',1.2,.1,1.2,null,0,-.2,0,glow(glowC));g.add(light);
+    [[-1.4,0],[1.4,0],[0,-1.4],[0,1.4]].forEach(([x,z])=>{
+      g.add(mk('sph',.22,.22,.22,null,x,-.05,z,glow(p.spot||'#ffd60a')));
+    });
     return g;}
 };
 
@@ -327,7 +368,41 @@ const RECIPES=[
       {id:'handlebar',at:[0,.55,1.55],color:'#212529',grip:'#ff006e',bell:'#ffd60a',scale:1.05},
       {id:'stripe',at:[0,.55,.2],color:'#fff',w:.2,h:.08,d:3.2},
       {id:'googly',at:[0,.85,1.05],s:.24},
-      {id:'flag',at:[-.55,.9,-1.15],color:'#ffbe0b',tip:'#e63946',scale:.85}]}
+      {id:'flag',at:[-.55,.9,-1.15],color:'#ffbe0b',tip:'#e63946',scale:.85}]},
+  /* D12 tier-3 garage cars — exact GARAGE_WANTED names so placeholders disappear */
+  {name:'Rocket Sled',emoji:'🛷',base:'race.glb',speed:31,r:2.2,tier:3,weapon:'rocket',scale:1.7,tweak:[.85,.55,1.35],y:.05,height:2.4,
+    paint:'#ff595e',exhaust:[0,.55,-2.4],
+    parts:[
+      {id:'sledRunners',at:[0,.25,0],color:'#ced4da',tip:'#ffd60a'},
+      {id:'stripe',at:[0,.7,.15],color:'#fff',w:.28,h:.08,d:4.0},
+      {id:'spoiler',at:[0,.85,-1.85],color:'#222',scale:.9},
+      {id:'rockets',at:[0,.95,-.15],scale:1.15,color:'#c1121f',fin:'#ffd60a',glow:'#ff7b00'},
+      {id:'googly',at:[0,.95,1.55],s:.22}]},
+  {name:'Robo Walker',emoji:'🤖',base:'truck.glb',speed:22,r:2.6,tier:3,weapon:'rocket',scale:1.45,tweak:[1.05,1.15,1.0],y:.85,height:4.2,
+    paint:'#8d99ae',exhaust:[0,1.55,-2.0],
+    parts:[
+      {id:'roboLegs',at:[0,0,0],color:'#6c757d',joint:'#ffd60a',boot:'#212529'},
+      {id:'stripe',at:[0,1.85,.2],color:'#ffd60a',w:2.0,h:.14,d:2.2},
+      {id:'googly',at:[0,2.55,1.55],s:.36},
+      {id:'flag',at:[.7,2.35,-.4],color:'#3a86ff',tip:'#ff006e',pole:'#adb5bd',scale:.9},
+      {id:'rockets',at:[0,2.15,-.75],scale:1.2,color:'#495057',fin:'#ffd60a',glow:'#48cae4'},
+      {id:'lightbar',at:[0,2.65,.35],a:'#ff2d55',b:'#3a86ff'}]},
+  {name:'Spike-o-saurus',emoji:'🦕',base:'truck.glb',speed:23,r:2.7,tier:3,weapon:'rocket',scale:1.55,tweak:[1.08,1.15,1.1],height:3.6,
+    paint:'#57cc99',exhaust:[0,.8,-2.2],
+    parts:[
+      {id:'stegoSpikes',at:[0,1.85,-.15],scale:1.2,color:'#38a3a5',b:'#ffbe0b'},
+      {id:'googly',at:[0,2.15,2.35],s:.34},
+      {id:'stripe',at:[0,.9,.15],color:'#22577a',w:2.1,h:.16,d:2.6},
+      {id:'rockets',at:[0,1.55,-.95],scale:1.25,color:'#2a9d8f',fin:'#ffbe0b',glow:'#95d5b2'},
+      {id:'plow',at:[0,.85,2.55],color:'#80ed99',scale:.85}]},
+  {name:'Hover Zoomer',emoji:'🛸',base:'race-future.glb',speed:29,r:2.3,tier:3,weapon:'rocket',scale:1.65,tweak:[1.05,.9,1.05],y:.35,height:2.8,
+    paint:'#9b5de5',exhaust:[0,.7,-2.1],
+    parts:[
+      {id:'hoverDisc',at:[0,.55,0],scale:1.05,color:'#7b2cbf',rim:'#22223b',dome:'#caf0f8',glow:'#48cae4',spot:'#ffd60a'},
+      {id:'stripe',at:[0,1.15,.1],color:'#00f5d4',w:.25,h:.08,d:2.8},
+      {id:'rockets',at:[0,1.05,-.55],scale:1.1,color:'#5a189a',fin:'#00f5d4',glow:'#ff7b00'},
+      {id:'googly',at:[0,1.45,1.15],s:.26},
+      {id:'spoiler',at:[0,1.25,-1.45],color:'#00bbf9'}]}
 ];
 
 /* ---------- Kenney cars ----------
