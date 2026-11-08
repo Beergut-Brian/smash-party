@@ -131,7 +131,8 @@ Claude Code's *logic* sessions still own `core.js`, `game.js` and `tools/`. A de
   - Buildings still need the L3 part contract to collapse. For a pack building, either keep it one piece (it smashes but doesn't pancake) or split walls/roof into separate meshes in Blender, and tag them in a small manifest.
   - Needs: L9 GLB prop loader for the cleanest path. Cars can start now via `assets/cars/cars.json`.
 
-- [ ] **D5: Boss model(s)** (world lane)
+- [x] **D5: Boss model(s)** (world lane)
+  - Done (world-bosses/D5): `BOSSES` in `src/world/bosses.js` replaces all three placeholders, block-built, 47–55 parts, 3 phases × 2 weak spots each, spinning bits via `o.spin`. **Clankzilla**: washing-machine robot (sock in the window), toaster head with toast popping out, tin-can legs in sneakers, plunger + spatula, propeller; weak spots knees → heels → dial + battery. **Shelldozer**: beach crab with one giant fiddler claw wearing a sandcastle, pinwheel on top; claw wrists → back bumps → castle shells. **King Wobbles**: roly-poly toy king, stacked-block tummy, curly mustache, tilted crown, spinning lollipop scepter and wind-up key; slipper pompoms → buckle + key → side jewels. Same ids and names, so the recorded intros still play.
   - One original boss for max size, built from L3-contract parts plus `BP(mesh, floor, 'weak')` glowing weak spots. Chunky, funny, not scary. Kaden and son to pick the concept (and maybe name it).
   - Needs: L6 spec. ✅ L6 is done. The format is in `CLAUDE.md` under "Boss". Logic has three blocky placeholders to replace or polish (Kaden picked all three ideas, one random per world): **Clankzilla** (junk robot), **Shelldozer** (crab carrying a sandcastle), **King Wobbles** (wobbly block king). New bosses welcome; Kaden and son will invent more.
 
