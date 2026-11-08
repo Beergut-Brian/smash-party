@@ -159,6 +159,14 @@ Same shape as `HOME_QUEST_AT`: `{giver:[x,z], r, stage:[x,z,w,d], …point lists
 
 Scenery the layouts should build (no quest `stage` scenes, like Q1b): the bakery and the birthday cake on Frosting Lane, the gumball machine bowl, the forest clearing, gingerbread doorsteps, the donut shop lot, the dock, wafer bridge, a marshmallow island and the waterfall, the quarry, bank ramps, the cake plaza, the mountain with ramps and a summit cherry, the cloud meadow.
 
+## How the pack reads the spots (Q3, for Z6 part 2)
+`src/world/quests/candy.js` reads `registerWorld({id:'candy', questAt})` (candy_land.js) once when it loads, key by key, and falls back to its own numbers (`QUEST_CANDY_AT`, read off `CANDY_LAND_PLAN`) for anything missing, so you can fill quests one at a time. Rules of thumb from the engine:
+- **Push quests (`minty_gumballs`, `glaze_donuts`):** the goal circle sits at the **stage center**, and a `quest_<id>` spot (if the layout marks one) wins over `stage`. So center the `quest_<id>` spot (or `stage`) on the **bowl / shop lot**, or give the pack a `goal:[x,z]`. The pushables start in a ring ~3 (gumballs) / ~8 (donuts) units round it.
+- **Point lists:** `cherries:{street,roof}` and optional `piles` (Bun), `rings` (Snap, Fizzy), `drops` (Cocoa), `goal` (Minty, Glaze), `rings_at:{river,bridge,island,falls}` (Wafer), optional `crystals` (Jo), `summit:[x,z,h]` or `summit` + `summitH` (Sundae). Anything left out is spread over the stage.
+- **`lift` items** (Bun's roof cherry, Wafer's rings, Sundae's cherry) sit on top of whatever prop is at the point: put it right on the cupcake house / falls / summit prop. With no prop there Sundae's cherry floats at `summitH` (default 3, in car-scale-1 units): **keep it at 3 or less**, since at huge a jump only reaches ~2.4 (2.6 with hover).
+- The quarry uses `candy_crystal` (and some `candy_rock`) for its 50 rock-candy crystals, so no new prop is needed.
+- Sub-zone ids in the pack's comments follow Z6: the mountains are `candy_peaks`.
+
 ## Hand-offs
 - **Quest items (quests lane, in the pack):** `cherry`, `cocoa`, `lifering` (`QUEST_ITEMS`), push builds for the gumballs and the donuts.
 - **Logic (L42, L44):** the `sugarrush` ability; cosmetics `cherry`, `gumballs`, `bandhat`, `siren`, `burp`, `rainbow`; arrival size. Any cosmetic that doesn't make it: the quest gives ⭐⭐ instead.

@@ -127,7 +127,7 @@ Each block: id · giver (emoji, name, look, voice for casting) · steps · rewar
 **`cinder_rocks`** (side) 🔥 **Cinder the Dimetrodon**
 - *Look:* a red sail-backed dimetrodon in a sun hat and sunglasses, fanning herself with a palm leaf.
 - *Voice:* hot and bothered, dramatic sighs ("Phew! It's TOASTY!").
-- *Steps:* talk → **smash** 40 lava rocks (`dino_boulder` / `dino_rock`) the volcano spat out round her beach chair.
+- *Steps:* talk → **smash** 30 lava rocks (`dino_lavarock` / `dino_cinder`) the volcano spat out round her beach chair.
 - *Lines:* "The volcano hiccupped rocks!" · "Smash them all, honey!" · "Ooh, that's cooler!" · "Ahh, a nice breeze!"
 - *Reward:* ⭐⭐⭐.
 - *Spots:* `giver` on the volcano slope (r 6); `stage` ~100×80.
@@ -157,6 +157,12 @@ Same shape as `HOME_QUEST_AT`: `{giver:[x,z], r, stage:[x,z,w,d], …point lists
 | `gertie_photo` | dino_volcano (meadow) | 6 | 120×80 | (none) |
 
 Scenery the layouts should build (no quest `stage` scenes, like Q1b): Gertie's nest, the nursery fence, the giant nest + hill ramp, the bowling hollow, the dig pit with a display stand, ribcage arch and a ramped ledge, the swamp dock, the trike corral, Cinder's beach chair, the boss arena.
+
+## How the pack reads the spots (Q2, for Z5b)
+`src/world/quests/dino.js` reads `registerWorld({id:'dino', questAt})` once when it loads, key by key, and falls back to its own numbers (`QUEST_DINO_AT`, round the default start at x=0) for anything missing, so you can fill quests one at a time. Rules of thumb from the engine:
+- **Push quests (`gertie_egg`, `rolly_bowling`, `rosa_trikes`):** the goal circle sits at the **stage center**, and a `quest_<id>` spot (if the layout marks one) wins over `stage`. So center the `quest_<id>` spot (or `stage`) on the **nest / hollow / corral**, not the whole area, or give the pack a `goal:[x,z]` (it uses that as the center). The pushables must start within ~1.8× the stage radius of it.
+- **Point lists:** `nest`, `egg`, `leaves` (Gertie), `rings` (Rocky, Mossy), `sneakers:{nest,ramp}` (Theo), `drops` (Petra), `goal` (Rolly, Rosa), `pieces:{tar,ribcage,ledge}` and optional `mounds` (Digby), optional `rocks` (Cinder). Anything left out is spread over the stage.
+- **`lift` items** (Theo's nest sneaker, Digby's ribcage and ledge bones) sit on top of whatever prop is at the point: put the point right on the prop. With no prop there the sneaker floats at `y` 5 (a jump at tiny/small reaches ~6.5); the bones just lie on the ground.
 
 ## Hand-offs
 - **Quest items (quests lane, in the pack):** `leaf`, `sneaker`, `worm`, `bone` (`QUEST_ITEMS`), push builds for the egg and the boulders.
