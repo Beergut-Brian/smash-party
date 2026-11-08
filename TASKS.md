@@ -137,6 +137,13 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Town: houses lined up along streets with yards, fences, driveways and mailboxes; shops on a main street; a park block. Farm: fenced fields with crops in rows, animals in pens, the barn yard. Park: paths, a playground area, the pond.
   - Mark spots with `ctx.spot()` so the filler lands where it belongs.
 
+- [ ] **L21: Camera follows your size + "where's my car?"** (play-test round 2; do before L17)
+  - The start feels zoomed out and you lose your car. **Keep each car about the same size on screen at every size:** the camera distance scales with the players' size (close at micro, pulling back as you grow), with gentle easing on size-ups (a little "whoosh" pull-back is a nice size-up moment). Let the **world** make you feel small (giant curbs, flowers, mailboxes towering over you), not the camera.
+  - Two players far apart: frame both, but clamp the zoom-out and gently pull the trailing car along instead of shrinking both cars to specks.
+  - **Easy to find your car:** a bright player-colored ring and a bobbing arrow/marker above each car (P1/P2 color), bigger on spawn and after respawn/teleport/garage, fading to subtle while driving. A short spotlight + "beep beep!" intro on start.
+  - **Start on a street:** spawn both players on a sidewalk/street spot in a town chunk, surrounded by micro props (pebbles, flowers, soda cans, leaves), with a curb and a mailbox towering over them, instead of open grass. (Ties into L19 spots; until then, pick a fixed street spot in the home area.)
+  - Hand-off: `NEEDS DESIGN` world-props for a hand-placed "start street" set-dressing (curb, sidewalk cracks, puddle, toy-sized clutter) once the spawn spot exists.
+
 - [ ] **L17: Level-up garage (pick your new car)**
   - Every car-tier unlock (every 2 sizes) opens a **garage** instead of the plain LEVEL UP: the world pauses and both players drop into a small showroom arena with 3–4 parked cars per player from the new tier on glowing pads, each with a **stat card** floating above it.
   - **Smash a car to pick it** (drive into it, with a big burst, fanfare and the car's name spoken). You then drive the new car around the garage until the other player picks. With one player, only one pick is needed.
