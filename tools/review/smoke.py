@@ -50,7 +50,9 @@ async def main():
         await E("(()=>{const g=questGivers.hank;__sp.tp(g.x,g.z+g.r+players[0].r-0.03);players[0].heading=Math.PI;})()")
         await pg.keyboard.down('KeyW'); await pg.wait_for_timeout(1500); await pg.keyboard.up('KeyW')
         print('quest started', await until(pg, "!!questA"))
+        await E("talkS&&talkClose()")   # L45: the opening talk scene pauses the game; headless is too slow to click through it
         await E("__sp.quest('hank_lunchbox',true)"); await pg.wait_for_timeout(6000)
+        await E("talkS&&talkClose()")
         print('hammer after', await E("hasAbility('hammer')"), '| saved', await E("!!localStorage.getItem('sp_adv')"))
         await E("__sp.level(2)"); await pg.wait_for_timeout(4000); await pg.keyboard.press('KeyQ')
         print('garage rises', await until(pg, "!!garage"))
