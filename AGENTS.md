@@ -60,7 +60,7 @@ Check `TASKS.md` before starting. Take the top unchecked task in your section, c
 - Y is up. Forward for any car/object is **+Z** at `rotation.y = 0`; heading θ points along `(sin θ, cos θ)`.
 - The camera looks from +Z toward −Z, so screen-up is world −Z.
 - The world spans ±440 (`ARENA`) as an 11×11 grid of 80×80 chunks (`CHUNK`); chunk (0,0) is centered on the origin. The original hand-built arena (`buildWorld`) fills the middle, ±72 (`HOME`). Roads run every 160 units. Units ≈ meters; a car is ~4–5 long.
-- Only chunks near the players are built. Far objects sleep as instanced meshes and wake into real meshes near a car. Smashed things are remembered per chunk and regrow after a couple of minutes.
+- Only chunks near the players are built. Objects sleep in shared instanced pools (one draw call per shape for the whole world, undamaged pack buildings drawn from their `o.proxy`) and wake into real meshes only when something hits them. Animals draw instanced per kind and material; block-built cars are merged per material except the wheels. Smashed things are remembered per chunk and regrow after a couple of minutes.
 
 ## Adding things
 - **Block-built car:** write `buildX()` returning `{g, wheels, ex, h}` (see `buildMonster`) and add it to `CARS` with `name, emoji, speed (20–32), r (collision radius ~2–2.8)`, plus `tier` (0 = starter cars at the tiniest sizes … 3 = the coolest cars at the biggest sizes; a new tier unlocks every 2 sizes) and optionally `weapon: 'bubble' | 'cannon' | 'rocket'` (default: tiers 0–1 bubble, tier 2 cannon, tier 3 rocket). Until `tier` is set, `CAR_TIER` in game.js decides.

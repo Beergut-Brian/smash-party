@@ -13,13 +13,13 @@ const _dm=new THREE.Matrix4(),_dc=new THREE.Color();
 function addDebris(m,half,vx,vy,vz,opts={}){
   let slot=-1;if(m.isBox){if(dbox.count>=DBOX_CAP)return;slot=dbox.count++;dbox.setColorAt(slot,m.col);dbox.instanceColor.needsUpdate=true;}
   else if(!m.parent)scene.add(m);
-  const d={m,half,vx,vy,vz,ax:rand(-9,9),ay:rand(-9,9),az:rand(-9,9),life:opts.life||rand(6,9),settled:false,s0:m.scale.clone(),g:opts.g||32,confetti:!!opts.confetti,slot};
+  const d={m,half,vx,vy,vz,ax:rand(-9,9),ay:rand(-9,9),az:rand(-9,9),life:opts.life||rand(6,9),settled:false,s0:m.scale.clone(),g:opts.g||32,confetti:!!opts.confetti,slot,whole:!!opts.whole};
   if(slot>=0)dboxOwner[slot]=d;debris.push(d);
   if(debris.length>DEBRIS_MAX)for(let i=0;i<debris.length-DEBRIS_MAX;i++)debris[i].life=Math.min(debris[i].life,0.6);
 }
 function updateDebris(dt){
   for(let i=debris.length-1;i>=0;i--){const d=debris[i];d.life-=dt;
-    if(d.life<=0){if(d.slot>=0)dboxFree(d);else scene.remove(d.m);debris.splice(i,1);continue;}
+    if(d.life<=0){if(d.slot>=0)dboxFree(d);else{scene.remove(d.m);if(d.whole)wholeN--;}debris.splice(i,1);continue;}
     if(d.life<0.8){const k=Math.max(0.01,d.life/0.8);d.m.scale.set(d.s0.x*k,d.s0.y*k,d.s0.z*k);}
     const p=d.m.position;
     if(d.settled){
@@ -48,13 +48,31 @@ function updateParts(dt){
     const k=p.life/p.max;p.m.position.x+=p.vx*dt;p.m.position.y+=p.vy*dt;p.m.position.z+=p.vz*dt;
     p.m.scale.setScalar(p.grow?p.s0*(1+p.grow*(1-k)):p.s0*k);if(p.fade)p.m.material.opacity=k*0.75;}
 }
+/* L25: puffs and flashes all draw from one InstancedMesh (color + fading opacity per instance) instead of a mesh and
+   material each: a big explosion was ~30 draw calls of smoke on its own. */
+const PUFF_CAP=700,puffs=[],puffGeo=GEO.sph.clone(),puffOp=new THREE.InstancedBufferAttribute(new Float32Array(PUFF_CAP),1);
+puffGeo.setAttribute('iOp',puffOp);
+const puffMat=new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,depthWrite:false});
+puffMat.onBeforeCompile=sh=>{sh.vertexShader='attribute float iOp;\nvarying float vOp;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvOp=iOp;');
+  sh.fragmentShader='varying float vOp;\n'+sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\ndiffuseColor.a*=vOp;');};
+const puffIM=new THREE.InstancedMesh(puffGeo,puffMat,PUFF_CAP);puffIM.setColorAt(0,new THREE.Color('#ffffff'));puffIM.count=0;
+puffIM.frustumCulled=false;puffIM.castShadow=false;puffIM.receiveShadow=false;scene.add(puffIM);
+const _pfc=new THREE.Color(),_pfm=new THREE.Matrix4(),_pfq=new THREE.Quaternion(),_pfv=new THREE.Vector3(),_pfs=new THREE.Vector3();
+function addPuff(x,y,z,s,color,life,vx,vy,vz,grow){
+  if(puffs.length>=PUFF_CAP)return; // plenty of smoke already
+  puffs.push({x,y,z,s0:s,life,max:life,vx,vy,vz,grow});puffIM.setColorAt(puffs.length-1,_pfc.set(color));puffIM.instanceColor.needsUpdate=true;}
+function updatePuffs(dt){
+  for(let i=puffs.length-1;i>=0;i--){const p=puffs[i];p.life-=dt;
+    if(p.life<=0){const last=puffs.length-1;if(i!==last){puffs[i]=puffs[last];puffIM.getColorAt(last,_pfc);puffIM.setColorAt(i,_pfc);puffIM.instanceColor.needsUpdate=true;}puffs.pop();continue;}
+    p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;}
+  for(let i=0;i<puffs.length;i++){const p=puffs[i],k=p.life/p.max,sc=p.s0*(1+p.grow*(1-k));
+    _pfm.compose(_pfv.set(p.x,p.y,p.z),_pfq,_pfs.set(sc,sc,sc));puffIM.setMatrixAt(i,_pfm);puffOp.array[i]=k*0.75;}
+  puffIM.count=puffs.length;if(puffs.length){puffIM.instanceMatrix.needsUpdate=true;puffOp.needsUpdate=true;}}
 function puff(x,y,z,n,size,color='#f4ecdf'){
   const k=Math.min(1.6,size/1.2);
-  for(let i=0;i<n;i++){const m=new THREE.Mesh(GEO.sph,new THREE.MeshBasicMaterial({color,transparent:true,opacity:.75,depthWrite:false}));
-    m.position.set(x+rand(-1,1)*k,y+rand(0,1)*k,z+rand(-1,1)*k);m.scale.setScalar(size*rand(.7,1.3));addPart(m,rand(.5,.9),rand(-3,3)*k,rand(1,3)*k,rand(-3,3)*k,1.6,true);}
+  for(let i=0;i<n;i++)addPuff(x+rand(-1,1)*k,y+rand(0,1)*k,z+rand(-1,1)*k,size*rand(.7,1.3),color,rand(.5,.9),rand(-3,3)*k,rand(1,3)*k,rand(-3,3)*k,1.6);
 }
-function flash(x,y,z,color,size,life){const m=new THREE.Mesh(GEO.sph,new THREE.MeshBasicMaterial({color,transparent:true,opacity:1,depthWrite:false}));
-  m.position.set(x,y,z);m.scale.setScalar(size);addPart(m,life,0,2,0,6,true);}
+function flash(x,y,z,color,size,life){addPuff(x,y,z,size,color,life,0,2,0,6);}
 
 /* ---------- smashing ---------- */
 let score=0,levelScore=0,level=1,goal=100,smashCount=0,shake=0;
@@ -62,15 +80,16 @@ const queue=[];
 const _wp=new THREE.Vector3(),_q=new THREE.Quaternion(),_ws=new THREE.Vector3();
 function partMat(m){if(m.material&&!Array.isArray(m.material))return m.material;let f=null;m.traverse(x=>{if(!f&&x.isMesh)f=Array.isArray(x.material)?x.material[0]:x.material;});return f||M('#cccccc');}
 // send one part flying: whole parts fly off intact, others shatter into `n` boxes. vyK scales the upward kick.
+const WHOLE_MAX=40;let wholeN=0; // L25: at most this many intact parts fly at once (each is its own draw call); past that they shatter into boxes
 function breakPart(o,part,nx,nz,power,vyK=1){
   if(part.gone)return;part.gone=true;const m=part.mesh,k=sizeK(o);power*=k;vyK*=k;
   m.traverse(x=>x.userData.dead=true); // keeps it hidden in the chunk's instanced copy
   m.getWorldPosition(_wp);const out=Math.atan2(_wp.x-o.x,_wp.z-o.z);
-  if(part.whole){
+  if(part.whole&&wholeN<WHOLE_MAX){wholeN++;
     m.getWorldQuaternion(_q);m.getWorldScale(_ws);
     scene.add(m);m.position.copy(_wp);m.quaternion.copy(_q);m.scale.copy(_ws);
     const f=power*rand(.4,1.0);
-    addDebris(m,part.half,nx*f+(Math.sin(out)*rand(1,5)+rand(-3,3))*k,rand(4,11)*(0.6+power/45)*vyK,nz*f+(Math.cos(out)*rand(1,5)+rand(-3,3))*k);
+    addDebris(m,part.half,nx*f+(Math.sin(out)*rand(1,5)+rand(-3,3))*k,rand(4,11)*(0.6+power/45)*vyK,nz*f+(Math.cos(out)*rand(1,5)+rand(-3,3))*k,{whole:true});
   }else{
     m.getWorldScale(_ws);const s=_ws,vol=s.x*s.y*s.z/part.n;const cs0=clamp(Math.cbrt(vol),0.3*k*k,2.0);
     for(let i=0;i<part.n;i++){const cs=cs0*rand(.7,1.15);
@@ -350,7 +369,7 @@ function rollWorld(keepSize){
   for(const c of chunks.values())for(const r of c.rampList)r.mesh.geometry.dispose();
   chunks.clear();for(const o of objects){poolRelease(o);scene.remove(o.g);}objects=[];queue.length=0;
   for(const o of collapsing)scene.remove(o.g);collapsing.length=0;
-  for(const a of animals)scene.remove(a.g);animals.length=0;
+  for(const a of animals)animalHide(a);animals.length=0;
   for(const d of debris)if(!d.confetti){scene.remove(d.m);d.life=0;}
   worldSeed=(Math.random()*1e9)|0;setZoneMap(randomZoneMap(mulberry(worldSeed),'TFP',pickThemedZones()));
   buildWorld();captureHome();
@@ -407,7 +426,7 @@ function spawnFalling(cx,cz,spread,type){
   return null;
 }
 function updateObjects(dt){
-  for(const o of objects){if(!o.wob)continue;o.wob=Math.max(0,o.wob-dt*1.6);const w=o.wob;
+  for(const o of objects){if(!o.wob)continue;if(o.sleep)wakeObj(o);o.wob=Math.max(0,o.wob-dt*1.6);const w=o.wob;
     o.g.rotation.x=Math.sin(T*23)*0.07*w;o.g.rotation.z=Math.cos(T*19)*0.09*w;const f=o.s0||1;o.g.scale.set(f*(1+0.05*w*Math.sin(T*31)),f*(1-0.08*w*Math.sin(T*31)),f*(1+0.05*w*Math.sin(T*31)));}
   for(const o of objects){if(!o.alive||!o.falling)continue;
     o.vy-=40*dt;o.fy+=o.vy*dt;
@@ -419,11 +438,12 @@ function updateObjects(dt){
 
 /* ---------- world streaming (chunks) ---------- */
 /* Each chunk remembers its objects as records {type,x,z,arg,r,seed,dead,back}, so leaving and coming back
-   keeps what you smashed. Only chunks near the players are built. Built objects "sleep" as instanced meshes
-   (a few draw calls per chunk) and wake into real meshes when a car gets close enough to smash them.
+   keeps what you smashed. Only chunks near the players are built. Built objects "sleep" in the shared instanced
+   pools (one draw call per shape for the whole world) and wake into real meshes only when something happens to
+   them (smashed, hit, wobbling, rolling), then fall asleep again once the cars are far away.
    Smashed records regrow after REGROW seconds (dropping from the sky if the chunk is loaded). */
 const REGROW=[90,160];
-const wakeR=()=>3+7*S; // wake things this close to a car (minus their radius): a lookahead, not the whole view
+const wakeR=()=>3+7*S; // woken things (hit, wobbling) go back to sleep once the cars are this far away (minus their radius)
 const chunks=new Map();
 const chunkKey=(ci,cj)=>ci+','+cj;
 function getChunk(ci,cj){const k=chunkKey(ci,cj);let c=chunks.get(k);
@@ -523,11 +543,18 @@ function sleepLook(o){o.g.updateMatrixWorld(true);const out=[];
    free slots, so a sleeping scatter prop costs nothing extra to draw. */
 const pools=new Map();
 // Slots stay packed (a freed slot takes the last one in), and im.count only draws the slots in use.
+function poolIM(geo,mat,plain,cap){const im=new THREE.InstancedMesh(geo,mat,cap);if(plain)im.setColorAt(0,new THREE.Color('#ffffff'));im.count=0;
+  im.castShadow=im.receiveShadow=true;im.frustumCulled=false;scene.add(im);return im;}
 function poolFor(m){const k=batchKey(m);let p=pools.get(k);
-  if(!p){const plain=colorBatched(m),cap=plain?2048:256,im=new THREE.InstancedMesh(m.geometry,batchMat(m),cap);
-    if(plain)im.setColorAt(0,new THREE.Color('#ffffff'));im.count=0;
-    im.castShadow=im.receiveShadow=true;im.frustumCulled=false;scene.add(im);p={im,plain,cap,owner:[]};pools.set(k,p);}
+  if(!p){const plain=colorBatched(m),cap=plain?512:64;p={im:poolIM(m.geometry,batchMat(m),plain,cap),plain,cap,owner:[]};pools.set(k,p);}
+  if(p.im.count>=p.cap&&p.cap<16384)poolGrow(p);
   return p;}
+function poolGrow(p){ // full: swap in one twice the size (copies every slot; owners point at the new mesh)
+  const old=p.im,im=poolIM(old.geometry,old.material,p.plain,p.cap*=2);im.count=old.count;
+  im.instanceMatrix.array.set(old.instanceMatrix.array);if(p.plain)im.instanceColor.array.set(old.instanceColor.array);
+  im.instanceMatrix.needsUpdate=true;if(p.plain)im.instanceColor.needsUpdate=true;
+  for(let i=0;i<old.count;i++)if(p.owner[i])p.owner[i][0]=im;
+  scene.remove(old);old.dispose();p.im=im;}
 const _pm=new THREE.Matrix4(),_pc=new THREE.Color();
 function poolAdopt(o){ // move an awake object into the pools and let it sleep (it wakes again when a car gets close)
   if(o.inst||!o.alive||o.spin||o.rolling||o.gold)return;const ent=[];let ok=true;
@@ -548,18 +575,16 @@ function loadChunk(c){
   c.loaded=true;c.group=new THREE.Group();scene.add(c.group);
   c.box=new THREE.Box3(new THREE.Vector3(c.x0-12,-1,c.z0-12),new THREE.Vector3(c.x0+CHUNK+12,40,c.z0+CHUNK+12));
   for(const r of c.rampList){c.group.add(r.mesh);ramps.push(r);}
-  const batches=new Map(),sleepers=[];
+  /* L25: sleepers go into the shared pools (one InstancedMesh per shape for the whole world, like the scatter props)
+     instead of a batch per shape per chunk: at GIANT size ~70 chunks are loaded, which was ~850 batches (most holding
+     1–3 copies) and the same again in the shadow pass. Drawing every loaded chunk's sleepers costs a few hundred
+     thousand extra triangles, which is far cheaper than the draw calls. */
   for(const rec of c.recs){
     if(rec.dead){if(T<rec.back)continue;rec.dead=false;}
-    const o=buildRec(rec);scene.remove(o.g);o.g.updateMatrixWorld(true);o.inst=[];o.sleep=true;sleepers.push(o);
+    const o=buildRec(rec);scene.remove(o.g);
     if(rec.gold&&!o.bld)goldify(o,60);
-    let multi=!!o.spin||!!o.gold;o.g.traverse(m=>{if(m.isMesh&&Array.isArray(m.material))multi=true;});if(multi){scene.add(o.g);o.inst=null;o.sleep=false;continue;}
-    for(const [m,mat] of sleepLook(o)){const k=batchKey(m);let b=batches.get(k);
-      if(!b)batches.set(k,b={geo:m.geometry,src:m,plain:colorBatched(m),list:[],cols:[]});
-      o.inst.push([b,b.list.length,m]);b.list.push(mat);b.cols.push(m.material.color);}}
-  for(const b of batches.values()){const im=new THREE.InstancedMesh(b.geo,batchMat(b.src),b.list.length);
-    b.list.forEach((m,i)=>{im.setMatrixAt(i,m);if(b.plain)im.setColorAt(i,b.cols[i]);});im.castShadow=im.receiveShadow=true;im.frustumCulled=false;c.group.add(im);b.im=im;}
-  for(const o of sleepers)if(o.inst)o.inst=o.inst.map(([b,i,mesh])=>[b.im,i,b.list[i],mesh]);
+    if(!o.spin&&!o.gold)poolAdopt(o);
+    if(!o.pooled){o.inst=null;o.sleep=false;scene.add(o.g);}} // spinning, gold or multi-material: stays a real mesh
 }
 function unloadChunk(c){
   c.loaded=false;for(const h of c.herds)if(h.on)herdOff(h);
@@ -585,7 +610,9 @@ function updateStreaming(dt,all){
   // wake objects near a car, put far ones back to sleep
   for(const o of objects){if(!o.inst||!o.alive)continue;let d=1e9;
     for(const p of players)d=Math.min(d,Math.hypot(o.x-p.x,o.z-p.z)-o.r);
-    if(o.sleep){if(d<wr)wakeObj(o);}else if(d>wr+2+4*S&&!o.falling&&!o.wob&&!o.rolling)sleepObj(o);}
+    if(!o.sleep&&d>wr+2+4*S&&!o.falling&&!o.wob&&!o.rolling)sleepObj(o);}
+  // L25: nothing wakes just for being near a car; it stays in its batch until something happens to it (smash, hit,
+  // wobble, roll: those call wakeObj), so an untouched house or tree costs no draw calls of its own at any size.
   // regrow smashed things in loaded chunks: they drop back in from the sky
   if((regrowT-=dt)>0)return;regrowT=1;let n=0;
   for(const c of chunks.values()){if(!c.loaded)continue;
@@ -623,6 +650,23 @@ function confetti(n){
 /* ---------- players ---------- */
 const players=[];
 const PCOL=['#ff9f1c','#2ec4f6'];
+/* L25: a block-built car is ~30–40 meshes; merge everything that doesn't move on its own (not the wheels) into one
+   mesh per material, so a car is ~10 draw calls instead of ~37 (each pass). Shapes that can't merge stay as they are. */
+function carMerge(model){
+  if(!THREE.mergeGeometries||!model||!model.g)return model;const g=model.g;g.updateMatrixWorld(true);
+  const keep=new Set();for(const w of model.wheels||[])w.traverse(x=>keep.add(x));
+  const inv=new THREE.Matrix4().copy(g.matrixWorld).invert(),groups=new Map();
+  g.traverse(m=>{if(!m.isMesh||m.isSkinnedMesh||m.isInstancedMesh||keep.has(m)||m.children.length||Array.isArray(m.material)||m.morphTargetInfluences)return;
+    for(let x=m;x&&x!==g;x=x.parent)if(keep.has(x)||Object.keys(x.userData).length)return; // spinning / tagged parts stay live
+    const geo=m.geometry,sig=m.material.uuid+'|'+(geo.index?'i':'n')+'|'+Object.keys(geo.attributes).sort().join(',');
+    (groups.get(sig)||groups.set(sig,[]).get(sig)).push(m);});
+  for(const list of groups.values()){if(list.length<2)continue;
+    const geos=list.map(m=>m.geometry.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv,m.matrixWorld)));
+    let merged=null;try{merged=THREE.mergeGeometries(geos);}catch(e){}
+    if(!merged)continue;const mm=new THREE.Mesh(merged,list[0].material);mm.castShadow=list.some(m=>m.castShadow);mm.receiveShadow=true;
+    for(const m of list)m.parent.remove(m);g.add(mm);(model.merged||(model.merged=[])).push(merged);}
+  return model;}
+function carUnmerge(model){if(model&&model.merged)for(const geo of model.merged)geo.dispose();}
 class Player{
   constructor(idx,src){
     this.idx=idx;this.src=src;this.color=PCOL[idx];
@@ -644,8 +688,8 @@ class Player{
   get r(){return this.stats.r*S;}
   get sm(){return clamp(S<1?Math.pow(S,0.95):Math.pow(S,0.6),0.07,2.3);} // speed scale: slow when small, same as before from size 1 up
   setCar(i,announce){
-    if(this.model)this.root.remove(this.model.g);
-    this.carIdx=i;this.stats=CARS[i];this.model=this.stats.build();this.root.add(this.model.g);
+    if(this.model){this.root.remove(this.model.g);carUnmerge(this.model);}
+    this.carIdx=i;this.stats=CARS[i];this.model=carMerge(this.stats.build());this.root.add(this.model.g);
     this.nameT=2.5;
     if(announce){sfx.pop();say(this.stats.name+'!');puff(this.x,S,this.z,6,1.6*Math.max(S,.3),'#ffffff');}
     updatePanels();
@@ -1026,22 +1070,42 @@ function animalModel(kind,def){
     const t=new THREE.Group();let ok=true;
     for(const [mat,geos] of byMat){const g=THREE.mergeGeometries?THREE.mergeGeometries(geos):null;if(!g){ok=false;break;}
       const mesh=new THREE.Mesh(g,mat);mesh.castShadow=mesh.receiveShadow=true;t.add(mesh);}
-    animalTemplates[kind]=ok?t:src;}
+    t.userData.merged=ok;animalTemplates[kind]=ok?t:src;}
   return animalTemplates[kind].clone();}
+/* L25: animals draw from one InstancedMesh per kind and material (a farm full of animals is a handful of draw calls,
+   not one per animal per material per pass). a.g stays the animal's transform, just not in the scene; a gold animal
+   (its own material + beam) or a kind that couldn't be merged is a real mesh in the scene instead. */
+const animalBatches=new Map(),ANIMAL_CAP=256;
+function animalShow(a){animalHide(a);a.shown=true;const t=animalTemplates[a.kind];
+  if(a.gold||!t||!t.userData.merged){scene.add(a.g);return;}
+  const ent=[];
+  for(const tm of t.children){let b=animalBatches.get(tm);
+    if(!b){const im=new THREE.InstancedMesh(tm.geometry,instMat(tm.material),ANIMAL_CAP);im.count=0;im.castShadow=im.receiveShadow=true;im.frustumCulled=false;
+      scene.add(im);animalBatches.set(tm,b={im,owner:[]});}
+    if(b.im.count>=ANIMAL_CAP){a.inst=ent;animalHide(a);a.shown=true;scene.add(a.g);return;}
+    const i=b.im.count++;const e=[b,i];b.owner[i]=e;ent.push(e);}
+  a.inst=ent;a.g.updateMatrix();for(const e of ent)e[0].im.setMatrixAt(e[1],a.g.matrix);}
+function animalHide(a){a.shown=false;scene.remove(a.g);if(!a.inst)return;
+  for(const e of a.inst){const b=e[0],im=b.im,i=e[1],last=--im.count;
+    if(i!==last){im.getMatrixAt(last,_pm);im.setMatrixAt(i,_pm);const mv=b.owner[last];mv[1]=i;b.owner[i]=mv;}
+    b.owner[last]=undefined;im.instanceMatrix.needsUpdate=true;}
+  a.inst=null;}
+function animalBatchSync(){for(const a of animals)if(a.inst){a.g.updateMatrix();for(const e of a.inst)e[0].im.setMatrixAt(e[1],a.g.matrix);}
+  for(const b of animalBatches.values())if(b.im.count)b.im.instanceMatrix.needsUpdate=true;}
 function spawnAnimal(h,x,z,kind=h.kind){
   const def=animalDef(kind),g=animalModel(kind,def);_bx.setFromObject(g);
   const r=Math.max(_bx.max.z-_bx.min.z,_bx.max.x-_bx.min.x)/2*0.85,hgt=_bx.max.y;
   const a={kind,def,g,herd:h,x,z,y:0,vx:0,vz:0,vy:0,heading:rand(0,Math.PI*2),state:'idle',t:rand(0,2),r,h:hgt,fr:r*1.2,
     alive:true,falling:false,ph:rand(0,9),spin:[0,0,0]};
   a.sz=clamp(Math.round(4+Math.log(Math.max(r,hgt/3)/1.1)/Math.log(SIZE_STEP)),0,SIZES.length-1);
-  a.speed=clamp(1.2+r*1.6,1,5);g.position.set(x,groundH(x,z),z);g.rotation.y=a.heading;scene.add(g);animals.push(a);h.list.push(a);return a;}
+  a.speed=clamp(1.2+r*1.6,1,5);g.position.set(x,groundH(x,z),z);g.rotation.y=a.heading;animals.push(a);h.list.push(a);return a;}
 function herdOn(h){h.on=true;if(h.goldIdx===undefined)h.goldIdx=Math.random()<0.15?0:-1;
   // every chicken flock gets a rooster (when design has made one)
   for(let i=0;i<h.n;i++){const k=h.kind==='chicken'&&i===h.n-1&&animalDef('rooster')?'rooster':h.kind;
-    const a=spawnAnimal(h,h.x+rand(-3,3),h.z+rand(-3,3),k);if(i===h.goldIdx)goldify(a,30);}}
-function herdOff(h){h.on=false;for(const a of h.list){scene.remove(a.g);const i=animals.indexOf(a);if(i>=0)animals.splice(i,1);}h.list.length=0;}
+    const a=spawnAnimal(h,h.x+rand(-3,3),h.z+rand(-3,3),k);if(i===h.goldIdx)goldify(a,30);animalShow(a);}}
+function herdOff(h){h.on=false;for(const a of h.list){animalHide(a);const i=animals.indexOf(a);if(i>=0)animals.splice(i,1);}h.list.length=0;}
 function launchAnimal(a,vx,vz,power){
-  if(a.state==='fly')return;if(a.gold){goldFound(a,true);ungold(a);a.herd.goldIdx=-1;}const d=Math.hypot(vx,vz)||1,H=rand(3,6)*Math.max(S,0.25)+a.r*2;
+  if(a.state==='fly')return;if(a.gold){goldFound(a,true);ungold(a);a.herd.goldIdx=-1;animalShow(a);}const d=Math.hypot(vx,vz)||1,H=rand(3,6)*Math.max(S,0.25)+a.r*2;
   a.state='fly';a.bounced=false;a.vy=Math.sqrt(64*H);a.vx=vx/d*power*0.5+rand(-2,2)*S;a.vz=vz/d*power*0.5+rand(-2,2)*S;
   a.spin=[rand(-12,12),rand(-12,12),rand(-12,12)];a.falling=true;
   if(!sfxClip(a.kind,0.9,rand(0.92,1.12)))tone('square',rand(500,900),rand(1200,1800),0.25,0.12);sfxClip('whee',0.35,rand(.9,1.2));
@@ -1093,6 +1157,7 @@ function updateAnimals(dt){
     a.y=groundH(a.x,a.z);
     g.position.set(a.x,a.y+(moving?Math.abs(Math.sin(T*14+a.ph))*0.12*a.r:0),a.z);
     if(a.state!=='dizzy')g.rotation.set(0,a.heading,moving?Math.sin(T*14+a.ph)*0.12:0);}
+  animalBatchSync();
 }
 
 
@@ -1447,12 +1512,12 @@ function garageRows(){
     l.forEach((c,k)=>{let x,z;
       if(players.length>1){const side=p.idx===0?-1:1;x=side*(9.5+(k%2)*7.5);z=-11+Math.floor(k/2)*9.5;}
       else{x=(k-(l.length-1)/2)*7;z=-6;}
-      const model=c.build();model.g.position.set(x,0.25,z);G.g.add(model.g);
+      const model=carMerge(c.build());model.g.position.set(x,0.25,z);G.g.add(model.g);
       const pad=mk('cyl',6,0.3,6,null,x,0.1,z,E(p.color));pad.castShadow=false;G.g.add(pad);
       const beam=new THREE.Mesh(MARK_BEAM_GEO,new THREE.MeshBasicMaterial({color:'#fff3b0',transparent:true,opacity:0.18,depthWrite:false,
         blending:THREE.AdditiveBlending,side:THREE.DoubleSide,fog:false}));beam.scale.set(3,12,3);beam.position.set(x,0,z);G.g.add(beam);
       G.pads.push({car:c,owner:p.idx,lx:x,lz:z,model,pad,beam,card:garageCard(c,p.color),spin:rand(0,6)});});}}
-function garagePadOff(pd,poof){pd.gone=true;garage.g.remove(pd.model.g,pd.pad,pd.beam);pd.beam.material.dispose();pd.card.remove();
+function garagePadOff(pd,poof){pd.gone=true;garage.g.remove(pd.model.g,pd.pad,pd.beam);carUnmerge(pd.model);pd.beam.material.dispose();pd.card.remove();
   if(poof){const w=garageW(pd);puff(w.x,garage.sG*1.5,w.z,6,1.2*garage.sG,'#ffffff');}}
 const _gw=new THREE.Vector3();
 function garageW(pd){return _gw.set(garage.x+pd.lx*garage.sG,0,garage.z+pd.lz*garage.sG);}
@@ -1561,7 +1626,7 @@ function loop(now){
   updateGrowth(dt);updateStreaming(dt);
   if(state==='play'&&!garage){collisions();updateBoss(dt);}
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
-  updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateCombo(dt);if(!garage)updateGold(dt);if(!garage){updatePads(dt);updateScatter(dt);updateAnimals(dt);}updateRollers(dt);updateSpin(dt);updateShots(dt);updateDebris(dt);updateParts(dt);
+  updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateCombo(dt);if(!garage)updateGold(dt);if(!garage){updatePads(dt);updateScatter(dt);updateAnimals(dt);}updateRollers(dt);updateSpin(dt);updateShots(dt);updateDebris(dt);updateParts(dt);updatePuffs(dt);
   updateMusic();updateCamera(dt,T);updateSignals(dt);cullChunks();updateHUD();
   renderer.render(scene,camera);
   pressed.clear();touch.jumpP=false;touch.swapP=false;
