@@ -80,25 +80,152 @@ const CARS=[
   {name:'Bubble Buggy',emoji:'🫧',speed:26,r:2.2,build:buildBubble}
 ];
 
-/* ---------- extra cars from 3D model files (assets/cars/cars.json) ----------
-   Each entry: {name, emoji, file, speed, r, scale, y, rotateY, height, exhaust:[x,y,z]}
-   Models must face +Z (forward) with wheels resting at y=0 after scale/y offset.
-   Any mesh with "wheel" in its name spins as a wheel. */
+/* ---------- parts library ----------
+   Reusable add-ons. A new car just lists part ids. Each part is built in its own
+   little space (y up, +Z forward) and the recipe places it with at / rot / scale.
+   Colors come from the recipe entry (p.color, p.a, p.b, …). */
+const PARTS={
+  lightbar(p){const g=new THREE.Group();
+    g.add(mk('box',1.15,.16,.32,'#222'));
+    g.add(mk('box',.42,.2,.26,null,-.3,.12,0,glow(p.a||'#ff2d55')));
+    g.add(mk('box',.42,.2,.26,null,.3,.12,0,glow(p.b||'#3a86ff')));
+    return g;},
+  stripe(p){return mk('box',p.w||1.5,p.h||.14,p.d||3.6,p.color||'#111');},
+  roofsign(p){const g=new THREE.Group();
+    g.add(mk('box',.15,.22,.15,'#222',0,-.05,0));
+    g.add(mk('box',.72,.32,.32,p.color||'#111',0,.16,0));
+    g.add(mk('box',.5,.1,.08,'#ffd60a',0,.16,.17));
+    return g;},
+  ladder(p){const g=new THREE.Group(),c=p.color||'#f8f9fa';
+    g.add(mk('box',.08,.08,2.5,c,-.3,0,0));g.add(mk('box',.08,.08,2.5,c,.3,0,0));
+    for(let i=0;i<6;i++)g.add(mk('box',.68,.06,.06,c,0,0,-1+i*.4));
+    return g;},
+  spoiler(p){const g=new THREE.Group(),c=p.color||'#111';
+    g.add(mk('box',.1,.38,.22,c,-.6,.1,0));g.add(mk('box',.1,.38,.22,c,.6,.1,0));
+    g.add(mk('box',1.55,.08,.38,c,0,.28,0));
+    return g;},
+  plow(p){const g=new THREE.Group();
+    const blade=mk('box',3.1,1.2,.2,p.color||'#ff9f1c');blade.rotation.x=-.6;g.add(blade);
+    g.add(mk('box',2.6,.12,.22,'#fff3bf',0,.35,.08));
+    g.add(mk('box',.14,.14,.9,'#495057',-.7,-.15,-.55));
+    g.add(mk('box',.14,.14,.9,'#495057',.7,-.15,-.55));
+    return g;},
+  drum(p){const g=new THREE.Group();
+    const body=mk('cyl',.62,1.6,.62,p.color||'#ffe066');body.rotation.x=Math.PI/2;g.add(body);
+    [-.48,.48].forEach(z=>{const b=mk('cyl',.68,.14,.68,p.band||'#f77f00');b.rotation.x=Math.PI/2;b.position.z=z;g.add(b);});
+    return g;},
+  chute(p){const g=new THREE.Group();
+    const lip=mk('cone',.26,.85,.26,p.color||'#ced4da');lip.rotation.x=Math.PI/2+.55;g.add(lip);
+    return g;},
+  stopSign(p){const g=new THREE.Group();
+    g.add(mk('box',.08,.9,.08,'#f8f9fa',0,-.2,0));
+    const disc=mk('cyl',.46,.08,.46,p.color||'#e63946',0,.42,0);disc.rotation.x=Math.PI/2;g.add(disc);
+    const face=mk('cyl',.28,.1,.28,'#fff',0,.42,.05);face.rotation.x=Math.PI/2;g.add(face);
+    return g;},
+  glass(p){const g=new THREE.Group();
+    const m=new THREE.Mesh(GEO.box,litMat({color:p.color||'#bde0fe',transparent:true,opacity:.78}));
+    m.scale.set(p.w||1.35,p.h||.48,p.d||.08);m.castShadow=false;g.add(m);
+    return g;}
+};
+
+/* ---------- car recipes ----------
+   One Kenney base + a paint color + parts from the library above + an optional tweak.
+   tweak is [x, y, z] multiplied on top of scale (a longer bus, a taller cab).
+   paint replaces the body color. Wheel meshes keep the Kenney texture and still spin.
+   at is [x, y, z] in car space. rot is [x, y, z] radians. */
+const RECIPES=[
+  {name:'Yellow Cab',emoji:'🚕',base:'taxi.glb',speed:25,r:2.2,tier:1,scale:1.636,height:2.7,
+    paint:'#ffd60a',exhaust:[0,.9,-2.1],
+    parts:[
+      {id:'stripe',at:[0,.55,0],color:'#222',w:2.15,h:.16,d:3.9},
+      {id:'roofsign',at:[0,2.42,.15],color:'#111'},
+      {id:'glass',at:[0,1.85,1.15],w:1.35,h:.42}]},
+  {name:'Hose Hero',emoji:'🚒',base:'firetruck.glb',speed:24,r:2.3,tier:2,scale:1.324,height:2.55,
+    paint:'#d62828',exhaust:[0,.8,-2.15],
+    parts:[
+      {id:'stripe',at:[0,1.15,0],color:'#f8f9fa',w:2.05,h:.14,d:4.15},
+      {id:'ladder',at:[0,2.2,-.15],color:'#f8f9fa'},
+      {id:'lightbar',at:[0,2.35,1.15],a:'#ff2d55',b:'#ff2d55'}]},
+  {name:'Dash Racer',emoji:'🏎️',base:'race.glb',speed:30,r:2.15,tier:2,scale:1.758,height:1.7,
+    paint:'#3a86ff',exhaust:[0,.45,-2.05],
+    parts:[
+      {id:'stripe',at:[0,1.22,.15],color:'#fff',w:.22,h:.06,d:3.3},
+      {id:'spoiler',at:[0,1.05,-1.55],color:'#ffd60a'},
+      {id:'glass',at:[0,.95,.85],color:'#caf0f8',w:1.05,h:.28}]},
+  {name:'Honk Bus',emoji:'🚌',base:'van.glb',speed:22,r:2.45,tier:2,scale:1.636,tweak:[1,1.08,1.12],height:2.7,
+    paint:'#ffbe0b',exhaust:[0,.7,-2.3],
+    parts:[
+      {id:'stripe',at:[0,1.35,0],color:'#222',w:2.35,h:.2,d:4.5},
+      {id:'lightbar',at:[0,2.45,.4],a:'#ff2d55',b:'#ffd60a'},
+      {id:'stopSign',at:[1.35,1.45,1.55],color:'#e63946'},
+      {id:'glass',at:[0,1.85,1.35],w:1.7,h:.5}]},
+  {name:'Snow Pusher',emoji:'❄️',base:'truck.glb',speed:21,r:2.35,tier:2,scale:1.525,height:2.2,
+    paint:'#e7f5ff',exhaust:[0,.7,-2.1],
+    parts:[
+      {id:'stripe',at:[0,1.15,.2],color:'#3a86ff',w:2.1,h:.16,d:2.2},
+      {id:'plow',at:[0,.95,2.55],color:'#ff9f1c'},
+      {id:'lightbar',at:[0,1.95,.55],a:'#ffd60a',b:'#ffd60a'}]},
+  {name:'Spinny Mixer',emoji:'🌀',base:'truck.glb',speed:20,r:2.4,tier:2,scale:1.525,height:2.7,
+    paint:'#f77f00',exhaust:[0,.7,-2.1],
+    parts:[
+      {id:'drum',at:[0,1.55,-.35],color:'#fff3bf',band:'#f77f00'},
+      {id:'chute',at:[.85,1.3,-1.15],rot:[0,.9,0],color:'#dee2e6'},
+      {id:'stripe',at:[0,.7,.4],color:'#fff',w:1.9,h:.12,d:1.6}]}
+];
+
+/* ---------- Kenney cars ----------
+   cars.json entries are plain bases (no extra parts). RECIPES mix a base, paint, and parts.
+   Both share one loaded copy of each glb. */
+function paintBody(root,color,keep){
+  const skip=keep||[];
+  root.traverse(o=>{
+    if(!o.isMesh)return;
+    const n=(o.name||'').toLowerCase();
+    if(/wheel|tire|tyre/.test(n)||skip.some(k=>n.includes(k)))return;
+    const paint=m=>{const mat=m.clone();mat.map=null;mat.color=new THREE.Color(color);if('metalness' in mat)mat.metalness=.04;if('roughness' in mat)mat.roughness=.65;return mat;};
+    o.material=Array.isArray(o.material)?o.material.map(paint):paint(o.material);
+  });
+}
+function buildRecipe(def,tmpl){
+  return ()=>{
+    const c=base(),m=tmpl.clone(true),s=def.scale||1,t=def.tweak||[1,1,1];
+    m.scale.set(s*(t[0]||1),s*(t[1]||1),s*(t[2]||1));
+    m.position.y=def.y||0;m.rotation.y=def.rotateY||0;
+    if(def.paint)paintBody(m,def.paint,def.keep);
+    c.g.add(m);
+    m.traverse(o=>{if(o.isMesh&&/wheel|tire|tyre/i.test(o.name)){const b=new THREE.Box3().setFromObject(o);o.userData.r=Math.max(.3,(b.max.y-b.min.y)/2);c.wheels.push(o);}});
+    (def.parts||[]).forEach(p=>{
+      const fn=PARTS[p.id];if(!fn){console.warn('Unknown car part',p.id);return;}
+      const g=fn(p);
+      if(p.at)g.position.set(p.at[0],p.at[1],p.at[2]);
+      if(p.rot)g.rotation.set(p.rot[0]||0,p.rot[1]||0,p.rot[2]||0);
+      if(p.scale)g.scale.setScalar(p.scale);
+      c.g.add(g);
+    });
+    if(def.exhaust)c.ex.set(...def.exhaust);c.h=def.height||3;return c;
+  };
+}
+function pushCar(def,tmpl){
+  const car={name:def.name,emoji:def.emoji||'🚗',speed:def.speed||25,r:def.r||2.3,build:buildRecipe(def,tmpl)};
+  if(def.tier!=null)car.tier=def.tier;if(def.weapon)car.weapon=def.weapon;
+  CARS.push(car);
+}
 function loadModelCars(){
   if(!THREE.GLTFLoader||location.protocol==='file:')return;
+  const loader=new THREE.GLTFLoader(),bases={},wait={},loading={};
+  function ready(file,fn){
+    if(bases[file])return fn(bases[file]);
+    (wait[file]=wait[file]||[]).push(fn);
+    if(loading[file])return;loading[file]=1;
+    loader.load('assets/cars/'+file,gltf=>{
+      const tmpl=gltf.scene;
+      tmpl.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+      bases[file]=tmpl;(wait[file]||[]).forEach(f=>f(tmpl));
+    },undefined,e=>console.warn('Could not load car model',file,e));
+  }
   fetch('assets/cars/cars.json').then(r=>r.ok?r.json():[]).then(list=>{
-    const loader=new THREE.GLTFLoader();
-    (list||[]).forEach(def=>{
-      loader.load('assets/cars/'+def.file,gltf=>{
-        const tmpl=gltf.scene;
-        tmpl.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
-        CARS.push({name:def.name,emoji:def.emoji||'🚗',speed:def.speed||25,r:def.r||2.3,build:()=>{
-          const c=base();const m=tmpl.clone(true);
-          m.scale.setScalar(def.scale||1);m.position.y=def.y||0;m.rotation.y=def.rotateY||0;c.g.add(m);
-          m.traverse(o=>{if(/wheel/i.test(o.name)){const b=new THREE.Box3().setFromObject(o);o.userData.r=Math.max(0.3,(b.max.y-b.min.y)/2);c.wheels.push(o);}});
-          if(def.exhaust)c.ex.set(...def.exhaust);c.h=def.height||3;return c;}});
-      },undefined,e=>console.warn('Could not load car model',def.file,e));
-    });
+    (list||[]).forEach(def=>ready(def.file,tmpl=>pushCar(def,tmpl)));
   }).catch(()=>{});
+  RECIPES.forEach(def=>ready(def.base,tmpl=>pushCar(def,tmpl)));
 }
 loadModelCars();
