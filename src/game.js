@@ -482,8 +482,14 @@ function updateObjects(dt){
     if(o.fy<=0){o.fy=0;o.falling=false;if(o.scat||o.rec)queue.push({t:0,fn:()=>poolAdopt(o)});const k=sizeK(o);if(o.sz>=tier-1)sfxIn(zoneXZ(o.x,o.z),'thud');puff(o.x,0.4*k,o.z,4,1.4*k);
       if(o.sz>=tier)for(const p of players)if(Math.hypot(p.x-o.x,p.z-o.z)<p.r+o.r){p.air=true;p.vy=10*p.sm;}}
     o.g.position.y=o.fy;fallPose(o);}
-  if(Math.random()<0.02){for(const o of objects)if(!o.alive)poolRelease(o);objects=objects.filter(o=>o.alive);}
+  if((deadT-=dt)<=0){deadT=0.25;objectsCompact();}
 }
+/* L43: dead objects (smashed, squished, LOD-pruned, filler that stepped aside) leave the per-frame list within a quarter
+   second; their chunk records keep them for regrowth. In place, so nothing is allocated when nothing died. */
+let deadT=0;
+function objectsCompact(){let j=0;
+  for(let i=0;i<objects.length;i++){const o=objects[i];if(o.alive)objects[j++]=o;else poolRelease(o);}
+  objects.length=j;}
 
 /* ---------- world streaming (chunks) ---------- */
 /* Each chunk remembers its objects as records {type,x,z,arg,r,seed,dead,back}, so leaving and coming back
@@ -712,7 +718,7 @@ function homeCtx(o={}){
 /* L31 size LOD: records 3+ sizes below the players aren't built (they'd only get squished without counting) and built
    ones are dropped on a size-up; they come back when the chunk is built again at a smaller size (new world). */
 const lodSkip=rec=>rec.sz!=null&&rec.sz<=tier-3;
-function lodPrune(){for(const o of objects)if(o.alive&&o.rec&&o.sz<=tier-3&&(o.sleep||!o.inst)&&!o.falling&&!o.wob&&!o.rolling&&!o.col){o.alive=false;poolRelease(o);scene.remove(o.g);}}
+function lodPrune(){for(const o of objects)if(o.alive&&o.rec&&o.sz<=tier-3&&(o.sleep||!o.inst)&&!o.falling&&!o.wob&&!o.rolling&&!o.col){o.alive=false;poolRelease(o);scene.remove(o.g);}objectsCompact();}
 function buildRec(rec){const o=withSeed(rec.seed,()=>OBJ[rec.type](rec.x,rec.z,rec.arg,rec.f));o.rec=rec;rec.sz=o.sz;
   if(rec.th){o.g.rotation.y+=rec.th;o.g.updateMatrixWorld(true);if(o.bld)initBld(o);o.fr=footprint(o);} // L31: scene props can be turned
   if(o.bld&&rec.gone)for(const i of rec.gone){const p=o.parts[i];if(p&&!p.gone){p.gone=true;p.mesh.parent.remove(p.mesh);o.paid+=1/o.parts.length;}}
@@ -778,7 +784,7 @@ function loadChunk(c){
   for(const rec of c.recs){
     if(rec.dead){if(T<rec.back)continue;rec.dead=false;}
     if(lodSkip(rec))continue;
-    const o=buildRec(rec);scene.remove(o.g);if(lodSkip(rec)){o.alive=false;continue;}
+    const o=buildRec(rec);scene.remove(o.g);if(lodSkip(rec)){o.alive=false;if(objects[objects.length-1]===o)objects.pop();continue;} // L43: first build told us it's too small: not kept
     if(rec.gold&&!o.bld)goldify(o,60);
     if(!o.spin&&!o.gold)poolAdopt(o);
     if(!o.pooled){o.inst=null;o.sleep=false;scene.add(o.g);}} // spinning, gold or multi-material: stays a real mesh
