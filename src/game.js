@@ -346,7 +346,7 @@ function newWorld(){
   for(const o of collapsing)scene.remove(o.g);collapsing.length=0;
   for(const a of animals)scene.remove(a.g);animals.length=0;
   for(const d of debris)if(!d.confetti){scene.remove(d.m);d.life=0;}
-  worldSeed=(Math.random()*1e9)|0;setZoneMap(randomZoneMap(mulberry(worldSeed)));
+  worldSeed=(Math.random()*1e9)|0;setZoneMap(randomZoneMap(mulberry(worldSeed),'TFP',pickThemedZones()));
   buildWorld();captureHome();
   growth=0;tier=0;giant=false;levelReady=false;popT=1;clearPads();nwBtn.style.display='none';goldCount=0;goldHud.style.display='none';
   players.forEach(p=>{const st=START_SPOTS[p.idx];p.x=st[0];p.z=st[1];p.y=0;p.vy=0;p.speed=0;p.kx=p.kz=0;p.air=false;p.heading=Math.PI;});
@@ -462,7 +462,7 @@ function genChunk(c){
     const ctx={zone:c.zone,ci:c.ci,cj:c.cj,x0:c.x0,z0:c.z0,x1:c.x0+CHUNK,z1:c.z0+CHUNK,cx:c.ci*CHUNK,cz:c.cj*CHUNK,size:CHUNK,
       place:(type,x,z,arg,r)=>chunkPlace(c,type,x,z,arg,r),ramp:(x,z,th,L,W,H)=>chunkRamp(c,x,z,th,L,W,H),free:(x,z,r)=>spotFree(c,x,z,r),herd:(kind,x,z,n)=>chunkHerd(c,kind,x,z,n)};
     // TODO(design): ZONE_LAYOUT.town/farm/park/home in objects.js replaces these placeholder fillers (D1)
-    const lay=(typeof ZONE_LAYOUT!=='undefined'&&ZONE_LAYOUT[c.zone])||DEFAULT_LAYOUT[c.zone]||DEFAULT_LAYOUT.park;
+    const lay=(ZONES[c.zone]&&ZONES[c.zone].layout)||(typeof ZONE_LAYOUT!=='undefined'&&ZONE_LAYOUT[c.zone])||DEFAULT_LAYOUT[c.zone]||DEFAULT_LAYOUT.park;
     lay(ctx);
     if(Math.random()<0.3&&c.recs.length){const r=pick(c.recs);r.gold=true;}
     if(!c.herds.length)defaultHerds(c);
@@ -790,6 +790,18 @@ function pauseInput(gpIn){
 :where(#pmVer){margin-top:10px;font-weight:900;color:#555}
 :where(#pmPad){margin-top:10px;font-size:13px;color:#777;line-height:1.5}`;document.head.appendChild(st);}
 
+/* ---------- themed zones (L15) ---------- */
+const _skyT=new THREE.Color(),_skyB=new THREE.Color();
+// a NEW WORLD mixes in up to two registered themed zones (weight = how likely each is to show up)
+function pickThemedZones(){let s='';for(const z of Object.values(ZONES).sort(()=>Math.random()-0.5)){if(s.length>=2)break;if(Math.random()<Math.min(1,0.6*z.weight))s+=z.letter;}return s;}
+// test helper: paint a 3×3 block of chunks next to the car as that zone, rebuild them and drive the car in
+function testZone(id){const z=ZONES[id];if(!z)return 'unknown zone: '+id+' (registered: '+Object.keys(ZONES).join(', ')+')';
+  const p=players[0]||{x:camT.x,z:camT.z};let ci=clamp(chunkIdx(p.x)+3,-CHUNKS_HALF+1,CHUNKS_HALF-1),cj=clamp(chunkIdx(p.z),-CHUNKS_HALF+1,CHUNKS_HALF-1);
+  if(Math.abs(ci)<=2&&Math.abs(cj)<=2)ci=clamp(chunkIdx(p.x)-3,-CHUNKS_HALF+1,CHUNKS_HALF-1);
+  const rows=zoneRows.map(r=>[...r]);for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++)rows[j+CHUNKS_HALF][i+CHUNKS_HALF]=z.letter;setZoneMap(rows.map(r=>r.join('')));
+  for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){const c=chunks.get(chunkKey(i,j));if(!c)continue;if(c.loaded)unloadChunk(c);for(const r of c.rampList)r.mesh.geometry.dispose();chunks.delete(c.k);}
+  const x=ci*CHUNK,zz=cj*CHUNK;if(players[0]){for(const q of players){q.x=x+(q.idx?6:0);q.z=zz;q.y=groundH(q.x,q.z);}}camT.set(x,0,zz);updateStreaming(0,true);return id+' zone around '+x+','+zz;}
+
 /* ---------- collisions ---------- */
 let lastBoing=0;
 function collisions(){
@@ -873,7 +885,7 @@ function scatterSize(){
   for(let t=0;t<10;t++){let r=Math.random();for(const [d,w] of SCAT_MIX){if((r-=w)<0){const k=tier+d;if(k>=0&&k<SIZES.length&&k>tier-3)return k;break;}}}
   return tier;}
 function scatterProp(zone,k){ // → [type, scale]
-  const zp=typeof ZONE_PROPS!=='undefined'&&ZONE_PROPS[zone]&&ZONE_PROPS[zone][SIZES[k]];
+  const zp=(ZONES[zone]&&ZONES[zone].sizes&&ZONES[zone].sizes[SIZES[k]])||(typeof ZONE_PROPS!=='undefined'&&ZONE_PROPS[zone]&&ZONE_PROPS[zone][SIZES[k]]);
   if(zp&&zp.length)return [pick(zp),1];
   const t=pick(DEFAULT_PROPS[zone]||DEFAULT_PROPS.home);return [t,Math.pow(SIZE_STEP,k-(TYPE_SIZE[t]??4))];}
 function spawnScatter(p,fill){
@@ -943,7 +955,7 @@ const animals=[];
 function chunkHerd(c,kind,x,z,n=4){
   if(!animalDef(kind)||x<c.x0+4||x>c.x0+CHUNK-4||z<c.z0+4||z>c.z0+CHUNK-4||onRoad(x,z,3))return false;
   c.herds.push({kind,x,z,n,list:[],on:false});return true;}
-function defaultHerds(c){const opts=ZONE_HERDS[c.zone]||ZONE_HERDS.park,n=c.zone==='farm'?3:c.zone==='town'?1:2;
+function defaultHerds(c){const opts=(ZONES[c.zone]&&ZONES[c.zone].herds)||ZONE_HERDS[c.zone]||ZONE_HERDS.park;if(!opts.length)return;const n=c.zone==='farm'?3:c.zone==='town'?1:2;
   for(let i=0,t=0;i<n&&t<20;t++){const [k,m]=pick(opts);if(chunkHerd(c,k,rand(c.x0+8,c.x0+CHUNK-8),rand(c.z0+8,c.z0+CHUNK-8),m))i++;}}
 // Each kind is built once and merged into one mesh per material, then copied (shared geometry) for every animal.
 const animalTemplates={};
@@ -1313,6 +1325,8 @@ function updateCamera(dt,t){
   camT.x+=(cx-camT.x)*Math.min(1,dt*4);camT.z+=(cz-camT.z)*Math.min(1,dt*4);
   const el=0.95;shake*=Math.pow(0.02,dt);const sx=rand(-1,1)*shake,sy=rand(-1,1)*shake;
   camera.position.set(camT.x+sx,camDist*Math.sin(el)+sy,camT.z+camDist*Math.cos(el));camera.lookAt(camT.x+sx*0.5,0,camT.z-2);
+  {const z=ZONES[zoneAt(chunkIdx(camT.x),chunkIdx(camT.z))],sk=z&&z.sky,k=Math.min(1,dt*1.2);   // themed zones tint the sky
+    skyU.top.value.lerp(_skyT.set(sk&&sk.top||SKY_TOP),k);skyU.bot.value.lerp(_skyB.set(sk&&sk.horizon||SKY_HORIZON),k);scene.fog.color.copy(skyU.bot.value);}
   sun.position.set(camT.x+30,80+camDist,camT.z+30);sun.target.position.set(camT.x,0,camT.z);sc.far=260+camDist*2;setShadow(camDist*0.95+10);
   scene.fog.near=camDist*1.8+100;scene.fog.far=scene.fog.near+160;
 }
@@ -1355,7 +1369,7 @@ function loop(now){
   pressed.clear();touch.jumpP=false;touch.swapP=false;
 }
 propsReady.then(()=>{buildWorld();captureHome();updateStreaming(0,true);last=performance.now();requestAnimationFrame(loop);});
-window.__sp={mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,gold:spawnGold,pad:placePad,pads,
+window.__sp={mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,zone:testZone,zones:ZONES,gold:spawnGold,pad:placePad,pads,
   boss(id){if(!giant){tier=SIZES.length-1;growth=MAX_GROW;levelReady=true;levelUp();newCars(true);}if(!boss)summonBoss(id);return boss&&boss.def.name;}, // __sp.boss('shelldozer')
   level(n=1){for(let i=0;i<n&&!giant;i++){growth=GROW_AT[tier+1];levelReady=true;levelUp();}return giant?'GIANT':SIZES[tier];}, // jump ahead n sizes
   tp(x,z,i=0){const p=players[i];if(p){p.x=x;p.z=z;p.y=groundH(x,z);camT.set(x,0,z);}},
