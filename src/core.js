@@ -221,8 +221,18 @@ function sfxClip(id,vol=0.8,rate=1){
 const SFX_VOL={crash:0.5,crash_big:0.75,rumble:0.8,boom:0.85,boing:0.55,jump:0.45,thud:0.55,turbo:0.5,pop:0.55,join:0.6,fanfare:0.65};
 const SFX_GAP={crash:45,thud:80,boom:60};const sfxLast={};
 const sfx={};
+/* Zone sounds (L22): sfxIn(zone, kind, own, ...args) plays sfx[kind] flavored by where it happened. It tries the
+   object's own clip (makeObj opts {sfx:'gummy_squish'}, for crash/thud), then the zone's (registerZone sfx:{crash, boom,
+   land}), then the default clip, then the synth. kind thud = the zone's 'land' sound. */
+const ZONE_SFX_KEY={crash:'crash',boom:'boom',thud:'land'};
+let sfxCtx=null;
+function sfxIn(zone,k,own,...a){sfxCtx={zone,own};try{sfx[k](...a);}finally{sfxCtx=null;}}
 for(const k in synth)sfx[k]=(...a)=>{const n=performance.now();if(n-(sfxLast[k]||0)<(SFX_GAP[k]||30))return;sfxLast[k]=n;
-  const id=k==='crash'&&a[0]?'crash_big':k;if(!sfxClip(id,SFX_VOL[id]||0.6,rand(0.93,1.07)*(k==='crash'?sfxPitch:1)))synth[k](...a);};
+  const id=k==='crash'&&a[0]?'crash_big':k,vol=SFX_VOL[id]||0.6,rate=rand(0.93,1.07)*(k==='crash'?sfxPitch:1);
+  if(sfxCtx){const c=sfxCtx,zs=ZONES[c.zone]&&ZONES[c.zone].sfx,zk=ZONE_SFX_KEY[k];
+    if(c.own&&(k==='crash'||k==='thud')&&sfxClip(c.own,vol,rate))return;
+    if(zs&&zk&&zs[zk]&&sfxClip(zs[zk],vol,rate))return;}
+  if(!sfxClip(id,vol,rate))synth[k](...a);};
 let sfxPitch=1; // game.js raises this during smash combos so each crash sounds a little higher
 
 /* Background music (tools/make-music.mjs → assets/sounds/music/). music(id) crossfades to that track; looping
@@ -230,18 +240,39 @@ let sfxPitch=1; // game.js raises this during smash combos so each crash sounds 
    Tracks download only when first wanted (phones). Voice lines duck the music. */
 const musicBank=clipBank('assets/sounds/music/',true),MUSIC_VOL=0.3,MUSIC_XF=1.5;
 let musicGain=null,musicWant=null,mTrack=null;
-function music(id,opts={}){if(musicWant&&musicWant.id===id)return;musicWant={id,loop:opts.loop!==false,then:opts.then};}
+/* L22: 'drive' and 'boss' play the music zone's own track (registerZone music:{drive, boss}) when it has one.
+   'drive' follows the zone the camera shows (setMusicZone); 'boss' keeps the zone it started in (or opts.zone). */
+let musicZone=null;
+function music(id,opts={}){const zone=opts.zone||(id==='drive'?null:musicZone);
+  if(musicWant&&musicWant.id===id&&musicWant.zone===zone)return;musicWant={id,zone,loop:opts.loop!==false,then:opts.then};}
+function musicTrack(w){const z=ZONES[w.zone||(w.id==='drive'?musicZone:null)],t=z&&z.music&&z.music[w.id];
+  return t&&musicBank.index[t]?t:w.id;}
+function setMusicZone(id){musicZone=id;}
 function playTrackNow(id,buf,loop){const t=AC.currentTime;
   if(!musicGain){musicGain=AC.createGain();musicGain.gain.value=MUSIC_VOL;musicGain.connect(master);}
   if(mTrack){const g=mTrack.g.gain;g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(0,t+MUSIC_XF);try{mTrack.src.stop(t+MUSIC_XF+0.05);}catch(e){}}
   const src=AC.createBufferSource(),g=AC.createGain();src.buffer=buf;src.connect(g);g.connect(musicGain);
   g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(1,t+MUSIC_XF);src.start(t);mTrack={id,src,g,start:t,dur:buf.duration,loop};}
-function updateMusic(){const w=musicWant;if(!AC||!w)return;
-  if(!mTrack||mTrack.id!==w.id){if(!w.pending&&musicBank.index[w.id]){w.pending=true;
-      loadClip(musicBank,w.id).then(buf=>{if(musicWant===w)playTrackNow(w.id,buf,w.loop);}).catch(()=>{});}return;}
+function updateMusic(){const w=musicWant;if(!AC||!w)return;const id=musicTrack(w);
+  if(!mTrack||mTrack.id!==id){if(w.pending!==id&&musicBank.index[id]){w.pending=id;
+      loadClip(musicBank,id).then(buf=>{if(musicWant===w&&musicTrack(w)===id)playTrackNow(id,buf,w.loop);}).catch(()=>{});}return;}
   const left=mTrack.start+mTrack.dur-AC.currentTime;
   if(mTrack.loop&&left<MUSIC_XF+0.1)playTrackNow(mTrack.id,mTrack.src.buffer,true);
   else if(!mTrack.loop&&left<0.6&&w.then)music(w.then);}
+/* L22 zone ambient: a quiet loop (registerZone sfx:{ambient:'candy_ambient'}) that fades in with the zone. */
+const AMB_VOL=0.22,AMB_XF=2.5;let ambGain=null,amb=null;
+function setAmbient(id){if(!AC||(amb&&amb.id===id)||(!amb&&!id))return;const t=AC.currentTime;
+  if(!ambGain){ambGain=AC.createGain();ambGain.gain.value=AMB_VOL;ambGain.connect(master);}
+  if(amb){const g=amb.g.gain;g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(0,t+AMB_XF);try{amb.src.stop(t+AMB_XF+0.05);}catch(e){}amb=null;}
+  const buf=id&&sfxBank.bufs[id];if(!buf||buf==='loading')return; // not decoded yet: zoneAudio tries again next frame
+  const src=AC.createBufferSource(),g=AC.createGain();src.buffer=buf;src.loop=true;src.connect(g);g.connect(ambGain);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(1,t+AMB_XF);src.start(t,Math.random()*buf.duration);amb={id,src,g};}
+/* Called every frame with the zone under the camera. A new zone must hold for ZONE_HOLD seconds before the music
+   and ambient switch, so driving along a zone edge doesn't flicker between tracks. */
+const ZONE_HOLD=2.5;let zoneSeen=null,zoneSeenT=0;
+function zoneAudio(zid,dt,quiet){if(zid!==zoneSeen){zoneSeen=zid;zoneSeenT=0;}else zoneSeenT+=dt;
+  if(zoneSeenT>=ZONE_HOLD||musicZone===null)setMusicZone(zid);
+  const zs=!quiet&&ZONES[musicZone]&&ZONES[musicZone].sfx;setAmbient(zs&&zs.ambient&&sfxBank.index[zs.ambient]?zs.ambient:null);}
 function duckMusic(sec){if(!musicGain)return;const t=AC.currentTime,g=musicGain.gain;g.cancelScheduledValues(t);g.setTargetAtTime(MUSIC_VOL*0.4,t,0.05);g.setTargetAtTime(MUSIC_VOL,t+sec,0.3);}
 /* Voice: say(text) plays the clip whose name is the text's slug ("MEGA SMASH!" → mega_smash.mp3),
    else the browser's robot voice. */
