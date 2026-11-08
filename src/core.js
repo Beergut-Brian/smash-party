@@ -97,7 +97,10 @@ function registerZone(z){
   if(z.props&&typeof OBJ!=='undefined')Object.assign(OBJ,z.props);
   return z;}
 function zoneAt(ci,cj){const row=zoneRows[cj+CHUNKS_HALF];return ZONE_NAMES[(row&&row[ci+CHUNKS_HALF])||'P']||'park';}
-function onRoad(x,z,pad=0){const lim=ROAD_W/2+pad;return Math.abs(x-Math.round(x/ROAD_EVERY)*ROAD_EVERY)<lim||Math.abs(z-Math.round(z/ROAD_EVERY)*ROAD_EVERY)<lim;}
+/* Indoors (L20) there are no roads, zone ground or edge walls: setOutdoor(false) hides them and onRoad says no. */
+const OUTDOOR=[];let roadsOn=true;
+function setOutdoor(on){roadsOn=on;for(const m of OUTDOOR)m.visible=on;}
+function onRoad(x,z,pad=0){if(!roadsOn)return false;const lim=ROAD_W/2+pad;return Math.abs(x-Math.round(x/ROAD_EVERY)*ROAD_EVERY)<lim||Math.abs(z-Math.round(z/ROAD_EVERY)*ROAD_EVERY)<lim;}
 
 // endless outer grass + zone-tinted world ground (one tiny canvas texture = one draw call)
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(ARENA*2+700,ARENA*2+700),M('#7ccf5a'));
@@ -118,7 +121,7 @@ function randomZoneMap(rnd,letters='TFP',extra=''){ // extra: themed zone letter
   return rows;}
 {setZoneMap(ZONE_MAP);const tex=zoneTex;tex.magFilter=THREE.NearestFilter;tex.minFilter=THREE.NearestFilter;
   const inner=new THREE.Mesh(new THREE.PlaneGeometry(ARENA*2,ARENA*2),litMat({map:tex,roughness:0.95}));
-  inner.rotation.x=-Math.PI/2;inner.position.y=0.01;inner.receiveShadow=true;scene.add(inner);}
+  inner.rotation.x=-Math.PI/2;inner.position.y=0.01;inner.receiveShadow=true;scene.add(inner);OUTDOOR.push(inner);}
 // instanced helper for static repeated scenery (frustum culling off: r128 can't bound instances)
 function instBoxes(list,color,shadow){
   const im=new THREE.InstancedMesh(GEO.box,litMat({color:'#ffffff'}),list.length);
@@ -132,12 +135,12 @@ function instBoxes(list,color,shadow){
     roads.push([r,0.03,0,ROAD_W,0.04,ARENA*2]);roads.push([0,0.03,r,ARENA*2,0.04,ROAD_W]);
     for(let i=-ARENA+4;i<ARENA;i+=8){if(Math.abs(i-Math.round(i/ROAD_EVERY)*ROAD_EVERY)<7)continue;
       dash.push([i,0.06,r,4,0.05,0.5]);dash.push([r,0.06,i,0.5,0.05,4]);}}
-  instBoxes(roads,'#5c6670');instBoxes(dash,'#ffd60a');}
+  OUTDOOR.push(instBoxes(roads,'#5c6670'),instBoxes(dash,'#ffd60a'));}
 // world-edge wall (soft bounce lives in game.js)
 {const w=[];for(let s=0;s<4;s++)for(let i=-ARENA;i<ARENA;i+=4){
   const c=((i/4)|0)%2?'#e63946':'#ffffff',o=(s%2?1:-1)*(ARENA+0.8);
   w.push(s<2?[i+2,0.8,o,4,1.6,1.6,c]:[o,0.8,i+2,1.6,1.6,4,c]);}
-  instBoxes(w,'#ffffff',true);}
+  OUTDOOR.push(instBoxes(w,'#ffffff',true));}
 // distant hills in a ring around the square world
 for(let i=0;i<26;i++){const a=i/26*Math.PI*2,r=(ARENA+rand(90,150))/Math.max(Math.abs(Math.cos(a)),Math.abs(Math.sin(a)));const h=mk('sph',rand(70,120),rand(30,60),rand(70,120),pick(['#6abf4b','#5fae45','#78c95a']),Math.cos(a)*r,0,Math.sin(a)*r);h.castShadow=false;scene.add(h);}
 
