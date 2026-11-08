@@ -124,6 +124,11 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - The level-up garage shows 3–4 cars per player from the new tier. Today's counts are tier 0: 3, tier 1: 8, tier 2: 11, tier 3: 5. Add **3+ tier-0 starters** (pedal car, shopping cart, toy scooter) and **4+ tier-3 showstoppers** from the D4 list (rocket sled, robot-leg walker, stegosaurus spike car, hover car) so both players get real choices.
 
 - [ ] **B1: Candy Land boss** `NEEDS DESIGN` (world-bosses; needs L23 + Z1) — e.g. a wobbly gummy-bear giant or a gumball-machine robot. Built from `BP` parts in candy colors, weak spots on the outside. Kaden + son pick the concept and name.
+- [ ] **B1a: Candy Land boss ideas** `NEEDS DESIGN` (world-bosses; from zone-candy, Z1 ✅; feeds B1, so pick one with Kaden + son and build it as B1)
+  - **Gummo the Gummy Giant** 🐻: a big wobbly gummy bear (high `sway`, jiggles when hit) in bright candy colors (cherry red body, lime belly). Weak spots: two gumdrop buttons on the belly (phase 1), two candy-cane-striped toe caps (phase 2), a lollipop held low in its paw (phase 3). Each storey falls apart into fat gummy chunks.
+  - **Gumbo-Tron 3000** 🍬: a walking gumball-machine robot, a twin of the zone's `candy_gumball` landmark with legs and a coin-slot mouth. Its head is a ball of gumballs (`whole:true` parts) that rain out as it takes damage. Weak spots: two coin-slot knobs on its chest (1), the silver turn-crank hands (2), the red hatch knees (3).
+  - **Sir Sprinkles** 🎂: a walking three-tier birthday cake (same tiers as `candy_cake`, so its storeys pancake the same way) with frosting arms, licorice legs and a candle crown (candles as `whole:true` extras). Weak spots: cherry kneecaps (1), sprinkle patches on the bottom tier (2), the cake-board feet (3). When it's beaten, the candles pop off like fireworks.
+  - The zone colors are global constants in `src/world/zones/candy.js` (`CANDY_BRIGHT`, `CANDY_PASTEL`, `CANDY_SCOOP`, `CANDY_RED`…); reuse them. Boss music is the zone's `candy_boss` track (AU3). Voice lines (intro, 2–3 taunts, defeat) go to the audio agent once a name is picked.
 - [ ] **B2: Dino Valley boss** `NEEDS DESIGN` (world-bosses; needs L23 + Z2) — a goofy, clumsy giant dinosaur (big head, tiny arms, never scary).
 - [ ] **B3: Bedroom boss** `NEEDS DESIGN` (world-bosses; needs L23 + L20) — a giant toy (wind-up robot, jack-in-the-box, or a living teddy bear) guarding the door out.
 
@@ -131,6 +136,22 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - **Each themed zone** (candy, dino, bedroom, and the core town/farm/park if they don't have their own yet): a looping **drive** track and a **boss** track in that zone's flavor (keep the game's upbeat, kid-friendly style), plus **crash/smash** variants (3+ each), a **boom**, a **landing** sound and a quiet **ambient** loop. Candy: crunches, pops, squishes. Dino: stomps, cartoon roars, leafy crashes. Bedroom: toy squeaks, block clatters, plush thumps.
   - **Each themed boss:** an intro line, 2–3 fight taunts (funny, not scary) and a defeat line.
   - Add them to `tools/*-lines.json`, `--dry` first, then generate. Log total credits used in the PR.
+
+- [ ] **AU3: Candy Land sounds + music** `NEEDS AUDIO` (audio; from zone-candy, Z1 ✅; the candy part of AU2. L22 is needed to play them, but they can be generated now). The ids are already set in `src/world/zones/candy.js`. The sound: sugary, bouncy, crunchy and silly, never gross.
+  - **Music** (`tools/music-lines.json`, same chiptune style as the other tracks):
+    - `candy_drive` (~90 s loop): a sweet sugar-rush driving tune: bouncy bubbly bassline, twinkly music-box / glockenspiel lead, skippy happy groove, like cruising through a candy shop. Seamless loop.
+    - `candy_boss` (~90 s loop): a goofy giant-dessert showdown, fast and dramatic but silly: oompah tuba bass, wobbly jelly synth, a chorus of kazoos, sparkly runs. Seamless loop.
+  - **Zone sfx** (`tools/sfx-lines.json`; the `_1…` variants are picked at random):
+    - `candy_crunch_1`…`_4` (crash, ~0.6 s): a crunchy hard-candy smash, a glassy sugar shatter, a crisp wafer crunch, a cookie snapping into crumbs.
+    - `candy_pop_1`…`_3` (boom, ~1.2 s): a huge popcorn / bubble-gum POP with a fizzy soda burst and a tinkle of falling sprinkles.
+    - `candy_squish_1`…`_3` (land, ~0.5 s): a soft, springy marshmallow squish / jelly splat landing.
+    - `candy_ambient` (~20 s loop, very quiet): a soda-fizz shimmer, a distant music-box twinkle, the odd bubble-gum pop far away.
+  - **Per-prop sfx** (overrides, see `CANDY_SFX` in candy.js):
+    - `candy_boing_1`…`_3` (~0.6 s): a rubbery gumdrop / marshmallow boing with a jiggly wobble (marshmallows, gumdrops, rolling donuts).
+    - `candy_gumballs_1`…`_2` (~1.5 s): a gumball machine bursting, dozens of gumballs clattering and bouncing everywhere.
+    - `candy_snap_1`…`_3` (~0.6 s): a chocolate-bar snap / gingerbread crack / candy-cane crack (chocolate bars, cookies, canes, gingerbread people and houses).
+    - `candy_splat_1`…`_3` (~0.8 s): a big frosting SPLAT with a wobbly cake thud (cupcakes, cupcake houses, ice cream, the sundae, the birthday cake).
+  - Voice lines for the candy boss come with B1a/B1 once Kaden + son pick one.
 
 - [x] **Z1: Candy Land zone** `NEEDS DESIGN` (zone-candy agent, see `agents/zone.md`; needs L15 ✅)
   - `src/world/zones/candy.js` from the template: pink/pastel ground and sky, lollipop trees, gumdrops, candy canes, cupcake houses (BP contract), a giant cake mega set piece, 15+ props across micro…mega, bunnies. No real candy brands.
