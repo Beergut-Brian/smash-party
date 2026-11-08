@@ -465,18 +465,30 @@ function loadModelCars(){
 }
 loadModelCars();
 
-/* D19: Grow-Up Garage showroom v2 (L32 hook). Car scale 1, floor top at y=0, decals ≥0.04 above it. Fills the
-   building's square inside (±GARAGE_HW=43): a tiled floor, a candy-wedge turntable (~GARAGE_R=40) under the parked cars,
-   a drive lane from the front door (+Z) to the back door (−Z) with GO chevrons, a checkered finish line and a green
+/* D26: Grow-Up Garage showroom v3 (L32 hook, L49 pad layout). Car scale 1, floor top at y=0, decals ≥0.04 above it.
+   Fills the building's square inside (±GARAGE_HW=43): each player gets a half in their color (P1 left, P2 right) with
+   parking bays (open to the lane) and a ring where logic's pads stand (garageRows' GARAGE_COLS / GARAGE_ROWZ), a drive lane from the front door (+Z) to the back door (−Z) with GO chevrons, a checkered finish line and a green
    GO arrow sign over the back door (the building in objects.js carries the doors themselves). No words. */
 function buildGarage(){
-  const g=new THREE.Group(),R=38,H=42.4,D=7,flat=(m)=>{m.castShadow=false;m.receiveShadow=true;g.add(m);return m;};
+  const g=new THREE.Group(),H=42.4,D=7,flat=(m)=>{m.castShadow=false;m.receiveShadow=true;g.add(m);return m;};
   flat(mk('box',H*2,.3,H*2,'#2b2d42',0,-.15,0)); // base floor, fills the square to the walls
-  for(let i=-3;i<=3;i++)for(let j=-3;j<=3;j++)if((i+j)&1)flat(mk('box',12,.04,12,'#33364f',i*12,.02,j*12)); // big soft floor tiles
-  const wedges=['#ff6b6b','#ffd60a','#06d6a0','#3a86ff','#9b5de5','#ff9f1c','#48cae4','#f72585'];
-  for(let i=0;i<8;i++){const w=new THREE.Mesh(new THREE.CircleGeometry(R,20,i*Math.PI/4,Math.PI/4),M(wedges[i]));
-    w.rotation.x=-Math.PI/2;w.position.y=.06;flat(w);}
-  const rim=new THREE.Mesh(new THREE.RingGeometry(R,R+1.2,48),M('#ffffff'));rim.rotation.x=-Math.PI/2;rim.position.y=.07;flat(rim);
+  // D26 (L49): one side per player in their color (P1 left, P2 right), parking bays where logic puts the pads
+  const pc=typeof PCOL!=='undefined'?PCOL:['#ff9f1c','#2ec4f6'],two=typeof players==='undefined'||players.length!==1;
+  const tint=(c,k)=>'#'+new THREE.Color('#2b2d42').lerp(new THREE.Color(c),k).getHexString();
+  const sides=two?[[-1,pc[0]],[1,pc[1]]]:[[-1,pc[0]],[1,pc[0]]];
+  for(const [sx,c] of sides){const w=H-D-1.2,cx=sx*(D+1.2+w/2);
+    flat(mk('box',w,.04,H*2-3,tint(c,.35),cx,.03,0));          // the player's half of the floor
+    flat(mk('box',w,.04,1,c,cx,.06,-H+2),mk('box',w,.04,1,c,cx,.06,H-2)); // colored edge stripes
+    flat(mk('box',1,.04,H*2-3,c,sx*(H-1.6),.06,0));
+    for(let z=-36;z<=36;z+=12)flat(mk('box',4,.04,4,tint(c,.5),sx*(H-5),.05,z));} // tiles by the wall
+  // parking bays where logic puts the pads (garageRows): open toward the drive lane, a glow ring for each pad to sit in
+  const bays=two?[[10.5,-20],[31,-20],[10.5,6],[31,6]].flatMap(([x,z])=>[[-x,z,pc[0]],[x,z,pc[1]]])
+    :[-30,-10.5,10.5,30].map(x=>[x,-8,pc[0]]);
+  const rows=new Map();for(const [x,z] of bays)rows.set(Math.sign(x)+':'+z,[Math.sign(x),z]);
+  for(const [sx,z] of rows.values()){const x0=D+.8,w=H-2.6-x0; // lines between the rows, one between the two columns
+    for(const sz of [-1,1])flat(mk('box',w,.04,.5,'#ffffff',sx*(x0+w/2),.09,z+sz*7.5));
+    flat(mk('box',.5,.04,15,'#ffffff',sx*20.5,.09,z));}
+  for(const [x,z,c] of bays){const ring=new THREE.Mesh(new THREE.RingGeometry(4.7,5.4,32),M(tint(c,.8)));ring.rotation.x=-Math.PI/2;ring.position.set(x,.1,z);flat(ring);}
   // the drive lane: front door → back door
   flat(mk('box',D*2,.04,H*2,'#3a3f5c',0,.1,0));
   for(const sx of [-1,1])flat(mk('box',.6,.04,H*2,'#ffffff',sx*(D-.3),.12,0));
@@ -485,8 +497,6 @@ function buildGarage(){
     for(const sx of [-1,1]){const c=flat(mk('box',1.3,.04,6,'#3ddc97',sx*1.9,.13,z));c.rotation.y=sx*0.75;}}
   for(let i=0;i<7;i++)for(let j=0;j<2;j++)flat(mk('box',2,.04,2,(i+j)%2?'#111111':'#ffffff',(i-3)*2,.14,-H+1.4+j*2)); // finish line
   for(let i=0;i<7;i++)flat(mk('box',2,.04,1.4,i%2?'#111111':'#ffd60a',(i-3)*2,.14,H-1)); // hazard stripe at the way in
-  // hub in the middle of the turntable
-  flat(mk('cyl',7,.06,7,'#ffffff',0,.16,0));flat(mk('cyl',3.6,.06,3.6,'#ffd60a',0,.2,0));
   // finish posts either side of the back door + the GO sign over it (inside face of the back wall)
   for(const sx of [-1,1])for(let k=0;k<5;k++)g.add(mk('box',1.2,2,1.2,k%2?'#111111':'#ffffff',sx*(D+1.6),1+k*2,-H+.4));
   g.add(mk('box',D*2+4.4,3.6,.6,'#06d6a0',0,12,-H+.2),mk('box',D*2+5,.5,.7,'#ffffff',0,13.9,-H+.2),mk('box',D*2+5,.5,.7,'#ffffff',0,10.1,-H+.2));
