@@ -7,7 +7,7 @@ A co-op driving-and-smashing game for a dad and his 5-year-old, played on a TV w
 - **Kid-simple controls.** Stick = point where you want to go. A/RT = turbo, B = jump (becomes 💥 BOOM when stuck), X or Y = shoot (and LEVEL UP when the gold button shows; either works because 8BitDo/Nintendo pads swap the X/Y labels), LB/RB = switch car. Never require reading.
 - **Big, loud, funny feedback.** Every action should have a sound, a puff, or a wobble.
 - **Original designs only.** No real car brands, toy lines, logos, or licensed characters.
-- Must run smoothly at 1080p on a GTX 1060 and stay playable on a phone (touch controls).
+- Must run smoothly at 1080p on a GTX 1060. Computer only (TV via PC + controllers); phone/touch support isn't needed, so don't spend time on it.
 
 ## Layout & who owns what
 Two tools work on this repo at the same time. Stay in your lane to avoid merge conflicts.
@@ -24,7 +24,7 @@ Two tools work on this repo at the same time. Stay in your lane to avoid merge c
 | `src/boot.mjs` | **Claude Code** (logic) | Imports three.js + addons, sets `window.THREE`, loads the plain scripts in order |
 | `index.html`, `CLAUDE.md` | Shared | Change rarely; mention it in the commit message |
 
-Scripts are plain (no modules); `src/boot.mjs` loads them in order: `core.js` → `cars.js` → `objects.js` → `game.js`. Materials: use `M(color)` / `mk()` (toy-plastic `MeshStandardMaterial` on high quality, Lambert on phone) or `litMat({...})` for custom ones, so the quality toggle covers them. Top-level `const`/`function` names are shared across files, so never reuse a name.
+Scripts are plain (no modules); `src/boot.mjs` loads them in order: `core.js` → `cars.js` → `objects.js` → `game.js`. Materials: use `M(color)` / `mk()` (toy-plastic `MeshStandardMaterial` on high, Lambert on FAST) or `litMat({...})` for custom ones, so the quality toggle covers them. **Prefer `M(color)`:** sleeping props, scatter and debris are batched by shape with the color per instance, so `M()` colors are nearly free to draw, while each custom material adds its own draw call per chunk. Top-level `const`/`function` names are shared across files, so never reuse a name.
 
 If a design change needs new logic (or the other way around), make the part in your own file and leave a `// TODO(logic):` or `// TODO(design):` note for the other tool instead of editing their file.
 

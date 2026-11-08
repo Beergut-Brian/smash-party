@@ -84,7 +84,8 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 - [ ] **L5: Tune and test pass**
   - Round 1 (Kaden's first play-test) ✅: slower when small; car tiers (cooler cars unlock every 2 sizes, Y switches within the tier); big cars shoot (X: cannon / rocket, also hits boss weak spots); LEVEL UP button instead of auto-growing; new `micro` bottom size, scatter mostly at your size with bigger things rarer; stuck detection → jump becomes 💥 BOOM.
   - Play-test the whole v2 loop: small, then medium, then giant. Make sure growth pacing feels good in a ~20 minute session with a 5-year-old.
-  - Check touch controls and phone performance still work (lower view radius on phones).
+  - ~~Phone check~~: not needed, the game is computer only (Kaden, 2026-11-07).
+  - ✅ Performance pass (v0.13.1): batch sleeping props by shape with per-instance colors, shared pools for scatter, wake radius scales with car size, merged animal models, herds only near the cars, debris boxes in one batch. Draw calls in the benchmark: micro 725→214, medium town 1,460→397, giant town 3,491→1,048, boss fight 6,412→880, debris storm 7,042→1,113; the 0.8 s level-up hitch is gone.
 
 ---
 

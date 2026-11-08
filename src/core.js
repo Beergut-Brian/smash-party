@@ -49,7 +49,7 @@ addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.a
 const matCache={};
 // lit material: toy plastic on high, cheaper Lambert on phone. Every mk()/M() prop picks this up.
 const litMat=o=>{if(HIGH)return new THREE.MeshStandardMaterial(Object.assign({roughness:0.62,metalness:0.04},o));const l=Object.assign({},o);delete l.roughness;delete l.metalness;return new THREE.MeshLambertMaterial(l);};
-const M=c=>matCache[c]||(matCache[c]=litMat({color:c}));
+const M=c=>{let m=matCache[c];if(!m){m=matCache[c]=litMat({color:c});m.userData.plain=true;}return m;}; // plain = only its color differs, so batches can share one material
 const E=c=>matCache['e'+c]||(matCache['e'+c]=new THREE.MeshBasicMaterial({color:c}));
 const GEO={
   box:new THREE.BoxGeometry(1,1,1),

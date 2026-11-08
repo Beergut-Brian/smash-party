@@ -1,14 +1,25 @@
 /* Smash Party — game logic: debris, smashing, respawn, players, input, collisions, camera, loop. Owner: Claude Code (logic). */
 /* ---------- debris & particles ---------- */
 const debris=[],parts=[],DEBRIS_MAX=IS_PHONE?220:420;
+/* Box debris (shatter chunks, blast bits, confetti) all draw from one InstancedMesh with per-instance colors:
+   hundreds of flying boxes cost one draw call. debrisBox(color) returns a stand-in Object3D to position/scale. */
+const DBOX_CAP=1200,dbox=new THREE.InstancedMesh(GEO.box,litMat({color:'#ffffff'}),DBOX_CAP),dboxOwner=[];
+dbox.setColorAt(0,new THREE.Color('#ffffff'));dbox.count=0;dbox.castShadow=dbox.receiveShadow=true;dbox.frustumCulled=false;scene.add(dbox);
+function debrisBox(color){const o=new THREE.Object3D();o.isBox=true;o.col=color;return o;}
+function dboxFree(d){const i=d.slot,last=--dbox.count;
+  if(i!==last){dbox.getMatrixAt(last,_dm);dbox.setMatrixAt(i,_dm);dbox.getColorAt(last,_dc);dbox.setColorAt(i,_dc);const mv=dboxOwner[last];mv.slot=i;dboxOwner[i]=mv;}
+  dboxOwner[last]=undefined;dbox.instanceMatrix.needsUpdate=true;dbox.instanceColor.needsUpdate=true;}
+const _dm=new THREE.Matrix4(),_dc=new THREE.Color();
 function addDebris(m,half,vx,vy,vz,opts={}){
-  if(!m.parent)scene.add(m);
-  debris.push({m,half,vx,vy,vz,ax:rand(-9,9),ay:rand(-9,9),az:rand(-9,9),life:opts.life||rand(6,9),settled:false,s0:m.scale.clone(),g:opts.g||32,confetti:!!opts.confetti});
+  let slot=-1;if(m.isBox){if(dbox.count>=DBOX_CAP)return;slot=dbox.count++;dbox.setColorAt(slot,m.col);dbox.instanceColor.needsUpdate=true;}
+  else if(!m.parent)scene.add(m);
+  const d={m,half,vx,vy,vz,ax:rand(-9,9),ay:rand(-9,9),az:rand(-9,9),life:opts.life||rand(6,9),settled:false,s0:m.scale.clone(),g:opts.g||32,confetti:!!opts.confetti,slot};
+  if(slot>=0)dboxOwner[slot]=d;debris.push(d);
   if(debris.length>DEBRIS_MAX)for(let i=0;i<debris.length-DEBRIS_MAX;i++)debris[i].life=Math.min(debris[i].life,0.6);
 }
 function updateDebris(dt){
   for(let i=debris.length-1;i>=0;i--){const d=debris[i];d.life-=dt;
-    if(d.life<=0){scene.remove(d.m);debris.splice(i,1);continue;}
+    if(d.life<=0){if(d.slot>=0)dboxFree(d);else scene.remove(d.m);debris.splice(i,1);continue;}
     if(d.life<0.8){const k=Math.max(0.01,d.life/0.8);d.m.scale.set(d.s0.x*k,d.s0.y*k,d.s0.z*k);}
     const p=d.m.position;
     if(d.settled){
@@ -27,6 +38,8 @@ function updateDebris(dt){
       d.vy=-d.vy*0.35;d.vx*=0.6;d.vz*=0.6;d.ax*=0.5;d.ay*=0.5;d.az*=0.5;
       if(Math.abs(d.vy)<2&&d.vx*d.vx+d.vz*d.vz<2){d.settled=true;d.vy=0;}}
   }
+  for(const d of debris)if(d.slot>=0){d.m.updateMatrix();dbox.setMatrixAt(d.slot,d.m.matrix);}
+  if(dbox.count)dbox.instanceMatrix.needsUpdate=true;
 }
 function addPart(m,life,vx=0,vy=0,vz=0,grow=0,fade=false){scene.add(m);parts.push({m,life,max:life,vx,vy,vz,grow,fade,s0:m.scale.x});}
 function updateParts(dt){
@@ -61,7 +74,7 @@ function breakPart(o,part,nx,nz,power,vyK=1){
   }else{
     m.getWorldScale(_ws);const s=_ws,vol=s.x*s.y*s.z/part.n;const cs0=clamp(Math.cbrt(vol),0.3*k*k,2.0);
     for(let i=0;i<part.n;i++){const cs=cs0*rand(.7,1.15);
-      const c=new THREE.Mesh(GEO.box,partMat(m));c.castShadow=true;c.scale.set(cs*rand(.8,1.2),cs*rand(.6,1.1),cs*rand(.8,1.2));
+      const c=debrisBox(partMat(m).color);c.scale.set(cs*rand(.8,1.2),cs*rand(.6,1.1),cs*rand(.8,1.2));
       c.position.set(_wp.x+rand(-s.x/2,s.x/2)*.8,_wp.y+rand(-s.y/2,s.y/2)*.8,_wp.z+rand(-s.z/2,s.z/2)*.8);c.rotation.set(rand(0,3),rand(0,3),rand(0,3));
       const f=power*rand(.3,.85),oa=Math.atan2(c.position.x-o.x,c.position.z-o.z);
       addDebris(c,cs*0.4,nx*f+Math.sin(oa)*rand(2,7)*k,rand(5,13)*(0.6+power/45)*vyK,nz*f+Math.cos(oa)*rand(2,7)*k);}
@@ -84,7 +97,7 @@ function smash(o,vx,vz,power){
 function explode(x,z,e=1){ // e = blast size (1 = a normal barrel); shrunken barrels make little pops
   const q=Math.sqrt(e);sfx.boom();shake=Math.min(2,shake+1.2*Math.min(1,e));
   flash(x,2*e,z,'#ffd166',3*e,0.4);flash(x,2*e,z,'#ff5400',2*e,0.55);puff(x,e,z,8,2.5*e,'#666666');
-  for(let i=0;i<16;i++){const c=new THREE.Mesh(GEO.box,M(pick(['#ff7b00','#ffd60a','#333333','#e63946'])));c.castShadow=true;const s=rand(.4,1.1)*e;c.scale.set(s,s,s);
+  for(let i=0;i<16;i++){const c=debrisBox(M(pick(['#ff7b00','#ffd60a','#333333','#e63946'])).color);const s=rand(.4,1.1)*e;c.scale.set(s,s,s);
     c.position.set(x,1.5*e,z);const a=rand(0,Math.PI*2),f=rand(12,24)*q;addDebris(c,s*.4,Math.sin(a)*f,rand(8,18)*q,Math.cos(a)*f);}
   for(const o of objects){if(!o.alive||o.falling)continue;const dx=o.x-x,dz=o.z-z,d=Math.hypot(dx,dz);
     if(o.boss)continue;
@@ -298,7 +311,7 @@ function newWorld(){
   boss=null;updateBossHud();bossArrows.forEach(s=>s.visible=false);
   for(const c of chunks.values())if(c.loaded)unloadChunk(c);
   for(const c of chunks.values())for(const r of c.rampList)r.mesh.geometry.dispose();
-  chunks.clear();for(const o of objects)scene.remove(o.g);objects=[];queue.length=0;
+  chunks.clear();for(const o of objects){poolRelease(o);scene.remove(o.g);}objects=[];queue.length=0;
   for(const o of collapsing)scene.remove(o.g);collapsing.length=0;
   for(const a of animals)scene.remove(a.g);animals.length=0;
   for(const d of debris)if(!d.confetti){scene.remove(d.m);d.life=0;}
@@ -360,10 +373,10 @@ function updateObjects(dt){
     o.g.rotation.x=Math.sin(T*23)*0.07*w;o.g.rotation.z=Math.cos(T*19)*0.09*w;const f=o.s0||1;o.g.scale.set(f*(1+0.05*w*Math.sin(T*31)),f*(1-0.08*w*Math.sin(T*31)),f*(1+0.05*w*Math.sin(T*31)));}
   for(const o of objects){if(!o.alive||!o.falling)continue;
     o.vy-=40*dt;o.fy+=o.vy*dt;
-    if(o.fy<=0){o.fy=0;o.falling=false;const k=sizeK(o);if(o.sz>=tier-1)sfx.thud();puff(o.x,0.4*k,o.z,4,1.4*k);
+    if(o.fy<=0){o.fy=0;o.falling=false;if(o.scat)queue.push({t:0,fn:()=>poolAdopt(o)});const k=sizeK(o);if(o.sz>=tier-1)sfx.thud();puff(o.x,0.4*k,o.z,4,1.4*k);
       if(o.sz>=tier)for(const p of players)if(Math.hypot(p.x-o.x,p.z-o.z)<p.r+o.r){p.air=true;p.vy=10*p.sm;}}
     o.g.position.y=o.fy;}
-  if(Math.random()<0.02)objects=objects.filter(o=>o.alive);
+  if(Math.random()<0.02){for(const o of objects)if(!o.alive)poolRelease(o);objects=objects.filter(o=>o.alive);}
 }
 
 /* ---------- world streaming (chunks) ---------- */
@@ -371,7 +384,8 @@ function updateObjects(dt){
    keeps what you smashed. Only chunks near the players are built. Built objects "sleep" as instanced meshes
    (a few draw calls per chunk) and wake into real meshes when a car gets close enough to smash them.
    Smashed records regrow after REGROW seconds (dropping from the sky if the chunk is loaded). */
-const REGROW=[90,160],WAKE_R=22;
+const REGROW=[90,160];
+const wakeR=()=>3+7*S; // wake things this close to a car (minus their radius): a lookahead, not the whole view
 const chunks=new Map();
 const chunkKey=(ci,cj)=>ci+','+cj;
 function getChunk(ci,cj){const k=chunkKey(ci,cj);let c=chunks.get(k);
@@ -452,6 +466,34 @@ function buildRec(rec){const o=withSeed(rec.seed,()=>OBJ[rec.type](rec.x,rec.z,r
 
 const HIDE=new THREE.Matrix4().makeTranslation(0,-9999,0),instMats={};
 const instMat=m=>instMats[m.id]||(instMats[m.id]=m.clone()); // own material so plain + instanced meshes don't swap shader programs
+// Plain M() colors batch by shape alone: one InstancedMesh per shape with the color per instance (instead of one
+// per shape+color), which cuts sleeping-object draw calls several times over.
+const PLAIN_INST=litMat({color:'#ffffff'});
+const batchKey=m=>m.material.userData.plain?'g'+m.geometry.id:m.geometry.id+'_'+m.material.id;
+/* Shared pools for objects that come and go (size-matched scatter): same shape batching, but long-lived and with
+   free slots, so a sleeping scatter prop costs nothing extra to draw. */
+const pools=new Map();
+// Slots stay packed (a freed slot takes the last one in), and im.count only draws the slots in use.
+function poolFor(m){const k=batchKey(m);let p=pools.get(k);
+  if(!p){const plain=!!m.material.userData.plain,cap=plain?2048:256,im=new THREE.InstancedMesh(m.geometry,plain?PLAIN_INST:instMat(m.material),cap);
+    if(plain)im.setColorAt(0,new THREE.Color('#ffffff'));im.count=0;
+    im.castShadow=im.receiveShadow=true;im.frustumCulled=false;scene.add(im);p={im,plain,cap,owner:[]};pools.set(k,p);}
+  return p;}
+const _pm=new THREE.Matrix4(),_pc=new THREE.Color();
+function poolAdopt(o){ // move an awake object into the pools and let it sleep (it wakes again when a car gets close)
+  if(o.inst||!o.alive)return;const ent=[];let ok=true;o.g.updateMatrixWorld(true);
+  o.g.traverse(m=>{if(!ok||!m.isMesh)return;if(Array.isArray(m.material)){ok=false;return;}const p=poolFor(m);if(p.im.count>=p.cap){ok=false;return;}
+    const i=p.im.count++;const e=[p.im,i,m.matrixWorld.clone(),m,p];p.owner[i]=e;p.im.setMatrixAt(i,HIDE);
+    if(p.plain){p.im.setColorAt(i,m.material.color);p.im.instanceColor.needsUpdate=true;}ent.push(e);});
+  o.inst=ent;o.pooled=true;
+  if(!ok){poolRelease(o);return;}
+  o.sleep=false;sleepObj(o);}
+function poolRelease(o){if(!o.pooled)return;o.pooled=false;
+  for(const e of o.inst){const im=e[0],p=e[4],i=e[1],last=--im.count;
+    if(i!==last){im.getMatrixAt(last,_pm);im.setMatrixAt(i,_pm);if(p.plain){im.getColorAt(last,_pc);im.setColorAt(i,_pc);im.instanceColor.needsUpdate=true;}
+      const moved=p.owner[last];moved[1]=i;p.owner[i]=moved;}
+    p.owner[last]=undefined;im.instanceMatrix.needsUpdate=true;}
+  o.inst=null;}
 function loadChunk(c){
   if(!c.gen)genChunk(c);
   c.loaded=true;c.group=new THREE.Group();scene.add(c.group);
@@ -462,16 +504,17 @@ function loadChunk(c){
     if(rec.dead){if(T<rec.back)continue;rec.dead=false;}
     const o=buildRec(rec);scene.remove(o.g);o.g.updateMatrixWorld(true);o.inst=[];o.sleep=true;sleepers.push(o);
     let multi=false;o.g.traverse(m=>{if(m.isMesh&&Array.isArray(m.material))multi=true;});if(multi){scene.add(o.g);o.inst=null;o.sleep=false;continue;}
-    o.g.traverse(m=>{if(!m.isMesh)return;const k=m.geometry.id+'_'+m.material.id;let b=batches.get(k);
-      if(!b)batches.set(k,b={geo:m.geometry,mat:m.material,list:[]});o.inst.push([b,b.list.length,m]);b.list.push(m.matrixWorld.clone());});}
-  for(const b of batches.values()){const im=new THREE.InstancedMesh(b.geo,instMat(b.mat),b.list.length);
-    b.list.forEach((m,i)=>im.setMatrixAt(i,m));im.castShadow=im.receiveShadow=true;im.frustumCulled=false;c.group.add(im);b.im=im;}
+    o.g.traverse(m=>{if(!m.isMesh)return;const k=batchKey(m);let b=batches.get(k);
+      if(!b)batches.set(k,b={geo:m.geometry,mat:m.material,plain:!!m.material.userData.plain,list:[],cols:[]});
+      o.inst.push([b,b.list.length,m]);b.list.push(m.matrixWorld.clone());b.cols.push(m.material.color);});}
+  for(const b of batches.values()){const im=new THREE.InstancedMesh(b.geo,b.plain?PLAIN_INST:instMat(b.mat),b.list.length);
+    b.list.forEach((m,i)=>{im.setMatrixAt(i,m);if(b.plain)im.setColorAt(i,b.cols[i]);});im.castShadow=im.receiveShadow=true;im.frustumCulled=false;c.group.add(im);b.im=im;}
   for(const o of sleepers)if(o.inst)o.inst=o.inst.map(([b,i,mesh])=>[b.im,i,b.list[i],mesh]);
 }
 function unloadChunk(c){
   c.loaded=false;for(const h of c.herds)if(h.on)herdOff(h);
   for(const r of c.rampList)removeRamp(r);
-  objects=objects.filter(o=>{if(o.chunk!==c.k)return true;scene.remove(o.g);return false;}); // alive records stay alive
+  objects=objects.filter(o=>{if(o.chunk!==c.k)return true;poolRelease(o);scene.remove(o.g);return false;}); // alive records stay alive
   c.group.traverse(m=>{if(m.isInstancedMesh)m.dispose();});scene.remove(c.group);c.group=null;
 }
 function wakeObj(o){if(!o.sleep)return;o.sleep=false;for(const [im,i] of o.inst){im.setMatrixAt(i,HIDE);im.instanceMatrix.needsUpdate=true;}scene.add(o.g);}
@@ -480,7 +523,7 @@ function streamR(){return (IS_PHONE?0.7:1)*(110+camDist*1.1);} // camDist alread
 function rectDist(c,x,z){return Math.hypot(Math.max(c.x0-x,0,x-c.x0-CHUNK),Math.max(c.z0-z,0,z-c.z0-CHUNK));}
 let regrowT=0;
 function updateStreaming(dt,all){
-  const R=streamR(),wr=WAKE_R*Math.max(1,S),pts=players.length?players.map(p=>[p.x,p.z]):[[camT.x,camT.z]];
+  const R=streamR(),wr=wakeR(),pts=players.length?players.map(p=>[p.x,p.z]):[[camT.x,camT.z]];
   let best;
   do{best=null;let bd=1e9; // load the nearest missing chunk (one per frame, no hitches); drop far ones
     for(let cj=-CHUNKS_HALF;cj<=CHUNKS_HALF;cj++)for(let ci=-CHUNKS_HALF;ci<=CHUNKS_HALF;ci++){const c=getChunk(ci,cj);
@@ -491,7 +534,7 @@ function updateStreaming(dt,all){
   // wake objects near a car, put far ones back to sleep
   for(const o of objects){if(!o.inst||!o.alive)continue;let d=1e9;
     for(const p of players)d=Math.min(d,Math.hypot(o.x-p.x,o.z-p.z)-o.r);
-    if(o.sleep){if(d<wr)wakeObj(o);}else if(d>wr+12&&!o.falling&&!o.wob)sleepObj(o);}
+    if(o.sleep){if(d<wr)wakeObj(o);}else if(d>wr+2+4*S&&!o.falling&&!o.wob)sleepObj(o);}
   // regrow smashed things in loaded chunks: they drop back in from the sky
   if((regrowT-=dt)>0)return;regrowT=1;let n=0;
   for(const c of chunks.values()){if(!c.loaded)continue;
@@ -516,7 +559,7 @@ function mega(){
 }
 function confetti(n){
   const cols=['#ff006e','#ffbe0b','#3a86ff','#06d6a0','#8338ec','#fb5607','#ffffff'],w=Math.max(1,camDist/40);
-  for(let i=0;i<n;i++){const c=new THREE.Mesh(GEO.box,M(pick(cols)));c.scale.set(.6,.06,.4);
+  for(let i=0;i<n;i++){const c=debrisBox(M(pick(cols)).color);c.scale.set(.6,.06,.4);
     c.scale.multiplyScalar(w);c.position.set(camT.x+rand(-35,35)*w,rand(18,40)*w,camT.z+rand(-30,20)*w);addDebris(c,.05,rand(-3,3),rand(-2,2),rand(-3,3),{confetti:true,g:6,life:rand(5,8)});}
 }
 
@@ -775,7 +818,7 @@ function spawnScatter(p,fill){
     if(players.some(q=>Math.hypot(q.x-x,q.z-z)<q.r+r+1))continue;
     const [t,f]=scatterProp(zoneAt(chunkIdx(x),chunkIdx(z)),k);
     const o=OBJ[t](x,z,t==='fence'?rand(0,Math.PI):undefined,f);o.scat=true;
-    if(fill){o.falling=true;o.fy=rand(6,16)*Math.max(S,0.4);o.vy=0;o.g.position.y=o.fy;}
+    if(fill){o.falling=true;o.fy=rand(6,16)*Math.max(S,0.4);o.vy=0;o.g.position.y=o.fy;}else poolAdopt(o);
     return o;}
   return null;}
 let scatT=0;
@@ -783,7 +826,7 @@ function updateScatter(dt){
   if(state!=='play'||!players.length||(scatT-=dt)>0)return;scatT=0.2;
   const Rs=scatR();let n=0;
   for(const o of objects){if(!o.scat||!o.alive)continue;let d=1e9;for(const p of players)d=Math.min(d,Math.hypot(o.x-p.x,o.z-p.z));
-    if(d>Rs*1.8||(o.sz<=tier-3&&d>Rs)){o.alive=false;scene.remove(o.g);continue;}n++;}
+    if(d>Rs*1.8||(o.sz<=tier-3&&d>Rs)){o.alive=false;poolRelease(o);scene.remove(o.g);continue;}n++;}
   const fill=n<SCAT_N*0.4; // nearly empty (game start, new world): rain props into view
   for(let i=0;i<6&&n<SCAT_N;i++,n++)spawnScatter(pick(players),fill);
 }
@@ -833,8 +876,18 @@ function chunkHerd(c,kind,x,z,n=4){
   c.herds.push({kind,x,z,n,list:[],on:false});return true;}
 function defaultHerds(c){const opts=ZONE_HERDS[c.zone]||ZONE_HERDS.park,n=c.zone==='farm'?3:c.zone==='town'?1:2;
   for(let i=0,t=0;i<n&&t<20;t++){const [k,m]=pick(opts);if(chunkHerd(c,k,rand(c.x0+8,c.x0+CHUNK-8),rand(c.z0+8,c.z0+CHUNK-8),m))i++;}}
+// Each kind is built once and merged into one mesh per material, then copied (shared geometry) for every animal.
+const animalTemplates={};
+function animalModel(kind,def){
+  if(!animalTemplates[kind]){const src=def.build();src.updateMatrixWorld(true);const byMat=new Map();
+    src.traverse(m=>{if(!m.isMesh||Array.isArray(m.material))return;const l=byMat.get(m.material)||[];l.push(m.geometry.clone().applyMatrix4(m.matrixWorld));byMat.set(m.material,l);});
+    const t=new THREE.Group();let ok=true;
+    for(const [mat,geos] of byMat){const g=THREE.mergeGeometries?THREE.mergeGeometries(geos):null;if(!g){ok=false;break;}
+      const mesh=new THREE.Mesh(g,mat);mesh.castShadow=mesh.receiveShadow=true;t.add(mesh);}
+    animalTemplates[kind]=ok?t:src;}
+  return animalTemplates[kind].clone();}
 function spawnAnimal(h,x,z){
-  const def=animalDef(h.kind),g=def.build();_bx.setFromObject(g);
+  const def=animalDef(h.kind),g=animalModel(h.kind,def);_bx.setFromObject(g);
   const r=Math.max(_bx.max.z-_bx.min.z,_bx.max.x-_bx.min.x)/2*0.85,hgt=_bx.max.y;
   const a={kind:h.kind,def,g,herd:h,x,z,y:0,vx:0,vz:0,vy:0,heading:rand(0,Math.PI*2),state:'idle',t:rand(0,2),r,h:hgt,fr:r*1.2,
     alive:true,falling:false,ph:rand(0,9),spin:[0,0,0]};
@@ -864,7 +917,7 @@ function animalHits(p,vx,vz,spd){
 }
 const _pv=new THREE.Vector3();let herdT=0;
 function updateAnimals(dt){
-  if((herdT-=dt)<=0){herdT=0.5;const R=Math.max(55,scatR()*3);
+  if((herdT-=dt)<=0){herdT=0.5;const R=clamp(scatR()*1.6,55,170); // herds wake near the cars, not across the whole world
     for(const c of chunks.values()){if(!c.loaded)continue;for(const h of c.herds){let d=1e9;
       for(const p of players.length?players:[{x:camT.x,z:camT.z}])d=Math.min(d,Math.hypot(h.x-p.x,h.z-p.z));
       if(!h.on&&d<R)herdOn(h);else if(h.on&&d>R+30)herdOff(h);}}}
