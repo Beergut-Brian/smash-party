@@ -83,7 +83,8 @@ function partMat(m){if(m.material&&!Array.isArray(m.material))return m.material;
 // send one part flying: whole parts fly off intact, others shatter into `n` boxes. vyK scales the upward kick.
 const WHOLE_MAX=40;let wholeN=0; // L25: at most this many intact parts fly at once (each is its own draw call); past that they shatter into boxes
 function breakPart(o,part,nx,nz,power,vyK=1){
-  if(part.gone)return;part.gone=true;const m=part.mesh,k=sizeK(o);power*=k;vyK*=k;
+  if(part.gone)return;if(part.bm)for(const rec of part.bm)bossSplit(o,rec); // L28: merged boss parts come back as real meshes first
+  part.gone=true;const m=part.mesh,k=sizeK(o);power*=k;vyK*=k;
   m.traverse(x=>x.userData.dead=true); // keeps it hidden in the chunk's instanced copy
   m.getWorldPosition(_wp);const out=Math.atan2(_wp.x-o.x,_wp.z-o.z);
   if(part.whole&&wholeN<WHOLE_MAX){wholeN++;
@@ -178,7 +179,7 @@ function damageBuilding(o,x,z,rad,max,y0,y1,nx,nz,power){
 }
 function dust(o,n){for(let i=0;i<n;i++)puff(o.x+rand(-o.r,o.r),rand(0.5,2.5),o.z+rand(-o.r,o.r),3,1.4+o.r*0.35,'#d9c9a8');}
 function collapse(o,k,vx,vz,power,fast){
-  if(!o.alive)return;killBld(o);
+  if(!o.alive)return;killBld(o);bossUnmerge(o);
   const dl=Math.hypot(vx,vz)||1,nx=vx/dl,nz=vz/dl,ry=o.g.rotation.y;
   const fs=[...new Set(o.parts.filter(p=>!p.gone).map(p=>p.floor))].sort((a,b)=>a-b);
   const up=new THREE.Group();o.g.add(up);
@@ -395,7 +396,7 @@ function newWorld(){
 }
 // a fresh procedurally zoned world; keepSize (after the garage) keeps the players' size and cars
 function rollWorld(keepSize,kind){ // kind: 'bedroom' | 'outside' | undefined = the same kind as now
-  boss=null;updateBossHud();bossArrows.forEach(s=>s.visible=false);
+  if(boss)bossUnmerge(boss.o);boss=null;updateBossHud();bossArrows.forEach(s=>s.visible=false);
   for(const c of chunks.values())if(c.loaded)unloadChunk(c);
   for(const c of chunks.values())for(const r of c.rampList)r.mesh.geometry.dispose();
   chunks.clear();for(const o of objects){poolRelease(o);scene.remove(o.g);}objects=[];queue.length=0;
@@ -1362,6 +1363,31 @@ function pickBoss(id,cx,cz){const l=bossList(),freshPick=a=>{const f=a.filter(d=
 function bossZone(def){return def.zone&&ZONES[def.zone]||null;}
 function bossDust(){const z=boss&&bossZone(boss.def);return (z&&(z.bossDust||z.ground))||'#d9c9a8';}
 function bossMusic(def){const z=bossZone(def),id=z&&z.music&&z.music.boss;return id&&musicBank.index[id]?id:'boss';}
+/* L28: a boss is ~50–200 parts and each one is its own draw call (per pass). Draw the untouched parts merged per
+   material into a few meshes under o.g (they move, sway and wobble with it); the real part meshes stay in place,
+   hidden. When a part breaks (or the boss collapses), its merge group splits back into the real meshes, so smashing
+   looks exactly as before. Weak spots (own pulsing material) and spinning bits stay live. */
+function bossMerge(o){
+  if(!THREE.mergeGeometries)return;o.g.updateMatrixWorld(true);
+  const inv=new THREE.Matrix4().copy(o.g.matrixWorld).invert(),groups=new Map();
+  for(const part of o.parts){if(part.kind==='weak'||part.gone)continue;
+    part.mesh.traverse(m=>{if(!m.isMesh||m.isSkinnedMesh||m.isInstancedMesh||!m.visible||Array.isArray(m.material)||m.morphTargetInfluences)return;
+      for(let x=m;x&&x!==o.g;x=x.parent)if(x.userData.spin||!x.visible)return;
+      const geo=m.geometry,sig=m.material.uuid+'|'+(geo.index?'i':'n')+'|'+Object.keys(geo.attributes).sort().join(',')+'|'+(m.castShadow?1:0);
+      (groups.get(sig)||groups.set(sig,{meshes:[],parts:new Set()}).get(sig)).meshes.push(m);groups.get(sig).parts.add(part);});}
+  o.bmerge=[];
+  for(const grp of groups.values()){if(grp.meshes.length<2)continue;
+    const geos=grp.meshes.map(m=>{const g=m.geometry.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv,m.matrixWorld));
+      for(const k of Object.keys(g.morphAttributes))delete g.morphAttributes[k];return g;});
+    let merged=null;try{merged=THREE.mergeGeometries(geos);}catch(e){}for(const g of geos)g.dispose();
+    if(!merged)continue;const mm=new THREE.Mesh(merged,grp.meshes[0].material);mm.castShadow=grp.meshes[0].castShadow;mm.receiveShadow=true;
+    o.g.add(mm);const rec={mm,meshes:grp.meshes};o.bmerge.push(rec);
+    for(const m of grp.meshes)m.visible=false;
+    for(const part of grp.parts)(part.bm||(part.bm=[])).push(rec);}
+}
+function bossSplit(o,rec){ // bring one merge group back as real meshes
+  if(!rec.mm)return;for(const m of rec.meshes)m.visible=true;if(rec.mm.parent)rec.mm.parent.remove(rec.mm);rec.mm.geometry.dispose();rec.mm=null;}
+function bossUnmerge(o){if(o&&o.bmerge){for(const rec of o.bmerge)bossSplit(o,rec);o.bmerge=null;}}
 function summonBoss(id){
   if(boss||!players.length)return;
   let cx=0,cz=0;players.forEach(p=>{cx+=p.x;cz+=p.z;});cx/=players.length;cz/=players.length;
@@ -1371,6 +1397,7 @@ function summonBoss(id){
   o.type='boss';o.boss=true;o.sz=99;o.s0=BOSS_SCALE;o.g.scale.setScalar(BOSS_SCALE);o.r*=BOSS_SCALE;o.h*=BOSS_SCALE;for(const p of o.parts)p.half*=BOSS_SCALE;
   initBld(o);
   for(const p of o.parts)if(p.kind==='weak'){p.phase=p.mesh.userData.phase||1;p.s0=p.mesh.scale.clone();p.mesh.material=new THREE.MeshBasicMaterial({color:'#777777'});}
+  bossMerge(o);
   boss={o,def,state:'drop',y:260,vy:0,phase:1,t:0,heading:0,stompT:7,hitT:0,speed:10,smashT:0,
     phases:Math.max(...o.parts.filter(p=>p.kind==='weak').map(p=>p.phase))};
   o.g.position.y=boss.y;music(bossMusic(def));say(`Here comes ${def.name}!`);sfxClip('boss_roar',0.9)||sfx.boom();updateBossHud();
