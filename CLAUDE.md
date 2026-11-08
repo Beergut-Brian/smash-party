@@ -102,5 +102,6 @@ Check `TASKS.md` before starting. Take the top unchecked task in your section, c
 ## Testing
 - Serve locally (`python3 -m http.server`) — the game (ES module boot) and models only load over http, not `file://`. `?q=phone` / `?q=high` forces a quality (also in the pause menu).
 - Headless SwiftShader can't render the new shadows reliably; for visual checks run Chromium on the real GPU (`--use-angle=metal --enable-gpu` on a Mac).
+- Adventure saves to localStorage `sp_adv` (L37; `saveGame()`, `localStorage.removeItem('sp_adv')` for a clean start). Arcade only keeps `sp_worlds`.
 - `window.__sp.mega()`, `__sp.explode(x,z)`, `__sp.addScore(n)`, `__sp.grow(n)` (1800 = GIANT), `__sp.newWorld()`, `__sp.tp(x,z)` and `__sp.stats()` in the console help with testing. Press N (or START) when giant for a new world.
 - Keyboard: P1 WASD/Space/E/Q/R, P2 Arrows/Enter/RShift///. Esc / START / ⏸ pauses (the pause menu also shows what each controller button reports). (drive/turbo/jump/level up/shoot; Q, /, R and . LEVEL UP when ready; ` cycles cars for testing). `__sp.level(n)` jumps ahead n sizes (`__sp.level(n,true)` skips the garage), `__sp.garage()` opens the garage for the current tier. Check both players, a ramp jump, a barrel chain, and a MEGA SMASH before pushing.

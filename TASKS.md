@@ -314,8 +314,9 @@ Full spec and contracts: **`docs/ADVENTURE.md`** (read it before any task below)
 - [x] **L38: Quest stages don't spawn yet** `NEEDS LOGIC` (logic-systems, before L37; found reviewing #46). `quests.js` calls `spawnScene(q.stage,x,z,0)` (the L35 hook), but L31's `spawnScene` is `(p,fill,id)`, so a quest's `stage` scene is silently never built (no error, the try/catch hides it). Add a scene-at-a-point helper in the scene code (e.g. `sceneAt(id,x,z,th,size)`: builds the scene at the players' size, clears filler off the spot, returns a handle so the quest can clear it when it ends or the players grow) and point the L35 hook at it (one-line change in quests.js; say so in the PR). Test with a quest that has `stage:'<a DEFAULT_SCENES id>'`. Q1 needs this for every stage.
   - Done: `sceneAt(id,x,z,th,size,{key})` / `sceneClear(key)` in game.js (scene code); quests.js's stage hook calls it with key `quest_<id>` (one line). Filler, smaller filler scenes and plain layout clutter up to a size bigger make way (and grow back when the stage goes); the stage nudges up to ~2.5× its radius to fit; clears away at 3+ sizes behind. Stays after the quest is done (no props popping out in front of the kid).
 
-- [ ] **L37: Save + Continue** `NEEDS LOGIC` (logic-systems; needs L35; spec §6)
+- [x] **L37: Save + Continue** `NEEDS LOGIC` (logic-systems; needs L35; spec §6)
   - Adventure auto-saves to localStorage after each quest step and garage visit (quests, abilities, cosmetics, cars, size, unlocked worlds). Start screen: ▶️ Continue and 🆕 New Adventure (2-second hold). Arcade only remembers unlocked worlds.
+  - Done: `saveGame()` / `snapshot()` / `applySnap()` in game.js (localStorage `sp_adv`): after every quest step and finish, garage exit, level up, every 20 s and on page hide; saves size, smash meter, each player's car, quests/abilities/cosmetics, the active quest, a garage still waiting, and the beaten boss. Start screen in Adventure with a save: `#savePick` row (`.sv` tiles `data-s="go"|"new"`, `.sel`, `.hold` = the fill bar for the 2-second hold) under the mode row; stick/arrows pick it. Arcade: `unlockWorld(id)` / `worldsUnlocked()` (`sp_worlds`) for L33. D19 styles the tiles.
 
 - [ ] **D19: Garage inside v2 + quest UI** `NEEDS DESIGN` (cars-ui; needs L32, L35, L36)
   - `buildGarage()` with the roomier floor and a back exit door; the GO arrow over the door.
@@ -475,9 +476,10 @@ Passed: boot with no script errors, version on the start screen, both players jo
   - Repro: GIANT (`__sp.level(7,true)`), `__sp.mega()` near a golden prop or `__sp.boss('clankzilla')` + `__sp.explode(x,z)` a few times next to it.
   - Expected: one banner at a time (or stacked), and the combo label offset so it never covers the cars. Positioning is in game.js (`showBig`, the combo label placement); if a style change isn't enough, add a `NEEDS LOGIC` task.
   - ✅ Done (`cars/QA3`): `#big` moved into the top band under the meter (smaller, shorter linger); `#combo` lifts ~22vh above the car anchor and caps at 52px so it no longer sits on the cars or stacks through GOLDEN/KABOOM. Style-only — no logic change.
-- [ ] **QA4: Switching LOOKS in the pause menu throws away the game** `NEEDS LOGIC` (logic-systems, `setQuality` in core.js)
+- [x] **QA4: Switching LOOKS in the pause menu throws away the game** `NEEDS LOGIC` (logic-systems, `setQuality` in core.js)
   - Repro: play to any size, Esc → "LOOKS: BEST (switch to FAST)" → the page reloads to the start screen at micro size and players must rejoin.
   - Expected: switch without a reload, or label it clearly (e.g. "restarts") so a long session isn't wiped by accident.
+  - Done (with L37): the reload stays (antialias needs a new GL context), but `setQuality` stashes a snapshot in sessionStorage and the game carries on after it: same size, smash meter, cars, quests; Arcade gets a fresh world of the same kind at the same size (like a garage exit). Players press A to jump back in.
 - [ ] **QA5: favicon.ico 404 on every boot** `NEEDS DESIGN` (cars-ui, UI art; `index.html` is shared)
   - The only console error on a clean boot is `GET /favicon.ico 404`. Add a small icon (or `<link rel="icon" href="data:,">`) so the console is clean for testing.
 
