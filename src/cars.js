@@ -468,15 +468,15 @@ loadModelCars();
 /* D9: level-up garage showroom. Floor top at y=0, ~26 radius, open toward +Z (camera). Logic scales + places it. */
 function buildGarage(){
   const g=new THREE.Group(),R=26;
-  const floor=mk('cyl',R*2,.35,R*2,'#2b2d42',0,-.175,0);floor.castShadow=false;g.add(floor);
+  const floor=mk('cyl',R*2,.35,R*2,'#2b2d42',0,-.095,0); // top at y=.08 so it never fights the ground plane (y=0)floor.castShadow=false;g.add(floor);
   // candy pie wedges on the floor
   const wedges=['#ff6b6b','#ffd60a','#06d6a0','#3a86ff','#9b5de5','#ff9f1c','#48cae4','#f72585'];
   for(let i=0;i<8;i++){
     const wedge=new THREE.Mesh(new THREE.CircleGeometry(R*.92,24,i*Math.PI/4,Math.PI/4),M(wedges[i]));
-    wedge.rotation.x=-Math.PI/2;wedge.position.y=.01;wedge.castShadow=false;wedge.receiveShadow=true;g.add(wedge);
+    wedge.rotation.x=-Math.PI/2;wedge.position.y=.12;wedge.castShadow=false;wedge.receiveShadow=true;g.add(wedge);
   }
-  const hub=mk('cyl',6.4,.12,6.4,'#fff',0,.06,0);hub.castShadow=false;g.add(hub);
-  g.add(mk('cyl',3.2,.16,3.2,'#ffd60a',0,.12,0));
+  const hub=mk('cyl',6.4,.12,6.4,'#fff',0,.1,0);hub.castShadow=false;g.add(hub);
+  g.add(mk('cyl',3.2,.16,3.2,'#ffd60a',0,.14,0));
   // low curb ring (open toward +Z so the camera can see in)
   const curb=new THREE.Mesh(new THREE.CylinderGeometry(R,R,1.1,48,1,true,Math.PI*.28,Math.PI*1.44),
     litMat({color:'#ffd60a',side:THREE.DoubleSide}));

@@ -255,7 +255,8 @@ Full spec and contracts: **`docs/ADVENTURE.md`** (read it before any task below)
 - [ ] **L32: The garage is a building you drive into** `NEEDS LOGIC` (logic-gameplay; spec §3)
   - At a new tier, LEVEL UP raises the Grow-Up Garage out of the ground a short drive ahead (rumble, dust, beacon, gold arrow), scaled to the players. Drive in the front door → camera swoops inside → pick (as today) → the back door rolls up with the GO arrow (A / START still works) → drive out into the world set up for the new size (Arcade: fresh world as today; Adventure: same world, regrown and restocked around the exit) → the garage sinks away.
   - Roomier inside: cars ~1.5× bigger, pads ~2× farther apart, a wider floor.
-  - Fix the floor flicker at the front and back of the garage floor (placeholder floor, stripes and the ground are all at y=0; lift each layer and keep the ground from showing through).
+  - D9 (PR #42) shipped Cursor's candy `buildGarage()` floor; keep it and scale/extend it. Today the stat cards of neighbouring cars overlap each other; the wider spacing should fix that (check with two players).
+  - Fix the floor flicker at the front and back of the garage floor. Cause: the floor top sat at y=0, the same height as the world's ground plane, which reaches under the garage. The reviewer lifted `buildGarage()`'s floor (top y=0.08, pie wedges 0.12) when merging #42; do the same for the logic placeholder and check on the real GPU that it's gone.
   - Hooks: `buildGarageBuilding()` in objects.js (outside; D18), `buildGarage()` in cars.js gets a back exit door (D19). Placeholder looks until then.
 
 - [ ] **L35: Quest engine** `NEEDS LOGIC` (logic-gameplay, after L32; spec §4)
@@ -438,10 +439,12 @@ Passed: boot with no script errors, version on the start screen, both players jo
   - Cause: in the `keydown` handler (game.js:928) the line ends with `// debug: cycle cars (play uses the garage)if(e.code==='KeyM')toggleMute();if(e.code==='KeyF')toggleFS();`, so the M and F checks sit inside the comment. The start screen tells players "F = fullscreen · M = sound".
   - Repro: start, join, press M → the 🔊 button stays 🔊 and the sound stays on.
   - Expected: M toggles 🔊/🔇, F toggles fullscreen. Fix: move the two checks onto their own line.
+  - Reviewer: a two-minute fix; logic-gameplay can fold it into its L32 PR.
 - [ ] **QA2: Draw calls go over budget at GIANT and in some boss fights** `NEEDS LOGIC` (logic-systems)
   - Repro (P1 + P2 joined): `__sp.level(7)` (pick cars in each garage or `__sp.garageGo()`), then `__sp.stats()` at home, `__sp.tp(240,-80)` (town), `__sp.tp(-400,-400)` (farm). Bosses: `__sp.room(false); __sp.boss('<id>')`, wait 6 s, `__sp.stats()`.
   - Measured `calls` / `tris`: GIANT home **1161–1257** / 5.2–7.1M, GIANT town **1029** / 5.1M, GIANT farm **1078** / 2.5M. Boss fights: clankzilla **1037** / 9.1M, sirsprinkles **905** / 8.1M, kingwobbles 806, shelldozer 795, rexy 784, gumbotron 765 / 8.1M, cuddles 758 / 8.6M, the rest 612–683. Budget: ~700 (~900 in a boss fight). For comparison: micro home 339, micro town 308, `__sp.zone('candy')` at GIANT 771.
   - The triangle counts (5–9M) are a big jump from ~0.8–1.5M at small sizes and may hurt a GTX 1060 as much as the draw calls. Check whether the far ring of chunks at GIANT (67–102 chunks loaded) can be thinner or use lower detail.
+  - Reviewer: do this **after L31** (scenes + less filler changes these numbers a lot); re-measure first, then fix what's still over.
 - [ ] **QA3: Big center text covers the action** `NEEDS DESIGN` (cars-ui, `style.css` `#big` / `#combo`)
   - Seen: "GOLDEN!" and "×93 COMBO!" drawn on top of each other in the middle of the screen (an unreadable jumble); in a boss fight a see-through "KABOOM!" spans the boss while "×164 COMBO!" sits right on both cars, so you can't see your own car for a moment.
   - Repro: GIANT (`__sp.level(7,true)`), `__sp.mega()` near a golden prop or `__sp.boss('clankzilla')` + `__sp.explode(x,z)` a few times next to it.
