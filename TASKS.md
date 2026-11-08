@@ -132,6 +132,12 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - The garage shows 4 cars per player from the new tier, different for each player once a tier has 6+. Counts now: tier 0: 6 ✅ (starters, not shown in a garage), tier 1: 8 ✅, tier 2: 11 ✅, **tier 3: 5** (Rocket Racer, Shark Attack, Rex Rammer, Stomp King, Comet Cruiser).
   - **Still needed (tier 3, the coolest cars, shown today as blocky ❓ placeholders):** Rocket Sled 🛷, Robo Walker 🤖 (robot legs), Spike-o-saurus 🦕 (stegosaurus spike car), Hover Zoomer 🛸. Use exactly these names in cars.js / cars.json with `tier:3` and the placeholder disappears by itself (or rename: then update `GARAGE_WANTED` in game.js via a `TODO(logic)`). More tier-3 ideas welcome; 8+ gives both players 4 different real cars.
 
+- [ ] **B1+B2 order (Kaden + son picked, Nov 7): build ALL three bosses for each zone, in this order** (world-bosses; set `zone:'candy'` / `zone:'dino'` on each so L23 can pick them)
+  1. **Gummo the Gummy Giant** 🐻 (candy), then **Rexy Rumbleton** 🦖 (dino): first, they're the favorites
+  2. **Gumbo-Tron 3000** 🍬 (candy) and **Lava Larry** 🌋 (dino)
+  3. **Sir Sprinkles** 🎂 (candy) and **Mama Stegosaurus "Plates"** 🦕 (dino)
+  - Concepts and weak-spot ideas are in B1a / B2a below. One PR per pair is fine. Each new boss: add an audio task (AU7) with its intro, 2–3 taunts and defeat line.
+
 - [ ] **B1: Candy Land boss** `NEEDS DESIGN` (world-bosses; needs L23 + Z1) — e.g. a wobbly gummy-bear giant or a gumball-machine robot. Built from `BP` parts in candy colors, weak spots on the outside. Kaden + son pick the concept and name.
 - [ ] **B1a: Candy Land boss ideas** `NEEDS DESIGN` (world-bosses; from zone-candy, Z1 ✅; feeds B1, so pick one with Kaden + son and build it as B1)
   - **Gummo the Gummy Giant** 🐻: a big wobbly gummy bear (high `sway`, jiggles when hit) in bright candy colors (cherry red body, lime belly). Weak spots: two gumdrop buttons on the belly (phase 1), two candy-cane-striped toe caps (phase 2), a lollipop held low in its paw (phase 3). Each storey falls apart into fat gummy chunks.
@@ -245,7 +251,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - Document the contract in CLAUDE.md, then add `NEEDS AUDIO` tasks (AU2) for each existing zone.
 
 - [ ] **L23: Themed world bosses**
-  - Bosses get a `zone` field: `BOSSES=[{id, zone:'candy', …}]`. When the players go GIANT, summon the boss of **the themed zone they're in** (or, in a world with a themed zone, that zone's boss), else a random general boss. Each themed boss gets its own **boss music** (from the zone's `music.boss`), intro line ("Here comes <Name>!"), and arena flavor (debris colors from the zone).
+  - Bosses get a `zone` field: `BOSSES=[{id, zone:'candy', …}]`. When the players go GIANT, summon a boss of **the themed zone they're in** (each zone can have **several** bosses: pick one at random, avoiding the one you just fought) (or, in a world with a themed zone, that zone's boss), else a random general boss. Each themed boss gets its own **boss music** (from the zone's `music.boss`), intro line ("Here comes <Name>!"), and arena flavor (debris colors from the zone).
   - Keep it co-op and no-fail as today. Test helper: `__sp.boss('id')` still works, plus `__sp.boss('zone:candy')`.
   - Add `NEEDS DESIGN` tasks B1–B3 for world-bosses (or confirm they exist).
 
