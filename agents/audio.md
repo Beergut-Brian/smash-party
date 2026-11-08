@@ -13,6 +13,7 @@
 ## How to work
 - Worktree + branch `audio/<what>`.
 - **Always `--dry` first** and report the character cost before generating. Generate only new/changed lines.
+- **Credits are not a constraint.** Prefer quality: generate 2–3 takes of key tracks and keep the best; give every zone its own music and sound palette.
 - Voice style: excited, kid-friendly, short. Sfx: cartoony and punchy, never scary.
 - Listen to a few results; regenerate any that are off (`--only=<id>`).
 

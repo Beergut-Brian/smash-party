@@ -12,7 +12,9 @@ Follow the zone plug-in contract in CLAUDE.md (added by L15): your file register
 - **Theme fully:** ground color, 15+ props across every size class, 2–3 landmark buildings using the `BP` contract, at least one mega set piece, a few ramps.
 - **Match the art style** of the rest of the world (Kenney/CC0 low-poly, bright, chunky). CC0 sources only, credited in `assets/CREDITS.md`.
 - Kid-friendly and original: no licensed candy brands, no scary dinosaurs (goofy is good).
-- Need new animals (dinos!) or a zone boss? Add `NEEDS DESIGN` tasks for `world-animals` / `world-bosses`, and `NEEDS LOGIC` if they need new behavior.
+- **Sound and music:** fill your zone's `music` and `sfx` ids in `registerZone` (contract from L22) and add a `NEEDS AUDIO` task listing what your zone should sound like (drive and boss tracks, crash/boom/land variants, ambient). Credits are plentiful, so be specific and generous.
+- **Boss:** every themed zone gets its own boss (L23). Add a `NEEDS DESIGN` task for world-bosses with 2–3 boss ideas that fit your zone.
+- Need new animals (dinos!)? Add `NEEDS DESIGN` tasks for `world-animals` / `world-bosses`, and `NEEDS LOGIC` if they need new behavior.
 
 ## Done means
 Branch `zone-<name>/build`, `__sp.newWorld()` until your zone appears (or `__sp.zone('<name>')`), drive through it at small and giant size, smash a landmark, calls under ~700, PR `world: <name> zone`.

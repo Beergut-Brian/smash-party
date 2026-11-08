@@ -123,6 +123,15 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 - [ ] **D12: More cars for the garage** `NEEDS DESIGN` (cars-ui; before L17 ships)
   - The level-up garage shows 3–4 cars per player from the new tier. Today's counts are tier 0: 3, tier 1: 8, tier 2: 11, tier 3: 5. Add **3+ tier-0 starters** (pedal car, shopping cart, toy scooter) and **4+ tier-3 showstoppers** from the D4 list (rocket sled, robot-leg walker, stegosaurus spike car, hover car) so both players get real choices.
 
+- [ ] **B1: Candy Land boss** `NEEDS DESIGN` (world-bosses; needs L23 + Z1) — e.g. a wobbly gummy-bear giant or a gumball-machine robot. Built from `BP` parts in candy colors, weak spots on the outside. Kaden + son pick the concept and name.
+- [ ] **B2: Dino Valley boss** `NEEDS DESIGN` (world-bosses; needs L23 + Z2) — a goofy, clumsy giant dinosaur (big head, tiny arms, never scary).
+- [ ] **B3: Bedroom boss** `NEEDS DESIGN` (world-bosses; needs L23 + L20) — a giant toy (wind-up robot, jack-in-the-box, or a living teddy bear) guarding the door out.
+
+- [ ] **AU2: Zone music + sound effects** `NEEDS AUDIO` (audio; needs L22). ElevenLabs credits are plentiful, so go all in:
+  - **Each themed zone** (candy, dino, bedroom, and the core town/farm/park if they don't have their own yet): a looping **drive** track and a **boss** track in that zone's flavor (keep the game's upbeat, kid-friendly style), plus **crash/smash** variants (3+ each), a **boom**, a **landing** sound and a quiet **ambient** loop. Candy: crunches, pops, squishes. Dino: stomps, cartoon roars, leafy crashes. Bedroom: toy squeaks, block clatters, plush thumps.
+  - **Each themed boss:** an intro line, 2–3 fight taunts (funny, not scary) and a defeat line.
+  - Add them to `tools/*-lines.json`, `--dry` first, then generate. Log total credits used in the PR.
+
 - [ ] **Z1: Candy Land zone** `NEEDS DESIGN` (zone-candy agent, see `agents/zone.md`; needs L15 ✅)
   - `src/world/zones/candy.js` from the template: pink/pastel ground and sky, lollipop trees, gumdrops, candy canes, cupcake houses (BP contract), a giant cake mega set piece, 15+ props across micro…mega, bunnies. No real candy brands.
 
@@ -149,6 +158,17 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - **Easy to find your car:** a bright player-colored ring and a bobbing arrow/marker above each car (P1/P2 color), bigger on spawn and after respawn/teleport/garage, fading to subtle while driving. A short spotlight + "beep beep!" intro on start.
   - **Start on a street:** spawn both players on a sidewalk/street spot in a town chunk, surrounded by micro props (pebbles, flowers, soda cans, leaves), with a curb and a mailbox towering over them, instead of open grass. (Ties into L19 spots; until then, pick a fixed street spot in the home area.)
   - Hand-off: `NEEDS DESIGN` world-props for a hand-placed "start street" set-dressing (curb, sidewalk cracks, puddle, toy-sized clutter) once the spawn spot exists.
+
+- [ ] **L22: Zone music + zone sound effects** (do right after L21; the zone agents need it)
+  - **Music per zone:** `registerZone({…, music:{drive:'candy_drive', boss:'candy_boss'}})`. When the players drive into a zone, cross-fade to that zone's drive track (debounced so zone edges don't flicker; with two players in different zones, follow P1 or the zone most of the screen shows). Fall back to the default `drive` if a track is missing.
+  - **Sound effects per zone:** `registerZone({…, sfx:{crash:'candy_crunch', boom:'candy_pop', land:'candy_squish', ambient:'candy_ambient'}})`. Smashing something plays its zone's variant (by the object's zone, not the player's), with a fallback to the default sound. Optional low-volume ambient loop per zone (birds on the farm, a soda-fizz shimmer in Candy Land).
+  - Objects can override: `makeObj(…,{sfx:'gummy_squish'})`.
+  - Document the contract in CLAUDE.md, then add `NEEDS AUDIO` tasks (AU2) for each existing zone.
+
+- [ ] **L23: Themed world bosses**
+  - Bosses get a `zone` field: `BOSSES=[{id, zone:'candy', …}]`. When the players go GIANT, summon the boss of **the themed zone they're in** (or, in a world with a themed zone, that zone's boss), else a random general boss. Each themed boss gets its own **boss music** (from the zone's `music.boss`), intro line ("Here comes <Name>!"), and arena flavor (debris colors from the zone).
+  - Keep it co-op and no-fail as today. Test helper: `__sp.boss('id')` still works, plus `__sp.boss('zone:candy')`.
+  - Add `NEEDS DESIGN` tasks B1–B3 for world-bosses (or confirm they exist).
 
 - [ ] **L17: Level-up garage (pick your new car)**
   - Every car-tier unlock (every 2 sizes) opens a **garage** instead of the plain LEVEL UP: the world pauses and both players drop into a small showroom arena with 3–4 parked cars per player from the new tier on glowing pads, each with a **stat card** floating above it.
