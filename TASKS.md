@@ -246,11 +246,13 @@ Full spec and contracts: **`docs/ADVENTURE.md`** (read it before any task below)
 
 **Phase A (start now, in parallel)**
 
-- [ ] **L31: Scenes + calmer filler** `NEEDS LOGIC` (logic-systems; spec §2)
-  - Scene contract: `SCENES` in objects.js and `registerZone({scenes})`, `ctx.scene(id,x,z,th)` in layouts, filler scenes dropped into open ground near the players by zone/spot/size. Scenes scale to any size class (positions and props ×1.65 per step), are remembered per chunk, and face their +Z toward the nearest road or the camera.
-  - Cut the random filler to about 40% at micro–small and about 60% at medium+, keep empty ground between scenes, and keep growth pacing about the same (tune points if needed). Both modes.
-  - Placeholder scenes from today's props so it's testable before design lands. Measure props on screen and `__sp.stats().calls` on the start street, a town chunk and in the bedroom, before and after.
-  - Hand-off: D18 (world-props) and Z4 (zone-bedroom) write the real scenes.
+- [ ] **L31: Planned world: lots, scenes, less random filler** `NEEDS LOGIC` (logic-systems; spec §2, updated Nov 8: **planned beats random**)
+  - Scene contract: `SCENES` in objects.js and `registerZone({scenes})`, `ctx.scene(id,x,z,th)` in layouts. Lots (a house plot with everything from the house down to the flowers) are just bigger scenes. Scenes scale to any size class (positions and props ×1.65 per step), are remembered per chunk, and regrow in place.
+  - Random filler becomes a small top-up (about 10–20% of what's on screen in planned chunks; it can drop a filler scene instead of single props). Zones/chunks with no planned layout keep more filler until design fills them. Both modes.
+  - **Size LOD for performance:** don't build (or don't keep awake) props 3+ sizes below the players in loaded chunks; build them again when the players are small. Planned yards are full of micro detail, so this keeps GIANT cheap (and helps QA2).
+  - Arcade random worlds: support a library of planned chunk **blocks** per zone (a layout picks one of several hand-made block designs, mirrored/rotated). Probably just a helper; the design lanes write the blocks.
+  - Placeholder scenes/lots from today's props so it's testable before design lands. Measure props on screen and `__sp.stats().calls` on the start street, a town chunk, in the bedroom, and at GIANT, before and after.
+  - Hand-off: D18 (world-props) plans the Home World and the blocks; Z4 (zone-bedroom) the bedroom.
 
 - [ ] **L32: The garage is a building you drive into** `NEEDS LOGIC` (logic-gameplay; spec §3)
   - At a new tier, LEVEL UP raises the Grow-Up Garage out of the ground a short drive ahead (rumble, dust, beacon, gold arrow), scaled to the players. Drive in the front door → camera swoops inside → pick (as today) → the back door rolls up with the GO arrow (A / START still works) → drive out into the world set up for the new size (Arcade: fresh world as today; Adventure: same world, regrown and restocked around the exit) → the garage sinks away.
@@ -272,13 +274,16 @@ Full spec and contracts: **`docs/ADVENTURE.md`** (read it before any task below)
   - `tools/voices.json` cast (`{"hank":{"voice":"<id>","model":"…","settings":{…},"prefix":"…"}}`), `"voice":"hank"` on lines in `tools/voice-lines.json`, `make-voices.mjs` uses each line's voice (clip id includes the voice; `--dry` shows cost per voice), `say(text,{voice})` in core.js plays it (robot voice fallback, maybe pitched per character). The announcer stays the default.
   - Hand-off: AU13 (audio) casts the voices.
 
-- [ ] **D18: Home World scenes + quest spots + garage outside** `NEEDS DESIGN` (world-props; needs L31 for scenes, L32 for the garage hook)
-  - 6–10 `SCENES` each for town, farm, park and home, across the size bands (ideas in spec §2: ant picnic, snail race, gnome tea party at micro; yard sale, lemonade stand, birthday party, car wash, traffic jam; pumpkin patch, hay maze, pig pen; picnic, sandcastle, kite field, soccer game…).
-  - Quest stages for the Home World quests (spec §4): Hank's yard by the start, Garry's garden, the chicken pasture, the crop circle with the crashed saucer, Dozer Dot's crate yard, the parade route arches, the pond island with a treasure chest, the sheep pen. Mark each with a `ctx.spot('quest_<id>',…)` at a fixed spot in the hand-made Home World map.
+- [ ] **D18: Plan the Home World (lots, scenes, quest spots) + garage outside** `NEEDS DESIGN` (world-props; needs L31, L32 for the garage hook)
+  - **A planned town, not random props** (Kaden: Kenney's suburban sample scenes are the look). Lot templates with detail at every scale (house, driveway car, fence, mailbox, bike, trash cans, gnome, flowerbed, flowers, toys), mirrored and recolored into streets; a big park next to the neighborhood; a downtown main street; school; the farm belt at the edge; the construction site; the cornfield.
+  - The hand-made Home World map: every chunk designed (the first world and Adventure's world). Then 2–4 planned **blocks** per zone (town, farm, park, home) for Arcade's random worlds.
+  - 6–10 `SCENES` per zone across the size bands for the lots, parks and fields (ideas in spec §2: ant picnic, snail race, gnome tea party at micro; yard sale, lemonade stand, birthday party, car wash; pumpkin patch, hay maze, pig pen; picnic, sandcastle, kite field, soccer game…).
+  - Quest stages for the Home World quests (spec §4): Hank's yard by the start, Garry's garden, the chicken pasture, the crop circle with the crashed saucer, Dozer Dot's crate yard, the parade route arches, the pond island with a treasure chest, the sheep pen. Mark each with a `ctx.spot('quest_<id>',…)` at a fixed spot.
   - `buildGarageBuilding()`: the Grow-Up Garage outside (front door on +Z ~10 wide at car scale 1, roof sign, beacon; floor at y=0).
+  - Big task: fine to split into PRs (lot templates + one street first, then the full map, then the Arcade blocks).
 
 - [ ] **Z4: Bedroom scenes, less clutter** `NEEDS DESIGN` (zone-bedroom; needs L31)
-  - Replace most of the random toys with scenes: toy-car race on the play-mat road (8 cars on a starting grid, ramp, checkered flag, block grandstand with plush fans), tea party, block city, sock mountain by the laundry basket, crayon art corner, train loop, dino-toy standoff, pillow fort, marble run, snack-bowl spill. Fewer repeats of the castles and towers at the big sizes.
+  - The bedroom is one room, so plan it fully (furniture and every scene at fixed spots, little random filler). Replace most of the random toys with scenes: toy-car race on the play-mat road (8 cars on a starting grid, ramp, checkered flag, block grandstand with plush fans), tea party, block city, sock mountain by the laundry basket, crayon art corner, train loop, dino-toy standoff, pillow fort, marble run, snack-bowl spill. Fewer repeats of the castles and towers at the big sizes.
 
 **Phase B (after Phase A merges)**
 
