@@ -212,14 +212,19 @@ function questRingPos(s,st,i,n){if(Array.isArray(s.at)&&Array.isArray(s.at[0]))r
 function questThingOff(t,poof){if(!t)return;if(t.g){if(poof)puff(t.g.position.x,t.g.position.y+qS(),t.g.position.z,6,1.2*Math.max(qS(),.2),'#ffffff');if(t.g.parent)t.g.parent.remove(t.g);}
   if(t.tag)t.tag.remove();if(t.o&&t.o.alive&&!t.keep){t.o.alive=false;if(typeof poolRelease==='function')poolRelease(t.o);scene.remove(t.o.g);}
   if(t.mats)for(const m of t.mats)m.dispose();if(t.geo)t.geo.dispose();}
+// QA8: quest critters and items are blown up so their biggest side is at least `min` car lengths (a car is ~4.5 at scale 1),
+// so a chicken to catch isn't a white speck next to the car. m is at scale 1, not yet in a scaled parent.
+const QUEST_CAR_L=4.5,QUEST_MIN_CRITTER=0.6,QUEST_MIN_ITEM=0.45;
+function questBigK(m,min){_bx.setFromObject(m);const d=Math.max(_bx.max.x-_bx.min.x,_bx.max.y-_bx.min.y,_bx.max.z-_bx.min.z)||1;return Math.max(1,min*QUEST_CAR_L/d);}
 function questGlow(col,op=0.3){return new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:op,depthWrite:false,blending:THREE.AdditiveBlending});}
 // find: a bobbing item with a light beam and its icon above it; touch it and it hops onto your roof
 function questItem(s,pos){const g=new THREE.Group(),look=typeof QUEST_ITEMS!=='undefined'&&QUEST_ITEMS[s.item];
   let m=null;if(look){try{m=look();}catch(e){}}
   if(!m){m=new THREE.Group();m.add(mk('box',1.2,0.8,0.9,s.color||'#e63946',0,0.4,0),mk('box',0.5,0.2,0.2,'#ffd60a',0,0.9,0));}
+  const k=questBigK(m,QUEST_MIN_ITEM);m.scale.setScalar(k);
   const beam=new THREE.Mesh(GEO.cyl,BEAM_MAT);beam.scale.set(0.9,14,0.9);beam.position.y=7;beam.castShadow=false;
   g.add(m,beam);g.position.set(pos[0],groundH(pos[0],pos[1]),pos[1]);g.scale.setScalar(qS());scene.add(g);
-  const t={kind:'item',g,m,beam,x:pos[0],z:pos[1],tag:questDiv('questIcon',s.icon||'🎁'),ph:rand(0,6),y:s.y!=null?s.y*qS():0,lift:!!s.lift,clear:!!s.clear,on:null,chk:0};
+  const t={kind:'item',g,m,k,beam,x:pos[0],z:pos[1],tag:questDiv('questIcon',s.icon||'🎁'),ph:rand(0,6),y:s.y!=null?s.y*qS():0,lift:!!s.lift,clear:!!s.clear,on:null,chk:0};
   questItemBase(t,st0(),true);return t;}
 const st0=()=>questA&&questA.st;
 // L40: what an item sits on (lift), what's cleared off its spot (clear); checked now and then, since chunks load later
@@ -243,9 +248,9 @@ function questItemTick(t,dt,st){
   const base=t.on&&t.on.alive?t.on.h+(t.on.fy||0):t.y,gy=groundH(t.x,t.z);
   if(t.hop!=null){t.hop=Math.max(0,t.hop-dt*1.6);}
   t.g.position.y=gy+base+(t.hop?Math.sin((1-t.hop)*Math.PI)*4*qS():0);
-  t.m.rotation.y+=dt*2;t.m.position.y=(0.4+0.3*Math.sin(T*3+t.ph));
+  t.m.rotation.y+=dt*2;t.m.position.y=(0.4+0.3*Math.sin(T*3+t.ph))*t.k;
   questProj(t.tag,t.x,base+3.2*qS(),t.z,true);
-  const reach=1.2*qS()+(t.on&&t.on.alive?t.on.r:0); // touching what it sits on counts
+  const reach=QUEST_CAR_L*qS()+(t.on&&t.on.alive?t.on.r:0); // QA8: within ~1.5 car lengths of the car's middle; touching what it sits on counts
   for(const p of players)if(Math.hypot(p.x-t.x,p.z-t.z)<p.r+reach&&(!(t.y>0)||t.on||(p.y||0)-gy>=t.y-1.6*qS()))return p;
   return null;}
 function questDrop(s,pos,done){const g=new THREE.Group(),mat=new THREE.MeshBasicMaterial({color:done?'#06d6a0':'#ffd60a',transparent:true,opacity:0.75});
@@ -267,6 +272,7 @@ function questPushable(s,pos){let m=null;
   if(typeof s.build==='function'){try{m=s.build();}catch(e){}}
   if(!m&&s.kind&&animalDef(s.kind))m=animalModel(s.kind,animalDef(s.kind));
   if(!m){m=new THREE.Group();m.add(mk('sph',2.2,2.2,2.2,s.color||'#ff006e',0,1.1,0),mk('box',2.25,0.35,0.35,'#ffffff',0,1.1,0));}
+  const k=s.kind||s.build?questBigK(m,QUEST_MIN_CRITTER):1;m.scale.setScalar(k);
   _bx.setFromObject(m);const r=Math.max(0.6,Math.max(_bx.max.x-_bx.min.x,_bx.max.z-_bx.min.z)/2)*qS();
   const g=new THREE.Group();g.add(m);g.position.set(pos[0],groundH(pos[0],pos[1]),pos[1]);g.scale.setScalar(qS());scene.add(g);
   return {kind:'push',g,m,x:pos[0],z:pos[1],vx:0,vz:0,r,ball:!s.kind&&!s.build};}
@@ -280,24 +286,24 @@ function questSmashThing(s,pos){const types=[].concat(s.type||['crates','barrel'
 function questFlock(kind,n,st){
   const def=animalDef(kind)||animalDef('chicken');animalModel(kind,def);const t=animalTemplates[kind];
   const ims=[];if(t&&t.userData.merged)for(const c of t.children){const im=new THREE.InstancedMesh(c.geometry,c.material,Math.max(1,n));im.castShadow=true;im.frustumCulled=false;scene.add(im);ims.push(im);}
-  _bx.setFromObject(t||def.build());const r=Math.max(_bx.max.x-_bx.min.x,_bx.max.z-_bx.min.z)/2*qS();
+  const src=t||def.build(),k=questBigK(src,QUEST_MIN_CRITTER);_bx.setFromObject(src);const r0=Math.max(_bx.max.x-_bx.min.x,_bx.max.z-_bx.min.z)/2*qS(),r=r0*k;
   const list=[];for(let i=0;i<n;i++){const p=questPlace({},st,i);list.push({x:p[0],z:p[1],h:rand(0,6),sp:0,t:rand(0,2),ph:rand(0,9),alive:true,g:ims.length?null:animalModel(kind,def)});
     if(list[i].g)scene.add(list[i].g);}
-  return {kind,def,ims,list,r,st,_m:new THREE.Matrix4(),_q:new THREE.Quaternion(),_p:new THREE.Vector3(),_s:new THREE.Vector3(),_e:new THREE.Euler()};}
+  return {kind,def,ims,list,r,r0,k,st,_m:new THREE.Matrix4(),_q:new THREE.Quaternion(),_p:new THREE.Vector3(),_s:new THREE.Vector3(),_e:new THREE.Euler()};}
 function questFlockOff(f){for(const im of f.ims){scene.remove(im);im.dispose();}for(const a of f.list)if(a.g)scene.remove(a.g);}
-function updateFlock(f,dt){const st=f.st,sp0=(3+f.r/qS())*qS()*1.4;let k=0;
+function updateFlock(f,dt){const st=f.st,sp0=(3+f.r0/qS())*qS()*1.4;let k=0;
   for(let i=0;i<f.list.length;i++){const a=f.list[i];
     if(a.alive){let np=null,nd=1e9;for(const p of players){const d=Math.hypot(a.x-p.x,a.z-p.z);if(d<nd){nd=d;np=p;}}
       if(np&&nd<np.r+f.r){a.alive=false;const fl=f.def.fluff||'#ffffff';puff(a.x,f.r,a.z,8,Math.max(0.3,f.r*1.4),fl);sfxClip(f.kind,0.9,rand(0.92,1.12))||sfx.pop();
         const gv=questGv();if(gv&&gv.shown)puff(gv.x,gv.r,gv.z,4,gv.r*0.6,fl);questProgress();if(!questA||questA.st!==st)return;continue;}
       a.t-=dt;
-      if(np&&nd<np.r+f.r*8+4*qS()){a.h=Math.atan2(a.x-np.x,a.z-np.z)+Math.sin(T*3+a.ph)*0.6;a.sp=sp0*1.6;a.t=0.6;} // run away, flapping
+      if(np&&nd<np.r+f.r0*8+4*qS()){a.h=Math.atan2(a.x-np.x,a.z-np.z)+Math.sin(T*3+a.ph)*0.6;a.sp=sp0*1.6;a.t=0.6;} // run away, flapping
       else if(a.t<=0){a.t=rand(1,2.5);a.sp=Math.random()<0.4?0:sp0*0.5;a.h=rand(0,Math.PI*2);}
       const dx=a.x-st.cx,dz=a.z-st.cz;if(Math.hypot(dx,dz)>st.R){a.h=Math.atan2(-dx,-dz);} // stay inside the stage
       a.x+=Math.sin(a.h)*a.sp*dt;a.z+=Math.cos(a.h)*a.sp*dt;}
     const y=a.alive?groundH(a.x,a.z)+(a.sp>0?Math.abs(Math.sin(T*16+a.ph))*0.25*f.r:0):0;
-    if(a.g){a.g.visible=a.alive;a.g.position.set(a.x,y,a.z);a.g.rotation.y=a.h;a.g.scale.setScalar(qS());continue;}
-    f._m.compose(f._p.set(a.x,y,a.z),f._q.setFromEuler(f._e.set(0,a.h,a.sp>0?Math.sin(T*16+a.ph)*0.15:0)),f._s.setScalar(qS()));
+    if(a.g){a.g.visible=a.alive;a.g.position.set(a.x,y,a.z);a.g.rotation.y=a.h;a.g.scale.setScalar(qS()*f.k);continue;}
+    f._m.compose(f._p.set(a.x,y,a.z),f._q.setFromEuler(f._e.set(0,a.h,a.sp>0?Math.sin(T*16+a.ph)*0.15:0)),f._s.setScalar(qS()*f.k));
     for(const im of f.ims)im.setMatrixAt(i,a.alive?f._m:QUEST_HIDE);k++;}
   for(const im of f.ims)im.instanceMatrix.needsUpdate=true;}
 // items riding on car roofs
