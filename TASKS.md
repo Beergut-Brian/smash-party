@@ -284,6 +284,8 @@ Full spec and contracts: **`docs/ADVENTURE.md`** (read it before any task below)
   - Quest stages for the Home World quests (spec §4): Hank's yard by the start, Garry's garden, the chicken pasture, the crop circle with the crashed saucer, Dozer Dot's crate yard, the parade route arches, the pond island with a treasure chest, the sheep pen. Mark each with a `ctx.spot('quest_<id>',…)` at a fixed spot.
   - `buildGarageBuilding()`: the Grow-Up Garage outside (front door on +Z ~10 wide at car scale 1, roof sign, beacon; floor at y=0).
   - Big task: fine to split into PRs (lot templates + one street first, then the full map, then the Arcade blocks).
+  - Seen reviewing L31/L32: at micro a medium crate stack (6 tall) sometimes stands on the start road a little ahead of the cars (on main too, not new). The planned start street should keep the road clear of anything too big to smash.
+  - L31 ✅ and L32 ✅ are merged: the scene/lot/block contract and the garage contract are in CLAUDE.md.
 
 - [ ] **Z4: Bedroom scenes, less clutter** `NEEDS DESIGN` (zone-bedroom; needs L31)
   - The bedroom is one room, so plan it fully (furniture and every scene at fixed spots, little random filler). Replace most of the random toys with scenes: toy-car race on the play-mat road (8 cars on a starting grid, ramp, checkered flag, block grandstand with plush fans), tea party, block city, sock mountain by the laundry basket, crayon art corner, train loop, dino-toy standoff, pillow fort, marble run, snack-bowl spill. Fewer repeats of the castles and towers at the big sizes.
