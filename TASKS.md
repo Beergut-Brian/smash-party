@@ -428,6 +428,29 @@ Full spec and contracts: **`docs/ADVENTURE.md`** (read it before any task below)
   - ~~Phone check~~: not needed, the game is computer only (Kaden, 2026-11-07).
   - ✅ Performance pass (v0.13.1): batch sleeping props by shape with per-instance colors, shared pools for scatter, wake radius scales with car size, merged animal models, herds only near the cars, debris boxes in one batch. Draw calls in the benchmark: micro 725→214, medium town 1,460→397, giant town 3,491→1,048, boss fight 6,412→880, debris storm 7,042→1,113; the 0.8 s level-up hitch is gone.
 
+## QA findings
+
+### Round 1 (v0.35.1, Nov 8): Chrome on Mac GPU (`--use-angle=metal`), 1920×1080, quality BEST, P1 + P2 on keyboard
+Passed: boot with no script errors, version on the start screen, both players join/drive/turbo/jump/shoot, garage at tiny (drive into a car → picked within ~1 s, GO shows, Space = GO → fresh world with the new cars), every size up to GIANT, home/town/farm/park, `__sp.zone` candy/dino/bedroom, `__sp.room()`, all 10 bosses spawn by id, NEW WORLD after a beaten boss, pause menu.
+
+- [ ] **QA1: M (mute) and F (fullscreen) keys do nothing** `NEEDS LOGIC` (logic-gameplay, `src/game.js`)
+  - Cause: in the `keydown` handler (game.js:928) the line ends with `// debug: cycle cars (play uses the garage)if(e.code==='KeyM')toggleMute();if(e.code==='KeyF')toggleFS();`, so the M and F checks sit inside the comment. The start screen tells players "F = fullscreen · M = sound".
+  - Repro: start, join, press M → the 🔊 button stays 🔊 and the sound stays on.
+  - Expected: M toggles 🔊/🔇, F toggles fullscreen. Fix: move the two checks onto their own line.
+- [ ] **QA2: Draw calls go over budget at GIANT and in some boss fights** `NEEDS LOGIC` (logic-systems)
+  - Repro (P1 + P2 joined): `__sp.level(7)` (pick cars in each garage or `__sp.garageGo()`), then `__sp.stats()` at home, `__sp.tp(240,-80)` (town), `__sp.tp(-400,-400)` (farm). Bosses: `__sp.room(false); __sp.boss('<id>')`, wait 6 s, `__sp.stats()`.
+  - Measured `calls` / `tris`: GIANT home **1161–1257** / 5.2–7.1M, GIANT town **1029** / 5.1M, GIANT farm **1078** / 2.5M. Boss fights: clankzilla **1037** / 9.1M, sirsprinkles **905** / 8.1M, kingwobbles 806, shelldozer 795, rexy 784, gumbotron 765 / 8.1M, cuddles 758 / 8.6M, the rest 612–683. Budget: ~700 (~900 in a boss fight). For comparison: micro home 339, micro town 308, `__sp.zone('candy')` at GIANT 771.
+  - The triangle counts (5–9M) are a big jump from ~0.8–1.5M at small sizes and may hurt a GTX 1060 as much as the draw calls. Check whether the far ring of chunks at GIANT (67–102 chunks loaded) can be thinner or use lower detail.
+- [ ] **QA3: Big center text covers the action** `NEEDS DESIGN` (cars-ui, `style.css` `#big` / `#combo`)
+  - Seen: "GOLDEN!" and "×93 COMBO!" drawn on top of each other in the middle of the screen (an unreadable jumble); in a boss fight a see-through "KABOOM!" spans the boss while "×164 COMBO!" sits right on both cars, so you can't see your own car for a moment.
+  - Repro: GIANT (`__sp.level(7,true)`), `__sp.mega()` near a golden prop or `__sp.boss('clankzilla')` + `__sp.explode(x,z)` a few times next to it.
+  - Expected: one banner at a time (or stacked), and the combo label offset so it never covers the cars. Positioning is in game.js (`showBig`, the combo label placement); if a style change isn't enough, add a `NEEDS LOGIC` task.
+- [ ] **QA4: Switching LOOKS in the pause menu throws away the game** `NEEDS LOGIC` (logic-systems, `setQuality` in core.js)
+  - Repro: play to any size, Esc → "LOOKS: BEST (switch to FAST)" → the page reloads to the start screen at micro size and players must rejoin.
+  - Expected: switch without a reload, or label it clearly (e.g. "restarts") so a long session isn't wiped by accident.
+- [ ] **QA5: favicon.ico 404 on every boot** `NEEDS DESIGN` (cars-ui, UI art; `index.html` is shared)
+  - The only console error on a clean boot is `GET /favicon.ico 404`. Add a small icon (or `<link rel="icon" href="data:,">`) so the console is clean for testing.
+
 ---
 
 ## Design (Cursor)
