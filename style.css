@@ -124,3 +124,90 @@ canvas{display:block}
 #garageGo small{display:block;font-family:'Nunito',sans-serif;font-weight:900;font-size:.38em;letter-spacing:.04em;opacity:.95;margin-top:2px}
 #garageGo:active{transform:translateX(-50%) translateY(5px);box-shadow:0 5px 0 #035e48,0 0 18px #06d6a066;animation:none}
 @keyframes garageGoBob{50%{transform:translateX(-50%) scale(1.07)}}
+
+/* D19: quest UI (L35) + ability glyphs + mode picker (L36). Pictures only. Logic injects plain :where() defaults; these win. */
+@keyframes qBob{0%,100%{transform:translate(-50%,-100%) translateY(0)}50%{transform:translate(-50%,-100%) translateY(-10px)}}
+@keyframes qPulse{50%{transform:scale(1.1)}}
+.questBalloon{
+  position:absolute;transform:translate(-50%,-100%);width:70px;height:70px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:40px;line-height:1;pointer-events:none;
+  background:radial-gradient(circle at 35% 30%,#8ecbff,#3a86ff 60%,#2459b8);
+  border:5px solid #fff;box-shadow:0 6px 0 #1b3f86,0 0 18px #3a86ff99;animation:qBob 1.1s ease-in-out infinite;
+}
+.questBalloon.main{background:radial-gradient(circle at 35% 30%,#fff3a0,#ffbe0b 60%,#e08a00);box-shadow:0 6px 0 #a35f00,0 0 26px #ffd60acc}
+.questBalloon::before{ /* the little tail pointing down at the giver */
+  content:'';position:absolute;left:50%;bottom:-16px;margin-left:-10px;border:10px solid transparent;border-top:14px solid #fff;
+}
+.questBalloon::after{
+  content:'!';position:absolute;right:-12px;top:-14px;width:32px;height:32px;border-radius:50%;
+  font:28px/32px 'Lilita One',sans-serif;text-align:center;color:#fff;background:#e63946;border:3px solid #fff;
+  box-shadow:0 3px 0 #9d1230;animation:qPulse .7s ease-in-out infinite;
+}
+.questBubble{
+  position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:8px 18px 10px;border-radius:26px;background:#fff;border:5px solid #222;color:#222;
+  font:22px 'Lilita One',sans-serif;pointer-events:none;white-space:nowrap;box-shadow:0 6px 0 #0004;
+}
+.questBubble::after{content:'';position:absolute;left:50%;bottom:-20px;margin-left:-12px;border:12px solid transparent;border-top:16px solid #222}
+.questBubble b{font-size:48px;line-height:1.05;filter:drop-shadow(0 3px 0 #0003)}
+.questBubble span,#questHud span{letter-spacing:3px;color:#ffbe0b;-webkit-text-stroke:1px #222;font-size:26px}
+.questIcon{
+  position:absolute;transform:translate(-50%,-100%);font-size:40px;line-height:1;pointer-events:none;
+  filter:drop-shadow(0 3px 0 #0006) drop-shadow(0 0 10px #fff8);animation:qBob .9s ease-in-out infinite;
+}
+#questArrow{
+  display:none;position:absolute;width:72px;height:72px;margin:-36px 0 0 -36px;border-radius:50%;
+  font-size:42px;line-height:72px;text-align:center;z-index:5;pointer-events:none;
+  background:radial-gradient(circle at 40% 35%,#fff3a0,#ffbe0b 70%);border:5px solid #fff;
+  box-shadow:0 0 0 4px #ffbe0b66,0 0 28px #ffd60a;animation:qPulse .8s ease-in-out infinite;
+}
+#questHud{
+  position:absolute;left:14px;top:118px;display:flex;align-items:center;gap:10px;padding:6px 18px 6px 8px;z-index:4;
+  border-radius:24px;background:linear-gradient(180deg,#5aa0ff,#3a86ff);border:4px solid #fff;box-shadow:0 5px 0 #1b3f86;
+  color:#fff;font:22px 'Lilita One',sans-serif;pointer-events:none;
+}
+#questHud.main{background:linear-gradient(180deg,#ffd60a,#ffbe0b);box-shadow:0 5px 0 #a35f00}
+#questHud i{font-style:normal;font-size:36px;width:52px;height:52px;line-height:52px;text-align:center;border-radius:50%;background:#fff;box-shadow:inset 0 -3px 0 #0002}
+#questHud b{font-size:38px;line-height:1}
+#questHud span{color:#fff;-webkit-text-stroke:0;text-shadow:0 2px 0 #0005}
+
+/* the ability glyph that pops in (and pulses) until the new button is first used */
+@keyframes abPop{0%{transform:scale(0) rotate(-20deg)}60%{transform:scale(1.25) rotate(6deg)}100%{transform:scale(1)}}
+@keyframes abGlow{50%{box-shadow:0 6px 0 #a35f00,0 0 30px #ffd60a}}
+#abilGlyphs{position:absolute;right:14px;bottom:118px;display:flex;flex-direction:column;align-items:flex-end;gap:12px;pointer-events:none;z-index:4}
+.abGlyph{
+  display:flex;align-items:center;gap:10px;padding:8px 16px 8px 10px;border-radius:999px;
+  background:linear-gradient(180deg,#1d2438f2,#0f1320ee);border:5px solid #ffd60a;box-shadow:0 6px 0 #a35f00,0 0 12px #ffd60a66;
+  animation:abPop .5s ease-out both,abGlow .9s ease-in-out .5s infinite;
+}
+.abGlyph span{font-size:46px;line-height:1;filter:drop-shadow(0 3px 0 #0006)}
+.abGlyph b{
+  display:inline-block;width:52px;height:52px;border-radius:50%;font:32px/46px 'Lilita One',sans-serif;text-align:center;
+  color:#fff;border:3px solid #fff;box-shadow:0 4px 0 #0006;animation:qPulse .6s ease-in-out infinite;
+}
+.abGlyph b.btnB{background:radial-gradient(circle at 40% 35%,#ff7b86,#e63946)}
+.abGlyph b.btnX{background:radial-gradient(circle at 40% 35%,#7fb2ff,#3a86ff)}
+
+/* start screen: 🗺️ Adventure / 🕹️ Arcade (same look as the 🛏️ / 🌳 tiles); #savePick is for L37's ▶️ Continue / 🆕 New tiles */
+#modePick,#savePick{display:flex;gap:clamp(16px,3vw,28px);justify-content:center;margin:6px 0 18px;flex-wrap:wrap}
+#modePick .mp,#savePick .mp{
+  appearance:none;-webkit-appearance:none;margin:0;position:relative;overflow:hidden;
+  width:clamp(120px,19vw,170px);height:clamp(120px,19vw,170px);font-size:clamp(60px,10vw,92px);line-height:1;
+  display:flex;align-items:center;justify-content:center;padding:0;
+  border:5px solid #fff;border-radius:28px;cursor:pointer;outline:none;
+  box-shadow:0 8px 0 #0003;text-shadow:0 4px 0 #0003;transition:transform .18s ease,box-shadow .18s ease,filter .18s ease;
+}
+#modePick .mp[data-m="adventure"]{background:linear-gradient(160deg,#ffe29a 0%,#ffbe0b 50%,#ff9f1c 100%)}
+#modePick .mp[data-m="arcade"]{background:linear-gradient(160deg,#9bf6ff 0%,#3a86ff 55%,#7b2cbf 100%)}
+#savePick .mp{background:linear-gradient(160deg,#b9fbc0 0%,#3ddc97 55%,#06a77d 100%)}
+#savePick .mp.new{background:linear-gradient(160deg,#ffc8dd 0%,#ff70a6 55%,#e63973 100%)}
+#savePick .mp::after{ /* hold-to-confirm fill: logic sets --hold from 0 to 1 */
+  content:'';position:absolute;left:0;bottom:0;width:100%;height:calc(var(--hold,0)*100%);background:#ffffff55;pointer-events:none;
+}
+#modePick .mp:hover,#savePick .mp:hover{transform:translateY(-3px) scale(1.04);filter:brightness(1.06)}
+#modePick .mp:active,#savePick .mp:active{transform:translateY(3px);box-shadow:0 4px 0 #0003}
+#modePick .mp.sel,#savePick .mp.sel{
+  border-color:#ffd60a;box-shadow:0 0 0 5px #ffd60a88,0 10px 0 #c47d00,0 0 28px #ffd60a;
+  transform:scale(1.14);animation:wpSel 1.1s ease-in-out infinite;
+}
+#modePick.focus,#worldPick.focus,#savePick.focus{outline:4px dashed #ffffffaa;outline-offset:10px;border-radius:34px}

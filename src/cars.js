@@ -465,42 +465,91 @@ function loadModelCars(){
 }
 loadModelCars();
 
-/* D9: level-up garage showroom. Floor top at y=0, ~26 radius, open toward +Z (camera). Logic scales + places it. */
+/* D19: Grow-Up Garage showroom v2 (L32 hook). Car scale 1, floor top at y=0, decals ≥0.04 above it. Fills the
+   building's square inside (±GARAGE_HW=43): a tiled floor, a candy-wedge turntable (~GARAGE_R=40) under the parked cars,
+   a drive lane from the front door (+Z) to the back door (−Z) with GO chevrons, a checkered finish line and a green
+   GO arrow sign over the back door (the building in objects.js carries the doors themselves). No words. */
 function buildGarage(){
-  const g=new THREE.Group(),R=26;
-  const floor=mk('cyl',R*2,.35,R*2,'#2b2d42',0,-.095,0); // top at y=.08 so it never fights the ground plane (y=0)floor.castShadow=false;g.add(floor);
-  // candy pie wedges on the floor
+  const g=new THREE.Group(),R=38,H=42.4,D=7,flat=(m)=>{m.castShadow=false;m.receiveShadow=true;g.add(m);return m;};
+  flat(mk('box',H*2,.3,H*2,'#2b2d42',0,-.15,0)); // base floor, fills the square to the walls
+  for(let i=-3;i<=3;i++)for(let j=-3;j<=3;j++)if((i+j)&1)flat(mk('box',12,.04,12,'#33364f',i*12,.02,j*12)); // big soft floor tiles
   const wedges=['#ff6b6b','#ffd60a','#06d6a0','#3a86ff','#9b5de5','#ff9f1c','#48cae4','#f72585'];
-  for(let i=0;i<8;i++){
-    const wedge=new THREE.Mesh(new THREE.CircleGeometry(R*.92,24,i*Math.PI/4,Math.PI/4),M(wedges[i]));
-    wedge.rotation.x=-Math.PI/2;wedge.position.y=.12;wedge.castShadow=false;wedge.receiveShadow=true;g.add(wedge);
-  }
-  const hub=mk('cyl',6.4,.12,6.4,'#fff',0,.1,0);hub.castShadow=false;g.add(hub);
-  g.add(mk('cyl',3.2,.16,3.2,'#ffd60a',0,.14,0));
-  // low curb ring (open toward +Z so the camera can see in)
-  const curb=new THREE.Mesh(new THREE.CylinderGeometry(R,R,1.1,48,1,true,Math.PI*.28,Math.PI*1.44),
-    litMat({color:'#ffd60a',side:THREE.DoubleSide}));
-  curb.position.y=.55;curb.receiveShadow=true;g.add(curb);
-  // candy stripes on the curb
-  for(let i=0;i<14;i++){
-    const a=Math.PI*.32+i*(Math.PI*1.36/14),x=Math.sin(a)*(R-.15),z=Math.cos(a)*(R-.15);
-    g.add(mk('box',R*.12,.95,.22,i%2?'#fff':'#e63946',x,.5,z));
-  }
-  // back banner + checkered strip
-  g.add(mk('box',R*1.15,6.5,1.1,'#e63946',0,3.4,-R+.55));
-  g.add(mk('box',R*1.15,1.4,1.3,'#fff',0,7.1,-R+.55));
-  for(let i=0;i<9;i++)g.add(mk('box',R*.12,R*.12*.55,.28,i%2?'#111':'#fff',(i-4)*R*.12,4.1,-R+1.15));
-  // spotlights around the back half
-  for(let i=0;i<5;i++){
-    const a=Math.PI*.55+i*(Math.PI*.9/4),x=Math.sin(a)*(R-2.2),z=Math.cos(a)*(R-2.2);
-    g.add(mk('cyl',.22,7.2,.22,'#adb5bd',x,3.6,z));
-    const lamp=mk('cone',1.1,1.4,1.1,'#212529',x,7.4,z);lamp.rotation.x=Math.PI;g.add(lamp);
-    g.add(mk('sph',.55,.55,.55,null,x,6.7,z,glow('#fff6a0')));
-  }
-  // little toy cones marking the open entrance
-  [[-10,R-1.2],[10,R-1.2],[-16,R-3],[16,R-3]].forEach(([x,z],i)=>{
-    g.add(mk('cone',.9,1.6,.9,i%2?'#ff9f1c':'#ffd60a',x,.8,z));
-    g.add(mk('cyl',.95,.18,.95,'#fff',x,.15,z));
-  });
+  for(let i=0;i<8;i++){const w=new THREE.Mesh(new THREE.CircleGeometry(R,20,i*Math.PI/4,Math.PI/4),M(wedges[i]));
+    w.rotation.x=-Math.PI/2;w.position.y=.06;flat(w);}
+  const rim=new THREE.Mesh(new THREE.RingGeometry(R,R+1.2,48),M('#ffffff'));rim.rotation.x=-Math.PI/2;rim.position.y=.07;flat(rim);
+  // the drive lane: front door → back door
+  flat(mk('box',D*2,.04,H*2,'#3a3f5c',0,.1,0));
+  for(const sx of [-1,1])flat(mk('box',.6,.04,H*2,'#ffffff',sx*(D-.3),.12,0));
+  for(let z=-26;z<=34;z+=10)flat(mk('box',.6,.04,4,'#ffd60a',0,.12,z));
+  for(const z of [-32,-25]){ // GO chevrons pointing out the back (−Z)
+    for(const sx of [-1,1]){const c=flat(mk('box',1.3,.04,6,'#3ddc97',sx*1.9,.13,z));c.rotation.y=sx*0.75;}}
+  for(let i=0;i<7;i++)for(let j=0;j<2;j++)flat(mk('box',2,.04,2,(i+j)%2?'#111111':'#ffffff',(i-3)*2,.14,-H+1.4+j*2)); // finish line
+  for(let i=0;i<7;i++)flat(mk('box',2,.04,1.4,i%2?'#111111':'#ffd60a',(i-3)*2,.14,H-1)); // hazard stripe at the way in
+  // hub in the middle of the turntable
+  flat(mk('cyl',7,.06,7,'#ffffff',0,.16,0));flat(mk('cyl',3.6,.06,3.6,'#ffd60a',0,.2,0));
+  // finish posts either side of the back door + the GO sign over it (inside face of the back wall)
+  for(const sx of [-1,1])for(let k=0;k<5;k++)g.add(mk('box',1.2,2,1.2,k%2?'#111111':'#ffffff',sx*(D+1.6),1+k*2,-H+.4));
+  g.add(mk('box',D*2+4.4,3.6,.6,'#06d6a0',0,12,-H+.2),mk('box',D*2+5,.5,.7,'#ffffff',0,13.9,-H+.2),mk('box',D*2+5,.5,.7,'#ffffff',0,10.1,-H+.2));
+  g.add(mk('box',1.2,1.6,.4,'#ffffff',0,11.4,-H+.6),mk('pyr',3.2,1.6,.4,'#ffffff',0,12.9,-H+.6)); // the up arrow = "this way out"
+  for(const sx of [-1,1])g.add(mk('sph',1,1,1,null,sx*(D+3.4),12,-H+.6,glow('#fff6a0')));
+  // ceiling lamps hanging off the side walls
+  for(const sx of [-1,1])for(const z of [-24,0,24]){
+    g.add(mk('box',3,.4,.5,'#adb5bd',sx*(H-1.3),11.6,z));
+    const lamp=mk('cone',1.6,1.2,1.6,'#212529',sx*(H-2.6),11,z);lamp.rotation.x=Math.PI;g.add(lamp);
+    g.add(mk('sph',.8,.5,.8,null,sx*(H-2.6),10.3,z,glow('#fff6a0')));}
+  // corner clutter: tire stacks, a toolbox and a cone (corners stay clear of the parking pads)
+  for(const [x,z] of [[-39,-39],[39,-39],[-39,38],[39,38]]){
+    for(let k=0;k<3;k++){g.add(mk('cyl',2.6,.9,2.6,'#222222',x,.45+k*.9,z),mk('cyl',1.2,.92,1.2,'#555555',x,.45+k*.9,z));}}
+  g.add(mk('box',3,2.4,1.6,'#e63946',-35,1.2,-40.6),mk('box',3.1,.3,1.7,'#adb5bd',-35,1.6,-40.6),mk('box',3.1,.3,1.7,'#adb5bd',-35,.8,-40.6));
+  g.add(mk('cone',1.2,2,1.2,'#ff9f1c',35,1,-36),mk('box',1.6,.2,1.6,'#ffffff',35,.1,-36));
+  return g;
+}
+
+/* D19: ability + cosmetic parts on the car (L36 hook `buildCarPart(id)`, game.js `carPartLook`). Car scale 1.
+   Roof parts (hammer, shoot, hat, crown): origin where they sit on the roof. hover / glide / dozer: origin at the car's
+   ground center (logic moves the dozer blade to the nose). A child with userData.swing swings on each smash
+   (logic sets its rotation.x = -0.5 + swing, so it rests at -0.5 with the pivot at its origin). */
+function buildCarPart(id){
+  const g=new THREE.Group();
+  if(id==='hammer'){ // a big squeaky toy mallet on a little roof stand
+    g.add(mk('box',.7,.25,.7,'#495057',.55,.12,-.6));
+    const h=new THREE.Group();h.position.set(.55,.25,-.6);h.rotation.x=-.5;h.userData.swing=true;
+    h.add(mk('cyl',.22,1.5,.22,'#ffd60a',0,.75,0));
+    const head=mk('cyl',.75,1.3,.75,'#e63946',0,1.55,0);head.rotation.z=Math.PI/2;h.add(head);
+    for(const sx of [-1,1]){const cap=mk('cyl',.82,.18,.82,'#ffffff',sx*.66,1.55,0);cap.rotation.z=Math.PI/2;h.add(cap);}
+    h.add(mk('sph',.2,.2,.2,'#ffffff',.2,1.85,.3)); // shine
+    g.add(h);}
+  else if(id==='shoot'){ // egg blaster: an egg hopper feeding a fat white nozzle
+    g.add(mk('box',.9,.3,1.4,'#adb5bd',0,.15,0));
+    const n=mk('cyl',.55,1.2,.55,'#ffffff',0,.55,.55);n.rotation.x=Math.PI/2.3;g.add(n);
+    const rim=mk('cyl',.72,.22,.72,'#ffbe0b',0,.68,1.12);rim.rotation.x=Math.PI/2.3;g.add(rim);
+    g.add(mk('cyl',.75,.7,.75,'#ffe8a3',0,.65,-.35),mk('sph',.42,.55,.42,'#fff8ec',-.12,1.05,-.32),mk('sph',.38,.5,.38,'#fff3d6',.16,1.1,-.42));}
+  else if(id==='hat'){ // striped party hat with a pom-pom
+    const HH=1.5,R0=.95,d=y=>R0*(1-y/HH)+.05;
+    g.add(mk('cone',R0,HH,R0,'#ff006e',0,HH/2,0));
+    for(const [y,c] of [[.32,'#ffd60a'],[.78,'#3a86ff']])g.add(mk('cyl',d(y),.2,d(y),c,0,y,0));
+    g.add(mk('sph',.42,.42,.42,'#ffffff',0,HH+.08,0),mk('cyl',1.05,.12,1.05,'#ffd60a',0,.06,0));
+    g.rotation.z=.15;}
+  else if(id==='crown'){
+    g.add(mk('cyl',1.15,.5,1.15,'#ffd60a',0,.25,0),mk('cyl',1.2,.14,1.2,'#e9a800',0,.08,0));
+    const gems=['#e63946','#3a86ff','#06d6a0','#9b5de5','#ff9f1c'];
+    for(let i=0;i<5;i++){const a=i/5*Math.PI*2,x=Math.sin(a)*.47,z=Math.cos(a)*.47;
+      g.add(mk('cone',.28,.5,.28,'#ffd60a',x,.72,z),mk('sph',.16,.16,.16,'#fff3a0',x,1,z),mk('sph',.2,.2,.08,gems[i],x*1.13,.28,z*1.13));}}
+  else if(id==='hover'){ // a glowing ring with four little thruster pods
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(1.9,.22,8,32),glow('#9bf6ff'));ring.rotation.x=Math.PI/2;ring.position.y=.25;g.add(ring);
+    const inner=new THREE.Mesh(new THREE.TorusGeometry(1.3,.1,6,28),glow('#ffffff'));inner.rotation.x=Math.PI/2;inner.position.y=.2;g.add(inner);
+    for(let i=0;i<4;i++){const a=Math.PI/4+i*Math.PI/2,x=Math.sin(a)*1.9,z=Math.cos(a)*1.9;
+      g.add(mk('cyl',.6,.4,.6,'#5a189a',x,.45,z),mk('cyl',.4,.1,.4,null,x,.22,z,glow('#ff70a6')));}}
+  else if(id==='glide'){ // kite wings: a colorful sail each side on a thin frame
+    for(const sx of [-1,1]){const w=new THREE.Group();w.position.set(sx*1.1,1.5,-.2);w.rotation.z=sx*.18;
+      w.add(mk('box',2.8,.1,1.5,sx<0?'#ff006e':'#3a86ff',sx*1.4,0,0),mk('box',1.4,.11,1.5,'#ffd60a',sx*2.1,.01,0));
+      w.add(mk('box',2.9,.16,.16,'#ffffff',sx*1.45,.08,.75),mk('cone',.35,.8,.1,'#06d6a0',sx*2.9,0,-.4));
+      g.add(w);}}
+  else if(id==='dozer'){ // a curved yellow blade with push arms
+    for(let i=-2;i<=2;i++){const b=mk('box',.66,1.1,.3,'#ffbe0b',i*.64,.6,.3-Math.abs(i)*.06);b.rotation.y=-i*.12;g.add(b);}
+    g.add(mk('box',3.3,.22,.38,'#495057',0,.08,.28),mk('box',3.3,.14,.36,'#e08a00',0,1.18,.26));
+    for(const sx of [-1,1])g.add(mk('box',.5,.6,.05,'#212529',sx*.7,.62,.5));
+    for(const sx of [-1,1]){g.add(mk('box',.22,.7,.32,'#212529',sx*1.0,.65,.48),mk('box',.24,.24,1,'#555555',sx*.9,.6,-.3));}}
+  else return null;
   return g;
 }
