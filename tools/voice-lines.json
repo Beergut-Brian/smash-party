@@ -92,6 +92,46 @@
     "You found a golden rooster!",
     "Beep beep!",
     "Pick your ride!",
-    "Let's go!"
+    "Let's go!",
+    {
+      "text": "Here comes Gummo the Gummy Giant!",
+      "prefix": "[shouting] "
+    },
+    {
+      "text": "Squishy squishy! You can't catch me!",
+      "prefix": "[giggles] "
+    },
+    {
+      "text": "I'm all wiggly jiggly!",
+      "prefix": "[giggling] "
+    },
+    {
+      "text": "Want a lollipop? Come and get it!",
+      "prefix": "[playfully] "
+    },
+    {
+      "text": "Aww, I'm all melty now. Good job, friends!",
+      "prefix": "[sighs happily] "
+    },
+    {
+      "text": "Here comes Rexy Rumbleton!",
+      "prefix": "[shouting] "
+    },
+    {
+      "text": "Rawr! That means hello!",
+      "prefix": "[goofy, friendly] "
+    },
+    {
+      "text": "My arms are too tiny to stop you!",
+      "prefix": "[laughing] "
+    },
+    {
+      "text": "Stompy stomp stomp!",
+      "prefix": "[excited, goofy] "
+    },
+    {
+      "text": "Oof! Rexy needs a nap. You did it!",
+      "prefix": "[yawns] "
+    }
   ]
 }

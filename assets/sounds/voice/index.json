@@ -443,5 +443,55 @@
   "text": "Scoot Zoom!",
   "speak": "Scoot Zoom!",
   "hash": "69b97bcf556c"
+ },
+ "here_comes_gummo_the_gummy_giant": {
+  "text": "Here comes Gummo the Gummy Giant!",
+  "speak": "Here comes Gummo the Gummy Giant!",
+  "hash": "5920bf6a2e59"
+ },
+ "squishy_squishy_you_can_t_catch_me": {
+  "text": "Squishy squishy! You can't catch me!",
+  "speak": "Squishy squishy! You can't catch me!",
+  "hash": "c7e92e048d43"
+ },
+ "i_m_all_wiggly_jiggly": {
+  "text": "I'm all wiggly jiggly!",
+  "speak": "I'm all wiggly jiggly!",
+  "hash": "f321fe2b21d5"
+ },
+ "want_a_lollipop_come_and_get_it": {
+  "text": "Want a lollipop? Come and get it!",
+  "speak": "Want a lollipop? Come and get it!",
+  "hash": "449569eab761"
+ },
+ "aww_i_m_all_melty_now_good_job_friends": {
+  "text": "Aww, I'm all melty now. Good job, friends!",
+  "speak": "Aww, I'm all melty now. Good job, friends!",
+  "hash": "8d4946904263"
+ },
+ "here_comes_rexy_rumbleton": {
+  "text": "Here comes Rexy Rumbleton!",
+  "speak": "Here comes Rexy Rumbleton!",
+  "hash": "71a01735db95"
+ },
+ "rawr_that_means_hello": {
+  "text": "Rawr! That means hello!",
+  "speak": "Rawr! That means hello!",
+  "hash": "df07588f77ec"
+ },
+ "my_arms_are_too_tiny_to_stop_you": {
+  "text": "My arms are too tiny to stop you!",
+  "speak": "My arms are too tiny to stop you!",
+  "hash": "b28556dbc5f4"
+ },
+ "stompy_stomp_stomp": {
+  "text": "Stompy stomp stomp!",
+  "speak": "Stompy stomp stomp!",
+  "hash": "71abd7329d0b"
+ },
+ "oof_rexy_needs_a_nap_you_did_it": {
+  "text": "Oof! Rexy needs a nap. You did it!",
+  "speak": "Oof! Rexy needs a nap. You did it!",
+  "hash": "4e9995cb402a"
  }
 }

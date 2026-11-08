@@ -165,7 +165,8 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
 
 - [x] **B2: Dino Valley boss** `NEEDS DESIGN` (world-bosses; needs L23 + Z2) — a goofy, clumsy giant dinosaur (big head, tiny arms, never scary).
   - Done (world-bosses/B1-B2): Kaden + son picked **Rexy Rumbleton** 🦖 (`id:'rexy'`, `zone:'dino'`): pastel T-rex, big head with a wide grin and buck teeth, googly eyes looking two ways, polka-dot belly, rounded back plates, teeny arms that windmill, tail dragging on the ground, sway 0.13. 57 parts, weak spots big toenails → knee pads → tail tip + tail bump. Joins the random pick until L23.
-- [ ] **AU7: Gummo + Rexy voice lines** `NEEDS AUDIO` (audio; from B1/B2). Add to `tools/voice-lines.json` and generate: `Here comes Gummo the Gummy Giant!`, `Here comes Rexy Rumbleton!`, plus each boss's `taunts` and `defeat` line (exact text in `BOSSES` in `src/world/bosses.js`). Goofy and friendly: Gummo is a squishy, giggly bear; Rexy is a big clumsy happy dino.
+- [x] **AU7: Gummo + Rexy voice lines** `NEEDS AUDIO` (audio; from B1/B2). Add to `tools/voice-lines.json` and generate: `Here comes Gummo the Gummy Giant!`, `Here comes Rexy Rumbleton!`, plus each boss's `taunts` and `defeat` line (exact text in `BOSSES` in `src/world/bosses.js`). Goofy and friendly: Gummo is a squishy, giggly bear; Rexy is a big clumsy happy dino.
+  - Done: all 10 lines recorded (2 intros, 6 taunts, 2 defeat lines), each with its own eleven_v3 direction tag (`[giggles]`, `[playfully]`, `[sighs happily]` for Gummo; `[goofy, friendly]`, `[laughing]`, `[yawns]` for Rexy). They play as soon as L27 says them.
 - [ ] **L27: Per-boss taunts and defeat line** `NEEDS LOGIC` (logic; from B1/B2). Bosses can now carry `taunts:[…]` and `defeat:'…'` (Gummo and Rexy do). In `hitWeak`, use `boss.def.taunts` (when present) instead of the generic `'Ouch!','Bonk!','Again! Again!'`, and say `boss.def.defeat` before `'You beat the boss!'`. Fall back to today's lines when a boss has none.
 - [ ] **B3: Bedroom boss** `NEEDS DESIGN` (world-bosses; needs L23 + L20) — a giant toy (wind-up robot, jack-in-the-box, or a living teddy bear) guarding the door out.
 
@@ -173,7 +174,7 @@ A much bigger world with **zones** (town, farm, park, and more) where **everythi
   - **Each themed zone** (candy, dino, bedroom, and the core town/farm/park if they don't have their own yet): a looping **drive** track and a **boss** track in that zone's flavor (keep the game's upbeat, kid-friendly style), plus **crash/smash** variants (3+ each), a **boom**, a **landing** sound and a quiet **ambient** loop. Candy: crunches, pops, squishes. Dino: stomps, cartoon roars, leafy crashes. Bedroom: toy squeaks, block clatters, plush thumps.
   - **Each themed boss:** an intro line, 2–3 fight taunts (funny, not scary) and a defeat line.
   - Add them to `tools/*-lines.json`, `--dry` first, then generate. Log total credits used in the PR.
-  - Progress: candy (AU3) and dino (AU5) are done. Still to do: bedroom (once L20 lands), town/farm/park drive/boss tracks and sfx, and the themed boss voice lines (once B1/B2/B3 pick names).
+  - Progress: candy (AU3) and dino (AU5) are done. Still to do: bedroom (once L20 lands), town/farm/park drive/boss tracks and sfx, and the bedroom boss voice lines (once B3 picks a name). Gummo + Rexy lines are done (AU7).
 
 - [x] **Z1: Candy Land zone** `NEEDS DESIGN` (zone-candy agent, see `agents/zone.md`; needs L15 ✅)
   - `src/world/zones/candy.js` from the template: pink/pastel ground and sky, lollipop trees, gumdrops, candy canes, cupcake houses (BP contract), a giant cake mega set piece, 15+ props across micro…mega, bunnies. No real candy brands.
