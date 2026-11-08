@@ -276,6 +276,13 @@ function questPushable(s,pos){let m=null;
   _bx.setFromObject(m);const r=Math.max(0.6,Math.max(_bx.max.x-_bx.min.x,_bx.max.z-_bx.min.z)/2)*qS();
   const g=new THREE.Group();g.add(m);g.position.set(pos[0],groundH(pos[0],pos[1]),pos[1]);g.scale.setScalar(qS());scene.add(g);
   return {kind:'push',g,m,x:pos[0],z:pos[1],vx:0,vz:0,r,ball:!s.kind&&!s.build};}
+// QA10: pushables are kept out of givers and out of props too big for the cars to plow through (both stop cars),
+// so one can't get shoved somewhere no car can reach. It slides along and bounces a little.
+function questPushSolid(t){
+  const out=(x,z,R)=>{const dx=t.x-x,dz=t.z-z,d=Math.hypot(dx,dz),rr=R+t.r;if(d>=rr)return;
+    const nx=d>1e-4?dx/d:1,nz=d>1e-4?dz/d:0;t.x=x+nx*rr;t.z=z+nz*rr;const vn=t.vx*nx+t.vz*nz;if(vn<0){t.vx-=1.4*vn*nx;t.vz-=1.4*vn*nz;}};
+  for(const id in questGivers){const gv=questGivers[id];if(gv.shown)out(gv.x,gv.z,gv.r);}
+  for(const o of objects){if(!o.alive||o.quest||o.boss||o.falling||o.sz<=tier)continue;if(Math.abs(o.x-t.x)>o.r+t.r||Math.abs(o.z-t.z)>o.r+t.r)continue;out(o.x,o.z,o.r);}}
 // smash: props of the step's type at the players' size, in the stage
 const questBaseSize={};
 function questSmashThing(s,pos){const types=[].concat(s.type||['crates','barrel','cone']),t=pick(types);if(!OBJ[t])return null;
@@ -345,11 +352,16 @@ function updateQuestStep(dt){
       for(const p of players)if(Math.hypot(p.x-nx.x,p.z-nx.z)<4*qS()+p.r*0.5){nx.done=true;nx.g.visible=false;flash(nx.x,3*qS(),nx.z,'#ffd60a',5*qS(),0.4);questProgress();return;}return;}
     case 'push':{const G=st.goal;questProj(G.tag,G.x,5*qS(),G.z,true);G.g.children[0].material.opacity=0.4+0.2*Math.sin(T*5);
       for(const t of st.things){if(t.inG){continue;}
-        for(const p of players){const dx=t.x-p.x,dz=t.z-p.z,d=Math.hypot(dx,dz)||0.01,rr=p.r+t.r;if(d>=rr)continue;
+        let hit=false,close=false;
+        for(const p of players){const dx=t.x-p.x,dz=t.z-p.z,d=Math.hypot(dx,dz)||0.01,rr=p.r+t.r;if(d<rr+p.r*3)close=true;if(d>=rr)continue;hit=true;
           const nx=dx/d,nz=dz/d,kick=Math.max(Math.abs(p.speed)*1.15,6*p.sm);t.x=p.x+nx*rr;t.z=p.z+nz*rr;t.vx=nx*kick;t.vz=nz*kick;p.speed*=0.85;
           if(T-(t.bT||0)>0.3){t.bT=T;sfx.boing();}}
         const f=Math.pow(0.35,dt);t.vx*=f;t.vz*=f;t.x+=t.vx*dt;t.z+=t.vz*dt;
         const ox=t.x-st.cx,oz=t.z-st.cz,od=Math.hypot(ox,oz),lim=st.R*1.8;if(od>lim){t.x=st.cx+ox/od*lim;t.z=st.cz+oz/od*lim;t.vx*=-0.5;t.vz*=-0.5;} // stays in the stage
+        questPushSolid(t);
+        // QA10 backstop: a car hanging around it for a while without ever touching it → it pops back to a fresh spot
+        t.stuckT=hit||!close?0:(t.stuckT||0)+dt;
+        if(t.stuckT>12){t.stuckT=0;puff(t.x,t.r,t.z,8,t.r*1.5,'#ffffff');const np=questPlace(s,st,st.things.indexOf(t),true);t.x=np[0];t.z=np[1];t.vx=t.vz=0;puff(t.x,t.r,t.z,8,t.r*1.5,'#ffd60a');sfx.pop();}
         const sp=Math.hypot(t.vx,t.vz);t.g.position.set(t.x,groundH(t.x,t.z),t.z);
         if(sp>0.1){if(t.ball)t.m.rotation.x+=sp*dt/t.r*qS();t.g.rotation.y=Math.atan2(t.vx,t.vz);}
         if(Math.hypot(t.x-G.x,t.z-G.z)<G.r-t.r*0.3){t.inG=true;t.vx=t.vz=0;flash(t.x,qS(),t.z,'#06d6a0',3*qS(),0.4);questProgress();if(questA!==A)return;}}
