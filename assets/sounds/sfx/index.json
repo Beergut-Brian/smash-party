@@ -193,5 +193,10 @@
   "prompt": "Giant trampoline boing launch, springy and bouncy with a rising whoosh",
   "dur": 1,
   "hash": "00876ec75ad7"
+ },
+ "rooster": {
+  "prompt": "Cartoon rooster loud surprised cock-a-doodle-doo, funny",
+  "dur": 1.4,
+  "hash": "fbd234da4f3c"
  }
 }
