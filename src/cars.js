@@ -242,31 +242,31 @@ const RECIPES=[
       {id:'stripe',at:[0,.7,.4],color:'#fff',w:1.9,h:.12,d:1.6},
       {id:'cannon',at:[0,1.35,2.05],color:'#495057',band:'#f77f00'}]},
   /* D4 wish-list: T-rex truck, taco truck, monster truck */
-  {name:'Rex Rammer',emoji:'🦕',base:'truck.glb',speed:22,r:2.55,tier:3,weapon:'rocket',scale:1.525,tweak:[1.05,1.12,1.08],height:3.4,
+  {name:'Rex Rammer',emoji:'🦕',base:'truck.glb',speed:22,r:2.55,tier:3,weapon:'rocket',scale:1.525,tweak:[1.05,1.12,1.08],height:3.8,
     paint:'#52b788',exhaust:[0,.75,-2.15],
     parts:[
-      {id:'trexHead',at:[0,1.55,2.35],color:'#52b788',jaw:'#2d6a4f',crest:'#f77f00'},
+      {id:'trexHead',at:[0,2.05,2.85],scale:1.35,color:'#52b788',jaw:'#2d6a4f',crest:'#f77f00'},
       {id:'stripe',at:[0,.85,.1],color:'#ffd60a',w:2.05,h:.14,d:2.4},
-      {id:'rockets',at:[0,1.45,-.55],color:'#40916c',fin:'#ffd60a',glow:'#95d5b2'}]},
-  {name:'Taco Tornado',emoji:'🌮',base:'van.glb',speed:24,r:2.4,tier:2,weapon:'cannon',scale:1.636,tweak:[1.02,1.1,1.05],height:3.1,
+      {id:'rockets',at:[0,1.65,-.85],scale:1.25,color:'#40916c',fin:'#ffd60a',glow:'#95d5b2'}]},
+  {name:'Taco Tornado',emoji:'🌮',base:'van.glb',speed:24,r:2.4,tier:2,weapon:'cannon',scale:1.636,tweak:[1.02,1.1,1.05],height:3.6,
     paint:'#f4a261',exhaust:[0,.75,-2.25],
     parts:[
-      {id:'tacoShell',at:[0,2.35,0],color:'#e9c46a',fill:'#e76f51',top:'#2a9d8f'},
+      {id:'tacoShell',at:[0,2.65,0],scale:1.35,color:'#e9c46a',fill:'#e76f51',top:'#2a9d8f'},
       {id:'stripe',at:[0,1.15,0],color:'#e63946',w:2.3,h:.16,d:4.2},
-      {id:'roofsign',at:[0,3.15,.2],color:'#e63946'},
-      {id:'cannon',at:[0,1.85,2.05],color:'#2a9d8f',tip:'#264653',band:'#e9c46a'},
+      {id:'roofsign',at:[0,3.55,.2],color:'#e63946'},
+      {id:'cannon',at:[0,1.95,2.25],scale:1.15,color:'#2a9d8f',tip:'#264653',band:'#e9c46a'},
       {id:'glass',at:[0,1.75,1.35],w:1.55,h:.45,color:'#ffe8d6'}]},
-  {name:'Stomp King',emoji:'🛞',base:'suv.glb',speed:23,r:2.7,tier:3,weapon:'rocket',scale:1.667,tweak:[1.12,1.4,1.08],y:.15,height:3.6,
+  {name:'Stomp King',emoji:'🛞',base:'suv.glb',speed:23,r:2.7,tier:3,weapon:'rocket',scale:1.667,tweak:[1.12,1.4,1.08],y:.15,height:3.8,
     paint:'#e63946',exhaust:[0,1.1,-2.2],
     parts:[
-      {id:'fatTire',at:[-1.55,.95,1.45],r:1.05,w:.85,hub:'#ffd60a'},
-      {id:'fatTire',at:[1.55,.95,1.45],r:1.05,w:.85,hub:'#ffd60a'},
-      {id:'fatTire',at:[-1.55,.95,-1.45],r:1.05,w:.85,hub:'#ffd60a'},
-      {id:'fatTire',at:[1.55,.95,-1.45],r:1.05,w:.85,hub:'#ffd60a'},
-      {id:'rollcage',at:[0,2.15,-.1],color:'#f8f9fa'},
+      {id:'fatTire',at:[-1.7,1.05,1.45],r:1.2,w:.95,hub:'#ffd60a'},
+      {id:'fatTire',at:[1.7,1.05,1.45],r:1.2,w:.95,hub:'#ffd60a'},
+      {id:'fatTire',at:[-1.7,1.05,-1.45],r:1.2,w:.95,hub:'#ffd60a'},
+      {id:'fatTire',at:[1.7,1.05,-1.45],r:1.2,w:.95,hub:'#ffd60a'},
+      {id:'rollcage',at:[0,2.25,-.1],color:'#f8f9fa'},
       {id:'stripe',at:[0,1.55,.2],color:'#ffd60a',w:2.2,h:.18,d:3.4},
-      {id:'rockets',at:[0,1.85,-.35],color:'#9b2226',fin:'#ffd60a',glow:'#ff7b00'},
-      {id:'spoiler',at:[0,2.55,-1.55],color:'#111'}]}
+      {id:'rockets',at:[0,2.05,-.55],scale:1.3,color:'#9b2226',fin:'#ffd60a',glow:'#ff7b00'},
+      {id:'spoiler',at:[0,2.7,-1.55],color:'#111'}]}
 ];
 
 /* ---------- Kenney cars ----------
