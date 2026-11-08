@@ -175,6 +175,66 @@
     {
       "text": "BUUURP! Ahh, much better. Bye bye!",
       "prefix": "[burps loudly] [sighs happily] "
+    },
+    {
+      "text": "Here comes Sir Sprinkles!",
+      "prefix": "[shouting] "
+    },
+    {
+      "text": "Happy birthday to ME!",
+      "prefix": "[posh, delighted] "
+    },
+    {
+      "text": "Want a slice? Come and get it!",
+      "prefix": "[posh, playfully] "
+    },
+    {
+      "text": "I'm the sweetest cake in town!",
+      "prefix": "[posh, proudly, giggles] "
+    },
+    {
+      "text": "Make a wish! Pop pop pop! Thanks for the party!",
+      "prefix": "[posh, cheerful, laughing] "
+    },
+    {
+      "text": "Here comes Mama Stegosaurus!",
+      "prefix": "[shouting] "
+    },
+    {
+      "text": "Careful, kiddos! Mama's coming through!",
+      "prefix": "[warm, motherly, flustered] "
+    },
+    {
+      "text": "Look at my pretty plates!",
+      "prefix": "[warm, motherly, proudly] "
+    },
+    {
+      "text": "Shh! Don't wake my egg!",
+      "prefix": "[whispers] "
+    },
+    {
+      "text": "Oh my! Time to go keep my egg warm. Bye bye, sweeties!",
+      "prefix": "[warm, motherly, laughing] "
+    },
+    {
+      "text": "Here comes Captain Cuddles!",
+      "prefix": "[shouting] "
+    },
+    {
+      "text": "Yaaawn! Is it bedtime yet?",
+      "prefix": "[yawns] [sleepy, warm] "
+    },
+    {
+      "text": "No pillow fights allowed! Hee hee!",
+      "prefix": "[sleepy, giggles] "
+    },
+    {
+      "text": "You can't catch the Captain!",
+      "prefix": "[warm, playfully, laughing] "
+    },
+    {
+      "text": "Okay, okay! Nap time. Night night, friends!",
+      "prefix": "[sleepy, warm] [yawns] "
     }
   ]
 }
