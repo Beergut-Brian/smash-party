@@ -269,3 +269,22 @@ canvas{display:block}
 /* QA13: LEVEL UP sits low in the middle (above #newWorld / the boss stars), not over the play area */
 #levelUp{position:fixed;left:50%;top:auto;bottom:clamp(96px,11vh,130px);font-size:clamp(24px,3vw,40px);padding:10px 30px 12px;z-index:20}
 #talkScene.on~#miniMap{visibility:hidden} /* the talk scene's letterbox covers that corner anyway */
+
+/* D22: portal swirl (L33, #portalFx; --pc / --pc2 = the land's colors) and the start-screen land buttons (#worldPick .wp.land) */
+@keyframes portalSpin{from{transform:rotate(0) scale(1)}to{transform:rotate(360deg) scale(1.15)}}
+@keyframes portalSuck{0%{transform:scale(1.6) rotate(0)}100%{transform:scale(.9) rotate(-200deg)}}
+#portalFx{position:fixed;inset:-60%;pointer-events:none;opacity:0;z-index:40;transition:opacity .6s ease;
+  background:
+    radial-gradient(circle,#ffffff 0 3%,#ffffffcc 6%,transparent 16%),
+    repeating-conic-gradient(from 0deg,var(--pc,#c77dff) 0 12deg,var(--pc2,#ffffff) 12deg 18deg,color-mix(in srgb,var(--pc,#c77dff) 70%,#000) 18deg 30deg);
+  animation:portalSpin 1.1s linear infinite}
+#portalFx::after{content:'';position:absolute;inset:0;border-radius:50%;
+  background:repeating-radial-gradient(circle,transparent 0 5%,#ffffff33 5% 6.5%),radial-gradient(circle,transparent 30%,#0007 70%);
+  animation:portalSuck 1.1s ease-in infinite}
+#portalFx.on{opacity:1}
+#worldPick .wp.land{position:relative;background:linear-gradient(160deg,#ffd6ff 0%,#c77dff 55%,#7b2cbf 100%)}
+#worldPick .wp.land[data-w="dino"]{background:linear-gradient(160deg,#d8f3a0 0%,#57cc99 50%,#ff9f1c 100%)}
+#worldPick .wp.land[data-w="candy"]{background:linear-gradient(160deg,#ffe5f1 0%,#ff70a6 50%,#c77dff 100%)}
+#worldPick .wp.land::after{ /* a little swirl badge: "you got here through a portal" */
+  content:'🌀';position:absolute;right:-10px;top:-10px;width:44px;height:44px;border-radius:50%;font-size:30px;line-height:40px;
+  background:#fff;border:3px solid #fff;box-shadow:0 4px 0 #0003;animation:portalSpin 3s linear infinite}
