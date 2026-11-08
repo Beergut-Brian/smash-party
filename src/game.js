@@ -2660,8 +2660,8 @@ function showSpots(on){if(spotView){scene.remove(spotView);spotView.traverse(m=>
     const col=cols[q.kind]||(cols[q.kind]=new THREE.MeshBasicMaterial({color:new THREE.Color().setHSL(Object.keys(cols).length*0.17%1,0.9,0.55),transparent:true,opacity:0.35,depthWrite:false}));
     const m=new THREE.Mesh(new THREE.PlaneGeometry(q.hx*2,q.hz*2),col);m.rotation.set(-Math.PI/2,0,Math.atan2(q.sn,q.cs));m.position.set(q.x,groundH(q.x,q.z)+0.06,q.z);g.add(m);}
   scene.add(g);spotView=g;return count;}
-window.__sp={map:()=>({shown:miniMap.style.display!=='none',...mmInfo,target:qmTarget,main:qmMain,marker:qmMark.g.visible}), // L47
-  voiceMissing,voiceInfo:()=>({cur:voiceCur&&{id:voiceCur.id,prio:voiceCur.prio,robot:!!voiceCur.robot},queue:voiceQ.map(c=>c.id),preloaded:[...voicePreloaded]}), // L46
+window.__sp={voiceMissing,voiceInfo:()=>({cur:voiceCur&&{id:voiceCur.id,prio:voiceCur.prio,robot:!!voiceCur.robot},queue:voiceQ.map(c=>c.id),preloaded:[...voicePreloaded]}), // L46
+  map:()=>({shown:miniMap.style.display!=='none',...mmInfo,target:qmTarget,main:qmMain,marker:qmMark.g.visible}), // L47
   world:id=>id?enterWorld(id):{world:worldId,worlds:Object.keys(WORLDS),lands:landList().map(w=>w.id),unlocked:worldsUnlocked(),adv:[...advLands]}, // L33: __sp.world('dino') jumps there
   portals(){if(!portals.some(p=>!p.start))portalsOpen();return portals.map(p=>p.kind);}, // raise the after-boss portals here
   scene:(id)=>spawnScene(players[0],true,id),sceneAt:(id,dz=-30)=>sceneAt(id,players[0].x,players[0].z+dz*Math.max(S,0.3),0,null,{key:'test'}),sceneClear,scenes:()=>Object.fromEntries(sceneDefs(zoneXZ(players[0].x,players[0].z)).map(([i,d])=>[i,d.size])),sceneStats,room:(on=true)=>{rollWorld(true,on?"bedroom":"outside");return on?"bedroom":"outside";},spots:(on)=>spotView&&on!==true?showSpots(false):showSpots(on),mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,zone:testZone,zones:ZONES,gold:spawnGold,pad:placePad,pads,
