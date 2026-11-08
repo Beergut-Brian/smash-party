@@ -567,6 +567,23 @@ function chunkSpot(c,kind,x,z,w,d,th=0){
   const ex=Math.abs(cs)*hx+Math.abs(sn)*hz,ez=Math.abs(sn)*hx+Math.abs(cs)*hz; // world-space half extents
   if(x+ex<c.x0||x-ex>c.x0+CHUNK||z+ez<c.z0||z-ez>c.z0+CHUNK)return false;
   c.spots.push({kind,x,z,hx,hz,cs,sn,ex,ez,area:w*d});return true;}
+/* L30: spots whose kind has a ground color in SPOT_LOOK (objects.js; a zone can add or override kinds with
+   registerZone({spotLook:{sand:'#ffc8dd'}})) are painted as flat tiles, one merged mesh per chunk with the color per
+   vertex. Bigger spots go first in the index buffer and the tiles don't write depth, so a path drawn over a lawn wins
+   without z-fighting at any camera distance. They sit just above the zone ground and under the roads (top y=0.05). */
+const SPOT_Y=0.03;let spotMat=null;
+function spotTiles(c){
+  const zl=ZONES[c.zone]&&ZONES[c.zone].spotLook,look=k=>(zl&&zl[k])||(typeof SPOT_LOOK!=='undefined'&&SPOT_LOOK[k]);
+  const list=c.spots.filter(q=>look(q.kind)).sort((a,b)=>b.area-a.area);if(!list.length)return null;
+  const pos=new Float32Array(list.length*12),col=new Float32Array(list.length*12),idx=[],cl=new THREE.Color();
+  list.forEach((q,i)=>{cl.set(look(q.kind));
+    [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([a,b],k)=>{const lx=a*q.hx,lz=b*q.hz,o=i*12+k*3;
+      pos[o]=q.x+lx*q.cs+lz*q.sn;pos[o+1]=SPOT_Y;pos[o+2]=q.z-lx*q.sn+lz*q.cs;col[o]=cl.r;col[o+1]=cl.g;col[o+2]=cl.b;});
+    const v=i*4;idx.push(v,v+2,v+1,v,v+3,v+2);}); // wound to face up
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('color',new THREE.BufferAttribute(col,3));
+  g.setIndex(idx);g.computeVertexNormals();g.computeBoundingSphere();
+  spotMat=spotMat||litMat({color:'#ffffff',vertexColors:true,roughness:0.95,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
+  const m=new THREE.Mesh(g,spotMat);m.receiveShadow=true;m.castShadow=false;m.renderOrder=1;m.userData.spotTiles=true;return m;}
 function chunkRamp(c,x,z,th,L=11,W=7,H=3.6){
   const m=W+2,sx=Math.sin(th),sz=Math.cos(th);
   for(let k=0;k<=2;k++){const px=x+sx*L*k/2,pz=z+sz*L*k/2;
@@ -667,6 +684,7 @@ function loadChunk(c){
   c.loaded=true;c.group=new THREE.Group();scene.add(c.group);
   c.box=new THREE.Box3(new THREE.Vector3(c.x0-12,-1,c.z0-12),new THREE.Vector3(c.x0+CHUNK+12,40,c.z0+CHUNK+12));
   for(const r of c.rampList){c.group.add(r.mesh);ramps.push(r);}
+  if(c.spots.length){const t=spotTiles(c);if(t)c.group.add(t);} // L30
   /* L25: sleepers go into the shared pools (one InstancedMesh per shape for the whole world, like the scatter props)
      instead of a batch per shape per chunk: at GIANT size ~70 chunks are loaded, which was ~850 batches (most holding
      1–3 copies) and the same again in the shadow pass. Drawing every loaded chunk's sleepers costs a few hundred
@@ -682,7 +700,7 @@ function unloadChunk(c){
   c.loaded=false;for(const h of c.herds)if(h.on)herdOff(h);
   for(const r of c.rampList)removeRamp(r);
   objects=objects.filter(o=>{if(o.chunk!==c.k)return true;poolRelease(o);scene.remove(o.g);return false;}); // alive records stay alive
-  c.group.traverse(m=>{if(m.isInstancedMesh)m.dispose();});scene.remove(c.group);c.group=null;
+  c.group.traverse(m=>{if(m.isInstancedMesh)m.dispose();else if(m.userData.spotTiles)m.geometry.dispose();});scene.remove(c.group);c.group=null;
 }
 function wakeObj(o){if(!o.sleep)return;o.sleep=false;for(const [im,i] of o.inst){im.setMatrixAt(i,HIDE);im.instanceMatrix.needsUpdate=true;}scene.add(o.g);}
 function sleepObj(o){if(o.proxied&&o.parts.some(p=>p.gone)){if(o.pooled)poolRelease(o);else o.inst=null;return;} // damaged: stays awake as real parts
