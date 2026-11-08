@@ -181,6 +181,55 @@ function buildBubble(){const c=base();
     mk('sph',0.45,0.45,0.45,'#ffbe0b',0,4.35,-0.6),mk('sph',0.5,0.5,0.5,null,-0.8,1.4,1.7,glow('#fff6a0')),mk('sph',0.5,0.5,0.5,null,0.8,1.4,1.7,glow('#fff6a0')));
   c.ex.set(0,1,-2);c.h=4.7;return c;}
 
+/* D12 tier-0 garage starters: humble toy rides for the tiniest sizes. */
+function buildPedal(){const c=base();
+  [[-1.05,1.35],[1.05,1.35],[-1.05,-1.45],[1.05,-1.45]].forEach(([x,z])=>W(c,1.05,0.55,x,0.55,z,'#ffd60a'));
+  const wheel=mk('cyl',0.55,0.12,0.55,'#ff006e',0,1.55,1.55);wheel.rotation.x=Math.PI/2;
+  add(c,
+    mk('box',2.1,0.55,3.6,'#3a86ff',0,0.95,0),
+    mk('box',2.15,0.18,3.65,'#ffd60a',0,1.2,0),
+    mk('box',1.7,0.7,1.5,'#3a86ff',0,1.65,-0.55),
+    mk('box',1.55,0.45,1.2,'#90e0ef',0,1.7,-0.45),
+    mk('box',1.9,0.35,1.1,'#ff006e',0,1.15,1.55),
+    mk('sph',0.35,0.35,0.35,'#fff',-0.55,1.45,1.95),mk('sph',0.35,0.35,0.35,'#fff',0.55,1.45,1.95),
+    mk('sph',0.16,0.16,0.16,'#111',-0.58,1.48,2.08),mk('sph',0.16,0.16,0.16,'#111',0.58,1.48,2.08),
+    mk('cyl',0.08,0.9,0.08,'#333',0,1.55,0.85),
+    wheel,
+    mk('box',0.35,0.12,0.55,'#222',-0.45,0.55,0.55),mk('box',0.35,0.12,0.55,'#222',0.45,0.55,0.55),
+    mk('box',0.5,0.35,0.15,null,-0.55,1.15,2.15,glow('#fff6a0')),mk('box',0.5,0.35,0.15,null,0.55,1.15,2.15,glow('#fff6a0')));
+  c.ex.set(0,0.7,-2.0);c.h=2.4;return c;}
+function buildCart(){const c=base();
+  [[-1.15,1.5],[1.15,1.5],[-1.15,-1.5],[1.15,-1.5]].forEach(([x,z])=>W(c,0.85,0.4,x,0.42,z,'#adb5bd'));
+  add(c,
+    mk('box',2.2,0.12,3.4,'#868e96',0,0.85,0),
+    mk('box',0.12,1.5,3.4,'#adb5bd',-1.05,1.55,0),mk('box',0.12,1.5,3.4,'#adb5bd',1.05,1.55,0),
+    mk('box',2.2,1.5,0.12,'#adb5bd',0,1.55,1.65),mk('box',2.2,1.1,0.12,'#adb5bd',0,1.35,-1.65),
+    mk('box',0.12,0.12,3.2,'#dee2e6',-0.35,2.2,0),mk('box',0.12,0.12,3.2,'#dee2e6',0.35,2.2,0),
+    mk('box',1.9,0.12,0.12,'#dee2e6',0,2.2,0.7),mk('box',1.9,0.12,0.12,'#dee2e6',0,2.2,-0.7),
+    mk('box',0.18,1.4,0.18,'#495057',0,1.8,-2.15),
+    mk('box',1.1,0.14,0.14,'#222',0,2.55,-2.15),
+    mk('sph',0.22,0.22,0.22,'#e63946',-0.5,2.55,-2.15),mk('sph',0.22,0.22,0.22,'#e63946',0.5,2.55,-2.15),
+    mk('box',0.9,0.7,0.7,'#ffbe0b',-0.35,1.35,0.35),
+    mk('box',0.7,0.55,0.55,'#9b5de5',0.45,1.25,-0.2),
+    mk('cyl',0.35,0.55,0.35,'#06d6a0',0.15,1.3,0.95),
+    mk('sph',0.4,0.4,0.4,'#ff006e',-0.4,1.4,-0.85));
+  c.ex.set(0,0.9,-2.1);c.h=2.9;return c;}
+function buildScooter(){const c=base();
+  W(c,1.15,0.45,0,0.55,1.7,'#ffd60a');W(c,1.15,0.45,0,0.55,-1.7,'#ffd60a');
+  const stem=mk('cyl',0.12,2.0,0.12,'#495057',0,1.7,1.35);
+  add(c,
+    mk('box',1.1,0.22,4.2,'#ff006e',0,0.55,0),
+    mk('box',1.15,0.1,4.25,'#ffd60a',0,0.68,0),
+    mk('box',0.9,0.12,0.9,'#222',0,0.75,-0.2),
+    stem,
+    mk('box',1.35,0.12,0.12,'#222',0,2.75,1.35),
+    mk('sph',0.2,0.2,0.2,'#ffd60a',-0.65,2.75,1.35),mk('sph',0.2,0.2,0.2,'#ffd60a',0.65,2.75,1.35),
+    mk('box',0.55,0.35,0.55,'#3a86ff',0,1.35,0.2),
+    mk('sph',0.28,0.28,0.28,'#fff',-0.22,1.85,0.55),mk('sph',0.28,0.28,0.28,'#fff',0.22,1.85,0.55),
+    mk('sph',0.12,0.12,0.12,'#111',-0.24,1.88,0.66),mk('sph',0.12,0.12,0.12,'#111',0.24,1.88,0.66),
+    mk('box',0.35,0.25,0.12,null,-0.35,0.75,2.15,glow('#fff6a0')),mk('box',0.35,0.25,0.12,null,0.35,0.75,2.15,glow('#fff6a0')));
+  c.ex.set(0,0.55,-2.3);c.h=3.1;return c;}
+
 /* tier 0 = humble starters, 3 = coolest smash machines. weapon is visible on tier 2–3. */
 const CARS=[
   {name:'Big Bouncer',emoji:'🛻',speed:24,r:2.6,tier:1,build:buildMonster},
@@ -190,7 +239,10 @@ const CARS=[
   {name:'Ice Cream Smasher',emoji:'🍦',speed:24,r:2.4,tier:0,build:buildIceCream},
   {name:'Hot Dog Hot Rod',emoji:'🌭',speed:28,r:2.3,tier:1,build:buildHotdog},
   {name:'Fire Truck',emoji:'🚒',speed:25,r:2.6,tier:2,weapon:'cannon',build:buildFire},
-  {name:'Bubble Buggy',emoji:'🫧',speed:26,r:2.2,tier:0,build:buildBubble}
+  {name:'Bubble Buggy',emoji:'🫧',speed:26,r:2.2,tier:0,build:buildBubble},
+  {name:'Pedal Zoom',emoji:'🚲',speed:22,r:2.1,tier:0,build:buildPedal},
+  {name:'Basket Bash',emoji:'🛒',speed:20,r:2.25,tier:0,build:buildCart},
+  {name:'Kick Scoot',emoji:'🛴',speed:24,r:2.05,tier:0,build:buildScooter}
 ];
 
 /* ---------- car recipes ----------
