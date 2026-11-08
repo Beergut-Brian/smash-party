@@ -2567,7 +2567,7 @@ function loop(now){
     for(const p of players){const s=src[p.src]||{x:0,z:0};if(levelReady&&!garage&&(s.levelP||s.swapP))levelUp();else if(s.fire&&!p.inG&&hasAbility('shoot')){shoot(p);abilUse('shoot');}p.update(dt,s);}
     if(garage)updateGarage(dt,src);
   }
-  updateGrowth(dt);updateStreaming(dt);updateQuests(dt);updateQuestMarker();updateMiniMap(dt);updateSave(dt);
+  updateGrowth(dt);updateStreaming(dt);updateQuests(dt);updateVoicePreload(dt);updateQuestMarker();updateMiniMap(dt);updateSave(dt);
   if(state==='play'&&!garageAll()){collisions();updateBoss(dt);}
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
   updateRoom(dt);updatePortals(dt);updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateCombo(dt);if(!garage){updateGold(dt);updatePads(dt);}if(!garageAll()){updateScatter(dt);updateScenes(dt);updateAnimals(dt);}updateRollers(dt);updateSpin(dt);updateShots(dt);updatePerks(dt);updateCarExtras(dt);updateDebris(dt);updateParts(dt);updatePuffs(dt);
@@ -2587,7 +2587,8 @@ function showSpots(on){if(spotView){scene.remove(spotView);spotView.traverse(m=>
     const col=cols[q.kind]||(cols[q.kind]=new THREE.MeshBasicMaterial({color:new THREE.Color().setHSL(Object.keys(cols).length*0.17%1,0.9,0.55),transparent:true,opacity:0.35,depthWrite:false}));
     const m=new THREE.Mesh(new THREE.PlaneGeometry(q.hx*2,q.hz*2),col);m.rotation.set(-Math.PI/2,0,Math.atan2(q.sn,q.cs));m.position.set(q.x,groundH(q.x,q.z)+0.06,q.z);g.add(m);}
   scene.add(g);spotView=g;return count;}
-window.__sp={map:()=>({shown:miniMap.style.display!=='none',...mmInfo,target:qmTarget,main:qmMain,marker:qmMark.g.visible}), // L47
+window.__sp={voiceMissing,voiceInfo:()=>({cur:voiceCur&&{id:voiceCur.id,prio:voiceCur.prio,robot:!!voiceCur.robot},queue:voiceQ.map(c=>c.id),preloaded:[...voicePreloaded]}), // L46
+  map:()=>({shown:miniMap.style.display!=='none',...mmInfo,target:qmTarget,main:qmMain,marker:qmMark.g.visible}), // L47
   world:id=>id?enterWorld(id):{world:worldId,worlds:Object.keys(WORLDS),lands:landList().map(w=>w.id),unlocked:worldsUnlocked(),adv:[...advLands]}, // L33: __sp.world('dino') jumps there
   portals(){if(!portals.some(p=>!p.start))portalsOpen();return portals.map(p=>p.kind);}, // raise the after-boss portals here
   scene:(id)=>spawnScene(players[0],true,id),sceneAt:(id,dz=-30)=>sceneAt(id,players[0].x,players[0].z+dz*Math.max(S,0.3),0,null,{key:'test'}),sceneClear,scenes:()=>Object.fromEntries(sceneDefs(zoneXZ(players[0].x,players[0].z)).map(([i,d])=>[i,d.size])),sceneStats,room:(on=true)=>{rollWorld(true,on?"bedroom":"outside");return on?"bedroom":"outside";},spots:(on)=>spotView&&on!==true?showSpots(false):showSpots(on),mega,explode,addScore,chunks,grow,newWorld,building:demoBuilding,animals,zone:testZone,zones:ZONES,gold:spawnGold,pad:placePad,pads,
