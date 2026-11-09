@@ -1579,6 +1579,7 @@ function spawnScatter(p,fill){
     if(objects.some(o=>o.alive&&Math.abs(o.x-x)<o.r+r+0.3&&Math.abs(o.z-z)<o.r+r+0.3&&Math.hypot(o.x-x,o.z-z)<o.r+r+0.3))continue;
     if(players.some(q=>Math.hypot(q.x-x,q.z-z)<q.r+r+1))continue;
     if(garageOn(x,z,r))continue; // L32: not inside the garage
+    if(giverKeep(x,z,r))continue; // QA7b
     const zn=zoneAt(chunkIdx(x),chunkIdx(z)),[t,f]=(sp&&spotProp(zn,sp.kind,k))||scatterProp(zn,k);
     const o=OBJ[t](x,z,t==='fence'?rand(0,Math.PI):undefined,f);o.scat=true;
     if(fill)dropIn(o,rand(6,16)*Math.max(S,0.4));else poolAdopt(o);
@@ -1601,6 +1602,14 @@ function fillBuild(rec,drop){const o=buildRec(rec);rec.o=o;fillBuilt.add(rec);
   if(drop)dropIn(o,rand(6,16)*Math.max(S,0.4)); // in view: it falls in
   else{scene.remove(o.g);poolAdopt(o);if(!o.pooled){o.inst=null;o.sleep=false;scene.add(o.g);}}}
 function fillOff(rec){const o=rec.o;rec.o=null;fillBuilt.delete(rec);if(o&&o.alive&&o.rec===rec){o.alive=false;poolRelease(o);scene.remove(o.g);}}
+/* QA7b: the filler keeps off quest givers: their giver_<id> spots (layouts mark them, homeQuestSpots in objects.js) and,
+   in any world, a shown giver plus about a car's room around it, so nothing hides a giver or blocks driving up to it. */
+function giverKeep(x,z,r){
+  for(let ci=chunkIdx(x-r)-1;ci<=chunkIdx(x+r)+1;ci++)for(let cj=chunkIdx(z-r)-1;cj<=chunkIdx(z+r)+1;cj++){const c=chunks.get(chunkKey(ci,cj));if(!c||!c.spots.length)continue;
+    for(const q of c.spots)if(q.kind.startsWith('giver_')){const dx=x-q.x,dz=z-q.z;if(Math.abs(dx*q.cs-dz*q.sn)<=q.hx+r&&Math.abs(dx*q.sn+dz*q.cs)<=q.hz+r)return true;}}
+  if(typeof questGivers!=='undefined'){const room=players.length?players[0].r*2:2*S;
+    for(const id in questGivers){const gv=questGivers[id];if(gv.shown&&Math.hypot(gv.x-x,gv.z-z)<gv.r+r+room)return true;}}
+  return false;}
 // L54: a prop may stand on a sidewalk or curb, but not straddle a step's edge (it would hang over)
 function stepEven(x,z,r){if(!steps.length)return true;const h=stepH(x,z);
   return stepH(x+r,z)===h&&stepH(x-r,z)===h&&stepH(x,z+r)===h&&stepH(x,z-r)===h;}
@@ -1610,6 +1619,7 @@ function fillFree(x,z,r,k,cell){
   if(rampH(x,z)>0||rampH(x+r,z)>0||rampH(x-r,z)>0||rampH(x,z+r)>0||rampH(x,z-r)>0||!stepEven(x,z,r))return false; // L54: steps are fine, ramps aren't
   if(k>tier&&(onRoad(x,z,r)||(arenaOn()&&typeof startLane==='function'&&startLane(x,z))))return false; // L26
   if(garageOn(x,z,r))return false; // L32
+  if(giverKeep(x,z,r))return false; // QA7b
   for(const e of cell.recs)if(Math.abs(e.x-x)<e.r+r+0.3&&Math.hypot(e.x-x,e.z-z)<e.r+r+0.3)return false;
   for(const o of objects)if(o.alive&&Math.abs(o.x-x)<o.r+r+0.3&&Math.abs(o.z-z)<o.r+r+0.3&&Math.hypot(o.x-x,o.z-z)<o.r+r+0.3)return false;
   if(players.some(q=>Math.hypot(q.x-x,q.z-z)<q.r+r+1))return false;
@@ -1777,7 +1787,7 @@ function spawnScene(p,fill,id,cell){ // cell (L51): {x0,z0,G} a fill cell to dro
     if(def.spot!=='road'&&onRoad(x,z,R*0.25)){miss('road');continue;}
     if(typeof garageOn==='function'&&garageOn(x,z,R)){miss('garage');continue;} // L32: not on the garage (reviewer, merging L31+L32)
     const th=sceneFace(x,z,R),it=sceneItems(def,x,z,th,f,(Math.random()*1e9)|0,zone,k),road=def.spot==='road',ok=[],tags=new Set(near.map(q=>q.tag)),skip=e=>tags.has(e.scene)||!!e.fill; // filler makes room (L51)
-    for(const q of it.place){const r=recR(q.type)*f*q.sc;if(scenePropFree(q.x,q.z,r,road,skip))ok.push([q,r]);}
+    for(const q of it.place){const r=recR(q.type)*f*q.sc;if(scenePropFree(q.x,q.z,r,road,skip)&&!giverKeep(q.x,q.z,r))ok.push([q,r]);} // QA7b: not on a giver
     if(!ok.length||ok.length<Math.min(2,it.place.length)||ok.length<it.place.length*0.6){miss('crowded');continue;}
     lastScene=sid;scenePlant(sid,x,z,R,k,f,it,ok,near,fill);
     return sid;}
