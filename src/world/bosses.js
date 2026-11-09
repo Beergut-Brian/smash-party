@@ -15,6 +15,9 @@
                    crown, lollipop scepter and a wind-up key turning in his back.
                    Weak spots: 1 slipper pompoms (front) · 2 belt buckle (front) + wind-up key (back) · 3 robe jewels (sides).
    Themed bosses (zone:'<id>' → L23 summons them in their zone; until then they join the random pick).
+   Dino Land (B4): Rexy is the jungle's boss and the Adventure finale (quest theo_rexy asks for him by id),
+   Lava Larry lives on Volcano Peak (dino_volcano) and Mama Stego in the Tar-Pit Swamp (dino_swamp). The Fossil Dig
+   (dino_dig) has none yet, so it picks from the dino bosses on the map.
    Optional taunts:[…] and defeat:'…' are each boss's own voice lines (TODO(logic): play them instead of the generic ones):
    Gummo the Gummy Giant 🐻 (candy) a big wobbly cherry gummy bear with a lime belly, a tiny party hat with a
                    spinning peppermint, and a swirl lollipop in each paw. Very high sway, so he jiggles.
@@ -25,13 +28,13 @@
    Gumbo-Tron 3000 🍬 (candy) a walking gumball-machine robot: red base body with a coin-slot mouth, a glass-globe head
                    full of gumballs (they fly out whole), googly eyes on the glass, a ring of gumballs twirling on top.
                    Weak spots: 1 coin-slot knobs (chest) · 2 silver turn-crank hands · 3 red hatch knees.
-   Lava Larry 🌋    (dino) the smiling volcano on four stubby legs with a rocky tail, googly eyes, lava drips and smoke
+   Lava Larry 🌋    (dino_volcano) the smiling volcano on four stubby legs with a rocky tail, googly eyes, lava drips and smoke
                    rings puffing out of his crater.
                    Weak spots: 1 glowing lava vents (sides) · 2 rock toes (front feet) · 3 lava-drip knees (back legs).
    Sir Sprinkles 🎂 (candy) a walking three-tier birthday cake on red licorice legs and cake-board feet, frosting
                    arms, a happy face on the middle tier and a crown of candles (they fly off like fireworks).
                    Weak spots: 1 cherry kneecaps · 2 sprinkle patches on the bottom tier · 3 the cake-board feet.
-   Mama Stegosaurus "Plates" 🦕 (dino) a chunky pastel stego with a row of giant colorful back plates (they fly off
+   Mama Stegosaurus "Plates" 🦕 (dino_swamp) a chunky pastel stego with a row of giant colorful back plates (they fly off
                    whole), eyelashes, a flower bow, and a spotted egg balanced on her tail.
                    Weak spots: 1 painted belly spots (sides) · 2 tail-spike thumbs on the ground · 3 front feet.
    Captain Cuddles 🧸 (bedroom) a big living teddy bear in striped pajamas and a floppy nightcap with a pompom, one
@@ -301,7 +304,7 @@ const BOSSES=[
     twirl.userData.spin={axis:'y',speed:3};P(BP(twirl,3,'roof'),1,true,0.6);
     o.spin=[twirl];}},
 
-  {id:'lavalarry',zone:'dino',name:'Lava Larry',emoji:'🌋',sway:0.05,
+  {id:'lavalarry',zone:'dino_volcano',name:'Lava Larry',emoji:'🌋',sway:0.05,
    taunts:['Rumble rumble! Hee hee!','I feel a big burp coming!','Hot lava hugs for everyone!'],
    defeat:'BUUURP! Ahh, much better. Bye bye!',
    build(P,g,o){
@@ -373,7 +376,7 @@ const BOSSES=[
     P(BP(mk('sph',0.9,0.9,0.9,'#e63946',0,y+0.4,0),4,'roof'),1,true,0.4);
   }},
 
-  {id:'mamastego',zone:'dino',name:'Mama Stegosaurus',emoji:'🦕',sway:0.06,
+  {id:'mamastego',zone:'dino_swamp',name:'Mama Stegosaurus',emoji:'🦕',sway:0.06,
    taunts:['Careful, kiddos! Mama\'s coming through!','Look at my pretty plates!','Shh! Don\'t wake my egg!'],
    defeat:'Oh my! Time to go keep my egg warm. Bye bye, sweeties!',
    build(P,g,o){

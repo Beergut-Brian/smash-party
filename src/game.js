@@ -398,7 +398,7 @@ function goGiant(){
   queue.push({t:4,fn:()=>summonBoss()});} // the NEW WORLD button (or, in the bedroom, the door bursting open) comes after the boss is beaten
 // NEW WORLD: shrink back to tiny and roll a fresh, procedurally zoned world. Only ever by choice.
 function newWorld(){
-  if(!giant||nwBtn.style.display!=='block')return;
+  if(nwBtn.style.display!=='block')return; // only shown after a boss (QA11: at any size, e.g. a bedroom or quest boss below GIANT)
   rollWorld(false,landW?worldId:questOn?'home':'outside'); // Adventure: the same world again, fresh (L33: portals lead to the lands)
   music('drive');showBig('NEW WORLD!');sfx.fanfare();say('New world! Smash it!');confetti(150);players.forEach(p=>introCar(p,2.4));
 }
@@ -421,7 +421,7 @@ function rollWorld(keepSize,kind,opt={}){ // kind: 'bedroom' | 'outside' | 'home
   else if(kind==='home'){setZoneMap(ZONE_MAP);homeWorld();}
   else{setZoneMap(randomZoneMap(mulberry(worldSeed),'TFP',pickThemedZones()));buildWorld();captureHome();}
   if(!keepSize){growth=0;tier=0;giant=false;levelReady=false;popT=1;goldCount=0;goldHud.style.display='none';}
-  clearPads();nwBtn.style.display='none';
+  clearPads();nwBtn.style.display='none';nwAfterBoss=false;
   players.forEach(p=>{const st=spawnSpot(p.idx);p.x=st[0];p.z=st[1];p.y=groundH(st[0],st[1]);p.vy=0;p.speed=0;p.kx=p.kz=0;p.air=false;p.heading=Math.PI;});
   if(players.length===2&&Math.hypot(players[0].x-players[1].x,players[0].z-players[1].z)<players[0].r*2.5)besideCar(players[1],players[0]); // big cars: room for both
   {const a=spawnSpot(0);camT.set(a[0],0,a[1]);}updateStreaming(0,true);if(!keepSize&&!opt.keepCars)newCars(true);
@@ -430,6 +430,9 @@ function rollWorld(keepSize,kind,opt={}){ // kind: 'bedroom' | 'outside' | 'home
   questWorldChanged(); // L35: the active quest step rebuilds its things in the new world
 }
 const nwBtn=document.createElement('button');nwBtn.id='newWorld';nwBtn.innerHTML='🌍 NEW WORLD!<small>START / N / tap</small>';
+// QA11: after a boss, Arcade offers NEW WORLD; Adventure doesn't (it would restart the finished world at micro): the portals are the way on
+let nwAfterBoss=false; // the boss of this world is beaten (saved, so Continue reopens the portals)
+function nwShow(){nwAfterBoss=true;if(!questOn)nwBtn.style.display='block';}
 nwBtn.onclick=e=>{e.stopPropagation();newWorld();};nwBtn.addEventListener('touchstart',e=>{e.stopPropagation();},{passive:true});
 document.body.appendChild(nwBtn);
 // size HUD: a row of cars getting bigger, lit up as you grow (a picture, not a number)
@@ -555,7 +558,7 @@ function updateRoom(dt){
   if(breakT>0){breakT-=dt;breakFly=Math.min(1,breakFly+dt*0.6);if(doorArrow)doorArrow.visible=false;
     if(breakT<=0){breakFly=0;rollWorld(true,'outside');camDist*=4; // the camera swoops back down over town
       music('drive');showBig("WE'RE OUTSIDE!");sfx.fanfare();say("We're outside!");confetti(150);players.forEach(p=>introCar(p,1.6));
-      if(giant){if(bossBeaten)queue.push({t:3,fn:()=>{nwBtn.style.display='block';portalsOpen();}});else queue.push({t:5,fn:()=>summonBoss()});}} // L29: still GIANT outside
+      if(giant){if(bossBeaten)queue.push({t:3,fn:()=>{nwShow();portalsOpen();}});else queue.push({t:5,fn:()=>summonBoss()});}} // L29: still GIANT outside
     return;}
   if(!roomZ){if(doorArrow)doorArrow.visible=false;return;}
   if((doorT-=dt)<=0){doorT=0.5;const d=objects.find(o=>o.alive&&!o.falling&&isBreakout(o)),ok=d&&d.sz<=tier;
@@ -759,7 +762,7 @@ const pools=new Map();
 function poolIM(geo,mat,plain,cap){const im=new THREE.InstancedMesh(geo,mat,cap);if(plain)im.setColorAt(0,new THREE.Color('#ffffff'));im.count=0;
   im.castShadow=im.receiveShadow=true;im.frustumCulled=false;scene.add(im);return im;}
 function poolFor(m){const k=batchKey(m);let p=pools.get(k);
-  if(!p){const plain=colorBatched(m),cap=plain?512:64;p={im:poolIM(m.geometry,batchMat(m),plain,cap),plain,cap,owner:[]};pools.set(k,p);}
+  if(!p){const plain=colorBatched(m),cap=plain?512:64;p={im:poolIM(m.geometry,batchMat(m),plain,cap),plain,cap,owner:[],maxR:0};pools.set(k,p);}
   if(p.im.count>=p.cap&&p.cap<16384)poolGrow(p);
   return p;}
 function poolGrow(p){ // full: swap in one twice the size (copies every slot; owners point at the new mesh)
@@ -773,10 +776,16 @@ function poolAdopt(o){ // move an awake object into the pools and let it sleep (
   if(o.inst||!o.alive||o.spin||o.rolling||o.gold)return;const ent=[];let ok=true;
   for(const [m,mat] of sleepLook(o)){if(!ok)break;if(Array.isArray(m.material)){ok=false;break;}const p=poolFor(m);if(p.im.count>=p.cap){ok=false;break;}
     const i=p.im.count++;const e=[p.im,i,mat,m,p];p.owner[i]=e;p.im.setMatrixAt(i,HIDE);
+    {const g=m.geometry;g.boundingSphere||g.computeBoundingSphere();const r=g.boundingSphere.radius*mat.getMaxScaleOnAxis();if(r>p.maxR)p.maxR=r;}
     if(p.plain){p.im.setColorAt(i,m.material.color);p.im.instanceColor.needsUpdate=true;}ent.push(e);}
   o.inst=ent;o.pooled=true;
   if(!ok){poolRelease(o);return;}
   o.sleep=false;sleepObj(o);}
+/* QA12: at GIANT ~150 pooled shapes are drawn twice (camera + shadow pass), and most are flowers, cans and gnomes whose
+   shadow is a few pixels at that size. A pool whose biggest copy (radius) is under POOL_SHADOW_R × the players' scale
+   skips the shadow pass, and an empty pool isn't drawn at all. Checked every frame (~150 pools, trivial). */
+const POOL_SHADOW_R=0.7;
+function poolShadows(){const lim=POOL_SHADOW_R*S;for(const p of pools.values()){const im=p.im;im.visible=im.count>0;im.castShadow=p.maxR>=lim;}}
 function poolRelease(o){if(!o.pooled)return;o.pooled=false;
   for(const e of o.inst){const im=e[0],p=e[4],i=e[1],last=--im.count;
     if(i!==last){im.getMatrixAt(last,_pm);im.setMatrixAt(i,_pm);if(p.plain){im.getColorAt(last,_pc);im.setColorAt(i,_pc);im.instanceColor.needsUpdate=true;}
@@ -809,7 +818,7 @@ function unloadChunk(c){
   objects=objects.filter(o=>{if(o.chunk!==c.k)return true;poolRelease(o);scene.remove(o.g);return false;}); // alive records stay alive
   c.group.traverse(m=>{if(m.isInstancedMesh)m.dispose();else if(m.userData.spotTiles)m.geometry.dispose();});scene.remove(c.group);c.group=null;
 }
-function wakeObj(o){if(!o.sleep)return;o.sleep=false;for(const [im,i] of o.inst){im.setMatrixAt(i,HIDE);im.instanceMatrix.needsUpdate=true;}scene.add(o.g);}
+function wakeObj(o){o.wakeT=T;if(!o.sleep)return;o.sleep=false;for(const [im,i] of o.inst){im.setMatrixAt(i,HIDE);im.instanceMatrix.needsUpdate=true;}scene.add(o.g);}
 function sleepObj(o){if(o.proxied&&o.parts.some(p=>p.gone)){if(o.pooled)poolRelease(o);else o.inst=null;return;} // damaged: stays awake as real parts
   o.sleep=true;for(const [im,i,m,mesh] of o.inst){im.setMatrixAt(i,mesh.userData.dead?HIDE:m);im.instanceMatrix.needsUpdate=true;}scene.remove(o.g);}
 function streamR(){return (IS_PHONE?0.7:1)*(110+camDist*1.1);} // camDist already grows with car size
@@ -827,7 +836,9 @@ function updateStreaming(dt,all){
   // wake objects near a car, put far ones back to sleep
   for(const o of objects){if(!o.inst||!o.alive)continue;let d=1e9;
     for(const p of players)d=Math.min(d,Math.hypot(o.x-p.x,o.z-p.z)-o.r);
-    if(!o.sleep&&d>wr+2+4*S&&!o.falling&&!o.wob&&!o.rolling)sleepObj(o);}
+    // QA12: an undamaged thing that's done wobbling goes back to its pool after ~1.5 s even with a car nearby (a boss
+    // stomp at GIANT used to leave ~60 props awake around the fight, ~300 draw calls); damaged ones wait till the cars leave
+    if(!o.sleep&&!o.falling&&!o.wob&&!o.rolling&&(d>wr+2+4*S||T-(o.wakeT||0)>1.5&&!(o.parts&&o.parts.some(q=>q.gone))))sleepObj(o);}
   // L25: nothing wakes just for being near a car; it stays in its batch until something happens to it (smash, hit,
   // wobble, roll: those call wakeObj), so an untouched house or tree costs no draw calls of its own at any size.
   // regrow smashed things in loaded chunks: they drop back in from the sky
@@ -869,19 +880,44 @@ const players=[];
 const PCOL=['#ff9f1c','#2ec4f6'];
 /* L25: a block-built car is ~30–40 meshes; merge everything that doesn't move on its own (not the wheels) into one
    mesh per material, so a car is ~10 draw calls instead of ~37 (each pass). Shapes that can't merge stay as they are. */
+/* QA12: plain M() parts (only their color differs) all merge into ONE mesh with the colors baked into the vertices, so
+   a block-built car is ~45 → ~10 draws and a quest giver ~10 → 1 (they're drawn twice: camera + shadow pass). */
+let CAR_VC=null;const carVC=()=>CAR_VC||(CAR_VC=litMat({color:'#ffffff',vertexColors:true}));
+function carVCGeo(m,mx){let g=m.geometry.clone();g.applyMatrix4(mx);if(g.index)g=g.toNonIndexed();
+  for(const k of Object.keys(g.attributes))if(k!=='position'&&k!=='normal')g.deleteAttribute(k);
+  for(const k of Object.keys(g.morphAttributes))delete g.morphAttributes[k];g.clearGroups();if(!g.attributes.normal)g.computeVertexNormals();
+  const n=g.attributes.position.count,c=new Float32Array(n*3),col=m.material.color;for(let i=0;i<n;i++){c[i*3]=col.r;c[i*3+1]=col.g;c[i*3+2]=col.b;}
+  g.setAttribute('color',new THREE.BufferAttribute(c,3));return g;}
+// each spinning wheel group (tire + hub + cap…) becomes one vertex-colored mesh inside it, so it still spins as one
+function carWheelMerge(model,w){if(!w||w.isMesh)return;w.updateMatrixWorld(true);const inv=new THREE.Matrix4().copy(w.matrixWorld).invert(),list=[];
+  w.traverse(m=>{if(!m.isMesh||m.children.length||Array.isArray(m.material)||m.morphTargetInfluences||!m.visible)return;
+    for(let x=m;x&&x!==w;x=x.parent)if(Object.keys(x.userData).length)return;
+    if(m.material.userData.plain&&m.material.color&&!m.material.transparent&&m.material.side===THREE.FrontSide)list.push(m);});
+  if(list.length<2)return;const geos=list.map(m=>carVCGeo(m,new THREE.Matrix4().multiplyMatrices(inv,m.matrixWorld)));
+  let merged=null;try{merged=THREE.mergeGeometries(geos);}catch(e){}for(const q of geos)q.dispose();if(!merged)return;
+  const mm=new THREE.Mesh(merged,carVC());mm.castShadow=list.some(m=>m.castShadow);mm.receiveShadow=true;for(const m of list)m.parent.remove(m);w.add(mm);
+  (model.merged||(model.merged=[])).push(merged);}
 function carMerge(model){
   if(!THREE.mergeGeometries||!model||!model.g)return model;const g=model.g;g.updateMatrixWorld(true);
   const keep=new Set();for(const w of model.wheels||[])w.traverse(x=>keep.add(x));
-  const inv=new THREE.Matrix4().copy(g.matrixWorld).invert(),groups=new Map();
+  const inv=new THREE.Matrix4().copy(g.matrixWorld).invert(),groups=new Map(),plain=[];
   g.traverse(m=>{if(!m.isMesh||m.isSkinnedMesh||m.isInstancedMesh||keep.has(m)||m.children.length||Array.isArray(m.material)||m.morphTargetInfluences)return;
     for(let x=m;x&&x!==g;x=x.parent)if(keep.has(x)||Object.keys(x.userData).length)return; // spinning / tagged parts stay live
+    if(m.material.userData.plain&&m.material.color&&!m.material.transparent&&m.material.side===THREE.FrontSide&&m.visible){plain.push(m);return;}
     const geo=m.geometry,sig=m.material.uuid+'|'+(geo.index?'i':'n')+'|'+Object.keys(geo.attributes).sort().join(',');
     (groups.get(sig)||groups.set(sig,[]).get(sig)).push(m);});
+  if(plain.length>1){const geos=plain.map(m=>carVCGeo(m,new THREE.Matrix4().multiplyMatrices(inv,m.matrixWorld)));
+    let merged=null;try{merged=THREE.mergeGeometries(geos);}catch(e){}for(const q of geos)q.dispose();
+    if(merged){const mm=new THREE.Mesh(merged,carVC());mm.castShadow=plain.some(m=>m.castShadow);mm.receiveShadow=true;
+      for(const m of plain)m.parent.remove(m);g.add(mm);(model.merged||(model.merged=[])).push(merged);}
+    else for(const m of plain){const geo=m.geometry,sig=m.material.uuid+'|'+(geo.index?'i':'n')+'|'+Object.keys(geo.attributes).sort().join(',');(groups.get(sig)||groups.set(sig,[]).get(sig)).push(m);}}
+  else for(const m of plain){const geo=m.geometry,sig=m.material.uuid+'|'+(geo.index?'i':'n')+'|'+Object.keys(geo.attributes).sort().join(',');(groups.get(sig)||groups.set(sig,[]).get(sig)).push(m);}
   for(const list of groups.values()){if(list.length<2)continue;
     const geos=list.map(m=>m.geometry.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv,m.matrixWorld)));
     let merged=null;try{merged=THREE.mergeGeometries(geos);}catch(e){}
     if(!merged)continue;const mm=new THREE.Mesh(merged,list[0].material);mm.castShadow=list.some(m=>m.castShadow);mm.receiveShadow=true;
     for(const m of list)m.parent.remove(m);g.add(mm);(model.merged||(model.merged=[])).push(merged);}
+  for(const w of model.wheels||[])carWheelMerge(model,w);
   return model;}
 function carUnmerge(model){if(model&&model.merged)for(const geo of model.merged)geo.dispose();}
 class Player{
@@ -1189,9 +1225,12 @@ function carPartLook(id){
   else if(id==='dozer'){g.add(mk('box',3.0,1.0,0.3,'#ffbe0b',0,0.55,0.25),mk('box',0.2,0.2,0.6,'#555555',-0.9,0.55,-0.1),mk('box',0.2,0.2,0.6,'#555555',0.9,0.55,-0.1));}
   return g;}
 function carParts(p){
-  if(p.parts){p.root.remove(p.parts);}p.parts=new THREE.Group();p.partMap={};p.root.add(p.parts);if(!questOn)return; // Arcade cars look as they always did
+  if(p.parts){p.root.remove(p.parts);}if(p.partGeos)p.partGeos.forEach(q=>q.dispose());p.partGeos=[];
+  p.parts=new THREE.Group();p.partMap={};p.root.add(p.parts);if(!questOn)return; // Arcade cars look as they always did
   const hat=cosHat(),ids=[...questAbil,...questCos].filter(id=>!COS_TRAIL[id]&&!COS_ENGINE[id]&&(!COS_HAT.includes(id)||id===hat));
-  for(const id of ids){const g=carPartLook(id);
+  for(const id of ids){const g=carPartLook(id),mm=carMerge({g}); // QA12: plain pieces → one draw (tagged swing/wag bits stay live)
+    {const live=[];g.traverse(x=>{if(x!==g&&!x.isMesh&&(x.userData.swing||x.userData.wag))live.push(x);});for(const x of live)carWheelMerge(mm,x);} // …and each swinging bit becomes one piece
+    if(mm.merged)p.partGeos.push(...mm.merged);
     if(ROOF_PARTS.includes(id))g.position.set(0,p.model.h,COS_HAT.includes(id)?-0.2:0);
     if(id==='dozer')g.position.z=p.stats.r*1.05;
     if(id==='dinotail')g.position.z=-p.stats.r*0.95; // origin at the car's ground center → its back bumper
@@ -1311,7 +1350,7 @@ function snapshot(){
   return {v:SAVE_V,t:Date.now(),mode:questOn?'adventure':'arcade',kind:landW?worldId:questOn?'home':roomZ?'bedroom':'outside',lands:[...advLands],
     growth,tier,giant,levelReady,score,levelScore,level,goal,smashCount,cars,
     garage:!!(garage&&!garage.exiting)||queue.some(q=>q.fn===openGarage),
-    quests:questOn?questState():null,used:[...abilUsed],eggs:eggShots,nw:nwBtn.style.display==='block'};}
+    quests:questOn?questState():null,used:[...abilUsed],eggs:eggShots,nw:nwAfterBoss};}
 function saveGame(){if(!questOn||(state!=='play'&&state!=='pause'))return;advSave=snapshot();lsSet(SAVE_KEY,advSave);}
 function wipeSave(){advSave=null;try{localStorage.removeItem(SAVE_KEY);}catch(e){}markSave();}
 function applySnap(s){
@@ -1322,7 +1361,7 @@ function applySnap(s){
   (s.lands||[]).forEach(id=>advLands.add(id));
   rollWorld(true,s.kind==='bedroom'&&ZONES.bedroom?'bedroom':s.kind==='home'?'home':worldOk(WORLDS[s.kind])?s.kind:'outside');
   if(s.quests&&s.quests.active&&QUESTS[s.quests.active])questStart(QUESTS[s.quests.active],true);
-  if(s.nw){nwBtn.style.display='block';queue.push({t:2,fn:portalsOpen});} // the boss was already beaten
+  if(s.nw){nwShow();queue.push({t:2,fn:portalsOpen});} // the boss was already beaten
   else if(giant&&!(questOn&&QUEST_LIST.some(q=>q.world===questWorld()&&!questDone.has(q.id)&&q.steps.some(t=>t.do==='boss'))))queue.push({t:4,fn:()=>summonBoss()});
   abilGlyphs();showBig(s.mode==='adventure'?'▶️':'✨');}
 function updateSave(dt){if(state==='play'&&questOn&&(saveT-=dt)<=0){saveT=20;saveGame();}}
@@ -1526,6 +1565,16 @@ function spotAt(x,z){const c=chunks.get(chunkKey(chunkIdx(x),chunkIdx(z)));if(!c
    A zone adds its own kinds with registerZone({water:{choco_river:1,choco_deep:2}}). */
 const WATER_KINDS={water:1,water_deep:2,river:1,lake:1,deep:2};
 for(const z in ZONES)if(ZONES[z].water)Object.assign(WATER_KINDS,ZONES[z].water);
+/* L50: a zone can give a water kind its own "can't go here" line, puff colors and splash clip:
+   registerZone({waterSay:{dino_lava:'Too hot! You need to fly!'},waterPuff:{dino_lava:['#ff7b00','#ffb703']},waterSfx:{dino_lava:'dino_lava'}}).
+   Kinds named *lava* / *magma* get the hot set by default; anything else is blue water. */
+const WATER_DEF={say:'Too deep! You need to fly!',puff:['#bde0fe','#ffffff','#a2d2ff'],sfx:'splash'};
+const WATER_HOT={say:'Too hot! You need to fly!',puff:['#ff7b00','#ffb703','#ffd166'],sfx:'dino_lava'};
+const WATER_LOOK={};
+function waterLook(kind){if(WATER_LOOK[kind])return WATER_LOOK[kind];const d=/lava|magma/.test(kind)?WATER_HOT:WATER_DEF,w={};
+  for(const z in ZONES){const Z=ZONES[z];if(Z.waterSay&&Z.waterSay[kind])w.say=Z.waterSay[kind];if(Z.waterPuff&&Z.waterPuff[kind])w.puff=[].concat(Z.waterPuff[kind]);if(Z.waterSfx&&Z.waterSfx[kind])w.sfx=Z.waterSfx[kind];}
+  return WATER_LOOK[kind]={say:w.say||d.say,puff:w.puff||d.puff,sfx:w.sfx||d.sfx};}
+const waterSplash=(L,vol,rate)=>(L.sfx!=='splash'&&sfxClip(L.sfx,vol,rate))||sfxClip('splash',vol,rate);
 function spotLookOf(c,kind){const zl=ZONES[c.zone]&&ZONES[c.zone].spotLook;return (zl&&zl[kind])||(typeof SPOT_LOOK!=='undefined'&&SPOT_LOOK[kind]);}
 function waterAt(x,z){let best=null;const ci=chunkIdx(x),cj=chunkIdx(z);
   for(let a=ci-1;a<=ci+1;a++)for(let b=cj-1;b<=cj+1;b++){const c=chunks.get(chunkKey(a,b));if(!c||!c.spots.length)continue;
@@ -1536,10 +1585,10 @@ let lastDeepSay=-99;
 function waterTick(p,dt){
   const q=p.air?null:waterAt(p.x,p.z),lv=q?WATER_KINDS[q.kind]:0,g=p.model.g;
   if(!lv){if(p.wet){g.rotation.z=0;p.wet=0;}if(!p.air)p.dryAt=[p.x,p.z];return;}
-  const fresh=!p.wet,sk=hasAbility('hover'),big=p.r*2>Math.max(q.hx,q.hz),S1=Math.max(S,0.15),spd=Math.abs(p.speed);p.wet=lv;
-  if(fresh&&spd>2){sfxClip('splash',0.6)||noise(0.4,1400,0.8,0.14,'lowpass',300);puff(p.x,0.3*S1,p.z,8,1.4*S1,'#bde0fe');}
+  const fresh=!p.wet,sk=hasAbility('hover'),big=p.r*2>Math.max(q.hx,q.hz),S1=Math.max(S,0.15),spd=Math.abs(p.speed),L=waterLook(q.kind);p.wet=lv;
+  if(fresh&&spd>2){waterSplash(L,0.6)||noise(0.4,1400,0.8,0.14,'lowpass',300);puff(p.x,0.3*S1,p.z,8,1.4*S1,L.puff[0]);}
   if((p.splashT=(p.splashT||0)-dt)<=0&&spd>1){p.splashT=sk?0.06:0.18;
-    const bx=p.x-Math.sin(p.heading)*p.r,bz=p.z-Math.cos(p.heading)*p.r;puff(bx,0.2*S1,bz,sk?2:1,(sk?0.7:0.5)*S1,pick(['#bde0fe','#ffffff','#a2d2ff']));}
+    const bx=p.x-Math.sin(p.heading)*p.r,bz=p.z-Math.cos(p.heading)*p.r;puff(bx,0.2*S1,bz,sk?2:1,(sk?0.7:0.5)*S1,pick(L.puff));}
   if(sk){if(p.partMap&&p.partMap.hover)p.partMap.hover.visible=true;g.position.y+=0.15;g.rotation.z=0.04*Math.sin(T*5+p.idx);
     if((p.humT=(p.humT||0)-dt)<=0){p.humT=0.5;sfxClip('hover_hum',0.25)||tone('sine',240+rand(-20,20),280,0.3,0.03);}p.dryAt=[p.x,p.z];return;}
   // wheels in the water: slow, low, bobbing
@@ -1551,8 +1600,8 @@ function waterTick(p,dt){
   const dx=p.x-d0[0],dz=p.z-d0[1],d=Math.hypot(dx,dz),mx=p.r*1.2+0.3*S1;
   if(d>mx*8){p.dryAt=[p.x,p.z];return;} // teleported in (spawn, garage): just wade
   if(d>mx){const ux=dx/d,uz=dz/d,back=Math.min(d-mx,(16*p.sm+(d-mx)*3)*dt);p.x-=ux*back;p.z-=uz*back;p.speed*=0.5;p.kx=-ux*5*p.sm;p.kz=-uz*5*p.sm;
-    if((p.deepT=(p.deepT||0)-dt)<=0){p.deepT=0.5;puff(p.x+ux*p.r,0.3*S1,p.z+uz*p.r,5,1.1*S1,'#a2d2ff');sfxClip('splash',0.4,1.3)||noise(0.25,1800,0.8,0.1,'lowpass',400);}
-    if(T-lastDeepSay>14){lastDeepSay=T;say('Too deep! You need to fly!');}}}
+    if((p.deepT=(p.deepT||0)-dt)<=0){p.deepT=0.5;puff(p.x+ux*p.r,0.3*S1,p.z+uz*p.r,5,1.1*S1,L.puff[L.puff.length-1]);waterSplash(L,0.4,1.3)||noise(0.25,1800,0.8,0.1,'lowpass',400);}
+    if(T-lastDeepSay>14){lastDeepSay=T;say(L.say);}}}
 // a point inside a spot that lies in the ring [d0,d1] around (px,pz), or null when no spot is in reach
 function spotPoint(px,pz,d0,d1){const near=[];let tot=0;
   for(let ci=chunkIdx(px-d1);ci<=chunkIdx(px+d1);ci++)for(let cj=chunkIdx(pz-d1);cj<=chunkIdx(pz+d1);cj++){const c=chunks.get(chunkKey(ci,cj));if(!c)continue;
@@ -1579,6 +1628,7 @@ function spawnScatter(p,fill){
     if(objects.some(o=>o.alive&&Math.abs(o.x-x)<o.r+r+0.3&&Math.abs(o.z-z)<o.r+r+0.3&&Math.hypot(o.x-x,o.z-z)<o.r+r+0.3))continue;
     if(players.some(q=>Math.hypot(q.x-x,q.z-z)<q.r+r+1))continue;
     if(garageOn(x,z,r))continue; // L32: not inside the garage
+    if(giverKeep(x,z,r))continue; // QA7b
     const zn=zoneAt(chunkIdx(x),chunkIdx(z)),[t,f]=(sp&&spotProp(zn,sp.kind,k))||scatterProp(zn,k);
     const o=OBJ[t](x,z,t==='fence'?rand(0,Math.PI):undefined,f);o.scat=true;
     if(fill)dropIn(o,rand(6,16)*Math.max(S,0.4));else poolAdopt(o);
@@ -1601,6 +1651,14 @@ function fillBuild(rec,drop){const o=buildRec(rec);rec.o=o;fillBuilt.add(rec);
   if(drop)dropIn(o,rand(6,16)*Math.max(S,0.4)); // in view: it falls in
   else{scene.remove(o.g);poolAdopt(o);if(!o.pooled){o.inst=null;o.sleep=false;scene.add(o.g);}}}
 function fillOff(rec){const o=rec.o;rec.o=null;fillBuilt.delete(rec);if(o&&o.alive&&o.rec===rec){o.alive=false;poolRelease(o);scene.remove(o.g);}}
+/* QA7b: the filler keeps off quest givers: their giver_<id> spots (layouts mark them, homeQuestSpots in objects.js) and,
+   in any world, a shown giver plus about a car's room around it, so nothing hides a giver or blocks driving up to it. */
+function giverKeep(x,z,r){
+  for(let ci=chunkIdx(x-r)-1;ci<=chunkIdx(x+r)+1;ci++)for(let cj=chunkIdx(z-r)-1;cj<=chunkIdx(z+r)+1;cj++){const c=chunks.get(chunkKey(ci,cj));if(!c||!c.spots.length)continue;
+    for(const q of c.spots)if(q.kind.startsWith('giver_')){const dx=x-q.x,dz=z-q.z;if(Math.abs(dx*q.cs-dz*q.sn)<=q.hx+r&&Math.abs(dx*q.sn+dz*q.cs)<=q.hz+r)return true;}}
+  if(typeof questGivers!=='undefined'){const room=players.length?players[0].r*2:2*S;
+    for(const id in questGivers){const gv=questGivers[id];if(gv.shown&&Math.hypot(gv.x-x,gv.z-z)<gv.r+r+room)return true;}}
+  return false;}
 // L54: a prop may stand on a sidewalk or curb, but not straddle a step's edge (it would hang over)
 function stepEven(x,z,r){if(!steps.length)return true;const h=stepH(x,z);
   return stepH(x+r,z)===h&&stepH(x-r,z)===h&&stepH(x,z+r)===h&&stepH(x,z-r)===h;}
@@ -1610,6 +1668,7 @@ function fillFree(x,z,r,k,cell){
   if(rampH(x,z)>0||rampH(x+r,z)>0||rampH(x-r,z)>0||rampH(x,z+r)>0||rampH(x,z-r)>0||!stepEven(x,z,r))return false; // L54: steps are fine, ramps aren't
   if(k>tier&&(onRoad(x,z,r)||(arenaOn()&&typeof startLane==='function'&&startLane(x,z))))return false; // L26
   if(garageOn(x,z,r))return false; // L32
+  if(giverKeep(x,z,r))return false; // QA7b
   for(const e of cell.recs)if(Math.abs(e.x-x)<e.r+r+0.3&&Math.hypot(e.x-x,e.z-z)<e.r+r+0.3)return false;
   for(const o of objects)if(o.alive&&Math.abs(o.x-x)<o.r+r+0.3&&Math.abs(o.z-z)<o.r+r+0.3&&Math.hypot(o.x-x,o.z-z)<o.r+r+0.3)return false;
   if(players.some(q=>Math.hypot(q.x-x,q.z-z)<q.r+r+1))return false;
@@ -1777,7 +1836,7 @@ function spawnScene(p,fill,id,cell){ // cell (L51): {x0,z0,G} a fill cell to dro
     if(def.spot!=='road'&&onRoad(x,z,R*0.25)){miss('road');continue;}
     if(typeof garageOn==='function'&&garageOn(x,z,R)){miss('garage');continue;} // L32: not on the garage (reviewer, merging L31+L32)
     const th=sceneFace(x,z,R),it=sceneItems(def,x,z,th,f,(Math.random()*1e9)|0,zone,k),road=def.spot==='road',ok=[],tags=new Set(near.map(q=>q.tag)),skip=e=>tags.has(e.scene)||!!e.fill; // filler makes room (L51)
-    for(const q of it.place){const r=recR(q.type)*f*q.sc;if(scenePropFree(q.x,q.z,r,road,skip))ok.push([q,r]);}
+    for(const q of it.place){const r=recR(q.type)*f*q.sc;if(scenePropFree(q.x,q.z,r,road,skip)&&!giverKeep(q.x,q.z,r))ok.push([q,r]);} // QA7b: not on a giver
     if(!ok.length||ok.length<Math.min(2,it.place.length)||ok.length<it.place.length*0.6){miss('crowded');continue;}
     lastScene=sid;scenePlant(sid,x,z,R,k,f,it,ok,near,fill);
     return sid;}
@@ -2149,8 +2208,8 @@ function hitWeak(part,p,nx,nz){const b=boss,o=b.o;b.hitT=T+0.3;
   const dl=b.def.defeat?3.4:0;if(dl){say(b.def.defeat);queue.push({t:dl,fn:()=>say('You beat the boss!')});}else say('You beat the boss!');
   collapse(o,0,nx,nz,60,true);
   queue.push({t:2.6,fn:()=>{showBig('BOSS BEATEN!');sfx.fanfare();confetti(260);
-    const d=roomDoor();if(!d){nwBtn.style.display='block';portalsOpen();return;}
-    queue.push({t:2.2,fn:()=>{const q=roomDoor();if(!q){if(roomZ)nwBtn.style.display='block';return;}smash(q,0,-1,60);}});}}); // L29: the door bursts open = BREAK OUT
+    const d=roomDoor();if(!d){nwShow();portalsOpen();return;}
+    queue.push({t:2.2,fn:()=>{const q=roomDoor();if(!q){if(roomZ)nwShow();return;}smash(q,0,-1,60);}});}}); // L29: the door bursts open = BREAK OUT
   queue.push({t:4.0+dl,fn:()=>{sfx.fanfare();say('Hooray! You did it together!');}});
 }
 function updateBoss(dt){
@@ -2755,7 +2814,7 @@ function loop(now){
     for(const p of players){const s=src[p.src]||{x:0,z:0};if(levelReady&&!garage&&(s.levelP||s.swapP))levelUp();else if(s.fire&&!p.inG&&hasAbility('shoot')){shoot(p);abilUse('shoot');}p.update(dt,s);}
     if(garage)updateGarage(dt,src);
   }
-  updateGrowth(dt);updateStreaming(dt);updateQuests(dt);updateVoicePreload(dt);updateQuestMarker();updateMiniMap(dt);updateSave(dt);
+  updateGrowth(dt);updateStreaming(dt);poolShadows();updateQuests(dt);updateVoicePreload(dt);updateQuestMarker();updateMiniMap(dt);updateSave(dt);
   if(state==='play'&&!garageAll()){collisions();updateBoss(dt);}
   for(let i=queue.length-1;i>=0;i--){queue[i].t-=dt;if(queue[i].t<=0){const f=queue[i].fn;queue.splice(i,1);f();}}
   updateRoom(dt);updatePortals(dt);updateObjects(dt);updateCollapses(dt);updateSquish(dt);updateCombo(dt);if(!garage){updateGold(dt);updatePads(dt);}if(!garageAll()){updateScatter(dt);updateScenes(dt);updateAnimals(dt);}updateRollers(dt);updateSpin(dt);updateShots(dt);updatePerks(dt);updateCarExtras(dt);updateDebris(dt);updateParts(dt);updatePuffs(dt);

@@ -55,6 +55,7 @@
     "New car!",
     "Stuck? Press jump to go BOOM!",
     "Too deep! You need to fly!",
+    "Too hot! You need to fly!",
     {
       "text": "BOOM!",
       "prefix": "[shouting] "

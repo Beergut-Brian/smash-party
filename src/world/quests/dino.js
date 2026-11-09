@@ -36,6 +36,18 @@ function questDinoAt(id,k){
 const questDinoLoop=(c,r,n,a0=0)=>Array.from({length:n},(_,i)=>{const a=a0+i/n*Math.PI*2;return [c[0]+Math.sin(a)*r,c[1]+Math.cos(a)*r];});
 // a point list from questAt, else the loop
 const questDinoPts=(id,k,c,r,n,a0)=>{const v=questDinoAt(id,k);return Array.isArray(v)&&Array.isArray(v[0])&&v.length?v:questDinoLoop(c,r,n,a0);};
+// Q2b: push steps (Rolly's boulders, Rosa's trikes) work out the green goal and the start spots when the step starts
+// (and again when the players grow), from the stage the engine uses. The goal is `r` car-scale units, shrunk when the
+// stage pen is small for the size (a chapter played late; pushables are kept within 1.8x the stage radius). Each start
+// keeps its direction from the goal center but sits at least ~1.5 car lengths outside the circle and inside the pen.
+function questDinoPushGoal(id,r){const q=typeof QUESTS!=='undefined'&&QUESTS[id];
+  if(!q||typeof questStageCenter!=='function')return r;return Math.min(r,questStageCenter(q)[2]*1.8/qS()*0.6);}
+function questDinoPushAt(id,r,pts){const q=typeof QUESTS!=='undefined'&&QUESTS[id];
+  if(!q||typeof questStageCenter!=='function')return pts;
+  const s=qS(),[cx,cz,R]=questStageCenter(q),lim=R*1.8-2*s,want=Math.min(questDinoPushGoal(id,r)*s+7*s,lim);
+  return pts.map(([x,z],i)=>{let dx=x-cx,dz=z-cz,d=Math.hypot(dx,dz);
+    if(d<1e-3){const a=i/pts.length*Math.PI*2;dx=Math.sin(a);dz=Math.cos(a);d=1;}
+    const k=Math.min(Math.max(d,want),lim)/d;return [cx+dx*k,cz+dz*k];});}
 
 /* ---------- giver looks (car scale 1, ~4.5 long, facing +Z, feet at y=0, M() colors) ---------- */
 // Grandma Gertie: an old round brontosaurus in a flowery shawl, big knitting glasses on her long droopy neck, yarn on her back
@@ -256,7 +268,7 @@ registerQuest({
 // Rolly waits at the edge of the bowling hollow (the goal circle = the stage center); his five boulders sit on the
 // slope above it.
 const questRollyAt=(()=>{const c=questDinoAt('rolly_bowling','goal')||questDinoAt('rolly_bowling','stage');
-  return {c,rocks:questDinoLoop(c,6.5,5,0.6)};})();
+  return {c,rocks:questDinoPts('rolly_bowling','boulders',c,6.5,5,0.6)};})();
 registerQuest({
   id:'rolly_bowling',world:'dino',chapter:2,main:false,
   giver:{id:'rolly',name:'Rolly the Ankylosaurus',emoji:'🎳',voice:'rolly',at:questDinoAt('rolly_bowling','giver'),h:3.2,build:questRollyBuild},
@@ -264,7 +276,8 @@ registerQuest({
   remind:['Five rocks in the hole! Hyuk!'],
   steps:[
     {do:'talk',icon:'🪨',n:5,say:['Hyuk hyuk! Hiya!','Wanna go bowling?','Roll five rocks in the hole!']},
-    {do:'push',n:5,icon:'🪨',r:22,build:questRollyBoulder,at:questRollyAt.rocks,
+    {do:'push',n:5,icon:'🪨',build:questRollyBoulder,
+      get r(){return questDinoPushGoal('rolly_bowling',22);},get at(){return questDinoPushAt('rolly_bowling',22,questRollyAt.rocks);},
       say:{start:'The hole is right here! Hyuk!',each:['STRIKE! Hyuk hyuk!','Spare! Hyuk!','Roll roll roll!'],hint:'Into the green circle! Hyuk!',got:'Five strikes! Wowee!'}}],
   reward:{stars:3,say:['Best bowler ever!','Hyuk hyuk! High five!']},
   after:['STRIKE! Hyuk!','Bowling is the best.']});
@@ -314,7 +327,8 @@ registerQuest({
   remind:['Tweet! Eight trikes in the corral!'],
   steps:[
     {do:'talk',icon:'🦕',n:8,say:['Tweet tweet! Ranger Rosa!','Trikes on the loose!','Push eight trikes in the corral!']},
-    {do:'push',n:8,kind:'trike',icon:'🦕',r:22,at:questRosaAt.trikes,
+    {do:'push',n:8,kind:'trike',icon:'🦕',
+      get r(){return questDinoPushGoal('rosa_trikes',22);},get at(){return questDinoPushAt('rosa_trikes',22,questRosaAt.trikes);},
       say:{start:'The corral is right here! Tweet!',each:['Good herding!','Tweet! One more!','In you go, trike!'],hint:'Into the green circle! Tweet!',got:'All in! Ranger approved!'}}],
   reward:{stars:3,say:['Tweet! Great work, rangers!','You are honorary rangers!']},
   after:['Tweet tweet!','All trikes safe. Tweet!']});
