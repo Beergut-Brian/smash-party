@@ -150,7 +150,7 @@ function questTouch(gv,p){
 /* ---------- running a quest ---------- */
 function questStart(q,quiet){
   if(questA)questStepEnd(false);
-  questA={q,si:0,st:null};const pr=questProg[q.id]||(questProg[q.id]={step:0,n:0});questA.si=Math.min(pr.step,q.steps.length-1);
+  questA={q,si:0,st:null,back:!!quiet};const pr=questProg[q.id]||(questProg[q.id]={step:0,n:0});questA.si=Math.min(pr.step,q.steps.length-1);
   if(!quiet){sfxClip('quest_start',0.8)||sfx.join();}
   questStepStart();}
 function questGv(){return questA&&questGivers[questA.q.giver.id];}
@@ -161,7 +161,7 @@ function questStageCenter(q){
 function questStepStart(){
   const A=questA,q=A.q,s=q.steps[A.si],pr=questProg[q.id],gv=questGv(),voice=questVoice(q,s);
   const n=s.n||1,c=questStageCenter(q),st=A.st={s,n,got:pr.n||0,things:[],tier,cx:c[0],cz:c[1],R:c[2],t:0};
-  if(A.si===0&&q.stage&&typeof sceneAt==='function'&&!A.scene){A.scene=true; // L38; a stage design hasn't built yet is skipped quietly (L40)
+  if((A.si===0||A.back)&&q.stage&&typeof sceneAt==='function'&&!A.scene){A.scene=true; // L38; a stage design hasn't built yet is skipped quietly (L40)
     if(typeof sceneDef!=='function'||sceneDef(q.stage,zoneXZ(c[0],c[1])))try{A.scene=sceneAt(q.stage,c[0],c[1],0,null,{key:'quest_'+q.id})||true;}catch(e){console.warn('sceneAt',e);}}
   const say0=s.say&&!Array.isArray(s.say)&&s.say.start;
   switch(s.do){
@@ -219,12 +219,20 @@ const QUEST_ICON={hammer:'🔨',shoot:'🥚',hover:'🛸',dozer:'🚜',glide:'�
 let questSpinT=0;
 function questSave(){if(typeof saveGame==='function')try{saveGame();}catch(e){}} // L37
 // for L37: everything quest-side that a save needs, and putting it back
-function questState(){return {done:[...questDone],abil:[...questAbil],cos:[...questCos],prog:JSON.parse(JSON.stringify(questProg)),active:questA&&questA.q.id};}
+function questState(){return {done:[...questDone],abil:[...questAbil],cos:[...questCos],prog:JSON.parse(JSON.stringify(questProg)),active:questA&&questA.q.id,parked:{...questParked}};}
 function questLoad(s){questReset();if(!s)return;(s.done||[]).forEach(i=>questDone.add(i));(s.abil||[]).forEach(i=>questAbil.add(i));(s.cos||[]).forEach(i=>questCos.add(i));
-  Object.assign(questProg,s.prog||{});if(s.active&&QUESTS[s.active])questStart(QUESTS[s.active],true);}
-function questReset(){if(questA)questStepEnd(false);questA=null;questDone.clear();questAbil.clear();questCos.clear();for(const k in questProg)delete questProg[k];questHudSet();}
+  Object.assign(questProg,s.prog||{});Object.assign(questParked,s.parked||{});if(s.active)questResume(s.active);}
+function questReset(){if(questA)questStepEnd(false);questA=null;for(const k in questParked)delete questParked[k];questDone.clear();questAbil.clear();questCos.clear();for(const k in questProg)delete questProg[k];questHudSet();}
 // the world was rebuilt (garage exit, breakout…): rebuild the active step's things
-function questWorldChanged(){if(questA&&questA.st){questStepEnd(false);questStepStart();}}
+// QA16: a quest from another world is parked (progress stays in questProg) and picked back up when you return there
+const questParked={}; // world id → the quest id left open there
+function questWorldChanged(){const w=questWorld();
+  if(questA&&questA.q.world!==w){questStepEnd(false);questParked[questA.q.world]=questA.q.id;questA=null;questHudSet();}
+  else if(questA&&questA.st){questStepEnd(false);questStepStart();}
+  if(!questA&&questParked[w]){const id=questParked[w];delete questParked[w];if(QUESTS[id]&&!questDone.has(id))questStart(QUESTS[id],true);}}
+// start a saved quest here, or park it for its own world
+function questResume(id){const q=QUESTS[id];if(!q||questDone.has(id))return;
+  if(q.world===questWorld()){if(!questA||questA.q!==q)questStart(q,true);}else if(!questParked[q.world])questParked[q.world]=id;}
 
 /* ---------- step things ---------- */
 const qS=()=>GROW_S[giant?GROW_S.length-1:tier]; // the players' size (not the still-growing car scale S): quest things are built at this
