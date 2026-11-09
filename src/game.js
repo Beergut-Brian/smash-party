@@ -398,7 +398,7 @@ function goGiant(){
   queue.push({t:4,fn:()=>summonBoss()});} // the NEW WORLD button (or, in the bedroom, the door bursting open) comes after the boss is beaten
 // NEW WORLD: shrink back to tiny and roll a fresh, procedurally zoned world. Only ever by choice.
 function newWorld(){
-  if(!giant||nwBtn.style.display!=='block')return;
+  if(nwBtn.style.display!=='block')return; // only shown after a boss (QA11: at any size, e.g. a bedroom or quest boss below GIANT)
   rollWorld(false,landW?worldId:questOn?'home':'outside'); // Adventure: the same world again, fresh (L33: portals lead to the lands)
   music('drive');showBig('NEW WORLD!');sfx.fanfare();say('New world! Smash it!');confetti(150);players.forEach(p=>introCar(p,2.4));
 }
@@ -421,7 +421,7 @@ function rollWorld(keepSize,kind,opt={}){ // kind: 'bedroom' | 'outside' | 'home
   else if(kind==='home'){setZoneMap(ZONE_MAP);homeWorld();}
   else{setZoneMap(randomZoneMap(mulberry(worldSeed),'TFP',pickThemedZones()));buildWorld();captureHome();}
   if(!keepSize){growth=0;tier=0;giant=false;levelReady=false;popT=1;goldCount=0;goldHud.style.display='none';}
-  clearPads();nwBtn.style.display='none';
+  clearPads();nwBtn.style.display='none';nwAfterBoss=false;
   players.forEach(p=>{const st=spawnSpot(p.idx);p.x=st[0];p.z=st[1];p.y=groundH(st[0],st[1]);p.vy=0;p.speed=0;p.kx=p.kz=0;p.air=false;p.heading=Math.PI;});
   if(players.length===2&&Math.hypot(players[0].x-players[1].x,players[0].z-players[1].z)<players[0].r*2.5)besideCar(players[1],players[0]); // big cars: room for both
   {const a=spawnSpot(0);camT.set(a[0],0,a[1]);}updateStreaming(0,true);if(!keepSize&&!opt.keepCars)newCars(true);
@@ -430,6 +430,9 @@ function rollWorld(keepSize,kind,opt={}){ // kind: 'bedroom' | 'outside' | 'home
   questWorldChanged(); // L35: the active quest step rebuilds its things in the new world
 }
 const nwBtn=document.createElement('button');nwBtn.id='newWorld';nwBtn.innerHTML='🌍 NEW WORLD!<small>START / N / tap</small>';
+// QA11: after a boss, Arcade offers NEW WORLD; Adventure doesn't (it would restart the finished world at micro): the portals are the way on
+let nwAfterBoss=false; // the boss of this world is beaten (saved, so Continue reopens the portals)
+function nwShow(){nwAfterBoss=true;if(!questOn)nwBtn.style.display='block';}
 nwBtn.onclick=e=>{e.stopPropagation();newWorld();};nwBtn.addEventListener('touchstart',e=>{e.stopPropagation();},{passive:true});
 document.body.appendChild(nwBtn);
 // size HUD: a row of cars getting bigger, lit up as you grow (a picture, not a number)
@@ -555,7 +558,7 @@ function updateRoom(dt){
   if(breakT>0){breakT-=dt;breakFly=Math.min(1,breakFly+dt*0.6);if(doorArrow)doorArrow.visible=false;
     if(breakT<=0){breakFly=0;rollWorld(true,'outside');camDist*=4; // the camera swoops back down over town
       music('drive');showBig("WE'RE OUTSIDE!");sfx.fanfare();say("We're outside!");confetti(150);players.forEach(p=>introCar(p,1.6));
-      if(giant){if(bossBeaten)queue.push({t:3,fn:()=>{nwBtn.style.display='block';portalsOpen();}});else queue.push({t:5,fn:()=>summonBoss()});}} // L29: still GIANT outside
+      if(giant){if(bossBeaten)queue.push({t:3,fn:()=>{nwShow();portalsOpen();}});else queue.push({t:5,fn:()=>summonBoss()});}} // L29: still GIANT outside
     return;}
   if(!roomZ){if(doorArrow)doorArrow.visible=false;return;}
   if((doorT-=dt)<=0){doorT=0.5;const d=objects.find(o=>o.alive&&!o.falling&&isBreakout(o)),ok=d&&d.sz<=tier;
@@ -1311,7 +1314,7 @@ function snapshot(){
   return {v:SAVE_V,t:Date.now(),mode:questOn?'adventure':'arcade',kind:landW?worldId:questOn?'home':roomZ?'bedroom':'outside',lands:[...advLands],
     growth,tier,giant,levelReady,score,levelScore,level,goal,smashCount,cars,
     garage:!!(garage&&!garage.exiting)||queue.some(q=>q.fn===openGarage),
-    quests:questOn?questState():null,used:[...abilUsed],eggs:eggShots,nw:nwBtn.style.display==='block'};}
+    quests:questOn?questState():null,used:[...abilUsed],eggs:eggShots,nw:nwAfterBoss};}
 function saveGame(){if(!questOn||(state!=='play'&&state!=='pause'))return;advSave=snapshot();lsSet(SAVE_KEY,advSave);}
 function wipeSave(){advSave=null;try{localStorage.removeItem(SAVE_KEY);}catch(e){}markSave();}
 function applySnap(s){
@@ -1322,7 +1325,7 @@ function applySnap(s){
   (s.lands||[]).forEach(id=>advLands.add(id));
   rollWorld(true,s.kind==='bedroom'&&ZONES.bedroom?'bedroom':s.kind==='home'?'home':worldOk(WORLDS[s.kind])?s.kind:'outside');
   if(s.quests&&s.quests.active&&QUESTS[s.quests.active])questStart(QUESTS[s.quests.active],true);
-  if(s.nw){nwBtn.style.display='block';queue.push({t:2,fn:portalsOpen});} // the boss was already beaten
+  if(s.nw){nwShow();queue.push({t:2,fn:portalsOpen});} // the boss was already beaten
   else if(giant&&!(questOn&&QUEST_LIST.some(q=>q.world===questWorld()&&!questDone.has(q.id)&&q.steps.some(t=>t.do==='boss'))))queue.push({t:4,fn:()=>summonBoss()});
   abilGlyphs();showBig(s.mode==='adventure'?'▶️':'✨');}
 function updateSave(dt){if(state==='play'&&questOn&&(saveT-=dt)<=0){saveT=20;saveGame();}}
@@ -2169,8 +2172,8 @@ function hitWeak(part,p,nx,nz){const b=boss,o=b.o;b.hitT=T+0.3;
   const dl=b.def.defeat?3.4:0;if(dl){say(b.def.defeat);queue.push({t:dl,fn:()=>say('You beat the boss!')});}else say('You beat the boss!');
   collapse(o,0,nx,nz,60,true);
   queue.push({t:2.6,fn:()=>{showBig('BOSS BEATEN!');sfx.fanfare();confetti(260);
-    const d=roomDoor();if(!d){nwBtn.style.display='block';portalsOpen();return;}
-    queue.push({t:2.2,fn:()=>{const q=roomDoor();if(!q){if(roomZ)nwBtn.style.display='block';return;}smash(q,0,-1,60);}});}}); // L29: the door bursts open = BREAK OUT
+    const d=roomDoor();if(!d){nwShow();portalsOpen();return;}
+    queue.push({t:2.2,fn:()=>{const q=roomDoor();if(!q){if(roomZ)nwShow();return;}smash(q,0,-1,60);}});}}); // L29: the door bursts open = BREAK OUT
   queue.push({t:4.0+dl,fn:()=>{sfx.fanfare();say('Hooray! You did it together!');}});
 }
 function updateBoss(dt){
