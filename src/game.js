@@ -128,7 +128,7 @@ function explode(x,z,e=1){ // e = blast size (1 = a normal barrel); shrunken bar
     if(o.bld){if(d<9*e+o.r)queue.push({t:0.06+d*0.012,fn:()=>damageBuilding(o,x,z,9*e,99,-1,7*e,dx/(d||1),dz/(d||1),24*q)});continue;}
     if(d<8*e+o.r&&o.sz<=tier+1)queue.push({t:0.06+d*0.012,fn:()=>smash(o,dx,dz,26*q)});}
   for(const p of players){const dx=p.x-x,dz=p.z-z,d=Math.hypot(dx,dz)||1;
-    if(d<10*e){p.air=true;p.vy=Math.max(p.vy,12*q);p.kx+=dx/d*14*q;p.kz+=dz/d*14*q;}}
+    if(d<10*e){const k=Math.min(q,e);p.air=true;p.vy=Math.max(p.vy,12*k);p.kx+=dx/d*14*k;p.kz+=dz/d*14*k;}} // QA19: small blasts nudge (linear under 1), big ones still throw
   for(const a of animals){const dx=a.x-x,dz=a.z-z,d=Math.hypot(dx,dz);if(d<10*e)launchAnimal(a,dx||1,dz,18*q);}
 }
 function slam(p,big){ // landing hard (or from a launch pad: big) smashes what's around the car
@@ -281,17 +281,19 @@ function shoot(p,aim,weapon){const w=weapon||carWeapon(p.stats);if(!w||(!weapon&
 const _wpK=new THREE.Vector3();
 function updatePerks(dt){if(state!=='play'||garageAll()||!hasAbility('hammer'))return;
   for(const p of players){if(!p.perk||(p.perkT-=dt)>0)continue;
-    if(p.perk==='autoRockets'){p.perkT=2.4;const R=p.r*22;let best=null,bd=R;
+    if(p.perk==='autoRockets'){p.perkT=2.4; // QA19: only aims at things near the car's size (not the micro clutter at the start)
+     const R=p.r*22;let best=null,bd=R;
       if(boss&&boss.state!=='dead'&&boss.state!=='drop')for(const q of boss.o.parts){if(q.kind!=='weak'||q.gone||q.phase!==boss.phase)continue;
         q.mesh.getWorldPosition(_wpK);const d=Math.hypot(_wpK.x-p.x,_wpK.z-p.z);if(d<bd*3){bd=d;best={x:_wpK.x,z:_wpK.z};}}
-      if(!best)for(const o of objects){if(!o.alive||o.boss||o.falling||o.sz>tier||o.sz<=tier-3)continue;const d=Math.hypot(o.x-p.x,o.z-p.z);if(d<bd&&d>p.r*1.5){bd=d;best=o;}}
+      if(!best)for(const o of objects){if(!o.alive||o.boss||o.falling||o.sz>tier||o.sz<tier-1)continue;const d=Math.hypot(o.x-p.x,o.z-p.z);if(d<bd&&d>p.r*1.5){bd=d;best=o;}}
       if(best){shoot(p,Math.atan2(best.x-p.x,best.z-p.z),'rocket');}else p.perkT=0.6;}
     else if(p.perk==='magnet'){p.perkT=0.2;const R=p.r*3.5;let n=0;
       for(const o of objects){if(n>=2)break;if(!o.alive||o.boss||o.bld||o.gold||o.falling||o.rolling||o.sz>=tier)continue;const dx=p.x-o.x,dz=p.z-o.z;
         if(dx*dx+dz*dz>R*R)continue;n++;if(o.sz<=tier-3)squish(o);else smash(o,dx,dz,12*Math.sqrt(Math.max(1,S)));
         puff(o.x,0.5*S,o.z,2,0.6*Math.max(S,.3),'#bde0fe');}
       if(n)tone('sine',rand(900,1300),rand(1400,1800),0.05,0.05);}}}
-function shotEnd(s,i){if(s.rk)explode(s.x,s.z,clamp(S*0.55,0.6,2.4));else puff(s.x,s.y,s.z,3,s.r*2,s.bub?'#cdf7ff':'#dddddd');
+// QA19: a rocket's blast is scaled to the car (the old 0.6 floor was a barrel-sized blast at micro)
+function shotEnd(s,i){if(s.rk)explode(s.x,s.z,clamp(S*0.55,0.03,2.4));else puff(s.x,s.y,s.z,3,s.r*2,s.bub?'#cdf7ff':'#dddddd');
   if(s.bub)tone('sine',900,1600,0.06,0.08);scene.remove(s.m);shots.splice(i,1);}
 function updateShots(dt){
   for(let i=shots.length-1;i>=0;i--){const s=shots[i];s.life-=dt;
@@ -1360,7 +1362,7 @@ function applySnap(s){
   if(s.quests)questLoad({...s.quests,active:null}); // abilities + cosmetics first, so the world and cars come out right
   (s.lands||[]).forEach(id=>advLands.add(id));
   rollWorld(true,s.kind==='bedroom'&&ZONES.bedroom?'bedroom':s.kind==='home'?'home':worldOk(WORLDS[s.kind])?s.kind:'outside');
-  if(s.quests&&s.quests.active&&QUESTS[s.quests.active])questStart(QUESTS[s.quests.active],true);
+  if(s.quests&&s.quests.active)questResume(s.quests.active); // QA16: parked if it belongs to another world
   if(s.nw){nwShow();queue.push({t:2,fn:portalsOpen});} // the boss was already beaten
   else if(giant&&!(questOn&&QUEST_LIST.some(q=>q.world===questWorld()&&!questDone.has(q.id)&&q.steps.some(t=>t.do==='boss'))))queue.push({t:4,fn:()=>summonBoss()});
   abilGlyphs();showBig(s.mode==='adventure'?'▶️':'✨');}
