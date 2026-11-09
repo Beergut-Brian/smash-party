@@ -210,8 +210,8 @@ New abilities always come with a **button glyph that pulses on screen** (with a 
 
 - A **world** is a set of zones with its own map, start, music, bosses and quests. **Home World** = town, farm, park, home (and the bedroom, as today's arcade start). **Dino Land** and **Candy Land** become their own worlds; they stop being mixed into the Home World's NEW WORLD.
 - **Portals:** after the Home World boss, two big swirly portals rise from the ground near the fight: 🦖 a green-and-orange jungle swirl with a roar, 🍭 a pink sprinkle swirl with a giggle. "The portals are open! Pick one!" Drive into one: swirl, whoosh, and you pop out in that world.
-- Each world has a **home portal** near its start to go back, and the other land's portal opens once that world's boss is beaten.
-- What carries over: cars, abilities and cosmetics. **You shrink back to tiny in the portal**, so each land is a fresh grow-up adventure with its own 4 chapters.
+- Each world's start has a **home portal** (in a land) and a portal to **every land whose portal has opened** in this adventure, standing beside the cars (≥ 6 car lengths, not straight ahead). A portal only takes a car that's driving into it (not one knocked into it by a blast, pulled along by the other car, or growing into it).
+- What carries over: cars, abilities and cosmetics. **The first visit to a land starts at micro** (chapter 1), so each land is a fresh grow-up adventure with its own 4 chapters. **Going back to a world you've been to puts you back the way you left it** (QA18): its size, chapter, smash meter, cars, a garage still waiting and whether its boss is beaten.
 - Arcade: once a land is unlocked, its picture shows on the start screen next to 🛏️ / 🌳.
 
 Dino Land and Candy Land need more than one zone each to feel like worlds (sub-zones like jungle, volcano, swamp, fossil dig, nest hills / gumdrop forest, chocolate river, lollipop meadow, cake town, ice-cream mountains), plus their own scenes and quests. **That's the next phase** after the Home World; see the task list.
@@ -240,7 +240,7 @@ Quest givers each get their **own ElevenLabs voice** (the announcer stays the an
 ---
 
 ## 8. Decisions (Kaden, Nov 8)
-1. **Portal size:** you shrink back to tiny in each new land, so every land is a fresh grow-up adventure.
+1. **Portal size:** the first visit to a land starts at micro, so every land is a fresh grow-up adventure; going back to a world restores the size you left it at (QA18).
 2. **Garage:** rises out of the ground a short drive ahead of the players at each level-up.
 3. **Adventure start:** the street outside, with Hank right there. The bedroom stays an Arcade start.
 4. **Saving:** auto-save with ▶️ Continue; 🆕 New Adventure needs a 2-second hold.
