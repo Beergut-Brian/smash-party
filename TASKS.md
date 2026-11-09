@@ -754,7 +754,7 @@ Draw calls: see QA12 (GIANT is over budget in the Adventure maps; everything els
   - After a portal the cars are kept (by design), so the tier-3 Rocket Racer arrives at micro with `autoRockets` on. It fires nonstop at the micro props round the start: the screen fills with white dust puffs over "×39 COMBO! AWESOME!", the cars get knocked around (cause 1 of QA15), and the start hit 726 draw calls at micro (normally ~360–480).
   - Repro: Adventure, get the Rocket Racer, take a portal, watch the arrival.
   - Expected: keep the car but scale perk blasts and puffs to the current size (or hold `autoRockets` until something the car's size is near), so the arrival is readable.
-- [ ] **QA20: The start screen is taller than 1080p: the title is cut off and the version is off-screen** `NEEDS DESIGN` (cars-ui, `style.css` `#start`)
+- [x] **QA20: The start screen is taller than 1080p: the title is cut off and the version is off-screen** `NEEDS DESIGN` (cars-ui, `style.css` `#start`)
   - At 1920×1080, `#start` is 1,134 px tall in Arcade (the 🛏️ 🌳 🦖 🍭 row) and 1,105 px in Adventure (the save row). The top of "SMASH" is clipped and `#version` sits at y = 1,091 in Arcade (below the screen). With browser chrome or a TV's overscan it's worse.
   - Expected: everything, including the version, fits at 1080p and 720p (smaller title/tiles or tighter gaps), no scrollbar.
 - [ ] **QA21: Petra's worm drops sit on nests too big to drive into at tiny** `NEEDS DESIGN` (quests, `src/world/quests/dino.js` `petra_worms` drops) — minor
