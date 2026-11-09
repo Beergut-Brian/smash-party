@@ -254,13 +254,20 @@ registerQuest({
   after:['Stomp stomp stomp!','Tiny arms, big feet!']});
 
 // Petra waits on a hilltop; five hungry nests are spread over the hills.
+// QA21: the zone's drops each carry a dino_hungry_nest scene (built 'small', turned i radians) whose nest is too big to drive
+// into at tiny (chapter 2), so each glowing drop sits just outside its nest, on the clearing's edge between two egglings
+// (they stand at local angles .5, 2.6, 4.7 at r 2.64, so mid-gap is 1.55+i in world). The fallback points have no nests.
+const QUEST_PETRA_OFF=3.7;
+function questPetraDrops(){const W=typeof WORLDS!=='undefined'&&WORLDS.dino,v=W&&W.questAt&&W.questAt.petra_worms&&W.questAt.petra_worms.drops;
+  if(!Array.isArray(v)||!v.length)return questDinoPts('petra_worms','drops',questDinoAt('petra_worms','stage'),26,5);
+  return v.map(([x,z],i)=>{const a=1.55+i;return [x+Math.sin(a)*QUEST_PETRA_OFF,z+Math.cos(a)*QUEST_PETRA_OFF];});}
 registerQuest({
   id:'petra_worms',world:'dino',chapter:2,main:false,
   giver:{id:'petra',name:'Petra Pteranodon',emoji:'🪺',voice:'petra',at:questDinoAt('petra_worms','giver'),h:4.0,build:questPetraBuild},
   remind:['Five hungry nests, over!'],
   steps:[
     {do:'talk',icon:'🪱',n:5,say:['Petra here! Come in!','Babies are hungry, over!','Drop worms in five nests!']},
-    {do:'deliver',n:5,icon:'🪱',at:questDinoPts('petra_worms','drops',questDinoAt('petra_worms','stage'),26,5),
+    {do:'deliver',n:5,icon:'🪱',at:questPetraDrops(),
       say:{start:'Nests are all over the hills, over!',each:['Delivery! Roger!','Chirp chirp! Got it!','Right on target!'],hint:'Glowing nest! Go go!',got:'All fed! Roger that!'}}],
   reward:{cosmetic:'roar',stars:2,say:['Mission complete! Over and out!','Here is a dino roar! RAWR!']},
   after:['Roger that!','Clear skies! Over!']});
