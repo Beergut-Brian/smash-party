@@ -749,6 +749,7 @@ Draw calls: see QA12 (GIANT is over budget in the Adventure maps; everything els
 - [ ] **QA18: Going back to a land restarts it at micro** `NEEDS LOGIC` (logic-systems, `enterWorld` in worlds.js) — design call for the reviewer
   - In Dino Land at tiny (chapter 2), the 🏡 portal and back → micro, chapter 1 again; the kids regrow two sizes and redo the tiny garage before chapter 2's givers make sense. With QA15 this happens by accident.
   - Suggest: in Adventure, remember each world's size (tier, growth, picked cars) and restore it when you come back; only a first visit starts at micro. Note: `docs/ADVENTURE.md` §5 says "you shrink back to **tiny** in the portal"; the code (L44) uses micro. One of them should change.
+  - **Reviewer's call (Nov 9):** remember each world's size, cars and chapter progress per world in Adventure and restore them on the way back; only a first visit starts at micro (the L44 arrival size). Update `docs/ADVENTURE.md` §5 to match.
 - [ ] **QA19: A top-tier car carried to micro blows up the whole start and whites out the screen** `NEEDS LOGIC` (logic-gameplay, `updatePerks` / blast puffs in game.js) — kid lens
   - After a portal the cars are kept (by design), so the tier-3 Rocket Racer arrives at micro with `autoRockets` on. It fires nonstop at the micro props round the start: the screen fills with white dust puffs over "×39 COMBO! AWESOME!", the cars get knocked around (cause 1 of QA15), and the start hit 726 draw calls at micro (normally ~360–480).
   - Repro: Adventure, get the Rocket Racer, take a portal, watch the arrival.
