@@ -427,7 +427,7 @@ function rollWorld(keepSize,kind,opt={}){ // kind: 'bedroom' | 'outside' | 'home
   players.forEach(p=>{const st=spawnSpot(p.idx);p.x=st[0];p.z=st[1];p.y=groundH(st[0],st[1]);p.vy=0;p.speed=0;p.kx=p.kz=0;p.air=false;p.heading=Math.PI;});
   if(players.length===2&&Math.hypot(players[0].x-players[1].x,players[0].z-players[1].z)<players[0].r*2.5)besideCar(players[1],players[0]); // big cars: room for both
   {const a=spawnSpot(0);camT.set(a[0],0,a[1]);}updateStreaming(0,true);if(!keepSize&&!opt.keepCars)newCars(true);
-  if(reG&&keepSize)queue.push({t:1.6,fn:openGarage});
+  if(opt.garage??(reG&&keepSize))queue.push({t:1.6,fn:openGarage}); // QA18: opt.garage = that world's own waiting garage (portals)
   portalsStart(); // L33: the home portal near a land's start
   questWorldChanged(); // L35: the active quest step rebuilds its things in the new world
 }
@@ -1349,7 +1349,7 @@ let advSave=(s=>s&&s.v===SAVE_V?s:null)(lsGet(SAVE_KEY)),saveSel='go',newHold=0,
 let resumeSnap=(()=>{try{const s=JSON.parse(sessionStorage.getItem('sp_resume')||'null');sessionStorage.removeItem('sp_resume');return s&&s.v===SAVE_V?s:null;}catch(e){return null;}})();
 function snapshot(){
   const cars={};for(let i=0;i<2;i++){const p=players.find(q=>q.idx===i);const nm=p?p.stats.name:snapCars&&snapCars[i];if(nm)cars[i]=nm;}
-  return {v:SAVE_V,t:Date.now(),mode:questOn?'adventure':'arcade',kind:landW?worldId:questOn?'home':roomZ?'bedroom':'outside',lands:[...advLands],
+  return {v:SAVE_V,t:Date.now(),mode:questOn?'adventure':'arcade',kind:landW?worldId:questOn?'home':roomZ?'bedroom':'outside',lands:[...advLands],open:[...advOpen],worlds:JSON.parse(JSON.stringify(advWorld)),
     growth,tier,giant,levelReady,score,levelScore,level,goal,smashCount,cars,
     garage:!!(garage&&!garage.exiting)||queue.some(q=>q.fn===openGarage),
     quests:questOn?questState():null,used:[...abilUsed],eggs:eggShots,nw:nwAfterBoss};}
@@ -1361,10 +1361,11 @@ function applySnap(s){
   (s.used||[]).forEach(i=>abilUsed.add(i));eggShots=s.eggs||0;snapCars=s.cars||null;snapGarage=!!s.garage;
   if(s.quests)questLoad({...s.quests,active:null}); // abilities + cosmetics first, so the world and cars come out right
   (s.lands||[]).forEach(id=>advLands.add(id));
+  if(s.open)s.open.forEach(id=>advOpen.add(id));else if(advLands.size)landList().forEach(w=>advOpen.add(w.id)); // QA17: older saves: a land visited = the Home boss opened them all
+  for(const k in advWorld)delete advWorld[k];Object.assign(advWorld,s.worlds||{}); // QA18
   rollWorld(true,s.kind==='bedroom'&&ZONES.bedroom?'bedroom':s.kind==='home'?'home':worldOk(WORLDS[s.kind])?s.kind:'outside');
   if(s.quests&&s.quests.active)questResume(s.quests.active); // QA16: parked if it belongs to another world
-  if(s.nw){nwShow();queue.push({t:2,fn:portalsOpen});} // the boss was already beaten
-  else if(giant&&!(questOn&&QUEST_LIST.some(q=>q.world===questWorld()&&!questDone.has(q.id)&&q.steps.some(t=>t.do==='boss'))))queue.push({t:4,fn:()=>summonBoss()});
+  worldAfterSet(s.nw); // the boss was already beaten: portals; GIANT without a boss quest: the boss drops in
   abilGlyphs();showBig(s.mode==='adventure'?'▶️':'✨');}
 function updateSave(dt){if(state==='play'&&questOn&&(saveT-=dt)<=0){saveT=20;saveGame();}}
 addEventListener('pagehide',saveGame);addEventListener('visibilitychange',()=>{if(document.hidden)saveGame();});
@@ -2688,8 +2689,8 @@ function tetherPlayers(dt,ps,base){
   const [a,b]=players,dx=b.x-a.x,dz=b.z-a.z,d=Math.hypot(dx,dz)||1,ux=dx/d,uz=dz/d;
   const va=-(Math.sin(a.heading)*ux+Math.cos(a.heading)*uz)*a.speed,vb=(Math.sin(b.heading)*ux+Math.cos(b.heading)*uz)*b.speed;
   const tr=Math.abs(va-vb)>0.5?(va>vb?b:a):(a.markT>b.markT?b:a),ld=tr===a?b:a,sg=tr===a?1:-1; // tie (both parked): the one that just teleported leads
-  if(ps>lim*3){besideCar(tr,ld);puff(tr.x,S,tr.z,8,1.4*Math.max(S,.3),'#ffffff');sfx.pop();return;} // way off (teleport): pop it back next to the leader
-  const pull=Math.min(ps-lim,lim)*4.5*dt;tr.kx+=sg*ux*pull;tr.kz+=sg*uz*pull;}
+  if(ps>lim*3){besideCar(tr,ld);tr.tetherT=T;puff(tr.x,S,tr.z,8,1.4*Math.max(S,.3),'#ffffff');sfx.pop();return;} // way off (teleport): pop it back next to the leader
+  const pull=Math.min(ps-lim,lim)*4.5*dt;tr.kx+=sg*ux*pull;tr.kz+=sg*uz*pull;tr.tetherT=T;} // QA15: a pulled car doesn't take portals
 let lastSh=0;function setShadow(s){if(Math.abs(s-lastSh)<Math.max(0.3,s*0.04))return;lastSh=s;sc.left=-s;sc.right=s;sc.top=s;sc.bottom=-s;sc.updateProjectionMatrix();}
 const v3=new THREE.Vector3();
 function updateHUD(){
