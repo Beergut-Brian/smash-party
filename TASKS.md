@@ -762,10 +762,11 @@ Draw calls: see QA12 (GIANT is over budget in the Adventure maps; everything els
 - [x] **QA20: The start screen is taller than 1080p: the title is cut off and the version is off-screen** `NEEDS DESIGN` (cars-ui, `style.css` `#start`)
   - At 1920×1080, `#start` is 1,134 px tall in Arcade (the 🛏️ 🌳 🦖 🍭 row) and 1,105 px in Adventure (the save row). The top of "SMASH" is clipped and `#version` sits at y = 1,091 in Arcade (below the screen). With browser chrome or a TV's overscan it's worse.
   - Expected: everything, including the version, fits at 1080p and 720p (smaller title/tiles or tighter gaps), no scrollbar.
-- [ ] **QA21: Petra's worm drops sit on nests too big to drive into at tiny** `NEEDS DESIGN` (quests, `src/world/quests/dino.js` `petra_worms` drops) — minor
+- [x] **QA21: Petra's worm drops sit on nests too big to drive into at tiny** `NEEDS DESIGN` (quests, `src/world/quests/dino.js` `petra_worms` drops) — minor
   - All 5 drops are exactly on `dino_nest` props that are `small` (sz 3) while chapter 2 is played at tiny: the car boings off the red ring with "💥 JUMP = BOOM!" 2.8 from the drop's center, but the drop needs the car within 1.22 (car r + 3.5·`qS()`). Jumping/hovering in works, so it's not a dead end, just unclear.
   - Repro: Dino Land at tiny, `__sp.talk('petra')`, drive at the drop at (54, 222).
   - Fix: put the drops beside the nests (or use the tiny nests). Optional `NEEDS LOGIC` (logic-gameplay): let a `deliver` drop on a solid prop count from the prop's edge.
+  - ✅ quests: `questPetraDrops()` (dino.js) moves each drop 3.7 off its nest center to the clearing edge, in the gap between the egglings; at tiny the car drives straight in and it counts (headless check, no errors).
 - [x] **QA22: After-boss portals land behind the smash meter or against giant props** `NEEDS LOGIC` (logic-systems, `portalsOpen` in worlds.js) — minor
   - The row rises `16*s` up the screen from the cars, so the floating 🏡 / 🦖 / 🍭 badges (y 16) sit behind the smash meter at the top of the screen (Home boss, Sir Sprinkles). After Sir Sprinkles the 🦖 portal rose 15 units from the mega cake's center (r 8.9) at the cake plaza, half hidden behind it (reachable from the road side).
   - Expected: raise them a little closer (badges below the meter) and skip spots overlapping props bigger than the cars.
